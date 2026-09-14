@@ -61,6 +61,7 @@ EVENT_CACHE_HOURS = float(os.getenv("PM_EDGE_EVENT_CACHE_HOURS", "8"))
 ALERT_COOLDOWN_HOURS = float(os.getenv("PM_EDGE_ALERT_COOLDOWN_HOURS", "6"))
 MAX_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_ALERTS_PER_RUN", "3"))
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
+WATCHER_VERSION = 2
 
 PRIMARY_MARKET = {
     "h2h": "h2h",
@@ -245,6 +246,94 @@ def get_events(odds, state):
     cache["events"] = events
     return events, 0
 
+
+def fetch_open_kalshi_sports_markets(base_url: str, max_events: int = 2500):
+    """
+    Load Kalshi OPEN EVENTS (not the generic market feed).
+
+    Kalshi's /events endpoint excludes multivariate events. We request nested
+    markets, then inject the event matchup title into each market before using
+    the existing PM Edge parser. This avoids the general /markets feed being
+    dominated by combo/MVE contracts and improves team matching.
+    """
+    out = []
+    cursor = None
+    seen_events = 0
+    session = requests.Session()
+    session.headers.update({"User-Agent": "PM-Edge-Watch/2.0"})
+    base = base_url.rstrip("/")
+
+    while seen_events < max_events:
+        params = {
+            "status": "open",
+            "with_nested_markets": "true",
+            "limit": min(200, max_events - seen_events),
+        }
+        if cursor:
+            params["cursor"] = cursor
+
+        r = session.get(base + "/events", params=params, timeout=25)
+        r.raise_for_status()
+        data = r.json()
+        events_batch = data.get("events", [])
+        if not isinstance(events_batch, list) or not events_batch:
+            break
+
+        for ev in events_batch:
+            seen_events += 1
+            category = str(ev.get("category") or "")
+            # Include sports explicitly; if category is absent, let the sports parser decide.
+            if category and "sport" not in category.lower():
+                continue
+
+            ev_title = str(ev.get("title") or "").strip()
+            ev_sub = str(ev.get("sub_title") or "").strip()
+
+            # Strip labels such as ": Spread" / ": Total Points" from the matchup.
+            matchup = ev_title.split(":", 1)[0].strip() if ev_title else ""
+            ev_markets = ev.get("markets") or []
+            if not isinstance(ev_markets, list):
+                continue
+
+            for raw_market in ev_markets:
+                if not isinstance(raw_market, dict):
+                    continue
+
+                # Ignore combo/multivariate children defensively.
+                ticker = str(raw_market.get("ticker") or "")
+                if ticker.startswith("KXMVE"):
+                    continue
+
+                enriched = dict(raw_market)
+                original_title = str(raw_market.get("title") or "").strip()
+
+                # If the event provides a matchup, force it to be the parser's event prefix.
+                # Example:
+                # event.title  = "Denver vs Kansas City: Spread"
+                # market.title = "Kansas City wins by over 2.5 points?"
+                # becomes      = "Denver vs Kansas City: Kansas City wins by over 2.5 points?"
+                lower_match = matchup.lower()
+                if matchup and (
+                    " vs " in lower_match or
+                    " v " in lower_match or
+                    " at " in lower_match or
+                    " @ " in lower_match
+                ):
+                    enriched["title"] = f"{matchup}: {original_title}" if original_title else matchup
+
+                nm = normalize_market(enriched)
+                nm["_kalshi_event_title"] = ev_title
+                nm["_kalshi_event_sub_title"] = ev_sub
+                nm["_kalshi_category"] = category
+                out.append(nm)
+
+        cursor = data.get("cursor")
+        if not cursor:
+            break
+
+    return out, seen_events
+
+
 def fair_to_dict(fair, event, spec, usage=None):
     return {
         "fetched_at": iso_now(),
@@ -348,7 +437,7 @@ def self_test():
     assert s["daily_usage"]["date"] == now_utc().date().isoformat()
     assert cents(0.57) == "57.0¢"
     assert pct(0.061) == "6.1%"
-    print("PM Edge watcher self-test: PASS")
+    print("PM Edge watcher v2 self-test: PASS")
     return 0
 
 def main():
@@ -366,8 +455,10 @@ def main():
     state = load_state()
     daily = reset_daily_usage(state)
 
-    raw = kalshi.list_open_markets(MAX_MARKETS)
-    markets = [normalize_market(x) for x in raw]
+    markets, kalshi_events_seen = fetch_open_kalshi_sports_markets(
+        settings.kalshi_base_url,
+        max_events=MAX_MARKETS,
+    )
     market_by_ticker = {m["ticker"]: m for m in markets}
     events, _ = get_events(odds, state)
 
@@ -513,8 +604,11 @@ def main():
 
     pass_sent = maybe_send_pass_alerts(state, market_by_ticker, state["fair_cache"], settings)
 
-    # First-run heartbeat confirms that notifications are connected even if there is no bet.
-    if not state.get("first_run_notified"):
+    # Health heartbeat confirms notifications and verifies the event matcher.
+    if (
+        not state.get("first_run_notified")
+        or int(state.get("watcher_version_notified", 0) or 0) < WATCHER_VERSION
+    ):
         remaining = None
         for x in state["fair_cache"].values():
             if x.get("requests_remaining") is not None:
@@ -522,15 +616,17 @@ def main():
                 break
         msg = (
             f"PM Edge Watch is running.\n"
-            f"Open Kalshi markets: {len(markets)}\n"
+            f"Kalshi open events checked: {kalshi_events_seen}\n"
+            f"Sports markets loaded: {len(markets)}\n"
             f"Matched sports candidates: {len(candidates)}\n"
             f"Fair values cached: {len(state['fair_cache'])}\n"
             f"Odds credits used today: {daily.get('credits',0)}/{DAILY_ODDS_BUDGET}"
         )
         if remaining is not None:
             msg += f"\nOdds API account credits remaining: {remaining}"
-        if send_push("✅ PM Edge Watch is live", msg, priority=0):
+        if send_push("✅ PM Edge Watch v2 is live", msg, priority=0):
             state["first_run_notified"] = True
+            state["watcher_version_notified"] = WATCHER_VERSION
 
     # Prune old state.
     live_tickers = set(market_by_ticker)
@@ -542,8 +638,9 @@ def main():
 
     save_state(state)
     print(json.dumps({
+        "kalshi_events_seen": kalshi_events_seen,
         "markets": len(markets),
-        "events": len(events),
+        "sportsbook_events": len(events),
         "candidates": len(candidates),
         "fair_cache": len(state["fair_cache"]),
         "actionable": len(actionable),
