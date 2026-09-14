@@ -43,7 +43,41 @@ from pmedge.market_parse import parse_market
 from pmedge.matcher import load_aliases, match_event
 from pmedge.odds import OddsAPIClient, OddsAPIError
 from pmedge.fair_value import fair_from_event, blend_fair_value, load_model_overlay, load_manual_values
+
 from pmedge.pricing import best_binary_trade
+import pmedge.matcher as _matcher_mod
+from rapidfuzz.fuzz import ratio as _rf_ratio, token_set_ratio as _rf_token_set_ratio
+
+def _smart_team_similarity(a: str, b: str, aliases: dict[str, str]) -> float:
+    """
+    More tolerant for Kalshi abbreviations:
+      KC Chiefs <-> Kansas City Chiefs
+      DEN Broncos <-> Denver Broncos
+      NY Giants <-> New York Giants
+    Mascot identity is strong evidence, while still retaining fuzzy city/name checks.
+    """
+    x = _matcher_mod.canon(a, aliases)
+    y = _matcher_mod.canon(b, aliases)
+    if not x or not y:
+        return 0.0
+    if x == y:
+        return 1.0
+    if x in y or y in x:
+        return 0.97
+
+    xt, yt = x.split(), y.split()
+    if xt and yt and xt[-1] == yt[-1] and len(xt[-1]) >= 4:
+        # Same mascot / distinctive final team token.
+        base = max(_rf_ratio(x, y), _rf_token_set_ratio(x, y)) / 100.0
+        return max(0.94, base)
+
+    # Same first+last tokens can catch labels such as "LA Chargers".
+    if xt and yt and xt[-1] == yt[-1]:
+        return 0.91
+
+    return max(_rf_ratio(x, y), _rf_token_set_ratio(x, y)) / 100.0
+
+_matcher_mod.team_similarity = _smart_team_similarity
 
 STATE_PATH = Path(os.getenv("PM_EDGE_WATCH_STATE", ".pm_edge_watch_state.json"))
 
@@ -54,14 +88,14 @@ STREAMLIT_APP_URL = os.getenv("STREAMLIT_APP_URL", "").strip()
 MIN_EDGE = float(os.getenv("PM_EDGE_MIN_NET_EDGE", "0.04"))
 MODEL_BUFFER = float(os.getenv("PM_EDGE_MODEL_ERROR_BUFFER", "0.01"))
 SLIPPAGE_BUFFER = float(os.getenv("PM_EDGE_SLIPPAGE_BUFFER", "0.0025"))
-MATCH_MIN = float(os.getenv("PM_EDGE_MIN_MATCH_CONFIDENCE", "0.82"))
+MATCH_MIN = float(os.getenv("PM_EDGE_MIN_MATCH_CONFIDENCE", "0.78"))
 DAILY_ODDS_BUDGET = int(os.getenv("PM_EDGE_ODDS_DAILY_BUDGET", "12"))
 MAX_REFRESH_GROUPS = int(os.getenv("PM_EDGE_MAX_ODDS_REFRESH_PER_RUN", "3"))
 EVENT_CACHE_HOURS = float(os.getenv("PM_EDGE_EVENT_CACHE_HOURS", "8"))
 ALERT_COOLDOWN_HOURS = float(os.getenv("PM_EDGE_ALERT_COOLDOWN_HOURS", "6"))
 MAX_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_ALERTS_PER_RUN", "3"))
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
-WATCHER_VERSION = 2
+WATCHER_VERSION = 3
 
 PRIMARY_MARKET = {
     "h2h": "h2h",
@@ -307,6 +341,11 @@ def fetch_open_kalshi_sports_markets(base_url: str, max_events: int = 2500):
                 enriched = dict(raw_market)
                 original_title = str(raw_market.get("title") or "").strip()
 
+                # Kalshi market close_time can be well after kickoff/first pitch.
+                # Use the parent event's strike_date as the occurrence time when available.
+                if ev.get("strike_date"):
+                    enriched["occurrence_datetime"] = ev.get("strike_date")
+
                 # If the event provides a matchup, force it to be the parser's event prefix.
                 # Example:
                 # event.title  = "Denver vs Kansas City: Spread"
@@ -437,7 +476,7 @@ def self_test():
     assert s["daily_usage"]["date"] == now_utc().date().isoformat()
     assert cents(0.57) == "57.0¢"
     assert pct(0.061) == "6.1%"
-    print("PM Edge watcher v2 self-test: PASS")
+    print("PM Edge watcher v3 self-test: PASS")
     return 0
 
 def main():
@@ -463,14 +502,19 @@ def main():
     events, _ = get_events(odds, state)
 
     candidates = []
+    supported_markets = 0
+    event_matches_any_conf = 0
     for market in markets:
         spec = parse_market(market)
         if spec.market_type not in PRIMARY_MARKET:
             continue
+        supported_markets += 1
         em = match_event(
             spec, events, aliases,
             market.get("occurrence_datetime") or market.get("close_time"),
         )
+        if em.event:
+            event_matches_any_conf += 1
         if not em.event or em.confidence < MATCH_MIN:
             continue
         cached = state.setdefault("fair_cache", {}).get(market["ticker"])
@@ -618,13 +662,15 @@ def main():
             f"PM Edge Watch is running.\n"
             f"Kalshi open events checked: {kalshi_events_seen}\n"
             f"Sports markets loaded: {len(markets)}\n"
+            f"Supported game markets parsed: {supported_markets}\n"
+            f"Event matches found: {event_matches_any_conf}\n"
             f"Matched sports candidates: {len(candidates)}\n"
             f"Fair values cached: {len(state['fair_cache'])}\n"
             f"Odds credits used today: {daily.get('credits',0)}/{DAILY_ODDS_BUDGET}"
         )
         if remaining is not None:
             msg += f"\nOdds API account credits remaining: {remaining}"
-        if send_push("✅ PM Edge Watch v2 is live", msg, priority=0):
+        if send_push("✅ PM Edge Watch v3 is live", msg, priority=0):
             state["first_run_notified"] = True
             state["watcher_version_notified"] = WATCHER_VERSION
 
@@ -641,6 +687,8 @@ def main():
         "kalshi_events_seen": kalshi_events_seen,
         "markets": len(markets),
         "sportsbook_events": len(events),
+        "supported_markets": supported_markets,
+        "event_matches_any_conf": event_matches_any_conf,
         "candidates": len(candidates),
         "fair_cache": len(state["fair_cache"]),
         "actionable": len(actionable),
