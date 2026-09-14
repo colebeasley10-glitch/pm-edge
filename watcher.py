@@ -88,20 +88,27 @@ STREAMLIT_APP_URL = os.getenv("STREAMLIT_APP_URL", "").strip()
 MIN_EDGE = float(os.getenv("PM_EDGE_MIN_NET_EDGE", "0.04"))
 MODEL_BUFFER = float(os.getenv("PM_EDGE_MODEL_ERROR_BUFFER", "0.01"))
 SLIPPAGE_BUFFER = float(os.getenv("PM_EDGE_SLIPPAGE_BUFFER", "0.0025"))
-MATCH_MIN = float(os.getenv("PM_EDGE_MIN_MATCH_CONFIDENCE", "0.78"))
+MATCH_MIN = float(os.getenv("PM_EDGE_WATCH_MATCH_CONFIDENCE", "0.72"))
 DAILY_ODDS_BUDGET = int(os.getenv("PM_EDGE_ODDS_DAILY_BUDGET", "12"))
 MAX_REFRESH_GROUPS = int(os.getenv("PM_EDGE_MAX_ODDS_REFRESH_PER_RUN", "3"))
 EVENT_CACHE_HOURS = float(os.getenv("PM_EDGE_EVENT_CACHE_HOURS", "8"))
 ALERT_COOLDOWN_HOURS = float(os.getenv("PM_EDGE_ALERT_COOLDOWN_HOURS", "6"))
 MAX_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_ALERTS_PER_RUN", "3"))
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
-WATCHER_VERSION = 3
+WATCHER_VERSION = 4
 
 PRIMARY_MARKET = {
     "h2h": "h2h",
     "spread": "spreads",
     "total": "totals",
     "team_total": "team_totals",
+}
+
+ODDS_MARKETS_FOR_TYPE = {
+    "h2h": "h2h",
+    "spread": "spreads,alternate_spreads",
+    "total": "totals,alternate_totals",
+    "team_total": "team_totals,alternate_team_totals",
 }
 
 def now_utc():
@@ -396,13 +403,23 @@ def fair_to_dict(fair, event, spec, usage=None):
 
 def score_market(market, fair_entry, settings):
     tick = tick_size_for_price(market, market.get("yes_bid") or market.get("yes_ask") or 0.50)
+
+    # Two-book alternate-line consensus is usable, but demand more edge.
+    n_books = int(fair_entry.get("n_books") or 0)
+    if n_books >= 4:
+        required_edge = MIN_EDGE
+    elif n_books == 3:
+        required_edge = max(MIN_EDGE, 0.045)
+    else:
+        required_edge = max(MIN_EDGE, 0.06)
+
     return best_binary_trade(
         fair_yes_prob=float(fair_entry["fair_yes_prob"]),
         yes_bid=market.get("yes_bid"),
         yes_ask=market.get("yes_ask"),
         no_bid=market.get("no_bid"),
         no_ask=market.get("no_ask"),
-        min_net_edge=MIN_EDGE,
+        min_net_edge=required_edge,
         nonfee_buffer=MODEL_BUFFER + SLIPPAGE_BUFFER,
         maker_fee_rate=settings.maker_fee_rate,
         taker_fee_rate=settings.taker_fee_rate,
@@ -476,7 +493,7 @@ def self_test():
     assert s["daily_usage"]["date"] == now_utc().date().isoformat()
     assert cents(0.57) == "57.0¢"
     assert pct(0.061) == "6.1%"
-    print("PM Edge watcher v3 self-test: PASS")
+    print("PM Edge watcher v4 self-test: PASS")
     return 0
 
 def main():
@@ -539,43 +556,63 @@ def main():
     run_event_odds_cache = {}
     credits_remaining_today = max(0, DAILY_ODDS_BUDGET - int(daily.get("credits", 0)))
 
+    fair_attempts = 0
+    fair_successes = 0
+    odds_errors = 0
+
     for _, market, spec, em in candidates:
         cached = state["fair_cache"].get(market["ticker"])
         ttl = fair_ttl_hours(em.event)
         if cached and age_hours(cached.get("fetched_at")) <= ttl:
             continue
-        if refreshed_groups >= MAX_REFRESH_GROUPS or credits_remaining_today <= 0:
-            break
 
-        mkey = PRIMARY_MARKET.get(spec.market_type)
-        group = (em.event.get("_sport_key"), em.event.get("id"), mkey)
+        requested_markets = ODDS_MARKETS_FOR_TYPE.get(spec.market_type)
+        if not requested_markets:
+            continue
+
+        group = (em.event.get("_sport_key"), em.event.get("id"), requested_markets)
+
         if group not in run_event_odds_cache:
+            if refreshed_groups >= MAX_REFRESH_GROUPS or credits_remaining_today <= 0:
+                continue
             try:
                 event_odds, usage = odds.event_odds(group[0], group[1], group[2])
             except OddsAPIError as exc:
+                odds_errors += 1
                 print("Odds refresh failed:", group, exc)
                 continue
+
             cost = usage_cost(usage)
             if cost > credits_remaining_today:
-                break
+                continue
+
             credits_remaining_today -= cost
             daily["credits"] = int(daily.get("credits", 0)) + cost
             refreshed_groups += 1
+
             if isinstance(event_odds, dict):
                 event_odds = dict(event_odds)
                 event_odds["_sport_key"] = em.event.get("_sport_key")
                 event_odds["_sport_title"] = em.event.get("_sport_title")
                 event_odds["_sport_group"] = em.event.get("_sport_group")
+
             run_event_odds_cache[group] = (event_odds, usage)
 
         event_odds, usage = run_event_odds_cache[group]
+        fair_attempts += 1
+
+        # Featured moneylines should have broader coverage. Exact alternate lines
+        # can legitimately have fewer books, so allow two but demand more edge later.
+        min_books_required = 3 if spec.market_type == "h2h" else 2
+
         consensus = fair_from_event(
             spec, event_odds, aliases,
-            min_books=settings.odds_min_books,
+            min_books=min_books_required,
             max_dispersion=settings.odds_max_dispersion,
         )
         fair = blend_fair_value(market["ticker"], consensus, overlay)
         if fair:
+            fair_successes += 1
             state["fair_cache"][market["ticker"]] = fair_to_dict(fair, em.event, spec, usage)
 
     # Manual fair values override any cache.
@@ -665,12 +702,15 @@ def main():
             f"Supported game markets parsed: {supported_markets}\n"
             f"Event matches found: {event_matches_any_conf}\n"
             f"Matched sports candidates: {len(candidates)}\n"
+            f"Fair-value attempts: {fair_attempts}\n"
+            f"Fair values created: {fair_successes}\n"
             f"Fair values cached: {len(state['fair_cache'])}\n"
+            f"Odds request errors: {odds_errors}\n"
             f"Odds credits used today: {daily.get('credits',0)}/{DAILY_ODDS_BUDGET}"
         )
         if remaining is not None:
             msg += f"\nOdds API account credits remaining: {remaining}"
-        if send_push("✅ PM Edge Watch v3 is live", msg, priority=0):
+        if send_push("✅ PM Edge Watch v4 is live", msg, priority=0):
             state["first_run_notified"] = True
             state["watcher_version_notified"] = WATCHER_VERSION
 
@@ -690,6 +730,9 @@ def main():
         "supported_markets": supported_markets,
         "event_matches_any_conf": event_matches_any_conf,
         "candidates": len(candidates),
+        "fair_attempts": fair_attempts,
+        "fair_successes": fair_successes,
+        "odds_errors": odds_errors,
         "fair_cache": len(state["fair_cache"]),
         "actionable": len(actionable),
         "alerts_sent": sent,
