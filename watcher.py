@@ -14,6 +14,7 @@ import time
 import zipfile
 from dataclasses import asdict
 from datetime import datetime, timezone, timedelta
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import requests
@@ -164,7 +165,7 @@ MAX_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_ALERTS_PER_RUN", "3"))
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
 MAX_EVENT_HOURS = float(os.getenv("PM_EDGE_MAX_EVENT_HOURS", "96"))
 MAX_AUTO_EDGE = float(os.getenv("PM_EDGE_MAX_AUTO_EDGE", "0.15"))
-WATCHER_VERSION = 12
+WATCHER_VERSION = 13
 
 PRIMARY_MARKET = {
     "h2h": "h2h",
@@ -357,95 +358,191 @@ def get_events(odds, state):
     return events, 0
 
 
+
+def _contains_matchup_separator(s: str) -> bool:
+    x = f" {str(s or '').lower()} "
+    return any(token in x for token in (" vs ", " vs. ", " at ", " @ ", " v "))
+
+
+def _clean_matchup_label(s: str) -> str:
+    s = str(s or "").strip()
+    if not s:
+        return ""
+    # Kalshi event families sometimes append ": Spread", ": Total", etc.
+    # Preserve the left side when that is the actual game label.
+    left = s.split(":", 1)[0].strip()
+    return left if _contains_matchup_separator(left) else s
+
+
+def _is_game_milestone(m: dict) -> bool:
+    category = str(m.get("category") or "").lower()
+    typ = str(m.get("type") or "").lower()
+    if category and category != "sports":
+        return False
+    # We want discrete contests, not season/tournament/award milestones.
+    return ("game" in typ or "match" in typ) and "tournament" not in typ and "season" not in typ
+
+
+def _milestone_is_near_term(m: dict) -> bool:
+    d = parse_dt(m.get("start_date"))
+    if not d:
+        return False
+    h = (d - now_utc()).total_seconds() / 3600.0
+    return -1.0 <= h <= MAX_EVENT_HOURS
+
+
+def _kalshi_get_json(session: requests.Session, url: str, params=None) -> dict:
+    r = session.get(url, params=params or {}, timeout=25)
+    r.raise_for_status()
+    return r.json()
+
+
 def fetch_open_kalshi_sports_markets(base_url: str, max_events: int = 2500):
     """
-    Load Kalshi OPEN EVENTS (not the generic market feed).
+    Discover actual near-term sports contests from Kalshi milestones, then load
+    only events/markets tied to those contests.
 
-    Kalshi's /events endpoint excludes multivariate events. We request nested
-    markets, then inject the event matchup title into each market before using
-    the existing PM Edge parser. This avoids the general /markets feed being
-    dominated by combo/MVE contracts and improves team matching.
+    Why this is safer:
+      * Milestones represent real-world occurrences and expose start_date.
+      * We only keep Sports milestones whose type is a discrete game/match.
+      * Season-long wins/points, awards, futures and combo markets never enter
+        the candidate pipeline.
     """
-    out = []
-    cursor = None
-    seen_events = 0
-    session = requests.Session()
-    session.headers.update({"User-Agent": "PM-Edge-Watch/2.0"})
     base = base_url.rstrip("/")
+    session = requests.Session()
+    session.headers.update({"User-Agent": "PM-Edge-Watch/13.0"})
 
-    while seen_events < max_events:
+    # 1) Pull upcoming Sports milestones. API has minimum_start_date but no max,
+    # so filter the 96-hour upper bound locally.
+    milestone_rows = []
+    cursor = None
+    pages = 0
+    minimum_start = (now_utc() - timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+
+    while len(milestone_rows) < max_events and pages < 10:
         params = {
-            "status": "open",
-            "with_nested_markets": "true",
-            "limit": min(200, max_events - seen_events),
+            "limit": min(500, max_events - len(milestone_rows)),
+            "category": "Sports",
+            "minimum_start_date": minimum_start,
         }
         if cursor:
             params["cursor"] = cursor
 
-        r = session.get(base + "/events", params=params, timeout=25)
-        r.raise_for_status()
-        data = r.json()
-        events_batch = data.get("events", [])
-        if not isinstance(events_batch, list) or not events_batch:
+        data = _kalshi_get_json(session, base + "/milestones", params)
+        batch = data.get("milestones", [])
+        if not isinstance(batch, list) or not batch:
             break
 
-        for ev in events_batch:
-            seen_events += 1
-            category = str(ev.get("category") or "")
-            # Include sports explicitly; if category is absent, let the sports parser decide.
-            if category and "sport" not in category.lower():
-                continue
-
-            ev_title = str(ev.get("title") or "").strip()
-            ev_sub = str(ev.get("sub_title") or "").strip()
-
-            # Strip labels such as ": Spread" / ": Total Points" from the matchup.
-            matchup = ev_title.split(":", 1)[0].strip() if ev_title else ""
-            ev_markets = ev.get("markets") or []
-            if not isinstance(ev_markets, list):
-                continue
-
-            for raw_market in ev_markets:
-                if not isinstance(raw_market, dict):
-                    continue
-
-                # Ignore combo/multivariate children defensively.
-                ticker = str(raw_market.get("ticker") or "")
-                if ticker.startswith("KXMVE"):
-                    continue
-
-                enriched = dict(raw_market)
-                original_title = str(raw_market.get("title") or "").strip()
-
-                # Preserve the market's own occurrence_datetime.
-                # Kalshi already provides this at market level and it is the
-                # correct field for matching the real-world sports occurrence.
-
-                # If the event provides a matchup, force it to be the parser's event prefix.
-                # Example:
-                # event.title  = "Denver vs Kansas City: Spread"
-                # market.title = "Kansas City wins by over 2.5 points?"
-                # becomes      = "Denver vs Kansas City: Kansas City wins by over 2.5 points?"
-                lower_match = matchup.lower()
-                if matchup and (
-                    " vs " in lower_match or
-                    " v " in lower_match or
-                    " at " in lower_match or
-                    " @ " in lower_match
-                ):
-                    enriched["title"] = f"{matchup}: {original_title}" if original_title else matchup
-
-                nm = normalize_market(enriched)
-                nm["_kalshi_event_title"] = ev_title
-                nm["_kalshi_event_sub_title"] = ev_sub
-                nm["_kalshi_category"] = category
-                out.append(nm)
-
+        milestone_rows.extend(batch)
+        pages += 1
         cursor = data.get("cursor")
         if not cursor:
             break
 
-    return out, seen_events
+    game_milestones = [
+        m for m in milestone_rows
+        if _is_game_milestone(m) and _milestone_is_near_term(m)
+    ]
+
+    # 2) Map every related/primary event ticker to its milestone.
+    ticker_to_milestone = {}
+    for m in game_milestones:
+        tickers = []
+        tickers.extend(m.get("primary_event_tickers") or [])
+        tickers.extend(m.get("related_event_tickers") or [])
+        for ticker in tickers:
+            t = str(ticker or "").strip()
+            if t:
+                ticker_to_milestone.setdefault(t, m)
+
+    # 3) Fetch the small set of event objects concurrently.
+    # Public Kalshi market-data endpoints do not need auth.
+    def fetch_event(event_ticker):
+        try:
+            data = _kalshi_get_json(
+                session,
+                base + f"/events/{event_ticker}",
+                {"with_nested_markets": "true"},
+            )
+            return event_ticker, data.get("event") or {}, data.get("markets") or []
+        except Exception as exc:
+            print("Kalshi event fetch failed:", event_ticker, exc)
+            return event_ticker, {}, []
+
+    event_results = []
+    with ThreadPoolExecutor(max_workers=12) as pool:
+        futs = [pool.submit(fetch_event, t) for t in ticker_to_milestone]
+        for fut in as_completed(futs):
+            event_results.append(fut.result())
+
+    out = []
+    event_count = 0
+
+    for event_ticker, ev, top_level_markets in event_results:
+        if not ev:
+            continue
+        event_count += 1
+        milestone = ticker_to_milestone.get(event_ticker) or {}
+
+        category = str(ev.get("category") or milestone.get("category") or "")
+        ev_title = str(ev.get("title") or "").strip()
+        ev_sub = str(ev.get("sub_title") or "").strip()
+        milestone_title = str(milestone.get("title") or "").strip()
+        milestone_start = milestone.get("start_date")
+
+        # Prefer the milestone's contest label, then event title.
+        matchup = ""
+        for label in (milestone_title, ev_title):
+            candidate = _clean_matchup_label(label)
+            if _contains_matchup_separator(candidate):
+                matchup = candidate
+                break
+        if not matchup:
+            matchup = _clean_matchup_label(milestone_title or ev_title)
+
+        ev_markets = ev.get("markets")
+        if not isinstance(ev_markets, list):
+            ev_markets = top_level_markets if isinstance(top_level_markets, list) else []
+
+        for raw_market in ev_markets:
+            if not isinstance(raw_market, dict):
+                continue
+
+            if str(raw_market.get("status") or "").lower() != "open":
+                continue
+
+            ticker = str(raw_market.get("ticker") or "")
+            if ticker.startswith("KXMVE") or raw_market.get("mve_collection_ticker"):
+                continue
+
+            enriched = dict(raw_market)
+            original_title = str(raw_market.get("title") or "").strip()
+
+            # Use the real game time from the Sports milestone for matching.
+            if milestone_start:
+                enriched["_match_datetime"] = milestone_start
+
+            # Feed the parser a clean game prefix so it can parse participants.
+            if matchup:
+                enriched["title"] = f"{matchup}: {original_title}" if original_title else matchup
+
+            nm = normalize_market(enriched)
+            nm["_kalshi_event_title"] = ev_title
+            nm["_kalshi_event_sub_title"] = ev_sub
+            nm["_kalshi_category"] = category
+            nm["_kalshi_milestone_title"] = milestone_title
+            nm["_kalshi_milestone_type"] = milestone.get("type")
+            nm["_kalshi_game_time"] = milestone_start
+            nm["_match_datetime"] = milestone_start or raw_market.get("occurrence_datetime")
+            out.append(nm)
+
+    stats = {
+        "milestones_scanned": len(milestone_rows),
+        "game_milestones": len(game_milestones),
+        "kalshi_events_seen": event_count,
+        "event_tickers": len(ticker_to_milestone),
+    }
+    return out, stats
 
 
 
@@ -522,11 +619,13 @@ def event_is_near_term(event: dict) -> bool:
     return -1.0 <= h <= MAX_EVENT_HOURS
 
 def kalshi_market_is_near_term(market: dict) -> bool:
-    kd = parse_dt(market.get("occurrence_datetime"))
+    kd = parse_dt(
+        market.get("_kalshi_game_time")
+        or market.get("_match_datetime")
+        or market.get("occurrence_datetime")
+    )
     if not kd:
-        # Some legitimate markets omit occurrence_datetime; let the sportsbook
-        # event horizon and matcher confidence handle those instead.
-        return True
+        return False
     h = (kd - now_utc()).total_seconds() / 3600.0
     return -1.0 <= h <= MAX_EVENT_HOURS
 
@@ -547,7 +646,11 @@ def low_score_time_confirmed(market: dict, event: dict) -> tuple[bool, float | N
     """
     For weaker but same-sport team-name matches, require independent time agreement.
     """
-    kd = parse_dt(market.get("occurrence_datetime"))
+    kd = parse_dt(
+        market.get("_kalshi_game_time")
+        or market.get("_match_datetime")
+        or market.get("occurrence_datetime")
+    )
     sd = parse_dt((event or {}).get("commence_time"))
     if not kd or not sd:
         return False, None
@@ -563,6 +666,8 @@ def inferred_sport_rule(market: dict):
         str(market.get("ticker") or ""),
         str(market.get("event_ticker") or ""),
         str(market.get("_kalshi_event_title") or ""),
+        str(market.get("_kalshi_milestone_title") or ""),
+        str(market.get("_kalshi_milestone_type") or ""),
     ]).upper()
 
     exact = [
@@ -718,7 +823,7 @@ def self_test():
     assert s["daily_usage"]["date"] == now_utc().date().isoformat()
     assert cents(0.57) == "57.0¢"
     assert pct(0.061) == "6.1%"
-    print("PM Edge watcher v12 self-test: PASS")
+    print("PM Edge watcher v13 self-test: PASS")
     return 0
 
 def main():
@@ -745,10 +850,11 @@ def main():
 
     daily = reset_daily_usage(state)
 
-    markets, kalshi_events_seen = fetch_open_kalshi_sports_markets(
+    markets, kalshi_stats = fetch_open_kalshi_sports_markets(
         settings.kalshi_base_url,
         max_events=MAX_MARKETS,
     )
+    kalshi_events_seen = int(kalshi_stats.get("kalshi_events_seen", 0))
     market_by_ticker = {m["ticker"]: m for m in markets}
     events, _ = get_events(odds, state)
 
@@ -803,7 +909,7 @@ def main():
         # is absent, match_event will rely on participant identity.
         em = match_event(
             spec, event_pool, aliases,
-            market.get("occurrence_datetime"),
+            market.get("_match_datetime") or market.get("occurrence_datetime"),
         )
 
         team_score = event_match_team_score(em)
@@ -1032,10 +1138,11 @@ def main():
                 break
         msg = (
             f"PM Edge Watch is running.\n"
-            f"Kalshi open events checked: {kalshi_events_seen}\n"
+            f"Sports milestones scanned: {kalshi_stats.get('milestones_scanned', 0)}\n"
+            f"Near-term game milestones: {kalshi_stats.get('game_milestones', 0)}\n"
+            f"Kalshi game events loaded: {kalshi_events_seen}\n"
             f"Sports markets loaded: {len(markets)}\n"
             f"Supported game markets parsed: {supported_markets}\n"
-            f"Futures/outrights filtered: {futures_filtered}\n"
             f"Sport identified: {sport_identified}\n"
             f"Event matches found: {event_matches_any_conf}\n"
             f"Same-sport matches: {same_sport_matches}\n"
@@ -1057,7 +1164,7 @@ def main():
         )
         if remaining is not None:
             msg += f"\nOdds API account credits remaining: {remaining}"
-        if send_push("✅ PM Edge Watch v12 is live", msg, priority=0):
+        if send_push("✅ PM Edge Watch v13 is live", msg, priority=0):
             state["first_run_notified"] = True
             state["watcher_version_notified"] = WATCHER_VERSION
 
@@ -1071,6 +1178,8 @@ def main():
 
     save_state(state)
     print(json.dumps({
+        "milestones_scanned": kalshi_stats.get("milestones_scanned", 0),
+        "game_milestones": kalshi_stats.get("game_milestones", 0),
         "kalshi_events_seen": kalshi_events_seen,
         "markets": len(markets),
         "sportsbook_events": len(events),
