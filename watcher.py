@@ -162,6 +162,13 @@ MAX_REFRESH_GROUPS = int(os.getenv("PM_EDGE_MAX_ODDS_REFRESH_PER_RUN", "3"))
 EVENT_CACHE_HOURS = float(os.getenv("PM_EDGE_EVENT_CACHE_HOURS", "8"))
 ALERT_COOLDOWN_HOURS = float(os.getenv("PM_EDGE_ALERT_COOLDOWN_HOURS", "6"))
 MAX_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_ALERTS_PER_RUN", "3"))
+
+# Speculative tier: same correctness safeguards (segment/futures/team/date
+# matching, suspicious-edge ceiling) as the primary tier, just a lower edge
+# bar. Sent as clearly-labeled separate alerts with their own budget, so they
+# can never crowd out a primary alert's slot.
+SPECULATIVE_MIN_EDGE = float(os.getenv("PM_EDGE_SPECULATIVE_MIN_EDGE", "0.02"))
+MAX_SPECULATIVE_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_SPECULATIVE_ALERTS_PER_RUN", "2"))
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
 MAX_EVENT_HOURS = float(os.getenv("PM_EDGE_MAX_EVENT_HOURS", "96"))
 MAX_AUTO_EDGE = float(os.getenv("PM_EDGE_MAX_AUTO_EDGE", "0.15"))
@@ -830,17 +837,28 @@ def fair_to_dict(fair, event, spec, usage=None):
         "requests_remaining": (usage or {}).get("requests_remaining"),
     }
 
-def score_market(market, fair_entry, settings):
+def score_market(market, fair_entry, settings, base_min_edge=None):
     tick = tick_size_for_price(market, market.get("yes_bid") or market.get("yes_ask") or 0.50)
 
     # Two-book alternate-line consensus is usable, but demand more edge.
+    # When no base is given (the primary tier), this reproduces the original
+    # behavior exactly: fixed absolute floors of 4.5%/6%, regardless of
+    # MIN_EDGE. A custom base (the speculative tier) scales the same +0.5pt/
+    # +2pt gaps relative to that lower base instead.
     n_books = int(fair_entry.get("n_books") or 0)
-    if n_books >= 4:
-        required_edge = MIN_EDGE
-    elif n_books == 3:
-        required_edge = max(MIN_EDGE, 0.045)
+    if base_min_edge is None:
+        base = MIN_EDGE
+        floor_3, floor_2 = 0.045, 0.06
     else:
-        required_edge = max(MIN_EDGE, 0.06)
+        base = base_min_edge
+        floor_3, floor_2 = base + 0.005, base + 0.02
+
+    if n_books >= 4:
+        required_edge = base
+    elif n_books == 3:
+        required_edge = max(base, floor_3)
+    else:
+        required_edge = max(base, floor_2)
 
     return best_binary_trade(
         fair_yes_prob=float(fair_entry["fair_yes_prob"]),
@@ -855,8 +873,11 @@ def score_market(market, fair_entry, settings):
         tick_size=tick,
     )
 
-def should_alert(state, market, fair_entry, q):
-    key = f"{market['ticker']}|{q.side}"
+def should_alert(state, market, fair_entry, q, tier="primary"):
+    # Primary tier keeps the original key format for backward compatibility
+    # with already-active alerts recorded before tiers existed.
+    suffix = "" if tier == "primary" else f"|{tier.upper()}"
+    key = f"{market['ticker']}|{q.side}{suffix}"
     prev = state.setdefault("alerts", {}).get(key)
     if not prev:
         return True, "NEW"
@@ -872,8 +893,9 @@ def should_alert(state, market, fair_entry, q):
         return True, "REMINDER"
     return False, ""
 
-def record_alert(state, market, fair_entry, q):
-    key = f"{market['ticker']}|{q.side}"
+def record_alert(state, market, fair_entry, q, tier="primary"):
+    suffix = "" if tier == "primary" else f"|{tier.upper()}"
+    key = f"{market['ticker']}|{q.side}{suffix}"
     state.setdefault("alerts", {})[key] = {
         "active": True,
         "sent_at": iso_now(),
@@ -882,6 +904,7 @@ def record_alert(state, market, fair_entry, q):
         "net_edge": q.net_edge,
         "fair_yes_prob": fair_entry["fair_yes_prob"],
         "title": market.get("title"),
+        "tier": tier,
     }
 
 def maybe_send_pass_alerts(state, market_by_ticker, fair_cache, settings):
@@ -889,7 +912,12 @@ def maybe_send_pass_alerts(state, market_by_ticker, fair_cache, settings):
     for key, alert in list(state.setdefault("alerts", {}).items()):
         if not alert.get("active"):
             continue
-        ticker, side = key.rsplit("|", 1)
+        # Speculative keys look like "TICKER|SIDE|SPECULATIVE"; primary keys
+        # keep the original two-part "TICKER|SIDE" format.
+        parts = key.split("|")
+        ticker, side = parts[0], parts[1]
+        tier = alert.get("tier", "primary")
+        base_edge = SPECULATIVE_MIN_EDGE if tier == "speculative" else None
         market = market_by_ticker.get(ticker)
         fair_entry = fair_cache.get(ticker)
         if not market or not fair_entry:
@@ -898,12 +926,13 @@ def maybe_send_pass_alerts(state, market_by_ticker, fair_cache, settings):
         event = {"commence_time": fair_entry.get("commence_time")}
         if age_hours(fair_entry.get("fetched_at")) > max(8.0, fair_ttl_hours(event) * 2):
             continue
-        q = score_market(market, fair_entry, settings)
+        q = score_market(market, fair_entry, settings, base_min_edge=base_edge)
         if q.qualifies:
             continue
+        label = "" if tier == "primary" else " (speculative)"
         msg = (
             f"{side} — {market.get('title','')[:150]}\n"
-            f"Current quote no longer clears PM Edge's {MIN_EDGE:.0%} net-edge rule.\n"
+            f"Current quote no longer clears PM Edge's {pct(base_edge if base_edge is not None else MIN_EDGE)} net-edge rule{label}.\n"
             f"Status: PASS / DO NOT CHASE."
         )
         if send_push("⚠️ PM EDGE — PASS NOW", msg, priority=0):
@@ -1176,6 +1205,8 @@ def main():
 
     # Score cached, sufficiently fresh fair values.
     actionable = []
+    speculative_actionable = []
+    closest_miss_edge = None  # reporting only -- never affects any decision
     for _, market, spec, em in candidates:
         fair_entry = state["fair_cache"].get(market["ticker"])
         if not fair_entry:
@@ -1187,71 +1218,102 @@ def main():
             q = score_market(market, fair_entry, settings)
         except Exception:
             continue
-        if not q.qualifies or q.recommended_limit is None:
+
+        # Same correctness safeguards apply to every tier -- only the edge
+        # bar differs. Compute these once per market.
+        is_future = looks_like_future_or_outright(market)
+        is_segment = looks_like_unsupported_segment(market)
+        is_near_term = kalshi_market_is_near_term(market)
+
+        if q.qualifies and q.recommended_limit is not None:
+            if is_future or is_segment or not is_near_term:
+                continue
+            net_edge = float(q.net_edge or 0)
+            if net_edge > MAX_AUTO_EDGE:
+                print(
+                    "SUSPICIOUS_EDGE_SKIPPED", market.get("ticker"), market.get("title"),
+                    q.side, q.recommended_limit, q.hard_max, net_edge,
+                )
+                continue
+            actionable.append((net_edge, market, fair_entry, q))
             continue
 
-        if looks_like_future_or_outright(market):
-            continue
-        if looks_like_unsupported_segment(market):
-            continue
-        if not kalshi_market_is_near_term(market):
-            continue
+        # Primary tier missed. Track how close, then try the speculative bar.
+        if q.net_edge is not None:
+            if closest_miss_edge is None or float(q.net_edge) > closest_miss_edge:
+                closest_miss_edge = float(q.net_edge)
 
-        net_edge = float(q.net_edge or 0)
-        # Extremely large "edges" in liquid sports markets are usually a
-        # settlement/matching/data problem. Never auto-alert them.
-        if net_edge > MAX_AUTO_EDGE:
-            print(
-                "SUSPICIOUS_EDGE_SKIPPED",
-                market.get("ticker"),
-                market.get("title"),
-                q.side,
-                q.recommended_limit,
-                q.hard_max,
-                net_edge,
-            )
+        if is_future or is_segment or not is_near_term:
             continue
-
-        actionable.append((net_edge, market, fair_entry, q))
+        try:
+            q_spec = score_market(market, fair_entry, settings, base_min_edge=SPECULATIVE_MIN_EDGE)
+        except Exception:
+            continue
+        if not q_spec.qualifies or q_spec.recommended_limit is None:
+            continue
+        spec_net_edge = float(q_spec.net_edge or 0)
+        if spec_net_edge > MAX_AUTO_EDGE:
+            continue
+        speculative_actionable.append((spec_net_edge, market, fair_entry, q_spec))
 
     actionable.sort(key=lambda x: x[0], reverse=True)
+    speculative_actionable.sort(key=lambda x: x[0], reverse=True)
 
     # Decide each candidate's alert reason up front so genuinely new/changed
     # information (NEW, BACK, a moved PRICE, a bigger EDGE) is never crowded
     # out of the per-run cap by a still-qualifying REMINDER that simply has a
     # bigger edge number. The owner already knows about a REMINDER position;
     # they have not yet heard about a NEW one. New info always goes first.
-    new_info, reminders = [], []
-    for net_edge, market, fair_entry, q in actionable:
-        ok, reason = should_alert(state, market, fair_entry, q)
-        if not ok:
-            continue
-        (reminders if reason == "REMINDER" else new_info).append((net_edge, market, fair_entry, q, reason))
+    def _split_new_vs_reminder(rows, tier):
+        new_info, reminders = [], []
+        for net_edge, market, fair_entry, q in rows:
+            ok, reason = should_alert(state, market, fair_entry, q, tier=tier)
+            if not ok:
+                continue
+            (reminders if reason == "REMINDER" else new_info).append((net_edge, market, fair_entry, q, reason))
+        return new_info, reminders
 
-    sent = 0
-    for net_edge, market, fair_entry, q, reason in new_info + reminders:
-        if sent >= MAX_ALERTS_PER_RUN:
-            break
-        yes_prob = float(fair_entry["fair_yes_prob"])
-        side_prob = yes_prob if q.side == "YES" else 1.0 - yes_prob
-        action = "BUY NOW" if q.execution == "TAKE" else "PLACE LIMIT"
-        current_ask = q.best_ask
-        sport = fair_entry.get("sport_title") or "Sports"
-        msg = (
-            f"{sport}\n"
-            f"{q.side} — {market.get('title','')[:170]}\n\n"
-            f"{action}: {cents(q.recommended_limit)}\n"
-            f"DO NOT PAY OVER: {cents(q.hard_max)}\n"
-            f"Current ask: {cents(current_ask) if current_ask is not None else '—'}\n"
-            f"Fair chance: {pct(side_prob)}\n"
-            f"Est. net edge: +{pct(q.net_edge)}\n"
-            f"Books: {int(fair_entry.get('n_books') or 0)}\n\n"
-            f"Do not chase above MAX."
-        )
-        title = f"🔥 PM EDGE +{pct(q.net_edge)} — {q.side}"
-        if send_push(title, msg, priority=0):
-            record_alert(state, market, fair_entry, q)
-            sent += 1
+    new_info, reminders = _split_new_vs_reminder(actionable, "primary")
+    spec_new_info, spec_reminders = _split_new_vs_reminder(speculative_actionable, "speculative")
+
+    def _send(rows, cap, tier, title_prefix):
+        n_sent = 0
+        for net_edge, market, fair_entry, q, reason in rows:
+            if n_sent >= cap:
+                break
+            yes_prob = float(fair_entry["fair_yes_prob"])
+            side_prob = yes_prob if q.side == "YES" else 1.0 - yes_prob
+            action = "BUY NOW" if q.execution == "TAKE" else "PLACE LIMIT"
+            current_ask = q.best_ask
+            sport = fair_entry.get("sport_title") or "Sports"
+            spec_note = (
+                "\nSpeculative pick: smaller edge, lower conviction. "
+                "Only worth it as a passive limit order -- do not chase.\n"
+                if tier == "speculative" else ""
+            )
+            msg = (
+                f"{sport}\n"
+                f"{q.side} — {market.get('title','')[:170]}\n"
+                f"{spec_note}\n"
+                f"{action}: {cents(q.recommended_limit)}\n"
+                f"DO NOT PAY OVER: {cents(q.hard_max)}\n"
+                f"Current ask: {cents(current_ask) if current_ask is not None else '—'}\n"
+                f"Fair chance: {pct(side_prob)}\n"
+                f"Est. net edge: +{pct(q.net_edge)}\n"
+                f"Books: {int(fair_entry.get('n_books') or 0)}\n\n"
+                f"Do not chase above MAX."
+            )
+            title = f"{title_prefix} +{pct(q.net_edge)} — {q.side}"
+            if send_push(title, msg, priority=0):
+                record_alert(state, market, fair_entry, q, tier=tier)
+                n_sent += 1
+        return n_sent
+
+    sent = _send(new_info + reminders, MAX_ALERTS_PER_RUN, "primary", "🔥 PM EDGE")
+    spec_sent = _send(
+        spec_new_info + spec_reminders, MAX_SPECULATIVE_ALERTS_PER_RUN,
+        "speculative", "🎲 PM EDGE SPECULATIVE",
+    )
 
     pass_sent = maybe_send_pass_alerts(state, market_by_ticker, state["fair_cache"], settings)
 
@@ -1299,6 +1361,36 @@ def main():
             state["first_run_notified"] = True
             state["watcher_version_notified"] = WATCHER_VERSION
 
+    # Daily digest: once per calendar day, send a low-priority summary even
+    # when zero alerts fired, so silence is distinguishable from a broken
+    # scanner. This is a snapshot of the run that happens to trigger it (the
+    # first run after the date rolls over), not an aggregate of every run
+    # that day. It never affects matching, pricing, or alert decisions.
+    today_str = now_utc().date().isoformat()
+    digest = state.setdefault("digest", {"date": ""})
+    if digest.get("date") != today_str:
+        miss_line = (
+            f"Closest miss below {pct(MIN_EDGE)} threshold: +{pct(closest_miss_edge)}"
+            if closest_miss_edge is not None
+            else "No sub-threshold candidates seen this run."
+        )
+        digest_msg = (
+            f"Daily health check -- this reflects one run, not the full day.\n\n"
+            f"Markets scanned: {len(markets)}\n"
+            f"Supported game markets: {supported_markets}\n"
+            f"Near-term candidates: {len(candidates)}\n"
+            f"Actionable this run: {len(actionable)}\n"
+            f"Alerts sent this run: {sent}\n"
+            f"Speculative actionable: {len(speculative_actionable)}\n"
+            f"Speculative alerts sent: {spec_sent}\n"
+            f"{miss_line}\n"
+            f"Odds credits used today: {daily.get('credits', 0)}/{DAILY_ODDS_BUDGET}\n\n"
+            f"Green Actions runs + these numbers moving = scanner is healthy, "
+            f"even with zero alerts."
+        )
+        if send_push("📋 PM Edge daily digest", digest_msg, priority=-1):
+            digest["date"] = today_str
+
     # Prune old state.
     live_tickers = set(market_by_ticker)
     state["quotes"] = {k:v for k,v in state["quotes"].items() if k in live_tickers}
@@ -1339,6 +1431,8 @@ def main():
         "fair_cache": len(state["fair_cache"]),
         "actionable": len(actionable),
         "alerts_sent": sent,
+        "speculative_actionable": len(speculative_actionable),
+        "speculative_alerts_sent": spec_sent,
         "pass_alerts_sent": pass_sent,
         "odds_credits_today": daily.get("credits", 0),
         "daily_budget": DAILY_ODDS_BUDGET,
