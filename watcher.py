@@ -48,13 +48,29 @@ from pmedge.pricing import best_binary_trade
 import pmedge.matcher as _matcher_mod
 from rapidfuzz.fuzz import ratio as _rf_ratio, token_set_ratio as _rf_token_set_ratio
 
+
+def _abbr_matches(short_token: str, long_tokens: list[str]) -> bool:
+    short_token = short_token.lower()
+    if not short_token:
+        return False
+
+    # Prefix abbreviation: DEN -> Denver, BUF -> Buffalo, CHI -> Chicago.
+    if len(short_token) >= 3 and any(t.startswith(short_token) for t in long_tokens):
+        return True
+
+    # Initialism: KC -> Kansas City, VGK -> Vegas Golden Knights.
+    acronym = "".join(t[0] for t in long_tokens if t)
+    if len(short_token) >= 2 and short_token == acronym:
+        return True
+
+    return False
+
 def _smart_team_similarity(a: str, b: str, aliases: dict[str, str]) -> float:
     """
-    More tolerant for Kalshi abbreviations:
-      KC Chiefs <-> Kansas City Chiefs
-      DEN Broncos <-> Denver Broncos
-      NY Giants <-> New York Giants
-    Mascot identity is strong evidence, while still retaining fuzzy city/name checks.
+    Strict abbreviation-aware matching.
+
+    Important: mascot equality alone is NOT enough. That caused false matches
+    such as NHL Panthers/Knights being paired with unrelated NCAA teams.
     """
     x = _matcher_mod.canon(a, aliases)
     y = _matcher_mod.canon(b, aliases)
@@ -66,15 +82,36 @@ def _smart_team_similarity(a: str, b: str, aliases: dict[str, str]) -> float:
         return 0.97
 
     xt, yt = x.split(), y.split()
-    if xt and yt and xt[-1] == yt[-1] and len(xt[-1]) >= 4:
-        # Same mascot / distinctive final team token.
-        base = max(_rf_ratio(x, y), _rf_token_set_ratio(x, y)) / 100.0
-        return max(0.94, base)
 
-    # Same first+last tokens can catch labels such as "LA Chargers".
-    if xt and yt and xt[-1] == yt[-1]:
-        return 0.91
+    # Exact mascot phrase + credible city/team abbreviation.
+    # Try one- and two-token mascot tails (e.g. Chiefs, Golden Knights).
+    for tail_n in (2, 1):
+        if len(xt) <= tail_n or len(yt) <= tail_n:
+            continue
+        if xt[-tail_n:] != yt[-tail_n:]:
+            continue
 
+        xlead = xt[:-tail_n]
+        ylead = yt[:-tail_n]
+
+        # Direct lead equality.
+        if xlead == ylead:
+            return 0.98
+
+        # One side may be an abbreviation of the other's lead/full team tokens.
+        if len(xlead) == 1 and _abbr_matches(xlead[0], ylead):
+            return 0.96
+        if len(ylead) == 1 and _abbr_matches(ylead[0], xlead):
+            return 0.96
+
+        # For VGK Golden Knights <-> Vegas Golden Knights, allow the
+        # abbreviation to represent city + mascot initials.
+        if len(xlead) == 1 and _abbr_matches(xlead[0], yt):
+            return 0.95
+        if len(ylead) == 1 and _abbr_matches(ylead[0], xt):
+            return 0.95
+
+    # Otherwise use ordinary fuzzy similarity without mascot-only boosting.
     return max(_rf_ratio(x, y), _rf_token_set_ratio(x, y)) / 100.0
 
 _matcher_mod.team_similarity = _smart_team_similarity
@@ -95,7 +132,9 @@ EVENT_CACHE_HOURS = float(os.getenv("PM_EDGE_EVENT_CACHE_HOURS", "8"))
 ALERT_COOLDOWN_HOURS = float(os.getenv("PM_EDGE_ALERT_COOLDOWN_HOURS", "6"))
 MAX_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_ALERTS_PER_RUN", "3"))
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
-WATCHER_VERSION = 4
+MAX_EVENT_HOURS = float(os.getenv("PM_EDGE_MAX_EVENT_HOURS", "96"))
+MAX_AUTO_EDGE = float(os.getenv("PM_EDGE_MAX_AUTO_EDGE", "0.20"))
+WATCHER_VERSION = 5
 
 PRIMARY_MARKET = {
     "h2h": "h2h",
@@ -380,6 +419,44 @@ def fetch_open_kalshi_sports_markets(base_url: str, max_events: int = 2500):
     return out, seen_events
 
 
+
+FUTURE_PHRASES = (
+    "be the matchup in",
+    "stanley cup final",
+    "super bowl matchup",
+    "world series matchup",
+    "nba finals matchup",
+    "championship matchup",
+    "make the playoffs",
+    "win the championship",
+    "win the stanley cup",
+    "win the super bowl",
+    "win the world series",
+    "season wins",
+    "regular season wins",
+    "most valuable player",
+    "mvp",
+)
+
+def looks_like_future_or_outright(market: dict) -> bool:
+    title = " ".join(
+        str(market.get(k) or "")
+        for k in ("title", "_kalshi_event_title", "_kalshi_event_sub_title")
+    ).lower()
+    return any(p in title for p in FUTURE_PHRASES)
+
+def event_is_near_term(event: dict) -> bool:
+    h = event_hours(event)
+    # Require a real scheduled event, not a season/futures resolution.
+    return -1.0 <= h <= MAX_EVENT_HOURS
+
+def occurrence_matches_event(market: dict, event: dict, tolerance_hours: float = 36.0) -> bool:
+    kd = parse_dt(market.get("occurrence_datetime"))
+    sd = parse_dt((event or {}).get("commence_time"))
+    if not kd or not sd:
+        return True
+    return abs((kd - sd).total_seconds()) <= tolerance_hours * 3600.0
+
 def fair_to_dict(fair, event, spec, usage=None):
     return {
         "fetched_at": iso_now(),
@@ -493,7 +570,7 @@ def self_test():
     assert s["daily_usage"]["date"] == now_utc().date().isoformat()
     assert cents(0.57) == "57.0¢"
     assert pct(0.061) == "6.1%"
-    print("PM Edge watcher v4 self-test: PASS")
+    print("PM Edge watcher v5 self-test: PASS")
     return 0
 
 def main():
@@ -521,19 +598,38 @@ def main():
     candidates = []
     supported_markets = 0
     event_matches_any_conf = 0
+    futures_filtered = 0
+    horizon_filtered = 0
+    time_mismatch_filtered = 0
+
     for market in markets:
+        if looks_like_future_or_outright(market):
+            futures_filtered += 1
+            continue
+
         spec = parse_market(market)
         if spec.market_type not in PRIMARY_MARKET:
             continue
         supported_markets += 1
+
         em = match_event(
             spec, events, aliases,
             market.get("occurrence_datetime") or market.get("close_time"),
         )
         if em.event:
             event_matches_any_conf += 1
+
         if not em.event or em.confidence < MATCH_MIN:
             continue
+
+        if not event_is_near_term(em.event):
+            horizon_filtered += 1
+            continue
+
+        if not occurrence_matches_event(market, em.event):
+            time_mismatch_filtered += 1
+            continue
+
         cached = state.setdefault("fair_cache", {}).get(market["ticker"])
         prevq = state.setdefault("quotes", {}).get(market["ticker"])
         score = priority_score(market, em.event, prevq, cached)
@@ -651,7 +747,23 @@ def main():
             continue
         if not q.qualifies or q.recommended_limit is None:
             continue
-        actionable.append((float(q.net_edge or 0), market, fair_entry, q))
+
+        net_edge = float(q.net_edge or 0)
+        # Extremely large "edges" in liquid sports markets are usually a
+        # settlement/matching/data problem. Never auto-alert them.
+        if net_edge > MAX_AUTO_EDGE:
+            print(
+                "SUSPICIOUS_EDGE_SKIPPED",
+                market.get("ticker"),
+                market.get("title"),
+                q.side,
+                q.recommended_limit,
+                q.hard_max,
+                net_edge,
+            )
+            continue
+
+        actionable.append((net_edge, market, fair_entry, q))
 
     actionable.sort(key=lambda x: x[0], reverse=True)
 
@@ -700,8 +812,9 @@ def main():
             f"Kalshi open events checked: {kalshi_events_seen}\n"
             f"Sports markets loaded: {len(markets)}\n"
             f"Supported game markets parsed: {supported_markets}\n"
+            f"Futures/outrights filtered: {futures_filtered}\n"
             f"Event matches found: {event_matches_any_conf}\n"
-            f"Matched sports candidates: {len(candidates)}\n"
+            f"Near-term candidates: {len(candidates)}\n"
             f"Fair-value attempts: {fair_attempts}\n"
             f"Fair values created: {fair_successes}\n"
             f"Fair values cached: {len(state['fair_cache'])}\n"
@@ -710,7 +823,7 @@ def main():
         )
         if remaining is not None:
             msg += f"\nOdds API account credits remaining: {remaining}"
-        if send_push("✅ PM Edge Watch v4 is live", msg, priority=0):
+        if send_push("✅ PM Edge Watch v5 is live", msg, priority=0):
             state["first_run_notified"] = True
             state["watcher_version_notified"] = WATCHER_VERSION
 
@@ -728,7 +841,10 @@ def main():
         "markets": len(markets),
         "sportsbook_events": len(events),
         "supported_markets": supported_markets,
+        "futures_filtered": futures_filtered,
         "event_matches_any_conf": event_matches_any_conf,
+        "horizon_filtered": horizon_filtered,
+        "time_mismatch_filtered": time_mismatch_filtered,
         "candidates": len(candidates),
         "fair_attempts": fair_attempts,
         "fair_successes": fair_successes,
