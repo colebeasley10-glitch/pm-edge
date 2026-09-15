@@ -165,7 +165,7 @@ MAX_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_ALERTS_PER_RUN", "3"))
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
 MAX_EVENT_HOURS = float(os.getenv("PM_EDGE_MAX_EVENT_HOURS", "96"))
 MAX_AUTO_EDGE = float(os.getenv("PM_EDGE_MAX_AUTO_EDGE", "0.15"))
-WATCHER_VERSION = 14
+WATCHER_VERSION = 15
 
 PRIMARY_MARKET = {
     "h2h": "h2h",
@@ -614,6 +614,104 @@ def looks_like_future_or_outright(market: dict) -> bool:
 
     return False
 
+
+UNSUPPORTED_SEGMENT_PHRASES = (
+    # Baseball
+    "first 3 innings",
+    "1st 3 innings",
+    "first three innings",
+    "first 5 innings",
+    "1st 5 innings",
+    "first five innings",
+    "first inning",
+    "1st inning",
+    "first 1 inning",
+    # Halves
+    "first half",
+    "1st half",
+    "second half",
+    "2nd half",
+    # Quarters
+    "first quarter",
+    "1st quarter",
+    "second quarter",
+    "2nd quarter",
+    "third quarter",
+    "3rd quarter",
+    "fourth quarter",
+    "4th quarter",
+    # Periods
+    "first period",
+    "1st period",
+    "second period",
+    "2nd period",
+    "third period",
+    "3rd period",
+    # Sets / maps / other partial contests
+    "first set",
+    "1st set",
+    "second set",
+    "2nd set",
+    "first map",
+    "1st map",
+    "second map",
+    "2nd map",
+)
+
+UNSUPPORTED_SEGMENT_TICKER_FRAGMENTS = (
+    "1H",
+    "2H",
+    "1Q",
+    "2Q",
+    "3Q",
+    "4Q",
+    "1P",
+    "2P",
+    "3P",
+    "F3",
+    "F5",
+    "1ST3",
+    "1ST5",
+)
+
+def looks_like_unsupported_segment(market: dict) -> bool:
+    """
+    Exclude partial-game/period markets until PM Edge has exact matching
+    sportsbook market support for that segment.
+
+    This prevents a Kalshi market like "Pittsburgh first 3 innings winner"
+    from being compared against a full-game moneyline.
+    """
+    title_blob = " ".join(
+        str(market.get(k) or "")
+        for k in (
+            "title",
+            "_kalshi_event_title",
+            "_kalshi_event_sub_title",
+            "_kalshi_milestone_title",
+        )
+    ).lower()
+
+    if any(p in title_blob for p in UNSUPPORTED_SEGMENT_PHRASES):
+        return True
+
+    # Ticker fragments are only used as a secondary guard because title text
+    # is more reliable. Surround with separators where possible to avoid broad
+    # accidental substring matches.
+    ticker_blob = " ".join(
+        str(market.get(k) or "")
+        for k in ("ticker", "event_ticker")
+    ).upper()
+
+    tokens = (
+        ticker_blob.replace("-", " ")
+        .replace("_", " ")
+        .replace("/", " ")
+        .split()
+    )
+    return any(fragment in tokens for fragment in UNSUPPORTED_SEGMENT_TICKER_FRAGMENTS)
+
+
 def event_is_near_term(event: dict) -> bool:
     h = event_hours(event)
     # Require a real scheduled sportsbook event in the next few days.
@@ -824,7 +922,7 @@ def self_test():
     assert s["daily_usage"]["date"] == now_utc().date().isoformat()
     assert cents(0.57) == "57.0¢"
     assert pct(0.061) == "6.1%"
-    print("PM Edge watcher v14 self-test: PASS")
+    print("PM Edge watcher v15 self-test: PASS")
     return 0
 
 def main():
@@ -863,6 +961,7 @@ def main():
     supported_markets = 0
     event_matches_any_conf = 0
     futures_filtered = 0
+    segment_filtered = 0
     kalshi_horizon_filtered = 0
     sportsbook_horizon_filtered = 0
 
@@ -883,6 +982,12 @@ def main():
         # parser can misread "win at least 60 games" as a head-to-head game.
         if looks_like_future_or_outright(market):
             futures_filtered += 1
+            continue
+
+        # Partial-game/period contracts require exact period-specific sportsbook
+        # odds. Until explicitly supported, never price them as full-game markets.
+        if looks_like_unsupported_segment(market):
+            segment_filtered += 1
             continue
 
         # SECOND: require the Kalshi occurrence itself to be near-term before
@@ -1075,6 +1180,8 @@ def main():
 
         if looks_like_future_or_outright(market):
             continue
+        if looks_like_unsupported_segment(market):
+            continue
         if not kalshi_market_is_near_term(market):
             continue
 
@@ -1144,6 +1251,7 @@ def main():
             f"Kalshi game events loaded: {kalshi_events_seen}\n"
             f"Sports markets loaded: {len(markets)}\n"
             f"Supported game markets parsed: {supported_markets}\n"
+            f"Partial-game markets filtered: {segment_filtered}\n"
             f"Sport identified: {sport_identified}\n"
             f"Event matches found: {event_matches_any_conf}\n"
             f"Same-sport matches: {same_sport_matches}\n"
@@ -1165,7 +1273,7 @@ def main():
         )
         if remaining is not None:
             msg += f"\nOdds API account credits remaining: {remaining}"
-        if send_push("✅ PM Edge Watch v14 is live", msg, priority=0):
+        if send_push("✅ PM Edge Watch v15 is live", msg, priority=0):
             state["first_run_notified"] = True
             state["watcher_version_notified"] = WATCHER_VERSION
 
@@ -1186,6 +1294,7 @@ def main():
         "sportsbook_events": len(events),
         "supported_markets": supported_markets,
         "futures_filtered": futures_filtered,
+        "segment_filtered": segment_filtered,
         "sport_identified": sport_identified,
         "event_matches_any_conf": event_matches_any_conf,
         "same_sport_matches": same_sport_matches,
