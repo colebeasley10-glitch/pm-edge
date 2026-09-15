@@ -125,7 +125,8 @@ STREAMLIT_APP_URL = os.getenv("STREAMLIT_APP_URL", "").strip()
 MIN_EDGE = float(os.getenv("PM_EDGE_MIN_NET_EDGE", "0.04"))
 MODEL_BUFFER = float(os.getenv("PM_EDGE_MODEL_ERROR_BUFFER", "0.01"))
 SLIPPAGE_BUFFER = float(os.getenv("PM_EDGE_SLIPPAGE_BUFFER", "0.0025"))
-MATCH_MIN = float(os.getenv("PM_EDGE_WATCH_MATCH_CONFIDENCE", "0.72"))
+MATCH_MIN_SAME_SPORT = float(os.getenv("PM_EDGE_WATCH_MATCH_CONFIDENCE_SAME_SPORT", "0.62"))
+MATCH_MIN_UNKNOWN_SPORT = float(os.getenv("PM_EDGE_WATCH_MATCH_CONFIDENCE_UNKNOWN_SPORT", "0.72"))
 DAILY_ODDS_BUDGET = int(os.getenv("PM_EDGE_ODDS_DAILY_BUDGET", "12"))
 MAX_REFRESH_GROUPS = int(os.getenv("PM_EDGE_MAX_ODDS_REFRESH_PER_RUN", "3"))
 EVENT_CACHE_HOURS = float(os.getenv("PM_EDGE_EVENT_CACHE_HOURS", "8"))
@@ -134,7 +135,7 @@ MAX_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_ALERTS_PER_RUN", "3"))
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
 MAX_EVENT_HOURS = float(os.getenv("PM_EDGE_MAX_EVENT_HOURS", "96"))
 MAX_AUTO_EDGE = float(os.getenv("PM_EDGE_MAX_AUTO_EDGE", "0.20"))
-WATCHER_VERSION = 6
+WATCHER_VERSION = 7
 
 PRIMARY_MARKET = {
     "h2h": "h2h",
@@ -458,6 +459,58 @@ def kalshi_market_is_near_term(market: dict) -> bool:
     h = (kd - now_utc()).total_seconds() / 3600.0
     return -1.0 <= h <= MAX_EVENT_HOURS
 
+
+def inferred_sport_rule(market: dict):
+    """
+    Infer the sportsbook sport key from Kalshi's ticker/event ticker.
+    Returns a predicate over The Odds API sport keys, or None if unknown.
+    """
+    blob = " ".join([
+        str(market.get("ticker") or ""),
+        str(market.get("event_ticker") or ""),
+        str(market.get("_kalshi_event_title") or ""),
+    ]).upper()
+
+    exact = [
+        (("NCAAF", "CFB"), "americanfootball_ncaaf"),
+        (("NFL",), "americanfootball_nfl"),
+        (("NCAAB", "CBB"), "basketball_ncaab"),
+        (("WNBA",), "basketball_wnba"),
+        (("NBA",), "basketball_nba"),
+        (("MLB",), "baseball_mlb"),
+        (("NHL",), "icehockey_nhl"),
+        (("MLS",), "soccer_usa_mls"),
+        (("EPL", "PREMIERLEAGUE"), "soccer_epl"),
+        (("UCL", "CHAMPIONSLEAGUE"), "soccer_uefa_champs_league"),
+        (("UFC", "MMA"), "mma_mixed_martial_arts"),
+        (("BOXING",), "boxing_boxing"),
+    ]
+    for needles, key in exact:
+        if any(n in blob for n in needles):
+            return ("exact", key)
+
+    # Tennis is split into many ATP/WTA tournament sport keys.
+    if any(n in blob for n in ("TENNIS", "ATP", "WTA")):
+        return ("prefix", "tennis_")
+
+    # Golf also uses event-specific keys, though most outright markets are
+    # filtered before this stage.
+    if "GOLF" in blob or "PGA" in blob:
+        return ("prefix", "golf_")
+
+    return None
+
+def sport_rule_matches(event: dict, rule) -> bool:
+    if not rule:
+        return True
+    key = str(event.get("_sport_key") or "")
+    mode, value = rule
+    if mode == "exact":
+        return key == value
+    if mode == "prefix":
+        return key.startswith(value)
+    return True
+
 def fair_to_dict(fair, event, spec, usage=None):
     return {
         "fetched_at": iso_now(),
@@ -571,7 +624,7 @@ def self_test():
     assert s["daily_usage"]["date"] == now_utc().date().isoformat()
     assert cents(0.57) == "57.0¢"
     assert pct(0.061) == "6.1%"
-    print("PM Edge watcher v6 self-test: PASS")
+    print("PM Edge watcher v7 self-test: PASS")
     return 0
 
 def main():
@@ -612,6 +665,9 @@ def main():
     kalshi_horizon_filtered = 0
     sportsbook_horizon_filtered = 0
 
+    sport_identified = 0
+    same_sport_matches = 0
+
     for market in markets:
         if looks_like_future_or_outright(market):
             futures_filtered += 1
@@ -622,14 +678,30 @@ def main():
             continue
         supported_markets += 1
 
+        sport_rule = inferred_sport_rule(market)
+        if sport_rule:
+            sport_identified += 1
+            event_pool = [e for e in events if sport_rule_matches(e, sport_rule)]
+            min_conf = MATCH_MIN_SAME_SPORT
+        else:
+            event_pool = events
+            min_conf = MATCH_MIN_UNKNOWN_SPORT
+
+        if not event_pool:
+            continue
+
+        # Never use close_time as a surrogate for kickoff. If occurrence_datetime
+        # is absent, match_event will rely on team identity alone.
         em = match_event(
-            spec, events, aliases,
-            market.get("occurrence_datetime") or market.get("close_time"),
+            spec, event_pool, aliases,
+            market.get("occurrence_datetime"),
         )
         if em.event:
             event_matches_any_conf += 1
+            if sport_rule:
+                same_sport_matches += 1
 
-        if not em.event or em.confidence < MATCH_MIN:
+        if not em.event or em.confidence < min_conf:
             continue
 
         if not kalshi_market_is_near_term(market):
@@ -823,7 +895,9 @@ def main():
             f"Sports markets loaded: {len(markets)}\n"
             f"Supported game markets parsed: {supported_markets}\n"
             f"Futures/outrights filtered: {futures_filtered}\n"
+            f"Sport identified: {sport_identified}\n"
             f"Event matches found: {event_matches_any_conf}\n"
+            f"Same-sport matches: {same_sport_matches}\n"
             f"Kalshi horizon filtered: {kalshi_horizon_filtered}\n"
             f"Sportsbook horizon filtered: {sportsbook_horizon_filtered}\n"
             f"Near-term candidates: {len(candidates)}\n"
@@ -835,7 +909,7 @@ def main():
         )
         if remaining is not None:
             msg += f"\nOdds API account credits remaining: {remaining}"
-        if send_push("✅ PM Edge Watch v6 is live", msg, priority=0):
+        if send_push("✅ PM Edge Watch v7 is live", msg, priority=0):
             state["first_run_notified"] = True
             state["watcher_version_notified"] = WATCHER_VERSION
 
@@ -854,7 +928,9 @@ def main():
         "sportsbook_events": len(events),
         "supported_markets": supported_markets,
         "futures_filtered": futures_filtered,
+        "sport_identified": sport_identified,
         "event_matches_any_conf": event_matches_any_conf,
+        "same_sport_matches": same_sport_matches,
         "kalshi_horizon_filtered": kalshi_horizon_filtered,
         "sportsbook_horizon_filtered": sportsbook_horizon_filtered,
         "candidates": len(candidates),
