@@ -126,7 +126,9 @@ STREAMLIT_APP_URL = os.getenv("STREAMLIT_APP_URL", "").strip()
 MIN_EDGE = float(os.getenv("PM_EDGE_MIN_NET_EDGE", "0.04"))
 MODEL_BUFFER = float(os.getenv("PM_EDGE_MODEL_ERROR_BUFFER", "0.01"))
 SLIPPAGE_BUFFER = float(os.getenv("PM_EDGE_SLIPPAGE_BUFFER", "0.0025"))
-TEAM_PAIR_MIN_SAME_SPORT = float(os.getenv("PM_EDGE_WATCH_TEAM_PAIR_MIN_SAME_SPORT", "0.58"))
+TEAM_PAIR_MIN_SAME_SPORT = float(os.getenv("PM_EDGE_WATCH_TEAM_PAIR_MIN_SAME_SPORT", "0.55"))
+TEAM_PAIR_STRONG_SAME_SPORT = float(os.getenv("PM_EDGE_WATCH_TEAM_PAIR_STRONG_SAME_SPORT", "0.70"))
+LOW_SCORE_MAX_TIME_DELTA_HOURS = float(os.getenv("PM_EDGE_WATCH_LOW_SCORE_MAX_TIME_DELTA_HOURS", "18"))
 MATCH_MIN_UNKNOWN_SPORT = float(os.getenv("PM_EDGE_WATCH_MATCH_CONFIDENCE_UNKNOWN_SPORT", "0.72"))
 DAILY_ODDS_BUDGET = int(os.getenv("PM_EDGE_ODDS_DAILY_BUDGET", "12"))
 MAX_REFRESH_GROUPS = int(os.getenv("PM_EDGE_MAX_ODDS_REFRESH_PER_RUN", "3"))
@@ -136,7 +138,7 @@ MAX_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_ALERTS_PER_RUN", "3"))
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
 MAX_EVENT_HOURS = float(os.getenv("PM_EDGE_MAX_EVENT_HOURS", "96"))
 MAX_AUTO_EDGE = float(os.getenv("PM_EDGE_MAX_AUTO_EDGE", "0.20"))
-WATCHER_VERSION = 8
+WATCHER_VERSION = 9
 
 PRIMARY_MARKET = {
     "h2h": "h2h",
@@ -472,6 +474,18 @@ def event_match_team_score(em) -> float:
     except Exception:
         return 0.0
 
+
+def low_score_time_confirmed(market: dict, event: dict) -> tuple[bool, float | None]:
+    """
+    For weaker but same-sport team-name matches, require independent time agreement.
+    """
+    kd = parse_dt(market.get("occurrence_datetime"))
+    sd = parse_dt((event or {}).get("commence_time"))
+    if not kd or not sd:
+        return False, None
+    delta_h = abs((kd - sd).total_seconds()) / 3600.0
+    return delta_h <= LOW_SCORE_MAX_TIME_DELTA_HOURS, delta_h
+
 def inferred_sport_rule(market: dict):
     """
     Infer the sportsbook sport key from Kalshi's ticker/event ticker.
@@ -636,7 +650,7 @@ def self_test():
     assert s["daily_usage"]["date"] == now_utc().date().isoformat()
     assert cents(0.57) == "57.0¢"
     assert pct(0.061) == "6.1%"
-    print("PM Edge watcher v8 self-test: PASS")
+    print("PM Edge watcher v9 self-test: PASS")
     return 0
 
 def main():
@@ -680,9 +694,14 @@ def main():
     sport_identified = 0
     same_sport_matches = 0
     accepted_same_sport = 0
+    accepted_same_sport_strong = 0
+    accepted_same_sport_time_confirmed = 0
+    rejected_low_score_missing_time = 0
+    rejected_low_score_bad_time = 0
     accepted_unknown_sport = 0
     top_same_sport_team_score = 0.0
     top_same_sport_confidence = 0.0
+    best_confirmed_time_delta_hours = None
 
     for market in markets:
         if looks_like_future_or_outright(market):
@@ -728,6 +747,21 @@ def main():
         if sport_rule:
             if team_score < TEAM_PAIR_MIN_SAME_SPORT:
                 continue
+
+            if team_score >= TEAM_PAIR_STRONG_SAME_SPORT:
+                accepted_same_sport_strong += 1
+            else:
+                time_ok, delta_h = low_score_time_confirmed(market, em.event)
+                if delta_h is None:
+                    rejected_low_score_missing_time += 1
+                    continue
+                if not time_ok:
+                    rejected_low_score_bad_time += 1
+                    continue
+                accepted_same_sport_time_confirmed += 1
+                if best_confirmed_time_delta_hours is None or delta_h < best_confirmed_time_delta_hours:
+                    best_confirmed_time_delta_hours = delta_h
+
             accepted_same_sport += 1
         else:
             if em.confidence < MATCH_MIN_UNKNOWN_SPORT:
@@ -929,8 +963,12 @@ def main():
             f"Event matches found: {event_matches_any_conf}\n"
             f"Same-sport matches: {same_sport_matches}\n"
             f"Accepted same-sport: {accepted_same_sport}\n"
+            f"  strong-name: {accepted_same_sport_strong}\n"
+            f"  time-confirmed: {accepted_same_sport_time_confirmed}\n"
             f"Top same-sport team score: {top_same_sport_team_score:.2f}\n"
             f"Top same-sport confidence: {top_same_sport_confidence:.2f}\n"
+            f"Low-score missing-time rejects: {rejected_low_score_missing_time}\n"
+            f"Low-score bad-time rejects: {rejected_low_score_bad_time}\n"
             f"Kalshi horizon filtered: {kalshi_horizon_filtered}\n"
             f"Sportsbook horizon filtered: {sportsbook_horizon_filtered}\n"
             f"Near-term candidates: {len(candidates)}\n"
@@ -942,7 +980,7 @@ def main():
         )
         if remaining is not None:
             msg += f"\nOdds API account credits remaining: {remaining}"
-        if send_push("✅ PM Edge Watch v8 is live", msg, priority=0):
+        if send_push("✅ PM Edge Watch v9 is live", msg, priority=0):
             state["first_run_notified"] = True
             state["watcher_version_notified"] = WATCHER_VERSION
 
@@ -965,9 +1003,14 @@ def main():
         "event_matches_any_conf": event_matches_any_conf,
         "same_sport_matches": same_sport_matches,
         "accepted_same_sport": accepted_same_sport,
+        "accepted_same_sport_strong": accepted_same_sport_strong,
+        "accepted_same_sport_time_confirmed": accepted_same_sport_time_confirmed,
+        "rejected_low_score_missing_time": rejected_low_score_missing_time,
+        "rejected_low_score_bad_time": rejected_low_score_bad_time,
         "accepted_unknown_sport": accepted_unknown_sport,
         "top_same_sport_team_score": round(top_same_sport_team_score, 4),
         "top_same_sport_confidence": round(top_same_sport_confidence, 4),
+        "best_confirmed_time_delta_hours": None if best_confirmed_time_delta_hours is None else round(best_confirmed_time_delta_hours, 3),
         "kalshi_horizon_filtered": kalshi_horizon_filtered,
         "sportsbook_horizon_filtered": sportsbook_horizon_filtered,
         "candidates": len(candidates),
