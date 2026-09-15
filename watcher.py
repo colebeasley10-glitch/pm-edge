@@ -138,7 +138,7 @@ MAX_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_ALERTS_PER_RUN", "3"))
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
 MAX_EVENT_HOURS = float(os.getenv("PM_EDGE_MAX_EVENT_HOURS", "96"))
 MAX_AUTO_EDGE = float(os.getenv("PM_EDGE_MAX_AUTO_EDGE", "0.20"))
-WATCHER_VERSION = 9
+WATCHER_VERSION = 99
 
 PRIMARY_MARKET = {
     "h2h": "h2h",
@@ -232,22 +232,29 @@ def pct(x):
     return f"{float(x)*100:.1f}%"
 
 def send_push(title, message, *, priority=0, url=None, url_title="Open PM Edge"):
+    # Diagnostic build: never send betting alerts.
+    if not title.startswith("🧪 PM Edge Diagnostic"):
+        print("DIAGNOSTIC_PUSH_SUPPRESSED:", title)
+        return False
+
     if not PUSHOVER_USER_KEY or not PUSHOVER_APP_TOKEN:
         print("PUSH SKIPPED: missing Pushover secrets")
         print(title)
         print(message)
         return False
+
     payload = {
         "token": PUSHOVER_APP_TOKEN,
         "user": PUSHOVER_USER_KEY,
         "title": title[:250],
         "message": message[:1024],
-        "priority": str(priority),
+        "priority": "0",
     }
     target = url or STREAMLIT_APP_URL
     if target:
         payload["url"] = target
         payload["url_title"] = url_title
+
     r = requests.post("https://api.pushover.net/1/messages.json", data=payload, timeout=20)
     if r.status_code >= 400:
         print("Pushover error:", r.status_code, r.text[:500])
@@ -650,7 +657,7 @@ def self_test():
     assert s["daily_usage"]["date"] == now_utc().date().isoformat()
     assert cents(0.57) == "57.0¢"
     assert pct(0.061) == "6.1%"
-    print("PM Edge watcher v9 self-test: PASS")
+    print("PM Edge diagnostic self-test: PASS")
     return 0
 
 def main():
@@ -687,6 +694,7 @@ def main():
     candidates = []
     supported_markets = 0
     event_matches_any_conf = 0
+    diagnostic_matches = []
     futures_filtered = 0
     kalshi_horizon_filtered = 0
     sportsbook_horizon_filtered = 0
@@ -737,6 +745,36 @@ def main():
                 same_sport_matches += 1
                 top_same_sport_team_score = max(top_same_sport_team_score, team_score)
                 top_same_sport_confidence = max(top_same_sport_confidence, float(em.confidence or 0))
+
+                kd = parse_dt(market.get("occurrence_datetime"))
+                sd = parse_dt((em.event or {}).get("commence_time"))
+                delta_h = None
+                if kd and sd:
+                    delta_h = abs((kd - sd).total_seconds()) / 3600.0
+
+                try:
+                    spec_dict = dict(vars(spec))
+                except Exception:
+                    spec_dict = {"repr": repr(spec)}
+
+                diagnostic_matches.append({
+                    "kalshi_ticker": market.get("ticker"),
+                    "kalshi_event_ticker": market.get("event_ticker"),
+                    "kalshi_event_title": market.get("_kalshi_event_title"),
+                    "kalshi_market_title": market.get("title"),
+                    "kalshi_occurrence_datetime": market.get("occurrence_datetime"),
+                    "kalshi_close_time": market.get("close_time"),
+                    "parsed_market": spec_dict,
+                    "sport_rule": sport_rule,
+                    "sportsbook_sport": em.event.get("_sport_key"),
+                    "sportsbook_home": em.event.get("home_team"),
+                    "sportsbook_away": em.event.get("away_team"),
+                    "sportsbook_commence_time": em.event.get("commence_time"),
+                    "team_score": round(team_score, 4),
+                    "combined_confidence": round(float(em.confidence or 0), 4),
+                    "time_delta_hours": None if delta_h is None else round(delta_h, 3),
+                    "match_reason": getattr(em, "reason", None),
+                })
 
         if not em.event:
             continue
@@ -793,10 +831,27 @@ def main():
             "no_ask": market.get("no_ask"),
         }
 
-    # Refresh a small number of high-priority fair values each run.
+    # ---------------- DIAGNOSTIC OUTPUT ----------------
+    # Sort strongest matches first and print enough live detail to fix the matcher.
+    diagnostic_matches.sort(
+        key=lambda x: (x.get("team_score") or 0, x.get("combined_confidence") or 0),
+        reverse=True,
+    )
+
+    print("\n=== PM EDGE DIAGNOSTIC: TOP SAME-SPORT MATCHES ===")
+    for idx, rec in enumerate(diagnostic_matches[:20], start=1):
+        print(f"--- MATCH {idx} ---")
+        print(json.dumps(rec, indent=2, sort_keys=True, default=str))
+    print("=== END PM EDGE DIAGNOSTIC ===\n")
+
+    # Diagnostic build intentionally does not request bookmaker odds.
     refreshed_groups = 0
     run_event_odds_cache = {}
     credits_remaining_today = max(0, DAILY_ODDS_BUDGET - int(daily.get("credits", 0)))
+
+    # Hard stop paid pricing in diagnostic mode.
+    candidates_for_pricing = candidates
+    candidates = []
 
     fair_attempts = 0
     fair_successes = 0
@@ -954,33 +1009,18 @@ def main():
                 remaining = x.get("requests_remaining")
                 break
         msg = (
-            f"PM Edge Watch is running.\n"
-            f"Kalshi open events checked: {kalshi_events_seen}\n"
-            f"Sports markets loaded: {len(markets)}\n"
-            f"Supported game markets parsed: {supported_markets}\n"
-            f"Futures/outrights filtered: {futures_filtered}\n"
-            f"Sport identified: {sport_identified}\n"
-            f"Event matches found: {event_matches_any_conf}\n"
-            f"Same-sport matches: {same_sport_matches}\n"
-            f"Accepted same-sport: {accepted_same_sport}\n"
-            f"  strong-name: {accepted_same_sport_strong}\n"
-            f"  time-confirmed: {accepted_same_sport_time_confirmed}\n"
-            f"Top same-sport team score: {top_same_sport_team_score:.2f}\n"
-            f"Top same-sport confidence: {top_same_sport_confidence:.2f}\n"
-            f"Low-score missing-time rejects: {rejected_low_score_missing_time}\n"
-            f"Low-score bad-time rejects: {rejected_low_score_bad_time}\n"
-            f"Kalshi horizon filtered: {kalshi_horizon_filtered}\n"
-            f"Sportsbook horizon filtered: {sportsbook_horizon_filtered}\n"
-            f"Near-term candidates: {len(candidates)}\n"
-            f"Fair-value attempts: {fair_attempts}\n"
-            f"Fair values created: {fair_successes}\n"
-            f"Fair values cached: {len(state['fair_cache'])}\n"
-            f"Odds request errors: {odds_errors}\n"
-            f"Odds credits used today: {daily.get('credits',0)}/{DAILY_ODDS_BUDGET}"
+            f"Diagnostic run complete.\n"
+            f"Kalshi events checked: {kalshi_events_seen}\n"
+            f"Supported markets parsed: {supported_markets}\n"
+            f"Same-sport matches captured: {len(diagnostic_matches)}\n"
+            f"Top team score: {top_same_sport_team_score:.2f}\n"
+            f"No pick alerts were sent.\n"
+            f"No sportsbook pricing calls were made.\n"
+            f"Open the GitHub run log and send the TOP SAME-SPORT MATCHES section."
         )
         if remaining is not None:
             msg += f"\nOdds API account credits remaining: {remaining}"
-        if send_push("✅ PM Edge Watch v9 is live", msg, priority=0):
+        if send_push("🧪 PM Edge Diagnostic is live", msg, priority=0):
             state["first_run_notified"] = True
             state["watcher_version_notified"] = WATCHER_VERSION
 
@@ -1013,7 +1053,8 @@ def main():
         "best_confirmed_time_delta_hours": None if best_confirmed_time_delta_hours is None else round(best_confirmed_time_delta_hours, 3),
         "kalshi_horizon_filtered": kalshi_horizon_filtered,
         "sportsbook_horizon_filtered": sportsbook_horizon_filtered,
-        "candidates": len(candidates),
+        "candidates_before_diagnostic_stop": len(candidates_for_pricing),
+        "diagnostic_matches": len(diagnostic_matches),
         "fair_attempts": fair_attempts,
         "fair_successes": fair_successes,
         "odds_errors": odds_errors,
