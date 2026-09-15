@@ -8,6 +8,7 @@ import io
 import json
 import math
 import os
+import re
 import sys
 import time
 import zipfile
@@ -125,7 +126,7 @@ STREAMLIT_APP_URL = os.getenv("STREAMLIT_APP_URL", "").strip()
 MIN_EDGE = float(os.getenv("PM_EDGE_MIN_NET_EDGE", "0.04"))
 MODEL_BUFFER = float(os.getenv("PM_EDGE_MODEL_ERROR_BUFFER", "0.01"))
 SLIPPAGE_BUFFER = float(os.getenv("PM_EDGE_SLIPPAGE_BUFFER", "0.0025"))
-MATCH_MIN_SAME_SPORT = float(os.getenv("PM_EDGE_WATCH_MATCH_CONFIDENCE_SAME_SPORT", "0.62"))
+TEAM_PAIR_MIN_SAME_SPORT = float(os.getenv("PM_EDGE_WATCH_TEAM_PAIR_MIN_SAME_SPORT", "0.58"))
 MATCH_MIN_UNKNOWN_SPORT = float(os.getenv("PM_EDGE_WATCH_MATCH_CONFIDENCE_UNKNOWN_SPORT", "0.72"))
 DAILY_ODDS_BUDGET = int(os.getenv("PM_EDGE_ODDS_DAILY_BUDGET", "12"))
 MAX_REFRESH_GROUPS = int(os.getenv("PM_EDGE_MAX_ODDS_REFRESH_PER_RUN", "3"))
@@ -135,7 +136,7 @@ MAX_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_ALERTS_PER_RUN", "3"))
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
 MAX_EVENT_HOURS = float(os.getenv("PM_EDGE_MAX_EVENT_HOURS", "96"))
 MAX_AUTO_EDGE = float(os.getenv("PM_EDGE_MAX_AUTO_EDGE", "0.20"))
-WATCHER_VERSION = 7
+WATCHER_VERSION = 8
 
 PRIMARY_MARKET = {
     "h2h": "h2h",
@@ -460,6 +461,17 @@ def kalshi_market_is_near_term(market: dict) -> bool:
     return -1.0 <= h <= MAX_EVENT_HOURS
 
 
+
+def event_match_team_score(em) -> float:
+    reason = str(getattr(em, "reason", "") or "")
+    m = re.search(r"team=([0-9.]+)", reason)
+    if not m:
+        return 0.0
+    try:
+        return float(m.group(1))
+    except Exception:
+        return 0.0
+
 def inferred_sport_rule(market: dict):
     """
     Infer the sportsbook sport key from Kalshi's ticker/event ticker.
@@ -624,7 +636,7 @@ def self_test():
     assert s["daily_usage"]["date"] == now_utc().date().isoformat()
     assert cents(0.57) == "57.0¢"
     assert pct(0.061) == "6.1%"
-    print("PM Edge watcher v7 self-test: PASS")
+    print("PM Edge watcher v8 self-test: PASS")
     return 0
 
 def main():
@@ -667,6 +679,10 @@ def main():
 
     sport_identified = 0
     same_sport_matches = 0
+    accepted_same_sport = 0
+    accepted_unknown_sport = 0
+    top_same_sport_team_score = 0.0
+    top_same_sport_confidence = 0.0
 
     for market in markets:
         if looks_like_future_or_outright(market):
@@ -682,27 +698,41 @@ def main():
         if sport_rule:
             sport_identified += 1
             event_pool = [e for e in events if sport_rule_matches(e, sport_rule)]
-            min_conf = MATCH_MIN_SAME_SPORT
         else:
             event_pool = events
-            min_conf = MATCH_MIN_UNKNOWN_SPORT
 
         if not event_pool:
             continue
 
         # Never use close_time as a surrogate for kickoff. If occurrence_datetime
-        # is absent, match_event will rely on team identity alone.
+        # is absent, match_event will rely on participant identity.
         em = match_event(
             spec, event_pool, aliases,
             market.get("occurrence_datetime"),
         )
+
+        team_score = event_match_team_score(em)
         if em.event:
             event_matches_any_conf += 1
             if sport_rule:
                 same_sport_matches += 1
+                top_same_sport_team_score = max(top_same_sport_team_score, team_score)
+                top_same_sport_confidence = max(top_same_sport_confidence, float(em.confidence or 0))
 
-        if not em.event or em.confidence < min_conf:
+        if not em.event:
             continue
+
+        # Once the sport is identified, prefer direct participant-pair evidence
+        # over the generic combined confidence score. match_event already rejects
+        # ambiguous near-ties and only considers pair scores >= 0.55.
+        if sport_rule:
+            if team_score < TEAM_PAIR_MIN_SAME_SPORT:
+                continue
+            accepted_same_sport += 1
+        else:
+            if em.confidence < MATCH_MIN_UNKNOWN_SPORT:
+                continue
+            accepted_unknown_sport += 1
 
         if not kalshi_market_is_near_term(market):
             kalshi_horizon_filtered += 1
@@ -898,6 +928,9 @@ def main():
             f"Sport identified: {sport_identified}\n"
             f"Event matches found: {event_matches_any_conf}\n"
             f"Same-sport matches: {same_sport_matches}\n"
+            f"Accepted same-sport: {accepted_same_sport}\n"
+            f"Top same-sport team score: {top_same_sport_team_score:.2f}\n"
+            f"Top same-sport confidence: {top_same_sport_confidence:.2f}\n"
             f"Kalshi horizon filtered: {kalshi_horizon_filtered}\n"
             f"Sportsbook horizon filtered: {sportsbook_horizon_filtered}\n"
             f"Near-term candidates: {len(candidates)}\n"
@@ -909,7 +942,7 @@ def main():
         )
         if remaining is not None:
             msg += f"\nOdds API account credits remaining: {remaining}"
-        if send_push("✅ PM Edge Watch v7 is live", msg, priority=0):
+        if send_push("✅ PM Edge Watch v8 is live", msg, priority=0):
             state["first_run_notified"] = True
             state["watcher_version_notified"] = WATCHER_VERSION
 
@@ -931,6 +964,10 @@ def main():
         "sport_identified": sport_identified,
         "event_matches_any_conf": event_matches_any_conf,
         "same_sport_matches": same_sport_matches,
+        "accepted_same_sport": accepted_same_sport,
+        "accepted_unknown_sport": accepted_unknown_sport,
+        "top_same_sport_team_score": round(top_same_sport_team_score, 4),
+        "top_same_sport_confidence": round(top_same_sport_confidence, 4),
         "kalshi_horizon_filtered": kalshi_horizon_filtered,
         "sportsbook_horizon_filtered": sportsbook_horizon_filtered,
         "candidates": len(candidates),
