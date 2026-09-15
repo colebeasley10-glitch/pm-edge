@@ -164,7 +164,7 @@ MAX_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_ALERTS_PER_RUN", "3"))
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
 MAX_EVENT_HOURS = float(os.getenv("PM_EDGE_MAX_EVENT_HOURS", "96"))
 MAX_AUTO_EDGE = float(os.getenv("PM_EDGE_MAX_AUTO_EDGE", "0.15"))
-WATCHER_VERSION = 11
+WATCHER_VERSION = 12
 
 PRIMARY_MARKET = {
     "h2h": "h2h",
@@ -718,7 +718,7 @@ def self_test():
     assert s["daily_usage"]["date"] == now_utc().date().isoformat()
     assert cents(0.57) == "57.0¢"
     assert pct(0.061) == "6.1%"
-    print("PM Edge watcher v11 self-test: PASS")
+    print("PM Edge watcher v12 self-test: PASS")
     return 0
 
 def main():
@@ -737,7 +737,7 @@ def main():
 
     # v6 changes event-time semantics. Purge fair values and alerts produced by
     # older matcher versions so a stale future/false match can never alert again.
-    if int(state.get("data_semantics_version", 0) or 0) < WATCHER_VERSION:
+    if int(state.get("data_semantics_version", 0) or 0) != WATCHER_VERSION:
         state["fair_cache"] = {}
         state["alerts"] = {}
         state["quotes"] = {}
@@ -1023,7 +1023,7 @@ def main():
     # Health heartbeat confirms notifications and verifies the event matcher.
     if (
         not state.get("first_run_notified")
-        or int(state.get("watcher_version_notified", 0) or 0) < WATCHER_VERSION
+        or int(state.get("watcher_version_notified", 0) or 0) != WATCHER_VERSION
     ):
         remaining = None
         for x in state["fair_cache"].values():
@@ -1057,7 +1057,7 @@ def main():
         )
         if remaining is not None:
             msg += f"\nOdds API account credits remaining: {remaining}"
-        if send_push("✅ PM Edge Watch v11 is live", msg, priority=0):
+        if send_push("✅ PM Edge Watch v12 is live", msg, priority=0):
             state["first_run_notified"] = True
             state["watcher_version_notified"] = WATCHER_VERSION
 
