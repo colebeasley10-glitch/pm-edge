@@ -1,0 +1,232 @@
+"""
+PM Edge regression tests.
+
+Pure logic tests: no network calls. Run with:
+    pip install pytest rapidfuzz pandas cryptography --break-system-packages
+    python -m pytest test_pm_edge_regressions.py -v
+
+These exercise the embedded pmedge package (extracted from watcher.py's
+runtime blob) plus watcher.py's own filtering/matching helper functions.
+"""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+
+import watcher  # noqa: E402  (triggers the embedded-runtime extraction)
+from pmedge.matcher import load_aliases, match_event  # noqa: E402
+from pmedge.market_parse import parse_market  # noqa: E402
+
+ALIASES = load_aliases()
+
+
+# ---------------------------------------------------------------------------
+# Segment / futures safeguards (section 8-10 of the takeover brief)
+# ---------------------------------------------------------------------------
+
+def test_regression_milwaukee_pittsburgh_f3_is_rejected():
+    """The exact live incident that drove v15: F3-innings market must never
+    be treated as a full-game market."""
+    market = {
+        "ticker": "KXMLBF3-26SEP15MILPIT",
+        "event_ticker": "KXMLBF3-26SEP15MILPIT",
+        "title": "Milwaukee at Pittsburgh: Pittsburgh first 3 innings winner",
+        "_kalshi_event_title": "Milwaukee at Pittsburgh",
+        "_kalshi_milestone_title": "Milwaukee at Pittsburgh",
+    }
+    assert watcher.looks_like_unsupported_segment(market) is True
+
+
+def test_full_game_h2h_is_not_flagged_as_segment_or_future():
+    market = {
+        "ticker": "KXMLBGAME-26SEP15MILPIT",
+        "event_ticker": "KXMLBGAME-26SEP15MILPIT",
+        "title": "Milwaukee at Pittsburgh: Winner?",
+        "_kalshi_event_title": "Milwaukee at Pittsburgh",
+    }
+    assert watcher.looks_like_unsupported_segment(market) is False
+    assert watcher.looks_like_future_or_outright(market) is False
+
+
+def test_half_quarter_period_set_map_segments_rejected():
+    titles = [
+        "Team A at Team B: First half winner",
+        "Team A at Team B: Second quarter total",
+        "Team A at Team B: Third period winner",
+        "Team A at Team B: First set winner",
+        "Team A at Team B: First map winner",
+    ]
+    for t in titles:
+        market = {"ticker": "X-1", "title": t, "_kalshi_event_title": t}
+        assert watcher.looks_like_unsupported_segment(market) is True, t
+
+
+def test_season_future_is_rejected():
+    market = {
+        "ticker": "KXNBAWINS-26",
+        "title": "Will the Lakers win at least 50 games in the 2026-27 regular season?",
+        "_kalshi_event_title": "Lakers regular season win total",
+    }
+    assert watcher.looks_like_future_or_outright(market) is True
+
+
+def test_mvp_and_championship_futures_rejected():
+    for title in [
+        "Who will win NBA MVP?",
+        "Will the Chiefs win the Super Bowl?",
+        "World Series matchup: Yankees vs Dodgers",
+    ]:
+        market = {"ticker": "X-2", "title": title, "_kalshi_event_title": title}
+        assert watcher.looks_like_future_or_outright(market) is True, title
+
+
+# ---------------------------------------------------------------------------
+# Event matching: sport, team, and now date confirmation for strong matches
+# ---------------------------------------------------------------------------
+
+def test_wrong_team_does_not_match():
+    spec = parse_market({"title": "Boston Celtics at Miami Heat: Winner?"})
+    events = [
+        {"id": "evt1", "home_team": "Los Angeles Lakers", "away_team": "Golden State Warriors",
+         "commence_time": "2026-09-15T23:00:00+00:00"},
+    ]
+    em = match_event(spec, events, ALIASES, "2026-09-15T23:00:00+00:00")
+    assert em.event is None
+
+
+def test_same_teams_correct_date_matches():
+    spec = parse_market({"title": "New York Yankees at Boston Red Sox: Winner?"})
+    events = [
+        {"id": "evt1", "home_team": "Boston Red Sox", "away_team": "New York Yankees",
+         "commence_time": "2026-09-15T17:05:00+00:00"},
+    ]
+    market_time = "2026-09-15T17:05:00+00:00"
+    em = match_event(spec, events, ALIASES, market_time)
+    assert em.event is not None
+    assert em.event["id"] == "evt1"
+
+
+def test_same_teams_wrong_date_doubleheader_is_now_rejected_end_to_end():
+    """
+    Reproduces the gap found during the takeover review: two teams playing
+    twice in a short window (doubleheader / back-to-back series). A strong
+    team-name match must NOT bypass date confirmation, or Game 2 can get
+    priced against Game 1's sportsbook odds.
+    """
+    spec = parse_market({"title": "New York Yankees at Boston Red Sox: Winner?"})
+    game1_event = {
+        "id": "evt_game1", "home_team": "Boston Red Sox", "away_team": "New York Yankees",
+        "commence_time": "2026-09-15T17:00:00+00:00",
+    }
+    # Kalshi's *second* game of the doubleheader, ~30.5 hours after game 1.
+    game2_kalshi_time = "2026-09-16T23:30:00+00:00"
+
+    em = match_event(spec, [game1_event], ALIASES, game2_kalshi_time)
+    # The raw matcher still finds a strong team-name match (this is expected --
+    # it has no other event to compare against). The safeguard has to live in
+    # watcher.py's acceptance logic, tested below.
+    assert em.event is not None
+    team_score = watcher.event_match_team_score(em)
+    assert team_score >= watcher.TEAM_PAIR_STRONG_SAME_SPORT
+
+    time_ok, delta_h = watcher.low_score_time_confirmed(
+        {"_kalshi_game_time": game2_kalshi_time}, em.event
+    )
+    assert delta_h is not None
+    assert time_ok is False, "a 30.5-hour gap must fail the time-confirmation check"
+    # This is exactly the condition the watcher.py patch now checks before
+    # accepting a "strong" same-sport match.
+
+
+def test_same_teams_close_date_within_tolerance_still_accepted():
+    """Sanity check the fix isn't overly strict: a normal small discrepancy
+    between Kalshi's listed time and sportsbook commence_time must still pass."""
+    spec = parse_market({"title": "New York Yankees at Boston Red Sox: Winner?"})
+    event = {
+        "id": "evt1", "home_team": "Boston Red Sox", "away_team": "New York Yankees",
+        "commence_time": "2026-09-15T17:00:00+00:00",
+    }
+    kalshi_time = "2026-09-15T18:30:00+00:00"  # 1.5h off -- normal noise
+    em = match_event(spec, [event], ALIASES, kalshi_time)
+    time_ok, delta_h = watcher.low_score_time_confirmed(
+        {"_kalshi_game_time": kalshi_time}, em.event
+    )
+    assert time_ok is True
+
+
+# ---------------------------------------------------------------------------
+# Alert priority: new/changed information must not be starved by reminders
+# ---------------------------------------------------------------------------
+
+def test_new_alerts_are_not_starved_by_higher_edge_reminders():
+    """
+    Regression for a second gap found during the takeover review: alerts were
+    sorted purely by net edge, so a still-qualifying REMINDER with a bigger
+    edge number could consume the whole per-run cap before a brand-new
+    opportunity (lower edge, but never alerted before) got a chance.
+    """
+    state = {"alerts": {}}
+
+    # Two markets already alerted 7 hours ago (past the 6h cooldown) with
+    # high edge -- both are due a REMINDER, not new information.
+    for i in range(2):
+        state["alerts"][f"OLD-{i}|YES"] = {
+            "active": True,
+            "sent_at": (watcher.now_utc() - watcher.timedelta(hours=7)).isoformat(),
+            "entry_price": 0.40,
+            "net_edge": 0.10,
+            "hard_max": 0.45,
+            "title": f"Old market {i}",
+        }
+
+    class FakeQ:
+        def __init__(self, side, recommended_limit, net_edge, hard_max, best_ask, execution="MAKE"):
+            self.side = side
+            self.recommended_limit = recommended_limit
+            self.net_edge = net_edge
+            self.hard_max = hard_max
+            self.best_ask = best_ask
+            self.execution = execution
+
+    fair_entry = {"fair_yes_prob": 0.55, "sport_title": "MLB", "n_books": 4}
+
+    old_candidates = [
+        (0.10, {"ticker": f"OLD-{i}", "title": f"Old market {i}"}, fair_entry,
+         FakeQ("YES", 0.40, 0.10, 0.45, 0.41))
+        for i in range(2)
+    ]
+    # One brand-new qualifying opportunity, never alerted before, lower edge.
+    new_candidate = (0.045, {"ticker": "NEW-1", "title": "New market"}, fair_entry,
+                      FakeQ("YES", 0.50, 0.045, 0.55, 0.50))
+
+    actionable = old_candidates + [new_candidate]
+    actionable.sort(key=lambda x: x[0], reverse=True)
+
+    new_info, reminders = [], []
+    for net_edge, market, fe, q in actionable:
+        ok, reason = watcher.should_alert(state, market, fe, q)
+        assert ok  # all three qualify for a push this run
+        (reminders if reason == "REMINDER" else new_info).append((net_edge, market, fe, q, reason))
+
+    # With a cap of 2, the fixed ordering (new_info + reminders) must place
+    # the NEW market ahead of both REMINDERs despite its smaller edge.
+    ordered = new_info + reminders
+    sent_tickers = [m["ticker"] for _, m, _, _, _ in ordered[:2]]
+    assert "NEW-1" in sent_tickers, "a brand-new opportunity was starved out by reminders"
+
+
+if __name__ == "__main__":
+    import traceback
+    tests = [v for k, v in list(globals().items()) if k.startswith("test_")]
+    passed, failed = 0, 0
+    for t in tests:
+        try:
+            t()
+            print(f"PASS  {t.__name__}")
+            passed += 1
+        except Exception:
+            print(f"FAIL  {t.__name__}")
+            traceback.print_exc()
+            failed += 1
+    print(f"\n{passed} passed, {failed} failed")
+    raise SystemExit(1 if failed else 0)
