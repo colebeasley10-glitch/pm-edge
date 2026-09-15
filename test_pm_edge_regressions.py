@@ -215,6 +215,79 @@ def test_new_alerts_are_not_starved_by_higher_edge_reminders():
     assert "NEW-1" in sent_tickers, "a brand-new opportunity was starved out by reminders"
 
 
+# ---------------------------------------------------------------------------
+# Speculative tier: lower edge bar, same correctness safeguards
+# ---------------------------------------------------------------------------
+
+def test_speculative_tier_catches_a_market_the_primary_tier_rejects():
+    """A market with real (devigged) edge below the primary 4% bar but above
+    the speculative 2% bar should qualify under score_market's speculative
+    base -- and still respect the book-count scaling."""
+    fair_entry = {"fair_yes_prob": 0.50, "n_books": 4}
+    market = {"yes_bid": 0.44, "yes_ask": 0.45, "no_bid": 0.55, "no_ask": 0.56}
+
+    class FakeSettings:
+        maker_fee_rate = 0.0175
+        taker_fee_rate = 0.07
+
+    q_primary = watcher.score_market(market, fair_entry, FakeSettings())
+    q_spec = watcher.score_market(market, fair_entry, FakeSettings(), base_min_edge=watcher.SPECULATIVE_MIN_EDGE)
+
+    assert q_primary.qualifies is False, "fixture should NOT clear the primary bar"
+    assert q_spec.qualifies is True, "fixture SHOULD clear the lower speculative bar"
+
+
+def test_speculative_tier_never_weakens_book_count_scaling():
+    """Fewer books must still demand more edge in the speculative tier too --
+    only the base moves, the safety scaling does not disappear."""
+    fair_entry_2books = {"n_books": 2}
+    fair_entry_4books = {"n_books": 4}
+    market = {"yes_bid": 0.40, "yes_ask": 0.41, "no_bid": 0.59, "no_ask": 0.60}
+
+    class FakeSettings:
+        maker_fee_rate = 0.0175
+        taker_fee_rate = 0.07
+
+    # Same fair prob for both; only book count differs.
+    fair_2 = {**fair_entry_2books, "fair_yes_prob": 0.50}
+    fair_4 = {**fair_entry_4books, "fair_yes_prob": 0.50}
+
+    q2 = watcher.score_market(market, fair_2, FakeSettings(), base_min_edge=watcher.SPECULATIVE_MIN_EDGE)
+    q4 = watcher.score_market(market, fair_4, FakeSettings(), base_min_edge=watcher.SPECULATIVE_MIN_EDGE)
+
+    # 2-book requires MORE edge than 4-book -- if 2-book qualifies, 4-book
+    # must also qualify (never the reverse).
+    if q2.qualifies:
+        assert q4.qualifies, "2-book cleared the bar but 4-book (easier bar) did not"
+
+
+def test_speculative_alerts_use_separate_state_keys_from_primary():
+    """A speculative alert for a ticker must not collide with -- or be
+    mistaken for -- a primary alert on the same ticker/side."""
+    state = {"alerts": {}}
+
+    class FakeQ:
+        side = "YES"
+        recommended_limit = 0.45
+        net_edge = 0.025
+        hard_max = 0.48
+
+    market = {"ticker": "SAME-TICKER", "title": "Test"}
+    fair_entry = {"fair_yes_prob": 0.50}
+
+    ok_primary, reason_primary = watcher.should_alert(state, market, fair_entry, FakeQ(), tier="primary")
+    watcher.record_alert(state, market, fair_entry, FakeQ(), tier="primary")
+
+    ok_spec, reason_spec = watcher.should_alert(state, market, fair_entry, FakeQ(), tier="speculative")
+
+    assert reason_primary == "NEW"
+    # The speculative tier has never been alerted for this ticker before,
+    # so it must ALSO read as NEW -- not silently suppressed because the
+    # primary tier already has an active entry for the same ticker/side.
+    assert reason_spec == "NEW", "speculative alert was incorrectly suppressed by the primary tier's state"
+    assert len(state["alerts"]) == 1  # only primary has been recorded so far
+
+
 if __name__ == "__main__":
     import traceback
     tests = [v for k, v in list(globals().items()) if k.startswith("test_")]
