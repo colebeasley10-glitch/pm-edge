@@ -134,7 +134,7 @@ MAX_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_ALERTS_PER_RUN", "3"))
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
 MAX_EVENT_HOURS = float(os.getenv("PM_EDGE_MAX_EVENT_HOURS", "96"))
 MAX_AUTO_EDGE = float(os.getenv("PM_EDGE_MAX_AUTO_EDGE", "0.20"))
-WATCHER_VERSION = 5
+WATCHER_VERSION = 6
 
 PRIMARY_MARKET = {
     "h2h": "h2h",
@@ -387,10 +387,9 @@ def fetch_open_kalshi_sports_markets(base_url: str, max_events: int = 2500):
                 enriched = dict(raw_market)
                 original_title = str(raw_market.get("title") or "").strip()
 
-                # Kalshi market close_time can be well after kickoff/first pitch.
-                # Use the parent event's strike_date as the occurrence time when available.
-                if ev.get("strike_date"):
-                    enriched["occurrence_datetime"] = ev.get("strike_date")
+                # Preserve the market's own occurrence_datetime.
+                # Kalshi already provides this at market level and it is the
+                # correct field for matching the real-world sports occurrence.
 
                 # If the event provides a matchup, force it to be the parser's event prefix.
                 # Example:
@@ -447,15 +446,17 @@ def looks_like_future_or_outright(market: dict) -> bool:
 
 def event_is_near_term(event: dict) -> bool:
     h = event_hours(event)
-    # Require a real scheduled event, not a season/futures resolution.
+    # Require a real scheduled sportsbook event in the next few days.
     return -1.0 <= h <= MAX_EVENT_HOURS
 
-def occurrence_matches_event(market: dict, event: dict, tolerance_hours: float = 36.0) -> bool:
+def kalshi_market_is_near_term(market: dict) -> bool:
     kd = parse_dt(market.get("occurrence_datetime"))
-    sd = parse_dt((event or {}).get("commence_time"))
-    if not kd or not sd:
+    if not kd:
+        # Some legitimate markets omit occurrence_datetime; let the sportsbook
+        # event horizon and matcher confidence handle those instead.
         return True
-    return abs((kd - sd).total_seconds()) <= tolerance_hours * 3600.0
+    h = (kd - now_utc()).total_seconds() / 3600.0
+    return -1.0 <= h <= MAX_EVENT_HOURS
 
 def fair_to_dict(fair, event, spec, usage=None):
     return {
@@ -570,7 +571,7 @@ def self_test():
     assert s["daily_usage"]["date"] == now_utc().date().isoformat()
     assert cents(0.57) == "57.0¢"
     assert pct(0.061) == "6.1%"
-    print("PM Edge watcher v5 self-test: PASS")
+    print("PM Edge watcher v6 self-test: PASS")
     return 0
 
 def main():
@@ -586,6 +587,15 @@ def main():
     kalshi = KalshiPublicClient(settings.kalshi_base_url)
     odds = OddsAPIClient(settings.odds_api_key, settings.odds_regions)
     state = load_state()
+
+    # v6 changes event-time semantics. Purge fair values and alerts produced by
+    # older matcher versions so a stale future/false match can never alert again.
+    if int(state.get("data_semantics_version", 0) or 0) < WATCHER_VERSION:
+        state["fair_cache"] = {}
+        state["alerts"] = {}
+        state["quotes"] = {}
+        state["data_semantics_version"] = WATCHER_VERSION
+
     daily = reset_daily_usage(state)
 
     markets, kalshi_events_seen = fetch_open_kalshi_sports_markets(
@@ -599,8 +609,8 @@ def main():
     supported_markets = 0
     event_matches_any_conf = 0
     futures_filtered = 0
-    horizon_filtered = 0
-    time_mismatch_filtered = 0
+    kalshi_horizon_filtered = 0
+    sportsbook_horizon_filtered = 0
 
     for market in markets:
         if looks_like_future_or_outright(market):
@@ -622,12 +632,12 @@ def main():
         if not em.event or em.confidence < MATCH_MIN:
             continue
 
-        if not event_is_near_term(em.event):
-            horizon_filtered += 1
+        if not kalshi_market_is_near_term(market):
+            kalshi_horizon_filtered += 1
             continue
 
-        if not occurrence_matches_event(market, em.event):
-            time_mismatch_filtered += 1
+        if not event_is_near_term(em.event):
+            sportsbook_horizon_filtered += 1
             continue
 
         cached = state.setdefault("fair_cache", {}).get(market["ticker"])
@@ -814,6 +824,8 @@ def main():
             f"Supported game markets parsed: {supported_markets}\n"
             f"Futures/outrights filtered: {futures_filtered}\n"
             f"Event matches found: {event_matches_any_conf}\n"
+            f"Kalshi horizon filtered: {kalshi_horizon_filtered}\n"
+            f"Sportsbook horizon filtered: {sportsbook_horizon_filtered}\n"
             f"Near-term candidates: {len(candidates)}\n"
             f"Fair-value attempts: {fair_attempts}\n"
             f"Fair values created: {fair_successes}\n"
@@ -823,7 +835,7 @@ def main():
         )
         if remaining is not None:
             msg += f"\nOdds API account credits remaining: {remaining}"
-        if send_push("✅ PM Edge Watch v5 is live", msg, priority=0):
+        if send_push("✅ PM Edge Watch v6 is live", msg, priority=0):
             state["first_run_notified"] = True
             state["watcher_version_notified"] = WATCHER_VERSION
 
@@ -843,8 +855,8 @@ def main():
         "supported_markets": supported_markets,
         "futures_filtered": futures_filtered,
         "event_matches_any_conf": event_matches_any_conf,
-        "horizon_filtered": horizon_filtered,
-        "time_mismatch_filtered": time_mismatch_filtered,
+        "kalshi_horizon_filtered": kalshi_horizon_filtered,
+        "sportsbook_horizon_filtered": sportsbook_horizon_filtered,
         "candidates": len(candidates),
         "fair_attempts": fair_attempts,
         "fair_successes": fair_successes,
