@@ -1,27 +1,82 @@
 """PM Edge v16 launcher.
 
-Keeps the proven v15 pricing/matching engine intact while making Kalshi
-market discovery rate-limit friendly:
+Keeps the proven v15 pricing/matching engine intact while adding two operational
+safety layers around it:
+
+Kalshi rate-limit guard
   * only fetch event families the engine can price exactly;
   * cap Kalshi event-fetch concurrency at four workers;
   * retry HTTP 429 / transient 5xx responses with bounded backoff.
+
+Odds API free-tier budget guard
+  * reset the daily counter at Eastern midnight instead of UTC midnight;
+  * pace the daily allowance across the day so early scans cannot spend it all;
+  * count every paid refresh as at least two budget units so a two-market
+    spread/total request can never slip through a one-credit remainder.
 
 This launcher never places real-money orders; watcher.py remains paper-alert only.
 """
 from __future__ import annotations
 
 import json
+import os
 import time
 from concurrent.futures import Future, ThreadPoolExecutor as _ThreadPoolExecutor
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import requests
 import watcher
+
+EASTERN = ZoneInfo("America/New_York")
+HARD_DAILY_ODDS_BUDGET = max(0, int(os.getenv("PM_EDGE_ODDS_DAILY_BUDGET", "14")))
 
 V16_STATS = {
     "prefiltered_event_fetches": 0,
     "kalshi_429_retries": 0,
     "kalshi_5xx_retries": 0,
+    "odds_hard_daily_budget": HARD_DAILY_ODDS_BUDGET,
+    "odds_paced_budget": 0,
 }
+
+
+def eastern_now() -> datetime:
+    return datetime.now(EASTERN)
+
+
+def paced_odds_budget(now: datetime | None = None) -> int:
+    """Unlock the daily Odds API budget gradually, preserving evening capacity."""
+    now = now or eastern_now()
+    hour = now.hour
+
+    # All values are even on purpose. Spread/total refreshes can cost two API
+    # credits, so this avoids ending a pacing window with an unsafe 1-credit gap.
+    if hour < 4:
+        allowance = 2
+    elif hour < 8:
+        allowance = 4
+    elif hour < 12:
+        allowance = 6
+    elif hour < 15:
+        allowance = 8
+    elif hour < 18:
+        allowance = 10
+    elif hour < 21:
+        allowance = 12
+    else:
+        allowance = 14
+
+    return min(HARD_DAILY_ODDS_BUDGET, allowance)
+
+
+def reset_daily_usage_eastern(state: dict) -> dict:
+    """Reset the persisted Odds budget on the user's Eastern calendar day."""
+    today = eastern_now().date().isoformat()
+    du = state.setdefault("daily_usage", {})
+    if du.get("date") != today:
+        du["date"] = today
+        du["credits"] = 0
+    return du
 
 
 def supported_full_game_event_ticker(event_ticker: str) -> bool:
@@ -108,18 +163,44 @@ class RateFriendlyExecutor(_ThreadPoolExecutor):
 
 
 def install_v16_patch() -> None:
-    # Preserve the proven v15 engine and patch only Kalshi request behavior.
+    # Preserve the proven v15 market/fair-value semantics. v16 only changes
+    # discovery reliability and operational API budgeting.
     watcher.WATCHER_VERSION = 16
     watcher._kalshi_get_json = kalshi_get_json_with_backoff
     watcher.ThreadPoolExecutor = RateFriendlyExecutor
 
+    # Budget on the Eastern calendar day and expose only the portion that has
+    # been unlocked at the current time of day.
+    watcher.reset_daily_usage = reset_daily_usage_eastern
+    current_paced_budget = paced_odds_budget()
+    watcher.DAILY_ODDS_BUDGET = current_paced_budget
+    V16_STATS["odds_paced_budget"] = current_paced_budget
+
+    # watcher.py makes the Odds request before it learns the exact API cost.
+    # Count any positive request as at least two local budget units. That is a
+    # conservative guard: h2h may really cost 1, while spread/total calls can
+    # cost 2. This prevents an untracked 2-credit request when only 1 remains.
+    original_usage_cost = watcher.usage_cost
+
+    def conservative_usage_cost(usage):
+        actual = original_usage_cost(usage)
+        if actual <= 0:
+            return 0
+        return max(2, actual)
+
+    watcher.usage_cost = conservative_usage_cost
+
     # watcher.py's heartbeat title is a literal; rewrite only that title so the
-    # notification accurately reports the active semantics version.
+    # notification accurately reports the active operational version.
     original_send_push = watcher.send_push
 
     def send_push_v16(title, message, *args, **kwargs):
         if title == "✅ PM Edge Watch v15 is live":
             title = "✅ PM Edge Watch v16 is live"
+            message = (
+                f"{message}\n"
+                f"Odds budget unlocked now: {current_paced_budget}/{HARD_DAILY_ODDS_BUDGET} (ET)"
+            )
         return original_send_push(title, message, *args, **kwargs)
 
     watcher.send_push = send_push_v16
@@ -148,6 +229,16 @@ def self_test() -> None:
     ]
     assert all(supported_full_game_event_ticker(x) for x in keep)
     assert all(not supported_full_game_event_ticker(x) for x in drop)
+
+    # Verify budget pacing boundaries and local-day reset behavior.
+    assert paced_odds_budget(datetime(2026, 9, 15, 0, 0, tzinfo=EASTERN)) <= 2
+    assert paced_odds_budget(datetime(2026, 9, 15, 14, 59, tzinfo=EASTERN)) <= 8
+    assert paced_odds_budget(datetime(2026, 9, 15, 21, 0, tzinfo=EASTERN)) <= 14
+    state = {"daily_usage": {"date": "1900-01-01", "credits": 99}}
+    reset_daily_usage_eastern(state)
+    assert state["daily_usage"]["date"] == eastern_now().date().isoformat()
+    assert state["daily_usage"]["credits"] == 0
+
     print("PM Edge v16 launcher self-test: PASS")
 
 
