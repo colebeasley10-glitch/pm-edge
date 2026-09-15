@@ -165,7 +165,7 @@ MAX_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_ALERTS_PER_RUN", "3"))
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
 MAX_EVENT_HOURS = float(os.getenv("PM_EDGE_MAX_EVENT_HOURS", "96"))
 MAX_AUTO_EDGE = float(os.getenv("PM_EDGE_MAX_AUTO_EDGE", "0.15"))
-WATCHER_VERSION = 13
+WATCHER_VERSION = 14
 
 PRIMARY_MARKET = {
     "h2h": "h2h",
@@ -508,7 +508,8 @@ def fetch_open_kalshi_sports_markets(base_url: str, max_events: int = 2500):
             if not isinstance(raw_market, dict):
                 continue
 
-            if str(raw_market.get("status") or "").lower() != "open":
+            market_status = str(raw_market.get("status") or "").lower()
+            if market_status not in ("active", "open"):
                 continue
 
             ticker = str(raw_market.get("ticker") or "")
@@ -823,7 +824,7 @@ def self_test():
     assert s["daily_usage"]["date"] == now_utc().date().isoformat()
     assert cents(0.57) == "57.0¢"
     assert pct(0.061) == "6.1%"
-    print("PM Edge watcher v13 self-test: PASS")
+    print("PM Edge watcher v14 self-test: PASS")
     return 0
 
 def main():
@@ -1164,7 +1165,7 @@ def main():
         )
         if remaining is not None:
             msg += f"\nOdds API account credits remaining: {remaining}"
-        if send_push("✅ PM Edge Watch v13 is live", msg, priority=0):
+        if send_push("✅ PM Edge Watch v14 is live", msg, priority=0):
             state["first_run_notified"] = True
             state["watcher_version_notified"] = WATCHER_VERSION
 
