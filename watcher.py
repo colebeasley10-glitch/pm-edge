@@ -51,18 +51,36 @@ from rapidfuzz.fuzz import ratio as _rf_ratio, token_set_ratio as _rf_token_set_
 
 
 def _abbr_matches(short_token: str, long_tokens: list[str]) -> bool:
-    short_token = short_token.lower()
-    if not short_token:
+    """
+    Match common sports team codes against a full sportsbook team name.
+
+    Examples:
+      BUF -> Buffalo Sabres
+      CHI -> Chicago Blackhawks
+      KC  -> Kansas City Chiefs
+      LAL -> Los Angeles Lakers
+      NYG -> New York Giants
+    """
+    short_token = short_token.lower().strip()
+    long_tokens = [t.lower().strip() for t in long_tokens if t]
+    if not short_token or not long_tokens:
         return False
 
-    # Prefix abbreviation: DEN -> Denver, BUF -> Buffalo, CHI -> Chicago.
+    # Prefix abbreviation of a city/team word: BUF -> Buffalo, DEN -> Denver.
     if len(short_token) >= 3 and any(t.startswith(short_token) for t in long_tokens):
         return True
 
-    # Initialism: KC -> Kansas City, VGK -> Vegas Golden Knights.
-    acronym = "".join(t[0] for t in long_tokens if t)
-    if len(short_token) >= 2 and short_token == acronym:
+    # Full-team initials: LAL -> Los Angeles Lakers; NYG -> New York Giants.
+    full_acronym = "".join(t[0] for t in long_tokens)
+    if len(short_token) >= 2 and short_token == full_acronym:
         return True
+
+    # City/location initials: KC -> Kansas City (Chiefs), LA -> Los Angeles.
+    # Try every leading prefix except the full team name.
+    for n in range(2, len(long_tokens)):
+        lead_acronym = "".join(t[0] for t in long_tokens[:n])
+        if short_token == lead_acronym:
+            return True
 
     return False
 
@@ -83,6 +101,14 @@ def _smart_team_similarity(a: str, b: str, aliases: dict[str, str]) -> float:
         return 0.97
 
     xt, yt = x.split(), y.split()
+
+    # A Kalshi event can use only the team code while the sportsbook uses the
+    # full franchise name. Sport-locking happens before this matcher, so a code
+    # such as CHI is compared only inside the correct league.
+    if len(xt) == 1 and _abbr_matches(xt[0], yt):
+        return 0.95
+    if len(yt) == 1 and _abbr_matches(yt[0], xt):
+        return 0.95
 
     # Exact mascot phrase + credible city/team abbreviation.
     # Try one- and two-token mascot tails (e.g. Chiefs, Golden Knights).
@@ -137,8 +163,8 @@ ALERT_COOLDOWN_HOURS = float(os.getenv("PM_EDGE_ALERT_COOLDOWN_HOURS", "6"))
 MAX_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_ALERTS_PER_RUN", "3"))
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
 MAX_EVENT_HOURS = float(os.getenv("PM_EDGE_MAX_EVENT_HOURS", "96"))
-MAX_AUTO_EDGE = float(os.getenv("PM_EDGE_MAX_AUTO_EDGE", "0.20"))
-WATCHER_VERSION = 99
+MAX_AUTO_EDGE = float(os.getenv("PM_EDGE_MAX_AUTO_EDGE", "0.15"))
+WATCHER_VERSION = 11
 
 PRIMARY_MARKET = {
     "h2h": "h2h",
@@ -232,29 +258,22 @@ def pct(x):
     return f"{float(x)*100:.1f}%"
 
 def send_push(title, message, *, priority=0, url=None, url_title="Open PM Edge"):
-    # Diagnostic build: never send betting alerts.
-    if not title.startswith("🧪 PM Edge Diagnostic"):
-        print("DIAGNOSTIC_PUSH_SUPPRESSED:", title)
-        return False
-
     if not PUSHOVER_USER_KEY or not PUSHOVER_APP_TOKEN:
         print("PUSH SKIPPED: missing Pushover secrets")
         print(title)
         print(message)
         return False
-
     payload = {
         "token": PUSHOVER_APP_TOKEN,
         "user": PUSHOVER_USER_KEY,
         "title": title[:250],
         "message": message[:1024],
-        "priority": "0",
+        "priority": str(priority),
     }
     target = url or STREAMLIT_APP_URL
     if target:
         payload["url"] = target
         payload["url_title"] = url_title
-
     r = requests.post("https://api.pushover.net/1/messages.json", data=payload, timeout=20)
     if r.status_code >= 400:
         print("Pushover error:", r.status_code, r.text[:500])
@@ -444,8 +463,28 @@ FUTURE_PHRASES = (
     "win the world series",
     "season wins",
     "regular season wins",
+    "total wins",
+    "total points",
+    "regular season",
+    "season points",
     "most valuable player",
     "mvp",
+    "rookie of the year",
+    "coach of the year",
+    "award",
+)
+
+FUTURE_TICKER_FRAGMENTS = (
+    "WINS",
+    "SEASONPTS",
+    "SEASONPOINTS",
+    "MVP",
+    "CHAMP",
+    "FINALS",
+    "PLAYOFF",
+    "AWARD",
+    "ROY",
+    "COTY",
 )
 
 def looks_like_future_or_outright(market: dict) -> bool:
@@ -453,7 +492,29 @@ def looks_like_future_or_outright(market: dict) -> bool:
         str(market.get(k) or "")
         for k in ("title", "_kalshi_event_title", "_kalshi_event_sub_title")
     ).lower()
-    return any(p in title for p in FUTURE_PHRASES)
+
+    ticker_blob = " ".join(
+        str(market.get(k) or "")
+        for k in ("ticker", "event_ticker")
+    ).upper()
+
+    if any(p in title for p in FUTURE_PHRASES):
+        return True
+
+    if any(fragment in ticker_blob for fragment in FUTURE_TICKER_FRAGMENTS):
+        return True
+
+    # Catch threshold-style season props even when phrased without "total wins".
+    # Examples from live Kalshi data:
+    # "win at least 60 games in the 2026-27 regular season"
+    # "earn at least 70 points in the 2026-27 regular season"
+    if "regular season" in title and any(
+        phrase in title
+        for phrase in ("at least", "more than", "fewer than", "less than", "games", "points")
+    ):
+        return True
+
+    return False
 
 def event_is_near_term(event: dict) -> bool:
     h = event_hours(event)
@@ -657,7 +718,7 @@ def self_test():
     assert s["daily_usage"]["date"] == now_utc().date().isoformat()
     assert cents(0.57) == "57.0¢"
     assert pct(0.061) == "6.1%"
-    print("PM Edge diagnostic self-test: PASS")
+    print("PM Edge watcher v11 self-test: PASS")
     return 0
 
 def main():
@@ -694,7 +755,6 @@ def main():
     candidates = []
     supported_markets = 0
     event_matches_any_conf = 0
-    diagnostic_matches = []
     futures_filtered = 0
     kalshi_horizon_filtered = 0
     sportsbook_horizon_filtered = 0
@@ -712,8 +772,16 @@ def main():
     best_confirmed_time_delta_hours = None
 
     for market in markets:
+        # FIRST: eliminate season-long/futures markets before the generic text
+        # parser can misread "win at least 60 games" as a head-to-head game.
         if looks_like_future_or_outright(market):
             futures_filtered += 1
+            continue
+
+        # SECOND: require the Kalshi occurrence itself to be near-term before
+        # attempting any sportsbook event match.
+        if not kalshi_market_is_near_term(market):
+            kalshi_horizon_filtered += 1
             continue
 
         spec = parse_market(market)
@@ -746,36 +814,6 @@ def main():
                 top_same_sport_team_score = max(top_same_sport_team_score, team_score)
                 top_same_sport_confidence = max(top_same_sport_confidence, float(em.confidence or 0))
 
-                kd = parse_dt(market.get("occurrence_datetime"))
-                sd = parse_dt((em.event or {}).get("commence_time"))
-                delta_h = None
-                if kd and sd:
-                    delta_h = abs((kd - sd).total_seconds()) / 3600.0
-
-                try:
-                    spec_dict = dict(vars(spec))
-                except Exception:
-                    spec_dict = {"repr": repr(spec)}
-
-                diagnostic_matches.append({
-                    "kalshi_ticker": market.get("ticker"),
-                    "kalshi_event_ticker": market.get("event_ticker"),
-                    "kalshi_event_title": market.get("_kalshi_event_title"),
-                    "kalshi_market_title": market.get("title"),
-                    "kalshi_occurrence_datetime": market.get("occurrence_datetime"),
-                    "kalshi_close_time": market.get("close_time"),
-                    "parsed_market": spec_dict,
-                    "sport_rule": sport_rule,
-                    "sportsbook_sport": em.event.get("_sport_key"),
-                    "sportsbook_home": em.event.get("home_team"),
-                    "sportsbook_away": em.event.get("away_team"),
-                    "sportsbook_commence_time": em.event.get("commence_time"),
-                    "team_score": round(team_score, 4),
-                    "combined_confidence": round(float(em.confidence or 0), 4),
-                    "time_delta_hours": None if delta_h is None else round(delta_h, 3),
-                    "match_reason": getattr(em, "reason", None),
-                })
-
         if not em.event:
             continue
 
@@ -806,10 +844,6 @@ def main():
                 continue
             accepted_unknown_sport += 1
 
-        if not kalshi_market_is_near_term(market):
-            kalshi_horizon_filtered += 1
-            continue
-
         if not event_is_near_term(em.event):
             sportsbook_horizon_filtered += 1
             continue
@@ -831,27 +865,10 @@ def main():
             "no_ask": market.get("no_ask"),
         }
 
-    # ---------------- DIAGNOSTIC OUTPUT ----------------
-    # Sort strongest matches first and print enough live detail to fix the matcher.
-    diagnostic_matches.sort(
-        key=lambda x: (x.get("team_score") or 0, x.get("combined_confidence") or 0),
-        reverse=True,
-    )
-
-    print("\n=== PM EDGE DIAGNOSTIC: TOP SAME-SPORT MATCHES ===")
-    for idx, rec in enumerate(diagnostic_matches[:20], start=1):
-        print(f"--- MATCH {idx} ---")
-        print(json.dumps(rec, indent=2, sort_keys=True, default=str))
-    print("=== END PM EDGE DIAGNOSTIC ===\n")
-
-    # Diagnostic build intentionally does not request bookmaker odds.
+    # Refresh a small number of high-priority fair values each run.
     refreshed_groups = 0
     run_event_odds_cache = {}
     credits_remaining_today = max(0, DAILY_ODDS_BUDGET - int(daily.get("credits", 0)))
-
-    # Hard stop paid pricing in diagnostic mode.
-    candidates_for_pricing = candidates
-    candidates = []
 
     fair_attempts = 0
     fair_successes = 0
@@ -949,6 +966,11 @@ def main():
         if not q.qualifies or q.recommended_limit is None:
             continue
 
+        if looks_like_future_or_outright(market):
+            continue
+        if not kalshi_market_is_near_term(market):
+            continue
+
         net_edge = float(q.net_edge or 0)
         # Extremely large "edges" in liquid sports markets are usually a
         # settlement/matching/data problem. Never auto-alert them.
@@ -1009,18 +1031,33 @@ def main():
                 remaining = x.get("requests_remaining")
                 break
         msg = (
-            f"Diagnostic run complete.\n"
-            f"Kalshi events checked: {kalshi_events_seen}\n"
-            f"Supported markets parsed: {supported_markets}\n"
-            f"Same-sport matches captured: {len(diagnostic_matches)}\n"
-            f"Top team score: {top_same_sport_team_score:.2f}\n"
-            f"No pick alerts were sent.\n"
-            f"No sportsbook pricing calls were made.\n"
-            f"Open the GitHub run log and send the TOP SAME-SPORT MATCHES section."
+            f"PM Edge Watch is running.\n"
+            f"Kalshi open events checked: {kalshi_events_seen}\n"
+            f"Sports markets loaded: {len(markets)}\n"
+            f"Supported game markets parsed: {supported_markets}\n"
+            f"Futures/outrights filtered: {futures_filtered}\n"
+            f"Sport identified: {sport_identified}\n"
+            f"Event matches found: {event_matches_any_conf}\n"
+            f"Same-sport matches: {same_sport_matches}\n"
+            f"Accepted same-sport: {accepted_same_sport}\n"
+            f"  strong-name: {accepted_same_sport_strong}\n"
+            f"  time-confirmed: {accepted_same_sport_time_confirmed}\n"
+            f"Top same-sport team score: {top_same_sport_team_score:.2f}\n"
+            f"Top same-sport confidence: {top_same_sport_confidence:.2f}\n"
+            f"Low-score missing-time rejects: {rejected_low_score_missing_time}\n"
+            f"Low-score bad-time rejects: {rejected_low_score_bad_time}\n"
+            f"Kalshi horizon filtered: {kalshi_horizon_filtered}\n"
+            f"Sportsbook horizon filtered: {sportsbook_horizon_filtered}\n"
+            f"Near-term candidates: {len(candidates)}\n"
+            f"Fair-value attempts: {fair_attempts}\n"
+            f"Fair values created: {fair_successes}\n"
+            f"Fair values cached: {len(state['fair_cache'])}\n"
+            f"Odds request errors: {odds_errors}\n"
+            f"Odds credits used today: {daily.get('credits',0)}/{DAILY_ODDS_BUDGET}"
         )
         if remaining is not None:
             msg += f"\nOdds API account credits remaining: {remaining}"
-        if send_push("🧪 PM Edge Diagnostic is live", msg, priority=0):
+        if send_push("✅ PM Edge Watch v11 is live", msg, priority=0):
             state["first_run_notified"] = True
             state["watcher_version_notified"] = WATCHER_VERSION
 
@@ -1053,8 +1090,7 @@ def main():
         "best_confirmed_time_delta_hours": None if best_confirmed_time_delta_hours is None else round(best_confirmed_time_delta_hours, 3),
         "kalshi_horizon_filtered": kalshi_horizon_filtered,
         "sportsbook_horizon_filtered": sportsbook_horizon_filtered,
-        "candidates_before_diagnostic_stop": len(candidates_for_pricing),
-        "diagnostic_matches": len(diagnostic_matches),
+        "candidates": len(candidates),
         "fair_attempts": fair_attempts,
         "fair_successes": fair_successes,
         "odds_errors": odds_errors,
