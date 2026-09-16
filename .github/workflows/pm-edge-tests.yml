@@ -29,3 +29,6 @@ jobs:
 
       - name: Run regression tests
         run: python test_pm_edge_regressions.py
+
+      - name: Run v16 launcher self-test
+        run: python pm_edge_runner_v16.py --self-test
