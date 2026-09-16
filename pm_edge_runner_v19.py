@@ -85,11 +85,15 @@ def install_v19_patch() -> None:
     # time, so replacing that global cleanly inserts the realism filter without
     # touching primary scoring or any of v18's fill/edge math.
     v18.find_price_fish = realistic_price_fish
+    watcher.WATCHER_VERSION = 19
 
     original_send_push = watcher.send_push
 
     def send_push_v19(title, message, *args, **kwargs):
-        if title == "✅ PM Edge Watch v18 Price Fish is live":
+        if title in {
+            "✅ PM Edge Watch v15 is live",
+            "✅ PM Edge Watch v18 Price Fish is live",
+        }:
             title = "✅ PM Edge Watch v19 Realistic Price Fish is live"
         return original_send_push(title, message, *args, **kwargs)
 
