@@ -58,12 +58,14 @@ jobs:
           PM_EDGE_ALERT_COOLDOWN_HOURS: "6"
           PM_EDGE_MAX_MARKETS: "3000"
 
-          # v18 Price Fish: do not lower the normal 4% edge requirement.
-          # Instead, surface passive limits 2c-8c below the current ask that
-          # WOULD clear the normal threshold if filled.
+          # Price Fish: do not lower the normal 4% edge requirement.
+          # Surface passive limits 2c-8c below the current ask, but v19 filters
+          # out moonshots: target must be >=20c and model fair chance >=25%.
           PM_EDGE_PRICE_FISH_MIN_GAP: "0.02"
           PM_EDGE_PRICE_FISH_MAX_GAP: "0.08"
+          PM_EDGE_PRICE_FISH_MIN_TARGET: "0.20"
+          PM_EDGE_PRICE_FISH_MIN_FAIR_SIDE_PROB: "0.25"
           PM_EDGE_MAX_PRICE_FISH_ALERTS_PER_RUN: "4"
           PM_EDGE_PRICE_FISH_DAILY_CAP: "12"
 
-        run: python pm_edge_runner_v18.py
+        run: python pm_edge_runner_v19.py
