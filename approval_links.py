@@ -50,6 +50,7 @@ def create_approval_token(
     ticker: str,
     side: str,
     lane: str,
+    execution: str,
     limit_price: float,
     shares: int,
     max_loss: float,
@@ -63,6 +64,9 @@ def create_approval_token(
     side = str(side or "").upper()
     if side not in {"YES", "NO"}:
         raise ValueError("side must be YES or NO")
+    execution = str(execution or "").upper()
+    if execution not in {"TAKE", "MAKE"}:
+        raise ValueError("execution must be TAKE or MAKE")
     if not ticker:
         raise ValueError("ticker is required")
     if not (0 < float(limit_price) < 1):
@@ -78,6 +82,7 @@ def create_approval_token(
         "t": str(ticker),
         "s": "Y" if side == "YES" else "N",
         "l": lane_code,
+        "a": "T" if execution == "TAKE" else "M",
         "p": int(round(float(limit_price) * 10000)),
         "n": int(shares),
         "r": int(round(float(max_loss) * 100)),
@@ -122,12 +127,16 @@ def verify_approval_token(token: str, *, now: int | None = None) -> dict:
     side = "YES" if payload.get("s") == "Y" else "NO" if payload.get("s") == "N" else None
     if side is None:
         raise ValueError("Invalid side")
+    execution = "TAKE" if payload.get("a") == "T" else "MAKE" if payload.get("a") == "M" else None
+    if execution is None:
+        raise ValueError("Invalid execution mode")
     lane = {"p": "primary", "v": "value", "f": "price_fish"}.get(payload.get("l"), "primary")
 
     return {
         "ticker": str(payload["t"]),
         "side": side,
         "lane": lane,
+        "execution": execution,
         "limit_price": int(payload["p"]) / 10000.0,
         "shares": int(payload["n"]),
         "max_loss": int(payload["r"]) / 100.0,
