@@ -51,8 +51,6 @@ V22_STATS = {
     "price_fish_fallbacks": 0,
 }
 
-# Raw signatures seen during scoring, used only to label the raw secondary
-# watcher push before v18 turns the remaining secondary alerts into Price Fish.
 _VALUE_SIGNATURES: set[tuple[str, str, str, int]] = set()
 
 
@@ -67,7 +65,6 @@ def _safe_float(value, default=None):
 
 
 def _raw_score_market(market, fair_entry, settings, base_min_edge=None):
-    """Reproduce watcher's unpatched scorer so VALUE can coexist with Price Fish."""
     tick = watcher.tick_size_for_price(
         market, market.get("yes_bid") or market.get("yes_ask") or 0.50
     )
@@ -122,7 +119,6 @@ def _value_required_edge(n_books: int) -> float | None:
 
 
 def find_value_trade(market: dict, fair_entry: dict, settings):
-    """Return a price-disciplined current-quote VALUE trade or None."""
     n_books = int(fair_entry.get("n_books") or 0)
     required = _value_required_edge(n_books)
     if required is None:
@@ -154,8 +150,6 @@ def find_value_trade(market: dict, fair_entry: dict, settings):
     if side_prob is None or side_prob + 1e-12 < VALUE_MIN_FAIR_SIDE_PROB:
         return None
 
-    # Mark the quote object so should_alert/record_alert can use a separate
-    # state key rather than colliding with Price Fish's speculative key.
     try:
         setattr(q, "pmedge_lane", "value")
     except Exception:
@@ -238,7 +232,6 @@ def _rewrite_value_push(title: str, message: str) -> tuple[str, str]:
 
 
 def _value_sizing(title: str, message: str):
-    """Apply 0.5x sizing to VALUE without changing Primary/Price Fish sizing."""
     if not str(title).startswith("💎 PM EDGE VALUE"):
         return None
 
@@ -277,15 +270,12 @@ def _value_still_qualifies(market: dict, fair_entry: dict, settings):
 
 
 def install_v22_patch() -> None:
-    """Install VALUE after v16-v21 so Primary, Price Fish and quiet hours remain."""
     watcher.WATCHER_VERSION = 22
     watcher.MAX_SPECULATIVE_ALERTS_PER_RUN = max(
         int(watcher.MAX_SPECULATIVE_ALERTS_PER_RUN),
         max(1, SECONDARY_MAX_ALERTS_PER_RUN),
     )
 
-    # Preserve v21 state. v22 adds a lane but does not alter matching semantics
-    # or invalidate existing Primary/Price Fish fair values.
     original_load_state = watcher.load_state
 
     def load_state_v22():
@@ -300,8 +290,6 @@ def install_v22_patch() -> None:
 
     watcher.load_state = load_state_v22
 
-    # At this point watcher.score_market is v18/v19's secondary Price Fish
-    # scorer. Keep it as the fallback, but insert VALUE ahead of it.
     price_fish_score = watcher.score_market
 
     def score_market_v22(market, fair_entry, settings, base_min_edge=None):
@@ -319,7 +307,6 @@ def install_v22_patch() -> None:
 
     watcher.score_market = score_market_v22
 
-    # Keep VALUE alert state and daily cap separate from Price Fish.
     original_should_alert = watcher.should_alert
 
     def should_alert_v22(state, market, fair_entry, q, tier="primary"):
@@ -348,9 +335,6 @@ def install_v22_patch() -> None:
 
     watcher.record_alert = record_alert_v22
 
-    # The base pass scanner cannot distinguish VALUE from Price Fish because
-    # both originate from the secondary watcher path. Replace it with a
-    # lane-aware version.
     def maybe_send_pass_alerts_v22(state, market_by_ticker, fair_cache, settings):
         sent = 0
         for key, alert in list(state.setdefault("alerts", {}).items()):
@@ -416,8 +400,6 @@ def install_v22_patch() -> None:
 
     watcher.maybe_send_pass_alerts = maybe_send_pass_alerts_v22
 
-    # Label VALUE before v18 sees the raw speculative title. Anything not
-    # identified as VALUE continues downstream and becomes a normal Price Fish.
     original_send_push = watcher.send_push
 
     def send_push_v22(title, message, *args, **kwargs):
@@ -432,8 +414,6 @@ def install_v22_patch() -> None:
 
     watcher.send_push = send_push_v22
 
-    # v20 looks up add_order_sizing in its module at call time, so we can
-    # special-case VALUE sizing while leaving all other lanes unchanged.
     v20 = v21.v20
     original_add_order_sizing = v20.add_order_sizing
 
@@ -451,15 +431,14 @@ def self_test() -> None:
         maker_fee_rate = 0.0175
         taker_fee_rate = 0.07
 
-    # Four-book fixture: below Primary but above 2.5% VALUE.
     fair = {"fair_yes_prob": 0.50, "n_books": 4, "sport_title": "Test"}
     market = {
         "ticker": "VALUE-1",
         "title": "Team A vs Team B: Team A wins",
-        "yes_bid": 0.45,
-        "yes_ask": 0.46,
-        "no_bid": 0.53,
-        "no_ask": 0.54,
+        "yes_bid": 0.44,
+        "yes_ask": 0.45,
+        "no_bid": 0.54,
+        "no_ask": 0.55,
     }
     q_primary = _raw_score_market(market, fair, FakeSettings(), None)
     q_value = find_value_trade(market, fair, FakeSettings())
@@ -467,12 +446,10 @@ def self_test() -> None:
     assert q_value is not None
     assert _q_lane(q_value) == "value"
 
-    # Two books are never enough for VALUE.
     assert find_value_trade(
         market, {**fair, "n_books": 2}, FakeSettings()
     ) is None
 
-    # VALUE rejects moonshot prices even if raw edge is large.
     moonshot = {
         "ticker": "VALUE-2",
         "title": "Longshot",
@@ -487,7 +464,6 @@ def self_test() -> None:
         FakeSettings(),
     ) is None
 
-    # Separate state key.
     state = {"alerts": {}}
     class FakeQ:
         side = "YES"
@@ -498,7 +474,6 @@ def self_test() -> None:
     watcher.record_alert(state, {"ticker": "X", "title": "T"}, fair, FakeQ(), tier="value")
     assert "X|YES|VALUE" in state["alerts"]
 
-    # Signature rewrite occurs before downstream v18 Price Fish copy.
     sport = "Test"
     market_title = market["title"][:170]
     price_int = int(round(float(q_value.recommended_limit) * 1000))
@@ -517,7 +492,6 @@ def self_test() -> None:
     assert rewritten_title.startswith("💎 PM EDGE VALUE")
     assert "VALUE LANE:" in rewritten_msg
 
-    # 0.5x sizing stays below the $5 VALUE risk cap.
     value_message = (
         "SIDE TO BUY: YES\n"
         "EXACT CONTRACT: Test\n"
@@ -562,7 +536,6 @@ if __name__ == "__main__":
         v21.v20.self_test()
         v21.self_test()
 
-        # Install the full chain so state-key and sizing tests exercise the live wrappers.
         v21.v20.v19.v18.v17.v16.install_v16_patch()
         v21.v20.v19.v18.v17.install_v17_patch()
         v21.v20.v19.v18.install_v18_patch()
