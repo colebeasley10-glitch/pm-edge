@@ -105,6 +105,7 @@ except Exception as exc:
 market_title = str(market.get("title") or market.get("subtitle") or trade["ticker"])
 current_ask = _as_price(market, trade["side"])
 max_price = float(trade["limit_price"])
+action_label = "BUY NOW" if trade["execution"] == "TAKE" else "PLACE LIMIT"
 
 st.subheader(market_title)
 st.code(trade["ticker"], language=None)
@@ -122,7 +123,7 @@ c5.metric("Max loss at limit", _money(trade["max_loss"]))
 c6.metric("Fair chance", _pct(trade.get("fair_probability")))
 
 st.caption(
-    f"Lane: {trade['lane'].replace('_', ' ').title()} · "
+    f"Action: {action_label} · Lane: {trade['lane'].replace('_', ' ').title()} · "
     f"Estimated edge: {_pct(trade.get('net_edge'))} · "
     f"Books: {trade.get('books') if trade.get('books') is not None else '—'}"
 )
@@ -132,22 +133,33 @@ if quote_error:
         "I couldn't refresh the live Kalshi quote. You can still open the exact market, "
         "but do not submit above the PM Edge max price."
     )
-elif current_ask is not None and current_ask > max_price + 1e-9:
+elif trade["execution"] == "TAKE" and current_ask is not None and current_ask > max_price + 1e-9:
     st.error(
-        f"PASS / DO NOT CHASE — the live {trade['side']} ask is {_cents(current_ask)}, "
-        f"above our {_cents(max_price)} maximum."
+        f"PASS / DO NOT CHASE — this was a BUY NOW play, but the live {trade['side']} ask "
+        f"is now {_cents(current_ask)}, above our {_cents(max_price)} maximum."
     )
     st.stop()
+elif trade["execution"] == "MAKE" and current_ask is not None and current_ask > max_price + 1e-9:
+    st.info(
+        f"LIMIT PLAY — the live ask is {_cents(current_ask)}. Do not buy that ask. "
+        f"Place your limit at {_cents(max_price)} or lower and wait for a fill."
+    )
 elif current_ask is not None:
     st.success(
         f"Price check passed: live ask {_cents(current_ask)} is at or below our "
         f"{_cents(max_price)} maximum."
     )
 
-st.warning(
-    "Final check: Kalshi can move after this screen. In Kalshi, use the exact side and "
-    f"never pay more than {_cents(max_price)}. You still make the final Submit decision."
-)
+if trade["execution"] == "MAKE":
+    st.warning(
+        f"In Kalshi, place a LIMIT order at {_cents(max_price)} or lower. Do not chase a "
+        "higher ask. You still make the final Submit decision."
+    )
+else:
+    st.warning(
+        "Final check: Kalshi can move after this screen. In Kalshi, use the exact side and "
+        f"never pay more than {_cents(max_price)}. You still make the final Submit decision."
+    )
 
 st.link_button(
     "APPROVE & OPEN KALSHI",
@@ -157,7 +169,7 @@ st.link_button(
 )
 
 with st.expander("Exact order details"):
-    st.write(f"**BUY {trade['side']}**")
+    st.write(f"**{action_label}: BUY {trade['side']}**")
     st.write(f"**{trade['shares']} shares**")
     st.write(f"**Limit: {_cents(max_price)} or lower**")
     st.write(f"Maximum contract cost at limit: **{_money(trade['max_loss'])}**")
