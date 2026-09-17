@@ -6,11 +6,14 @@ an order; the user still submits the final real-money order inside Kalshi.
 """
 from __future__ import annotations
 
+import html
+import json
 import os
 from urllib.parse import quote
 
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 
 # Streamlit Cloud secrets -> environment used by approval_links.
 for _name in ("PM_EDGE_APPROVAL_SECRET", "ODDS_API_KEY"):
@@ -57,6 +60,11 @@ def _cents(x: float | None) -> str:
     return "—" if x is None else f"{float(x) * 100:.1f}¢"
 
 
+def _price_input(x: float) -> str:
+    cents = float(x) * 100.0
+    return f"{cents:.2f}".rstrip("0").rstrip(".")
+
+
 def _pct(x: float | None) -> str:
     return "—" if x is None else f"{float(x) * 100:.1f}%"
 
@@ -80,6 +88,49 @@ def _kalshi_search_url(ticker: str) -> str:
     return "https://kalshi.com/search?q=" + quote(ticker, safe="-._")
 
 
+def _copy_button(label: str, value: str) -> None:
+    """Render a mobile-friendly clipboard button with a legacy fallback."""
+    label_html = html.escape(label)
+    value_js = json.dumps(str(value))
+    components.html(
+        f"""
+        <button id="copyBtn" onclick="copyValue()" style="
+            width:100%; min-height:44px; border:1px solid rgba(128,128,128,.45);
+            border-radius:8px; background:#ffffff; color:#111111; font-size:16px;
+            font-weight:600; padding:10px 12px; cursor:pointer;">
+            {label_html}
+        </button>
+        <script>
+        async function copyValue() {{
+            const value = {value_js};
+            const btn = document.getElementById('copyBtn');
+            try {{
+                if (navigator.clipboard && window.isSecureContext) {{
+                    await navigator.clipboard.writeText(value);
+                }} else {{
+                    const ta = document.createElement('textarea');
+                    ta.value = value;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.focus();
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                }}
+                const old = btn.innerText;
+                btn.innerText = 'Copied ✓';
+                setTimeout(() => btn.innerText = old, 1200);
+            }} catch (err) {{
+                btn.innerText = 'Use copy icon below';
+            }}
+        }}
+        </script>
+        """,
+        height=54,
+    )
+
+
 token = str(st.query_params.get("trade", "") or "").strip()
 if not token:
     st.error("This approval link is missing its trade token.")
@@ -101,26 +152,43 @@ except Exception as exc:
 market_title = str(market.get("title") or market.get("subtitle") or trade["ticker"])
 current_ask = _as_price(market, trade["side"])
 max_price = float(trade["limit_price"])
+price_input = _price_input(max_price)
 action_label = "BUY NOW" if trade["execution"] == "TAKE" else "PLACE LIMIT"
 
 st.subheader(market_title)
-st.markdown("**Copy this Kalshi ticker if the app opens on Home:**")
-st.code(trade["ticker"], language=None)
+st.markdown(f"## {action_label}: BUY {trade['side']}")
 
-c1, c2 = st.columns(2)
-c1.metric("Side", trade["side"])
-c2.metric("Shares", str(trade["shares"]))
+c1, c2, c3 = st.columns(3)
+c1.metric("Shares", str(trade["shares"]))
+c2.metric("Max price", _cents(max_price))
+c3.metric("Live ask", _cents(current_ask))
 
-c3, c4 = st.columns(2)
-c3.metric("PM Edge max price", _cents(max_price))
-c4.metric("Live Kalshi ask", _cents(current_ask))
+st.markdown("### Quick copy for Kalshi")
+st.caption("Tap each button, then paste into Kalshi. Price copies as cents, so 38 means 38¢.")
 
-c5, c6 = st.columns(2)
-c5.metric("Max loss at limit", _money(trade["max_loss"]))
-c6.metric("Fair chance", _pct(trade.get("fair_probability")))
+b1, b2, b3 = st.columns(3)
+with b1:
+    _copy_button("Copy Ticker", trade["ticker"])
+with b2:
+    _copy_button("Copy Shares", str(trade["shares"]))
+with b3:
+    _copy_button("Copy Price", price_input)
+
+st.caption("Fallback if an iPhone copy button does not work: tap the copy icon in one of these boxes.")
+f1, f2, f3 = st.columns(3)
+with f1:
+    st.code(trade["ticker"], language=None)
+with f2:
+    st.code(str(trade["shares"]), language=None)
+with f3:
+    st.code(price_input, language=None)
+
+c4, c5 = st.columns(2)
+c4.metric("Max loss at limit", _money(trade["max_loss"]))
+c5.metric("Fair chance", _pct(trade.get("fair_probability")))
 
 st.caption(
-    f"Action: {action_label} · Lane: {trade['lane'].replace('_', ' ').title()} · "
+    f"Lane: {trade['lane'].replace('_', ' ').title()} · "
     f"Estimated edge: {_pct(trade.get('net_edge'))} · "
     f"Books: {trade.get('books') if trade.get('books') is not None else '—'}"
 )
