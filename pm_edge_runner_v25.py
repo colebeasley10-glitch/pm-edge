@@ -2,7 +2,9 @@
 
 v25 runs the complete v24 scanner/approval/reconciliation flow, then uses the
 GET-only Kalshi connection plus public market settlement data to finalize PM
-Edge records with fill status, fees, result, net P/L, ROI, and fill rate.
+Edge records with fill status, fees, result, net P/L, ROI, and fill rate. It
+also sends one compact Pushover confirmation the first time a submitted PM Edge
+order is observed on Kalshi, so the user can tell which alert has been taken.
 """
 from __future__ import annotations
 
@@ -11,6 +13,7 @@ import json
 from kalshi_readonly import KalshiReadOnlyClient
 import performance_tracker
 import pm_edge_runner_v24 as v24
+import pushover_status
 
 
 def self_test() -> None:
@@ -23,6 +26,15 @@ def self_test() -> None:
 
 def main() -> int:
     rc = v24.main()
+
+    # v24 has already reconciled the order queue against Kalshi at this point.
+    # Emit one follow-up confirmation for newly observed submitted orders. This
+    # does not place, modify, or cancel anything on Kalshi.
+    try:
+        push_status = pushover_status.notify_taken_orders()
+    except Exception as exc:
+        push_status = {"error": f"{type(exc).__name__}: {exc}"}
+        print("PM_EDGE_PUSH_STATUS_ERROR", type(exc).__name__, str(exc)[:300])
 
     result = {
         "configured": False,
@@ -44,6 +56,7 @@ def main() -> int:
         }
         print("PM_EDGE_PERFORMANCE_ERROR", type(exc).__name__, str(exc)[:300])
 
+    print("PM_EDGE_PUSH_STATUS " + json.dumps(push_status, sort_keys=True))
     print("PM_EDGE_V25_PERFORMANCE " + json.dumps(result, sort_keys=True))
     return int(rc or 0)
 
