@@ -1,13 +1,13 @@
 """Mobile approval screen for PM Edge staged bets.
 
 This page validates the signed alert, re-checks the public Kalshi quote, and
-opens the exact Kalshi market. It never authenticates to Kalshi and cannot place
+shows the exact order details. It never authenticates to Kalshi and cannot place
 an order; the user still submits the final real-money order inside Kalshi.
 """
 from __future__ import annotations
 
 import os
-from urllib.parse import quote, urlencode
+from urllib.parse import quote
 
 import requests
 import streamlit as st
@@ -29,7 +29,7 @@ KALSHI_PUBLIC_BASE = os.getenv(
 
 st.set_page_config(page_title="PM Edge — Approve", page_icon="✅", layout="centered")
 st.title("PM Edge — Review Bet")
-st.caption("Check the bet and live price here, then open Kalshi for the final Submit tap.")
+st.caption("Check the bet and live price here, then make the final Submit decision in Kalshi.")
 
 
 def _as_price(market: dict, side: str) -> float | None:
@@ -42,7 +42,6 @@ def _as_price(market: dict, side: str) -> float | None:
             x = float(value)
         except (TypeError, ValueError):
             continue
-        # Integer-cent API fields use 0-100; *_dollars fields use 0-1.
         if key.endswith("_ask") and x > 1.0:
             x /= 100.0
         if 0 <= x <= 1:
@@ -74,24 +73,11 @@ def _load_market(ticker: str) -> dict:
     return market
 
 
-def _kalshi_market_url(ticker: str, side: str) -> str:
-    # Kalshi's current order-panel deep-link format uses the exact market ticker
-    # plus op_* query parameters. This should select the intended contract and
-    # YES/NO side, while still leaving the final submit action to the user.
-    params = urlencode(
-        {
-            "op_market_ticker": ticker,
-            "op_order_side": side.lower(),
-            "op_order_type": "dollars",
-            "op_side": "buy",
-        }
-    )
-    return (
-        "https://kalshi.com/markets_by_ticker/"
-        + quote(ticker, safe="-._")
-        + "?"
-        + params
-    )
+def _kalshi_search_url(ticker: str) -> str:
+    # Kalshi's iOS app currently may ignore exact web market/deep-link paths and
+    # land on Home. The web search URL is still useful in a browser, while the
+    # copyable ticker below is the reliable fallback inside the native app.
+    return "https://kalshi.com/search?q=" + quote(ticker, safe="-._")
 
 
 token = str(st.query_params.get("trade", "") or "").strip()
@@ -118,6 +104,7 @@ max_price = float(trade["limit_price"])
 action_label = "BUY NOW" if trade["execution"] == "TAKE" else "PLACE LIMIT"
 
 st.subheader(market_title)
+st.markdown("**Copy this Kalshi ticker if the app opens on Home:**")
 st.code(trade["ticker"], language=None)
 
 c1, c2 = st.columns(2)
@@ -140,8 +127,8 @@ st.caption(
 
 if quote_error:
     st.warning(
-        "I couldn't refresh the live Kalshi quote. You can still open the exact market, "
-        "but do not submit above the PM Edge max price."
+        "I couldn't refresh the live Kalshi quote. Use the ticker above to find the market, "
+        "and do not submit above the PM Edge max price."
     )
 elif trade["execution"] == "TAKE" and current_ask is not None and current_ask > max_price + 1e-9:
     st.error(
@@ -162,20 +149,24 @@ elif current_ask is not None:
 
 if trade["execution"] == "MAKE":
     st.warning(
-        f"In Kalshi, place a LIMIT order at {_cents(max_price)} or lower. Do not chase a "
-        "higher ask. You still make the final Submit decision."
+        f"In Kalshi, search the ticker above and place a LIMIT order at {_cents(max_price)} "
+        "or lower. Do not chase a higher ask."
     )
 else:
     st.warning(
-        "Final check: Kalshi can move after this screen. In Kalshi, use the exact side and "
-        f"never pay more than {_cents(max_price)}. You still make the final Submit decision."
+        "In Kalshi, search the ticker above, use the exact side shown here, and never pay "
+        f"more than {_cents(max_price)}."
     )
 
 st.link_button(
-    "APPROVE & OPEN KALSHI",
-    _kalshi_market_url(trade["ticker"], trade["side"]),
+    "OPEN KALSHI / SEARCH",
+    _kalshi_search_url(trade["ticker"]),
     type="primary",
     use_container_width=True,
+)
+st.caption(
+    "iPhone note: if Kalshi opens on Home, paste the copied ticker into Kalshi Search. "
+    "The native app currently does not reliably preserve exact-market web deep links."
 )
 
 with st.expander("Exact order details"):
