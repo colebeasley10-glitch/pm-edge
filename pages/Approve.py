@@ -41,6 +41,7 @@ KALSHI_PUBLIC_BASE = os.getenv(
 ).rstrip("/")
 MAX_ORDER_RISK = 10.00
 MAX_DAILY_RISK = 50.00
+EASTERN = ZoneInfo("America/New_York")
 
 st.set_page_config(page_title="PM Edge — Approve", page_icon="✅", layout="centered")
 st.title("PM Edge — Review & Submit")
@@ -139,14 +140,28 @@ def _copy_button(label: str, value: str) -> None:
     )
 
 
-def _day_prefix() -> str:
-    day = datetime.now(ZoneInfo("America/New_York")).strftime("%Y%m%d")
-    return f"pmedge-{day}-"
-
-
 def _client_order_id(token_text: str) -> str:
-    digest = hashlib.sha256(str(token_text).encode("utf-8")).hexdigest()[:20]
-    return _day_prefix() + digest
+    # Stable across page reloads and midnight boundaries: one approval token can
+    # map to only one Kalshi client_order_id.
+    digest = hashlib.sha256(str(token_text).encode("utf-8")).hexdigest()[:28]
+    return "pmedge-" + digest
+
+
+def _created_today(row: dict) -> bool:
+    """Whether a PM Edge order was created today in the user's Eastern day.
+
+    Missing/unparseable timestamps count as today so the $50 cap fails closed.
+    """
+    raw = str(row.get("created_time") or "").strip()
+    if not raw:
+        return True
+    try:
+        created = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if created.tzinfo is None:
+            return True
+        return created.astimezone(EASTERN).date() == datetime.now(EASTERN).date()
+    except Exception:
+        return True
 
 
 def _existing_cost(row: dict) -> float:
@@ -166,6 +181,14 @@ def _existing_cost(row: dict) -> float:
     except (TypeError, ValueError):
         return 0.0
     return count * price if count > 0 and 0 < price < 1 else 0.0
+
+
+def _today_pm_edge_cost(orders: list[dict]) -> float:
+    return sum(
+        _existing_cost(row)
+        for row in orders
+        if str(row.get("client_order_id") or "").startswith("pmedge-") and _created_today(row)
+    )
 
 
 token = str(st.query_params.get("trade", "") or "").strip()
@@ -266,11 +289,9 @@ else:
     daily_submitted = 0.0
     if orders is not None:
         for row in orders:
-            cid = str(row.get("client_order_id") or "")
-            if cid == client_order_id:
+            if str(row.get("client_order_id") or "") == client_order_id:
                 existing = row
-            if cid.startswith(_day_prefix()):
-                daily_submitted += _existing_cost(row)
+        daily_submitted = _today_pm_edge_cost(orders)
 
     if existing is not None:
         st.success("This approval has already been submitted to Kalshi. No duplicate order will be sent.")
@@ -311,11 +332,7 @@ else:
                     if str(row.get("client_order_id") or "") == client_order_id:
                         st.success("Already submitted. No duplicate order was sent.")
                         st.stop()
-                fresh_daily = sum(
-                    _existing_cost(row)
-                    for row in fresh_orders
-                    if str(row.get("client_order_id") or "").startswith(_day_prefix())
-                )
+                fresh_daily = _today_pm_edge_cost(fresh_orders)
                 if fresh_daily + computed_risk > MAX_DAILY_RISK + 1e-9:
                     st.error("NOT SUBMITTED — the $50 PM Edge daily risk cap would be exceeded.")
                     st.stop()
@@ -343,7 +360,10 @@ else:
                 st.write(f"**Filled:** {fill_count} · **Remaining:** {remaining}")
                 if avg_fill not in (None, ""):
                     try:
-                        st.write(f"**Average fill:** {_cents(float(avg_fill))}")
+                        displayed_fill = float(avg_fill)
+                        if trade["side"] == "NO":
+                            displayed_fill = 1.0 - displayed_fill
+                        st.write(f"**Average fill:** {_cents(displayed_fill)}")
                     except (TypeError, ValueError):
                         pass
                 st.caption(f"Kalshi order ID: {result.get('order_id', '—')}")
