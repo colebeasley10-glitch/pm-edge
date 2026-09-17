@@ -72,4 +72,21 @@ jobs:
           PM_EDGE_TARGET_WIN_PROFIT_DOLLARS: "5.00"
           PM_EDGE_MAX_RISK_DOLLARS: "10.00"
 
-        run: python pm_edge_runner_v20.py
+          # v21 overnight look-ahead. From 8-11 PM Eastern, prioritize games
+          # that start while the owner is normally asleep. During 11 PM-7 AM,
+          # defer ordinary actionable pushes until wake-up, while PASS/CANCEL
+          # safety alerts remain enabled. The daily Odds API budget is unchanged.
+          PM_EDGE_LOCAL_TIMEZONE: "America/New_York"
+          PM_EDGE_PREBED_START_HOUR: "20"
+          PM_EDGE_SLEEP_START_HOUR: "23"
+          PM_EDGE_WAKE_HOUR: "7"
+          PM_EDGE_PREBED_LOOKAHEAD_HOURS: "14"
+          PM_EDGE_PREBED_PRIORITY_BONUS: "100"
+          PM_EDGE_MORNING_PRIORITY_BONUS: "35"
+          PM_EDGE_PREBED_FAIR_TTL_HOURS: "1.5"
+          PM_EDGE_MORNING_FAIR_TTL_HOURS: "2.0"
+          PM_EDGE_PREBED_MAX_ODDS_REFRESH_PER_RUN: "5"
+          PM_EDGE_MORNING_LOOKAHEAD_AFTER_WAKE_HOURS: "4"
+          PM_EDGE_OVERNIGHT_MISSED_RETENTION_DAYS: "14"
+
+        run: python pm_edge_runner_v21.py
