@@ -1,0 +1,40 @@
+name: PM Edge Safe Kalshi Connection Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/pm-edge-connection-test.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  send-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Send safe connection-check link
+        env:
+          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
+          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
+          STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
+        run: |
+          python - <<'PY'
+          import os, urllib.parse, urllib.request
+          base = os.environ["STREAMLIT_APP_URL"].rstrip("/")
+          url = base + "/Kalshi_Connection_Check"
+          payload = urllib.parse.urlencode({
+              "token": os.environ["PUSHOVER_APP_TOKEN"],
+              "user": os.environ["PUSHOVER_USER_KEY"],
+              "title": "🔌 PM EDGE SAFE KALSHI CONNECTION TEST",
+              "message": "SAFE TEST ONLY. This page only checks whether the new Kalshi key can authenticate. It cannot place a bet.",
+              "url": url,
+              "url_title": "Run safe connection test",
+          }).encode()
+          req = urllib.request.Request("https://api.pushover.net/1/messages.json", data=payload, method="POST")
+          with urllib.request.urlopen(req, timeout=15) as response:
+              if response.status != 200:
+                  raise RuntimeError(f"Pushover returned {response.status}")
+          print("PM_EDGE_SAFE_CONNECTION_TEST_SENT")
+          PY
