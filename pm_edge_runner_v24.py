@@ -49,12 +49,16 @@ def _prepare_approval_url(market: dict, fair_entry: dict, q, tier: str) -> str |
     side = str(getattr(q, "side", "") or "").upper()
     if side not in {"YES", "NO"}:
         return None
+    execution = str(getattr(q, "execution", "") or "").upper()
+    if execution not in {"TAKE", "MAKE"}:
+        return None
     fair_side = v23.v22._side_probability(fair_entry, side)
     try:
         token = approval_links.create_approval_token(
             ticker=str(market.get("ticker") or ""),
             side=side,
             lane=lane,
+            execution=execution,
             limit_price=float(order["price"]),
             shares=int(order["shares"]),
             max_loss=float(order["max_loss"]),
@@ -163,6 +167,8 @@ def self_test() -> None:
     assert url is not None
     assert url.startswith("https://example.streamlit.app/Approve?trade=")
     assert len(url) < 512
+    token = url.split("trade=", 1)[1]
+    assert approval_links.verify_approval_token(token)["execution"] == "MAKE"
 
     message = (
         "MLB\n"
