@@ -2,6 +2,8 @@
 
 v24 keeps every v23 pricing, sizing, safety and staging rule. It adds:
 * a compact signed Review & approve URL to actionable Pushover alerts;
+* a compact quick-entry block in Pushover so the order can be referenced from
+  iPhone Notification Center while entering it in Kalshi;
 * an approval page that re-checks the live Kalshi quote before opening Kalshi;
 * optional GET-only account reconciliation for manually submitted orders/fills.
 
@@ -28,6 +30,7 @@ V24_STATS = {
 }
 
 _APPROVAL_URLS: dict[tuple[str, str, int], str] = {}
+_QUICK_ENTRIES: dict[tuple[str, str, int], dict] = {}
 
 
 def _price_key(price: float) -> int:
@@ -97,6 +100,22 @@ def _raw_message_key(message: str):
     return side, title[:170], int(round(cents_value * 10))
 
 
+def _quick_entry_block(details: dict) -> str:
+    side = str(details.get("side") or "").upper()
+    shares = int(details.get("shares") or 0)
+    price = float(details.get("price") or 0.0)
+    max_loss = float(details.get("max_loss") or 0.0)
+    edge = details.get("net_edge")
+    ticker = str(details.get("ticker") or "").strip()
+    edge_text = "—" if edge is None else f"{float(edge) * 100:+.1f}%"
+    cents = int(round(price * 100))
+    return (
+        f"QUICK ENTRY: BUY {side} | {shares} shares | {cents}¢ max\n"
+        f"Cost: ${max_loss:.2f} | Edge: {edge_text}\n"
+        f"Ticker: {ticker}"
+    )
+
+
 def install_v24_patch() -> None:
     watcher.WATCHER_VERSION = 24
 
@@ -105,9 +124,21 @@ def install_v24_patch() -> None:
     def should_alert_v24(state, market, fair_entry, q, tier="primary"):
         ok, reason = original_should_alert(state, market, fair_entry, q, tier=tier)
         if ok and getattr(q, "recommended_limit", None) is not None:
+            key = _alert_key(q.side, market.get("title", ""), q.recommended_limit)
+            lane = v23._effective_lane(tier, q)
+            order = v23._size_for_intent(q, lane)
+            if order is not None:
+                _QUICK_ENTRIES[key] = {
+                    "ticker": str(market.get("ticker") or ""),
+                    "side": str(getattr(q, "side", "") or "").upper(),
+                    "shares": int(order["shares"]),
+                    "price": float(order["price"]),
+                    "max_loss": float(order["max_loss"]),
+                    "net_edge": getattr(q, "net_edge", None),
+                }
+
             url = _prepare_approval_url(market, fair_entry, q, tier)
             if url:
-                key = _alert_key(q.side, market.get("title", ""), q.recommended_limit)
                 _APPROVAL_URLS[key] = url
                 V24_STATS["approval_links_prepared"] += 1
             else:
@@ -135,13 +166,22 @@ def install_v24_patch() -> None:
             and "DIGEST" not in upper_title
             and "IS LIVE" not in upper_title
         )
-        if actionable and not kwargs.get("url"):
+        if actionable:
             key = _raw_message_key(message)
-            url = _APPROVAL_URLS.get(key) if key else None
-            if url:
-                kwargs["url"] = url
-                kwargs["url_title"] = "Review & approve"
-                V24_STATS["approval_links_attached"] += 1
+            quick = _QUICK_ENTRIES.get(key) if key else None
+            if quick and not str(message).startswith("QUICK ENTRY:"):
+                message = _quick_entry_block(quick) + "\n\n" + str(message)
+                # Keep comfortably below Pushover's message-size ceiling while
+                # preserving the quick-entry block at the top of the alert.
+                if len(message) > 950:
+                    message = message[:947] + "..."
+
+            if not kwargs.get("url"):
+                url = _APPROVAL_URLS.get(key) if key else None
+                if url:
+                    kwargs["url"] = url
+                    kwargs["url_title"] = "Review & approve"
+                    V24_STATS["approval_links_attached"] += 1
         return original_send_push(title, message, *args, **kwargs)
 
     watcher.send_push = send_push_v24
@@ -177,6 +217,20 @@ def self_test() -> None:
         "DO NOT PAY OVER: 38.0¢\n"
     )
     assert _raw_message_key(message) == _alert_key("YES", market["title"], 0.38)
+
+    quick = _quick_entry_block(
+        {
+            "ticker": market["ticker"],
+            "side": "YES",
+            "shares": 9,
+            "price": 0.38,
+            "max_loss": 3.42,
+            "net_edge": 0.149,
+        }
+    )
+    assert "BUY YES | 9 shares | 38¢ max" in quick
+    assert "Cost: $3.42 | Edge: +14.9%" in quick
+    assert market["ticker"] in quick
     print("PM Edge v24 two-tap approval self-test: PASS")
 
 
