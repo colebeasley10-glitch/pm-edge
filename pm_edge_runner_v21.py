@@ -7,8 +7,10 @@ Behavior:
 * During the pre-bed window, events scheduled to start during quiet hours get a
   large refresh-priority bonus so their sportsbook fair values are refreshed
   before late U.S. games can consume the limited Odds API budget.
-* Pre-bed runs may refresh a few more event groups, but PM Edge's normal daily
-  Odds API budget and every pricing/edge threshold remain unchanged.
+* Part of the existing daily Odds API allowance is reserved until the pre-bed
+  window, then unlocked. The hard daily credit ceiling is not increased.
+* Pre-bed runs may refresh a few more event groups, but PM Edge's pricing/edge
+  thresholds and the normal hard daily Odds API budget remain unchanged.
 * During quiet hours, new actionable BET / PRICE FISH pushes are deferred.
   If the event will still be pregame after wake-up, the alert remains NEW and
   can fire after wake-up if it still qualifies.
@@ -49,6 +51,7 @@ MORNING_PRIORITY_BONUS = float(os.getenv("PM_EDGE_MORNING_PRIORITY_BONUS", "35")
 PREBED_FAIR_TTL_HOURS = float(os.getenv("PM_EDGE_PREBED_FAIR_TTL_HOURS", "1.5"))
 MORNING_FAIR_TTL_HOURS = float(os.getenv("PM_EDGE_MORNING_FAIR_TTL_HOURS", "2.0"))
 PREBED_MAX_REFRESH_GROUPS = int(os.getenv("PM_EDGE_PREBED_MAX_ODDS_REFRESH_PER_RUN", "5"))
+PREBED_RESERVED_ODDS_CREDITS = int(os.getenv("PM_EDGE_PREBED_RESERVED_ODDS_CREDITS", "4"))
 MORNING_LOOKAHEAD_AFTER_WAKE_HOURS = float(
     os.getenv("PM_EDGE_MORNING_LOOKAHEAD_AFTER_WAKE_HOURS", "4")
 )
@@ -60,6 +63,7 @@ V21_STATS = {
     "quiet_alerts_deferred": 0,
     "missed_overnight_queued": 0,
     "overnight_digests_sent": 0,
+    "odds_paced_budget": 0,
     "v20_state_migrations": 0,
 }
 
@@ -107,6 +111,24 @@ def is_prebed(dt: datetime | None = None) -> bool:
 
 def is_quiet(dt: datetime | None = None) -> bool:
     return _hour_in_window(_hour_value(local_now(dt)), SLEEP_START_HOUR, WAKE_HOUR)
+
+
+def overnight_aware_odds_budget(now: datetime | None = None) -> int:
+    """Reserve part of the normal daily allowance until the pre-bed scan."""
+    v16 = v20.v19.v18.v17.v16
+    hard = max(0, int(v16.HARD_DAILY_ODDS_BUDGET))
+    base = max(0, int(v16.paced_odds_budget(local_now(now))))
+    reserve = min(hard, max(0, int(PREBED_RESERVED_ODDS_CREDITS)))
+
+    if is_prebed(now):
+        return hard
+
+    # Before the 8 PM look-ahead window, do not let daytime scans consume the
+    # final reserved credits. After the pre-bed window/late at night, fall back
+    # to v16's ordinary pacing; the hard ceiling still applies.
+    if _hour_value(local_now(now)) < PREBED_START_HOUR:
+        return min(base, max(0, hard - reserve))
+    return min(base, hard)
 
 
 def _event_start_utc(event_or_fair: dict | None) -> datetime | None:
@@ -218,7 +240,6 @@ def _format_local_start(value) -> str:
     if d.tzinfo is None:
         d = d.replace(tzinfo=timezone.utc)
     ld = d.astimezone(LOCAL_TIMEZONE)
-    # %-I is not portable on Windows, but Actions runs Linux. Avoid it anyway.
     hour = ld.strftime("%I").lstrip("0") or "0"
     return f"{hour}:{ld.strftime('%M %p')} ET"
 
@@ -324,6 +345,11 @@ def install_v21_patch() -> None:
 
     watcher.fair_ttl_hours = fair_ttl_hours_v21
 
+    # v16 already established the hard daily ceiling and Eastern-day reset.
+    # v21 only changes how much of that same ceiling is unlocked right now.
+    watcher.DAILY_ODDS_BUDGET = overnight_aware_odds_budget()
+    V21_STATS["odds_paced_budget"] = watcher.DAILY_ODDS_BUDGET
+
     # Give the pre-bed pass a little more breadth. The daily Odds API ceiling
     # is NOT raised, so this only changes when the existing budget is spent.
     if is_prebed():
@@ -395,6 +421,14 @@ def self_test() -> None:
     morning_event = {"commence_time": "2026-09-18T13:00:00+00:00"}  # 9:00 AM ET
     assert is_quiet(quiet_utc) is True
     assert morning_priority_bonus(morning_event, quiet_utc) == MORNING_PRIORITY_BONUS
+
+    # Existing 14-credit hard budget stays intact, but the configured reserve
+    # cannot be spent before pre-bed and is fully unlocked during pre-bed.
+    hard = max(0, int(v20.v19.v18.v17.v16.HARD_DAILY_ODDS_BUDGET))
+    before_prebed = datetime(2026, 9, 17, 19, 0, tzinfo=LOCAL_TIMEZONE)
+    at_prebed = datetime(2026, 9, 17, 21, 0, tzinfo=LOCAL_TIMEZONE)
+    assert overnight_aware_odds_budget(before_prebed) <= max(0, hard - min(hard, PREBED_RESERVED_ODDS_CREDITS))
+    assert overnight_aware_odds_budget(at_prebed) == hard
 
     # Missed queue is deduplicated by ticker/side/tier and preserves first seen.
     class FakeQ:
