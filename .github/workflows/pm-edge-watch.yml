@@ -47,6 +47,12 @@ jobs:
           PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
           STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
 
+          # Optional read-only Kalshi credentials. When absent, PM Edge simply
+          # skips account reconciliation. Never paste these credentials in chat.
+          KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
+          KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
+          PM_EDGE_KALSHI_READONLY_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
+
           PM_EDGE_ODDS_DAILY_BUDGET: "14"
           PM_EDGE_MAX_ODDS_REFRESH_PER_RUN: "3"
           PM_EDGE_EVENT_CACHE_HOURS: "8"
@@ -89,12 +95,14 @@ jobs:
           PM_EDGE_TARGET_WIN_PROFIT_DOLLARS: "5.00"
           PM_EDGE_MAX_RISK_DOLLARS: "10.00"
 
-          # v23 approval-first execution staging. This intentionally has no
-          # live-trading mode: signals are queued for explicit approval only.
+          # v24 approval-first staging. This intentionally has no live-trading
+          # mode. Links expire, re-check the public quote, and still require the
+          # user to press Kalshi's final Submit button.
           PM_EDGE_EXECUTION_MODE: "preview"
           PM_EDGE_EXECUTION_MAX_ORDER_RISK: "10.00"
           PM_EDGE_EXECUTION_DAILY_RISK_LIMIT: "50.00"
           PM_EDGE_EXECUTION_QUEUE_RETENTION_DAYS: "14"
+          PM_EDGE_APPROVAL_TTL_SECONDS: "7200"
 
           # v21 overnight look-ahead remains active.
           PM_EDGE_LOCAL_TIMEZONE: "America/New_York"
@@ -111,4 +119,4 @@ jobs:
           PM_EDGE_MORNING_LOOKAHEAD_AFTER_WAKE_HOURS: "4"
           PM_EDGE_OVERNIGHT_MISSED_RETENTION_DAYS: "14"
 
-        run: python pm_edge_runner_v23.py
+        run: python pm_edge_runner_v24.py
