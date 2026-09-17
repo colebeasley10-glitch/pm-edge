@@ -46,6 +46,7 @@ jobs:
           PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
           PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
           STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
+          PM_EDGE_APPROVAL_SECRET: ${{ secrets.PM_EDGE_APPROVAL_SECRET }}
 
           # Optional read-only Kalshi credentials. When absent, PM Edge simply
           # skips account reconciliation. Never paste these credentials in chat.
