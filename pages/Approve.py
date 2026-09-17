@@ -1,22 +1,31 @@
 """Mobile approval screen for PM Edge staged bets.
 
-This page validates the signed alert, re-checks the public Kalshi quote, and
-shows the exact order details. It never authenticates to Kalshi and cannot place
-an order; the user still submits the final real-money order inside Kalshi.
+The signed approval token carries the exact approved order. This page refreshes
+the public Kalshi quote and, when a separate write-enabled key is configured,
+can submit that exact capped order only after the user presses Submit.
 """
 from __future__ import annotations
 
+import hashlib
 import html
 import json
 import os
+from datetime import datetime
 from urllib.parse import quote
+from zoneinfo import ZoneInfo
 
 import requests
 import streamlit as st
 import streamlit.components.v1 as components
 
-# Streamlit Cloud secrets -> environment used by approval_links.
-for _name in ("PM_EDGE_APPROVAL_SECRET", "ODDS_API_KEY"):
+# Streamlit Cloud secrets -> environment used by approval/signing clients.
+for _name in (
+    "PM_EDGE_APPROVAL_SECRET",
+    "ODDS_API_KEY",
+    "KALSHI_WRITE_API_KEY_ID",
+    "KALSHI_WRITE_PRIVATE_KEY",
+    "PM_EDGE_KALSHI_WRITE_BASE_URL",
+):
     try:
         if _name in st.secrets:
             os.environ[_name] = str(st.secrets[_name])
@@ -24,15 +33,19 @@ for _name in ("PM_EDGE_APPROVAL_SECRET", "ODDS_API_KEY"):
         pass
 
 import approval_links
+from kalshi_submit import KalshiSubmitClient, KalshiSubmitError
 
 KALSHI_PUBLIC_BASE = os.getenv(
     "PM_EDGE_KALSHI_PUBLIC_BASE_URL",
     "https://external-api.kalshi.com/trade-api/v2",
 ).rstrip("/")
+MAX_ORDER_RISK = 10.00
+MAX_DAILY_RISK = 50.00
+EASTERN = ZoneInfo("America/New_York")
 
 st.set_page_config(page_title="PM Edge — Approve", page_icon="✅", layout="centered")
-st.title("PM Edge — Review Bet")
-st.caption("Check the bet and live price here, then make the final Submit decision in Kalshi.")
+st.title("PM Edge — Review & Submit")
+st.caption("PM Edge re-checks the live price. Nothing is sent to Kalshi until you press Submit.")
 
 
 def _as_price(market: dict, side: str) -> float | None:
@@ -82,14 +95,10 @@ def _load_market(ticker: str) -> dict:
 
 
 def _kalshi_search_url(ticker: str) -> str:
-    # Kalshi's iOS app currently may ignore exact web market/deep-link paths and
-    # land on Home. The web search URL is still useful in a browser, while the
-    # copyable ticker below is the reliable fallback inside the native app.
     return "https://kalshi.com/search?q=" + quote(ticker, safe="-._")
 
 
 def _copy_button(label: str, value: str) -> None:
-    """Render a mobile-friendly clipboard button with a legacy fallback."""
     label_html = html.escape(label)
     value_js = json.dumps(str(value))
     components.html(
@@ -131,6 +140,57 @@ def _copy_button(label: str, value: str) -> None:
     )
 
 
+def _client_order_id(token_text: str) -> str:
+    # Stable across page reloads and midnight boundaries: one approval token can
+    # map to only one Kalshi client_order_id.
+    digest = hashlib.sha256(str(token_text).encode("utf-8")).hexdigest()[:28]
+    return "pmedge-" + digest
+
+
+def _created_today(row: dict) -> bool:
+    """Whether a PM Edge order was created today in the user's Eastern day.
+
+    Missing/unparseable timestamps count as today so the $50 cap fails closed.
+    """
+    raw = str(row.get("created_time") or "").strip()
+    if not raw:
+        return True
+    try:
+        created = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if created.tzinfo is None:
+            return True
+        return created.astimezone(EASTERN).date() == datetime.now(EASTERN).date()
+    except Exception:
+        return True
+
+
+def _existing_cost(row: dict) -> float:
+    try:
+        count = float(row.get("initial_count_fp") or row.get("initial_count") or row.get("count") or 0)
+    except (TypeError, ValueError):
+        return 0.0
+    outcome = str(row.get("outcome_side") or "").lower()
+    try:
+        if outcome == "yes":
+            price = float(row.get("yes_price_dollars") or 0)
+        elif outcome == "no":
+            price = float(row.get("no_price_dollars") or 0)
+        else:
+            legacy_side = str(row.get("side") or "").lower()
+            price = float(row.get("yes_price_dollars") or 0) if legacy_side == "yes" else float(row.get("no_price_dollars") or 0)
+    except (TypeError, ValueError):
+        return 0.0
+    return count * price if count > 0 and 0 < price < 1 else 0.0
+
+
+def _today_pm_edge_cost(orders: list[dict]) -> float:
+    return sum(
+        _existing_cost(row)
+        for row in orders
+        if str(row.get("client_order_id") or "").startswith("pmedge-") and _created_today(row)
+    )
+
+
 token = str(st.query_params.get("trade", "") or "").strip()
 if not token:
     st.error("This approval link is missing its trade token.")
@@ -152,94 +212,179 @@ except Exception as exc:
 market_title = str(market.get("title") or market.get("subtitle") or trade["ticker"])
 current_ask = _as_price(market, trade["side"])
 max_price = float(trade["limit_price"])
+shares = int(trade["shares"])
+computed_risk = shares * max_price
 price_input = _price_input(max_price)
 action_label = "BUY NOW" if trade["execution"] == "TAKE" else "PLACE LIMIT"
+client_order_id = _client_order_id(token)
+
+# Fail closed if the signed token's stated risk and independently computed risk disagree.
+if abs(float(trade["max_loss"]) - computed_risk) > 0.02:
+    st.error("Safety stop: the signed max-loss amount does not match shares × price.")
+    st.stop()
+if computed_risk > MAX_ORDER_RISK + 1e-9:
+    st.error(f"Safety stop: this order would risk {_money(computed_risk)}, above the {_money(MAX_ORDER_RISK)} per-order cap.")
+    st.stop()
 
 st.subheader(market_title)
 st.markdown(f"## {action_label}: BUY {trade['side']}")
 
 c1, c2, c3 = st.columns(3)
-c1.metric("Shares", str(trade["shares"]))
+c1.metric("Shares", str(shares))
 c2.metric("Max price", _cents(max_price))
 c3.metric("Live ask", _cents(current_ask))
 
-st.markdown("### Quick copy for Kalshi")
-st.caption("Tap each button, then paste into Kalshi. Price copies as cents, so 38 means 38¢.")
-
-b1, b2, b3 = st.columns(3)
-with b1:
-    _copy_button("Copy Ticker", trade["ticker"])
-with b2:
-    _copy_button("Copy Shares", str(trade["shares"]))
-with b3:
-    _copy_button("Copy Price", price_input)
-
-st.caption("Fallback if an iPhone copy button does not work: tap the copy icon in one of these boxes.")
-f1, f2, f3 = st.columns(3)
-with f1:
-    st.code(trade["ticker"], language=None)
-with f2:
-    st.code(str(trade["shares"]), language=None)
-with f3:
-    st.code(price_input, language=None)
-
 c4, c5 = st.columns(2)
-c4.metric("Max loss at limit", _money(trade["max_loss"]))
+c4.metric("Max order cost", _money(computed_risk))
 c5.metric("Fair chance", _pct(trade.get("fair_probability")))
-
 st.caption(
     f"Lane: {trade['lane'].replace('_', ' ').title()} · "
     f"Estimated edge: {_pct(trade.get('net_edge'))} · "
     f"Books: {trade.get('books') if trade.get('books') is not None else '—'}"
 )
 
+submit_price_ok = quote_error is None and current_ask is not None
 if quote_error:
-    st.warning(
-        "I couldn't refresh the live Kalshi quote. Use the ticker above to find the market, "
-        "and do not submit above the PM Edge max price."
-    )
+    st.error("LIVE CHECK FAILED — one-tap Submit is disabled until the Kalshi quote refresh succeeds.")
 elif trade["execution"] == "TAKE" and current_ask is not None and current_ask > max_price + 1e-9:
     st.error(
-        f"PASS / DO NOT CHASE — this was a BUY NOW play, but the live {trade['side']} ask "
-        f"is now {_cents(current_ask)}, above our {_cents(max_price)} maximum."
+        f"PASS / DO NOT CHASE — live {trade['side']} ask is {_cents(current_ask)}, "
+        f"above our {_cents(max_price)} maximum."
     )
-    st.stop()
+    submit_price_ok = False
 elif trade["execution"] == "MAKE" and current_ask is not None and current_ask > max_price + 1e-9:
     st.info(
-        f"LIMIT PLAY — the live ask is {_cents(current_ask)}. Do not buy that ask. "
-        f"Place your limit at {_cents(max_price)} or lower and wait for a fill."
+        f"LIMIT PLAY — live ask is {_cents(current_ask)}. Submit will rest a post-only limit at "
+        f"{_cents(max_price)}; it will not chase the ask."
     )
-elif current_ask is not None:
+else:
     st.success(
         f"Price check passed: live ask {_cents(current_ask)} is at or below our "
         f"{_cents(max_price)} maximum."
     )
 
-if trade["execution"] == "MAKE":
+try:
+    submit_client = KalshiSubmitClient.from_env()
+    submit_config_error = None
+except Exception as exc:
+    submit_client = None
+    submit_config_error = str(exc)
+
+if submit_client is None:
     st.warning(
-        f"In Kalshi, search the ticker above and place a LIMIT order at {_cents(max_price)} "
-        "or lower. Do not chase a higher ask."
+        "One-tap Submit is not connected yet. Add the separate write-enabled Kalshi key to "
+        "Streamlit Secrets, then this page will show the Submit button."
     )
+    if submit_config_error:
+        st.caption(f"Key configuration error: {submit_config_error}")
 else:
-    st.warning(
-        "In Kalshi, search the ticker above, use the exact side shown here, and never pay "
-        f"more than {_cents(max_price)}."
-    )
+    orders = None
+    risk_check_error = None
+    try:
+        orders = submit_client.get_orders(limit=200)
+    except Exception as exc:
+        risk_check_error = str(exc)
 
-st.link_button(
-    "OPEN KALSHI / SEARCH",
-    _kalshi_search_url(trade["ticker"]),
-    type="primary",
-    use_container_width=True,
-)
-st.caption(
-    "iPhone note: if Kalshi opens on Home, paste the copied ticker into Kalshi Search. "
-    "The native app currently does not reliably preserve exact-market web deep links."
-)
+    existing = None
+    daily_submitted = 0.0
+    if orders is not None:
+        for row in orders:
+            if str(row.get("client_order_id") or "") == client_order_id:
+                existing = row
+        daily_submitted = _today_pm_edge_cost(orders)
 
-with st.expander("Exact order details"):
+    if existing is not None:
+        st.success("This approval has already been submitted to Kalshi. No duplicate order will be sent.")
+        status = str(existing.get("status") or "submitted")
+        st.caption(f"Kalshi status: {status} · Client order ID: {client_order_id}")
+    elif risk_check_error:
+        st.error("Safety stop: PM Edge could not verify today's submitted-risk total, so Submit is disabled.")
+        st.caption(risk_check_error)
+    elif daily_submitted + computed_risk > MAX_DAILY_RISK + 1e-9:
+        st.error(
+            f"Daily cap stop: {_money(daily_submitted)} has already been submitted through PM Edge today. "
+            f"This {_money(computed_risk)} order would exceed the {_money(MAX_DAILY_RISK)} daily cap."
+        )
+    elif submit_price_ok:
+        st.markdown("### Ready to submit")
+        st.warning(
+            f"Pressing the button below sends a REAL Kalshi order: BUY {trade['side']} · "
+            f"{shares} shares · max {_cents(max_price)} · max cost {_money(computed_risk)}."
+        )
+        button_text = f"SUBMIT TO KALSHI — BUY {trade['side']} {shares} @ {_cents(max_price)}"
+        if st.button(button_text, type="primary", use_container_width=True):
+            try:
+                # Refresh the public quote again at the exact moment of approval.
+                fresh_market = _load_market(trade["ticker"])
+                fresh_ask = _as_price(fresh_market, trade["side"])
+                if fresh_ask is None:
+                    raise RuntimeError("Could not read a fresh Kalshi ask")
+                if trade["execution"] == "TAKE" and fresh_ask > max_price + 1e-9:
+                    st.error(
+                        f"NOT SUBMITTED — price moved to {_cents(fresh_ask)}, above the "
+                        f"{_cents(max_price)} max."
+                    )
+                    st.stop()
+
+                # Re-read PM Edge orders immediately before POST to enforce replay + daily caps.
+                fresh_orders = submit_client.get_orders(limit=200)
+                for row in fresh_orders:
+                    if str(row.get("client_order_id") or "") == client_order_id:
+                        st.success("Already submitted. No duplicate order was sent.")
+                        st.stop()
+                fresh_daily = _today_pm_edge_cost(fresh_orders)
+                if fresh_daily + computed_risk > MAX_DAILY_RISK + 1e-9:
+                    st.error("NOT SUBMITTED — the $50 PM Edge daily risk cap would be exceeded.")
+                    st.stop()
+
+                result = submit_client.create_buy_order(
+                    ticker=trade["ticker"],
+                    outcome_side=trade["side"],
+                    count=shares,
+                    max_price=max_price,
+                    execution=trade["execution"],
+                    client_order_id=client_order_id,
+                )
+            except KalshiSubmitError as exc:
+                if exc.status_code == 409:
+                    st.warning("Kalshi reports this order already exists or conflicts. Check your Kalshi Orders before trying anything else.")
+                else:
+                    st.error(f"Kalshi rejected the order ({exc.status_code}): {exc}")
+            except Exception as exc:
+                st.error(f"NOT SUBMITTED — {type(exc).__name__}: {exc}")
+            else:
+                fill_count = str(result.get("fill_count") or "0.00")
+                remaining = str(result.get("remaining_count") or "0.00")
+                avg_fill = result.get("average_fill_price")
+                st.success("ORDER SENT TO KALSHI ✓")
+                st.write(f"**Filled:** {fill_count} · **Remaining:** {remaining}")
+                if avg_fill not in (None, ""):
+                    try:
+                        displayed_fill = float(avg_fill)
+                        if trade["side"] == "NO":
+                            displayed_fill = 1.0 - displayed_fill
+                        st.write(f"**Average fill:** {_cents(displayed_fill)}")
+                    except (TypeError, ValueError):
+                        pass
+                st.caption(f"Kalshi order ID: {result.get('order_id', '—')}")
+
+st.divider()
+with st.expander("Manual fallback / exact order details"):
     st.write(f"**{action_label}: BUY {trade['side']}**")
-    st.write(f"**{trade['shares']} shares**")
+    st.write(f"**{shares} shares**")
     st.write(f"**Limit: {_cents(max_price)} or lower**")
-    st.write(f"Maximum contract cost at limit: **{_money(trade['max_loss'])}**")
-    st.caption("This page cannot submit, modify, or cancel a Kalshi order.")
+    st.write(f"Maximum contract cost at limit: **{_money(computed_risk)}**")
+    st.markdown("**Quick copy for Kalshi:**")
+    b1, b2, b3 = st.columns(3)
+    with b1:
+        _copy_button("Copy Ticker", trade["ticker"])
+    with b2:
+        _copy_button("Copy Shares", str(shares))
+    with b3:
+        _copy_button("Copy Price", price_input)
+    st.link_button(
+        "OPEN KALSHI / SEARCH",
+        _kalshi_search_url(trade["ticker"]),
+        use_container_width=True,
+    )
+    st.caption("Manual fallback only. The one-tap button above is the intended flow once the write key is connected.")
