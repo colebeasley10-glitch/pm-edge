@@ -37,6 +37,7 @@ jobs:
             .pm_edge_watch_state.json
             .pm_edge_order_queue.json
             .pm_edge_performance_history.json
+            .pm_edge_pushover_status.json
           key: pm-edge-watch-${{ github.run_id }}
           restore-keys: |
             pm-edge-watch-
@@ -50,7 +51,7 @@ jobs:
           PM_EDGE_APPROVAL_SECRET: ${{ secrets.PM_EDGE_APPROVAL_SECRET }}
 
           # Read-only Kalshi credentials power reconciliation plus v25 fill,
-          # settlement, fee, P/L, ROI, and fill-rate tracking.
+          # settlement, fee, P/L, ROI, fill-rate, and taken-status tracking.
           KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
           KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
           PM_EDGE_KALSHI_READONLY_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
