@@ -1,0 +1,57 @@
+name: PM Edge Live Position Check
+
+on:
+  push:
+    paths:
+      - ".github/workflows/pm-edge-live-position-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Inspect live Kalshi positions and marks
+        env:
+          KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
+          KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
+          PM_EDGE_KALSHI_READONLY_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
+        run: |
+          python - <<'PY'
+          import json, requests
+          from kalshi_readonly import KalshiReadOnlyClient
+          c=KalshiReadOnlyClient.from_env()
+          p=c._get("/portfolio/positions", params={"limit":200})
+          rows=p.get("market_positions",[])
+          out=[]
+          for x in rows:
+              pos=x.get("position_fp",x.get("position",0))
+              try: q=float(pos)
+              except: q=0
+              if q==0: continue
+              t=x.get("ticker")
+              m=requests.get(f"https://api.elections.kalshi.com/trade-api/v2/markets/{t}",timeout=10)
+              if m.status_code!=200:
+                  m=requests.get(f"https://external-api.kalshi.com/trade-api/v2/markets/{t}",timeout=10)
+              md=(m.json().get("market",{}) if m.ok else {})
+              out.append({
+                "ticker":t,
+                "position":q,
+                "title":md.get("title"),
+                "subtitle":md.get("subtitle"),
+                "status":md.get("status"),
+                "yes_bid":md.get("yes_bid_dollars",md.get("yes_bid")),
+                "yes_ask":md.get("yes_ask_dollars",md.get("yes_ask")),
+                "last_price":md.get("last_price_dollars",md.get("last_price")),
+                "market_exposure":x.get("market_exposure_dollars",x.get("market_exposure")),
+                "realized_pnl":x.get("realized_pnl_dollars",x.get("realized_pnl")),
+                "fees_paid":x.get("fees_paid_dollars",x.get("fees_paid"))
+              })
+          print(json.dumps(out,indent=2,sort_keys=True))
+          PY
