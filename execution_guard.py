@@ -227,13 +227,153 @@ def stage_order_intent(
     }
 
 
+def _parse_dt(value: Any) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).astimezone(timezone.utc)
+    except ValueError:
+        return None
+
+
+def _order_side(order: dict) -> str:
+    side = str(order.get("outcome_side") or order.get("side") or "").upper()
+    return side if side in {"YES", "NO"} else ""
+
+
+def _order_price(order: dict, side: str) -> float | None:
+    value = order.get("yes_price_dollars" if side == "YES" else "no_price_dollars")
+    price = _safe_float(value)
+    if price is not None:
+        return price
+    legacy = _safe_float(order.get("yes_price" if side == "YES" else "no_price"))
+    return legacy / 100.0 if legacy is not None and legacy > 1 else legacy
+
+
+def _fp_count(value: Any) -> float:
+    x = _safe_float(value)
+    return 0.0 if x is None else max(0.0, x)
+
+
+def _candidate_order(intent: dict, order: dict) -> bool:
+    if str(order.get("ticker") or order.get("market_ticker") or "") != str(intent.get("ticker") or ""):
+        return False
+    if str(order.get("action") or "buy").lower() != "buy":
+        return False
+    side = str(intent.get("side") or "").upper()
+    if _order_side(order) != side:
+        return False
+    price = _order_price(order, side)
+    limit_price = _safe_float(intent.get("limit_price"))
+    if price is None or limit_price is None or price > limit_price + 1e-9:
+        return False
+    initial = _fp_count(order.get("initial_count_fp") if order.get("initial_count_fp") is not None else order.get("initial_count"))
+    if abs(initial - int(intent.get("shares") or 0)) > 1e-6:
+        return False
+    intent_created = _parse_dt(intent.get("created_at"))
+    order_created = _parse_dt(order.get("created_time"))
+    if intent_created and order_created and order_created < intent_created:
+        return False
+    return True
+
+
+def reconcile_order_intents(client, *, path: Path = QUEUE_PATH, now: datetime | None = None) -> dict:
+    """Best-effort reconciliation using a GET-only Kalshi client.
+
+    A manual Kalshi UI order has no PM Edge correlation ID. Therefore an intent
+    is updated only when exactly one account order matches ticker, buy side,
+    exact share count, acceptable price, and timing. Ambiguous matches are never
+    guessed. This function cannot place, modify, or cancel orders.
+    """
+    payload = _load_queue(path)
+    active = [
+        x for x in payload.get("intents", [])
+        if x.get("status") in {"awaiting_approval", "approved", "submitted", "partially_filled"}
+    ]
+    if not active:
+        return {"checked": 0, "matched": 0, "ambiguous": 0, "updated": 0}
+
+    orders = client.get_orders(limit=200)
+    fills = client.get_fills(limit=200)
+    fills_by_order: dict[str, list[dict]] = {}
+    for fill in fills:
+        oid = str(fill.get("order_id") or "")
+        if oid:
+            fills_by_order.setdefault(oid, []).append(fill)
+
+    matched = ambiguous = updated = 0
+    checked_at = (now or _utc_now()).astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+    for intent in active:
+        candidates = [o for o in orders if _candidate_order(intent, o)]
+        if len(candidates) > 1:
+            intent["reconciliation_note"] = "ambiguous_multiple_matching_orders"
+            intent["reconciled_at"] = checked_at
+            ambiguous += 1
+            continue
+        if not candidates:
+            continue
+
+        order = candidates[0]
+        matched += 1
+        oid = str(order.get("order_id") or "")
+        fill_count = _fp_count(order.get("fill_count_fp") if order.get("fill_count_fp") is not None else order.get("fill_count"))
+        initial_count = _fp_count(order.get("initial_count_fp") if order.get("initial_count_fp") is not None else order.get("initial_count"))
+        status = str(order.get("status") or "").lower()
+
+        new_status = "submitted"
+        if fill_count > 0 and initial_count > 0 and fill_count + 1e-9 >= initial_count:
+            new_status = "filled"
+        elif fill_count > 0:
+            new_status = "partially_filled"
+        elif status in {"canceled", "cancelled"}:
+            new_status = "canceled"
+
+        order_fills = fills_by_order.get(oid, [])
+        weighted_cost = 0.0
+        weighted_count = 0.0
+        for fill in order_fills:
+            count = _fp_count(fill.get("count_fp") if fill.get("count_fp") is not None else fill.get("count"))
+            price = _order_price(fill, str(intent.get("side") or "").upper())
+            if count > 0 and price is not None:
+                weighted_cost += count * price
+                weighted_count += count
+
+        previous = intent.get("status")
+        intent.update({
+            "status": new_status,
+            "kalshi_order_id": oid or None,
+            "kalshi_order_status": status or None,
+            "filled_shares": round(fill_count, 4),
+            "remaining_shares": round(max(0.0, initial_count - fill_count), 4),
+            "average_fill_price": round(weighted_cost / weighted_count, 4) if weighted_count > 0 else None,
+            "reconciled_at": checked_at,
+            "reconciliation_note": "unique_strict_match",
+        })
+        if previous != new_status or not intent.get("kalshi_order_id"):
+            updated += 1
+
+    _save_queue(payload, path)
+    return {
+        "checked": len(active),
+        "matched": matched,
+        "ambiguous": ambiguous,
+        "updated": updated,
+    }
+
+
 def queue_summary(path: Path = QUEUE_PATH) -> dict:
     payload = _load_queue(path)
     intents = payload.get("intents", [])
-    awaiting = [x for x in intents if x.get("status") == "awaiting_approval"]
+    counts: dict[str, int] = {}
+    for intent in intents:
+        status = str(intent.get("status") or "unknown")
+        counts[status] = counts.get(status, 0) + 1
     return {
         "mode": _normalized_mode(),
         "total_intents": len(intents),
-        "awaiting_approval": len(awaiting),
+        "awaiting_approval": counts.get("awaiting_approval", 0),
+        "submitted": counts.get("submitted", 0),
+        "partially_filled": counts.get("partially_filled", 0),
+        "filled": counts.get("filled", 0),
         "live_submission_permitted": False,
     }
