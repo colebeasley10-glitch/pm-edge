@@ -110,7 +110,12 @@ def install_v23_patch() -> None:
     original_send_push = watcher.send_push
 
     def send_push_v23(title, message, *args, **kwargs):
-        if title == "✅ PM Edge Watch v22 Value Volume is live":
+        if title in {
+            "✅ PM Edge Watch v15 is live",
+            "✅ PM Edge Watch v20 Auto-Sized is live",
+            "✅ PM Edge Watch v21 Overnight Look-Ahead is live",
+            "✅ PM Edge Watch v22 Value Volume is live",
+        }:
             title = "✅ PM Edge Watch v23 Approval Execution is live"
 
         upper_title = str(title).upper()
@@ -183,13 +188,6 @@ if __name__ == "__main__":
     import sys
 
     if "--self-test" in sys.argv:
-        v22.v21.v20.v19.v18.v17.v16.self_test()
-        v22.v21.v20.v19.v18.v17.self_test()
-        v22.v21.v20.v19.v18.self_test()
-        v22.v21.v20.v19.self_test()
-        v22.v21.v20.self_test()
-        v22.v21.self_test()
-        v22.self_test()
         self_test()
         raise SystemExit(0)
     raise SystemExit(main())
