@@ -27,8 +27,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Compile v24 approval code
-        run: python -m py_compile approval_links.py kalshi_readonly.py kalshi_submit.py pm_edge_runner_v24.py pages/Approve.py
+      - name: Compile approval and performance code
+        run: python -m py_compile approval_links.py kalshi_readonly.py kalshi_submit.py performance_tracker.py pm_edge_runner_v24.py pm_edge_runner_v25.py pages/Approve.py
 
       - name: Run regression tests
         run: python test_pm_edge_regressions.py
@@ -66,5 +66,11 @@ jobs:
       - name: Run execution reconciliation tests
         run: python test_execution_reconcile.py
 
+      - name: Run settlement/performance tracker tests
+        run: python test_performance_tracker.py
+
       - name: Run v24 launcher self-test
         run: python pm_edge_runner_v24.py --self-test
+
+      - name: Run v25 launcher self-test
+        run: python pm_edge_runner_v25.py --self-test
