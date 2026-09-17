@@ -33,7 +33,9 @@ jobs:
       - name: Restore watcher state
         uses: actions/cache@v4
         with:
-          path: .pm_edge_watch_state.json
+          path: |
+            .pm_edge_watch_state.json
+            .pm_edge_order_queue.json
           key: pm-edge-watch-${{ github.run_id }}
           restore-keys: |
             pm-edge-watch-
@@ -87,6 +89,13 @@ jobs:
           PM_EDGE_TARGET_WIN_PROFIT_DOLLARS: "5.00"
           PM_EDGE_MAX_RISK_DOLLARS: "10.00"
 
+          # v23 approval-first execution staging. This intentionally has no
+          # live-trading mode: signals are queued for explicit approval only.
+          PM_EDGE_EXECUTION_MODE: "preview"
+          PM_EDGE_EXECUTION_MAX_ORDER_RISK: "10.00"
+          PM_EDGE_EXECUTION_DAILY_RISK_LIMIT: "50.00"
+          PM_EDGE_EXECUTION_QUEUE_RETENTION_DAYS: "14"
+
           # v21 overnight look-ahead remains active.
           PM_EDGE_LOCAL_TIMEZONE: "America/New_York"
           PM_EDGE_PREBED_START_HOUR: "20"
@@ -102,4 +111,4 @@ jobs:
           PM_EDGE_MORNING_LOOKAHEAD_AFTER_WAKE_HOURS: "4"
           PM_EDGE_OVERNIGHT_MISSED_RETENTION_DAYS: "14"
 
-        run: python pm_edge_runner_v22.py
+        run: python pm_edge_runner_v23.py

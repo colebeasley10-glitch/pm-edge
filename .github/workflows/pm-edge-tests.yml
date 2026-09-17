@@ -44,3 +44,9 @@ jobs:
 
       - name: Run v22 VALUE-lane tests
         run: python test_pm_edge_v22.py
+
+      - name: Run execution guard tests
+        run: python test_execution_guard.py
+
+      - name: Run v23 launcher self-test
+        run: python pm_edge_runner_v23.py --self-test
