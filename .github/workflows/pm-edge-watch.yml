@@ -49,6 +49,7 @@ jobs:
           PM_EDGE_MAX_ODDS_REFRESH_PER_RUN: "3"
           PM_EDGE_EVENT_CACHE_HOURS: "8"
 
+          # Primary remains the strongest tier and is unchanged.
           PM_EDGE_MIN_NET_EDGE: "0.04"
           PM_EDGE_MODEL_ERROR_BUFFER: "0.01"
           PM_EDGE_SLIPPAGE_BUFFER: "0.0025"
@@ -58,8 +59,23 @@ jobs:
           PM_EDGE_ALERT_COOLDOWN_HOURS: "6"
           PM_EDGE_MAX_MARKETS: "3000"
 
-          # Price Fish: keep the normal 4% edge requirement, fish 2c-8c below
-          # the current ask, and reject unrealistic moonshot prices.
+          # v22 VALUE lane: more volume at current prices without turning
+          # Primary into a looser model. Require 3+ books, 2.5% with 4+ books,
+          # 3.0% with exactly 3, realistic 20c-80c entries, and >=25% fair win
+          # probability for the side. VALUE gets its own daily cap and 0.5x size.
+          PM_EDGE_VALUE_MIN_NET_EDGE: "0.025"
+          PM_EDGE_VALUE_THREE_BOOK_EDGE: "0.03"
+          PM_EDGE_VALUE_MIN_BOOKS: "3"
+          PM_EDGE_VALUE_MIN_TARGET: "0.20"
+          PM_EDGE_VALUE_MAX_TARGET: "0.80"
+          PM_EDGE_VALUE_MIN_FAIR_SIDE_PROB: "0.25"
+          PM_EDGE_VALUE_DAILY_CAP: "20"
+          PM_EDGE_MAX_SECONDARY_ALERTS_PER_RUN: "6"
+          PM_EDGE_VALUE_TARGET_WIN_PROFIT_DOLLARS: "2.50"
+          PM_EDGE_VALUE_MAX_RISK_DOLLARS: "5.00"
+
+          # Price Fish stays at the normal 4% edge requirement, fishes 2c-8c
+          # below the current ask, and rejects unrealistic moonshot prices.
           PM_EDGE_PRICE_FISH_MIN_GAP: "0.02"
           PM_EDGE_PRICE_FISH_MAX_GAP: "0.08"
           PM_EDGE_PRICE_FISH_MIN_TARGET: "0.20"
@@ -67,16 +83,11 @@ jobs:
           PM_EDGE_MAX_PRICE_FISH_ALERTS_PER_RUN: "4"
           PM_EDGE_PRICE_FISH_DAILY_CAP: "12"
 
-          # v20 automatic sizing: target about $5 gross win profit while
-          # capping contract cost / max loss at $10 on any one alert.
+          # Primary / Price Fish automatic sizing.
           PM_EDGE_TARGET_WIN_PROFIT_DOLLARS: "5.00"
           PM_EDGE_MAX_RISK_DOLLARS: "10.00"
 
-          # v21 overnight look-ahead. From 8-11 PM Eastern, prioritize games
-          # that start while the owner is normally asleep. During 11 PM-7 AM,
-          # defer ordinary actionable pushes until wake-up, while PASS/CANCEL
-          # safety alerts remain enabled. Four of the existing 14 daily Odds
-          # API budget units are reserved until the pre-bed window.
+          # v21 overnight look-ahead remains active.
           PM_EDGE_LOCAL_TIMEZONE: "America/New_York"
           PM_EDGE_PREBED_START_HOUR: "20"
           PM_EDGE_SLEEP_START_HOUR: "23"
@@ -91,4 +102,4 @@ jobs:
           PM_EDGE_MORNING_LOOKAHEAD_AFTER_WAKE_HOURS: "4"
           PM_EDGE_OVERNIGHT_MISSED_RETENTION_DAYS: "14"
 
-        run: python pm_edge_runner_v21.py
+        run: python pm_edge_runner_v22.py
