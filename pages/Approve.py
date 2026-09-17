@@ -7,7 +7,7 @@ an order; the user still submits the final real-money order inside Kalshi.
 from __future__ import annotations
 
 import os
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 import requests
 import streamlit as st
@@ -75,12 +75,22 @@ def _load_market(ticker: str) -> dict:
 
 
 def _kalshi_market_url(ticker: str, side: str) -> str:
-    # Kalshi's web route resolves the exact ticker and carries the intended side.
+    # Kalshi's current order-panel deep-link format uses the exact market ticker
+    # plus op_* query parameters. This should select the intended contract and
+    # YES/NO side, while still leaving the final submit action to the user.
+    params = urlencode(
+        {
+            "op_market_ticker": ticker,
+            "op_order_side": side.lower(),
+            "op_order_type": "dollars",
+            "op_side": "buy",
+        }
+    )
     return (
         "https://kalshi.com/markets_by_ticker/"
-        + quote(ticker.lower(), safe="-")
-        + "?orderSide="
-        + side.lower()
+        + quote(ticker, safe="-._")
+        + "?"
+        + params
     )
 
 
