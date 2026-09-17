@@ -1,0 +1,43 @@
+name: PM Edge Fill Inspect
+
+on:
+  push:
+    paths:
+      - ".github/workflows/pm-edge-fill-inspect.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Read recent Kalshi fills
+        env:
+          KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
+          KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
+          PM_EDGE_KALSHI_READONLY_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
+        run: |
+          python - <<'PY'
+          import json
+          from kalshi_readonly import KalshiReadOnlyClient
+          c = KalshiReadOnlyClient.from_env()
+          fills = c.get_fills(limit=100) if c else []
+          keep = []
+          for f in fills:
+              keep.append({
+                  "ticker": f.get("ticker") or f.get("market_ticker"),
+                  "order_id": f.get("order_id"),
+                  "side": f.get("side") or f.get("outcome_side"),
+                  "yes_price": f.get("yes_price_dollars") or f.get("yes_price"),
+                  "no_price": f.get("no_price_dollars") or f.get("no_price"),
+                  "count": f.get("count_fp") or f.get("count"),
+                  "created_time": f.get("created_time") or f.get("ts"),
+              })
+          print(json.dumps(keep, indent=2, sort_keys=True))
+          PY
