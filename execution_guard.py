@@ -15,7 +15,7 @@ import json
 import math
 import os
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +23,7 @@ QUEUE_PATH = Path(os.getenv("PM_EDGE_ORDER_QUEUE_PATH", ".pm_edge_order_queue.js
 MAX_ORDER_RISK = float(os.getenv("PM_EDGE_EXECUTION_MAX_ORDER_RISK", "10.00"))
 DAILY_RISK_LIMIT = float(os.getenv("PM_EDGE_EXECUTION_DAILY_RISK_LIMIT", "50.00"))
 MAX_QUEUE_AGE_DAYS = int(os.getenv("PM_EDGE_EXECUTION_QUEUE_RETENTION_DAYS", "14"))
+RECONCILE_MATCH_WINDOW_HOURS = float(os.getenv("PM_EDGE_RECONCILE_MATCH_WINDOW_HOURS", "3"))
 EXECUTION_MODE = str(os.getenv("PM_EDGE_EXECUTION_MODE", "preview") or "preview").strip().lower()
 
 ALLOWED_MODES = {"off", "preview"}
@@ -272,8 +273,11 @@ def _candidate_order(intent: dict, order: dict) -> bool:
         return False
     intent_created = _parse_dt(intent.get("created_at"))
     order_created = _parse_dt(order.get("created_time"))
-    if intent_created and order_created and order_created < intent_created:
-        return False
+    if intent_created and order_created:
+        if order_created < intent_created:
+            return False
+        if order_created > intent_created + timedelta(hours=max(0.25, RECONCILE_MATCH_WINDOW_HOURS)):
+            return False
     return True
 
 
@@ -282,8 +286,9 @@ def reconcile_order_intents(client, *, path: Path = QUEUE_PATH, now: datetime | 
 
     A manual Kalshi UI order has no PM Edge correlation ID. Therefore an intent
     is updated only when exactly one account order matches ticker, buy side,
-    exact share count, acceptable price, and timing. Ambiguous matches are never
-    guessed. This function cannot place, modify, or cancel orders.
+    exact share count, acceptable price, and a short post-alert timing window.
+    Ambiguous matches are never guessed. This function cannot place, modify, or
+    cancel orders.
     """
     payload = _load_queue(path)
     active = [
@@ -338,7 +343,8 @@ def reconcile_order_intents(client, *, path: Path = QUEUE_PATH, now: datetime | 
                 weighted_cost += count * price
                 weighted_count += count
 
-        previous = intent.get("status")
+        previous_status = intent.get("status")
+        previous_order_id = intent.get("kalshi_order_id")
         intent.update({
             "status": new_status,
             "kalshi_order_id": oid or None,
@@ -349,7 +355,7 @@ def reconcile_order_intents(client, *, path: Path = QUEUE_PATH, now: datetime | 
             "reconciled_at": checked_at,
             "reconciliation_note": "unique_strict_match",
         })
-        if previous != new_status or not intent.get("kalshi_order_id"):
+        if previous_status != new_status or previous_order_id != (oid or None):
             updated += 1
 
     _save_queue(payload, path)
