@@ -72,6 +72,7 @@ def main() -> None:
         )
         result = execution_guard.reconcile_order_intents(client, path=path, now=NOW + timedelta(minutes=2))
         assert result["matched"] == 1
+        assert result["updated"] == 1
         payload = execution_guard._load_queue(path)
         intent = payload["intents"][0]
         assert intent["status"] == "filled"
@@ -124,6 +125,27 @@ def main() -> None:
         )
         assert result["matched"] == 0
         assert execution_guard._load_queue(path)["intents"][0]["status"] == "awaiting_approval"
+
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "queue.json"
+        seed(path, ticker="TOO-LATE", shares=2, price=0.40)
+        late = (NOW + timedelta(hours=4)).isoformat().replace("+00:00", "Z")
+        result = execution_guard.reconcile_order_intents(
+            FakeClient([{
+                "order_id": "late-order",
+                "ticker": "TOO-LATE",
+                "outcome_side": "yes",
+                "action": "buy",
+                "status": "resting",
+                "yes_price_dollars": "0.4000",
+                "initial_count_fp": "2.00",
+                "fill_count_fp": "0.00",
+                "created_time": late,
+            }]),
+            path=path,
+            now=NOW + timedelta(hours=4, minutes=1),
+        )
+        assert result["matched"] == 0
 
     print("Execution reconciliation tests: PASS")
 
