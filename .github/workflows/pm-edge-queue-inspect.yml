@@ -1,0 +1,32 @@
+name: PM Edge Queue Inspect
+
+on:
+  push:
+    paths:
+      - ".github/workflows/pm-edge-queue-inspect.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore PM Edge state
+        uses: actions/cache@v4
+        with:
+          path: |
+            .pm_edge_watch_state.json
+            .pm_edge_order_queue.json
+            .pm_edge_performance_history.json
+            .pm_edge_pushover_status.json
+          key: pm-edge-inspect-${{ github.run_id }}
+          restore-keys: |
+            pm-edge-watch-
+      - name: Print order queue
+        run: |
+          if [ -f .pm_edge_order_queue.json ]; then
+            cat .pm_edge_order_queue.json
+          else
+            echo "NO_QUEUE"
+          fi
