@@ -13,6 +13,7 @@ import json
 from kalshi_readonly import KalshiReadOnlyClient
 import performance_tracker
 import pm_edge_runner_v24 as v24
+import position_signals
 import pushover_status
 
 
@@ -43,11 +44,23 @@ def main() -> int:
         "errors": 0,
         "summary": performance_tracker.performance_summary(),
     }
+    signal_result = {"configured": False, "candidates": 0, "sent": 0}
     try:
         client = KalshiReadOnlyClient.from_env()
         if client is not None:
             result = performance_tracker.update_performance(client)
             result["configured"] = True
+            try:
+                signal_result = position_signals.notify_position_signals(client)
+                signal_result["configured"] = True
+            except Exception as exc:
+                signal_result = {
+                    "configured": True,
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "candidates": 0,
+                    "sent": 0,
+                }
+                print("PM_EDGE_POSITION_SIGNAL_ERROR", type(exc).__name__, str(exc)[:300])
     except Exception as exc:
         result = {
             "configured": True,
@@ -57,6 +70,7 @@ def main() -> int:
         print("PM_EDGE_PERFORMANCE_ERROR", type(exc).__name__, str(exc)[:300])
 
     print("PM_EDGE_PUSH_STATUS " + json.dumps(push_status, sort_keys=True))
+    print("PM_EDGE_POSITION_SIGNALS " + json.dumps(signal_result, sort_keys=True))
     print("PM_EDGE_V25_PERFORMANCE " + json.dumps(result, sort_keys=True))
     return int(rc or 0)
 
