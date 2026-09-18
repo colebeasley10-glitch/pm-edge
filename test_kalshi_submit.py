@@ -120,6 +120,7 @@ def main() -> None:
     assert sell_yes_body["side"] == "ask"
     assert sell_yes_body["price"] == "0.57"
     assert sell_yes_body["time_in_force"] == "immediate_or_cancel"
+    assert sell_yes_body["reduce_only"] is True
 
     sell_no = client.create_sell_order(
         ticker="TEST-NO",
@@ -132,6 +133,7 @@ def main() -> None:
     sell_no_body = session.calls[-1][2]["json"]
     assert sell_no_body["side"] == "bid"
     assert sell_no_body["price"] == "0.65"
+    assert sell_no_body["reduce_only"] is True
 
     assert client.submitted_cost_for_prefix("pmedge-20260917-") == 2.5
     assert client.find_order_by_client_id("pmedge-20260917-old") is not None
