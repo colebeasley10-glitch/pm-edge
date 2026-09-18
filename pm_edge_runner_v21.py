@@ -52,6 +52,10 @@ PREBED_FAIR_TTL_HOURS = float(os.getenv("PM_EDGE_PREBED_FAIR_TTL_HOURS", "1.5"))
 MORNING_FAIR_TTL_HOURS = float(os.getenv("PM_EDGE_MORNING_FAIR_TTL_HOURS", "2.0"))
 PREBED_MAX_REFRESH_GROUPS = int(os.getenv("PM_EDGE_PREBED_MAX_ODDS_REFRESH_PER_RUN", "5"))
 PREBED_RESERVED_ODDS_CREDITS = int(os.getenv("PM_EDGE_PREBED_RESERVED_ODDS_CREDITS", "4"))
+MORNING_RESERVED_ODDS_CREDITS = int(os.getenv("PM_EDGE_MORNING_RESERVED_ODDS_CREDITS", "2"))
+POST_WAKE_REVALIDATION_HOURS = float(os.getenv("PM_EDGE_POST_WAKE_REVALIDATION_HOURS", "2"))
+POST_WAKE_PRIORITY_BONUS = float(os.getenv("PM_EDGE_POST_WAKE_PRIORITY_BONUS", "250"))
+POST_WAKE_MAX_REFRESH_GROUPS = int(os.getenv("PM_EDGE_POST_WAKE_MAX_ODDS_REFRESH_PER_RUN", "5"))
 MORNING_LOOKAHEAD_AFTER_WAKE_HOURS = float(
     os.getenv("PM_EDGE_MORNING_LOOKAHEAD_AFTER_WAKE_HOURS", "4")
 )
@@ -60,12 +64,15 @@ OVERNIGHT_MISSED_RETENTION_DAYS = int(os.getenv("PM_EDGE_OVERNIGHT_MISSED_RETENT
 V21_STATS = {
     "prebed_priority_boosts": 0,
     "morning_priority_boosts": 0,
+    "post_wake_priority_boosts": 0,
     "quiet_alerts_deferred": 0,
+    "quiet_revalidation_queued": 0,
     "missed_overnight_queued": 0,
     "overnight_digests_sent": 0,
     "odds_paced_budget": 0,
     "v20_state_migrations": 0,
 }
+_DEFERRED_TICKERS: set[str] = set()
 
 
 def _safe_float(value, default=None):
@@ -113,23 +120,41 @@ def is_quiet(dt: datetime | None = None) -> bool:
     return _hour_in_window(_hour_value(local_now(dt)), SLEEP_START_HOUR, WAKE_HOUR)
 
 
+def is_post_wake_revalidation(dt: datetime | None = None) -> bool:
+    end = (WAKE_HOUR + max(0.25, POST_WAKE_REVALIDATION_HOURS)) % 24.0
+    return _hour_in_window(_hour_value(local_now(dt)), WAKE_HOUR, end)
+
+
 def overnight_aware_odds_budget(now: datetime | None = None) -> int:
-    """Reserve part of the normal daily allowance until the pre-bed scan."""
+    """Reserve both pre-bed capacity and a small post-wake revalidation pool."""
     v16 = v20.v19.v18.v17.v16
     hard = max(0, int(v16.HARD_DAILY_ODDS_BUDGET))
-    base = max(0, int(v16.paced_odds_budget(local_now(now))))
-    reserve = min(hard, max(0, int(PREBED_RESERVED_ODDS_CREDITS)))
+    local = local_now(now)
+    hour = _hour_value(local)
+    base = max(0, int(v16.paced_odds_budget(local)))
+    prebed_reserve = min(hard, max(0, int(PREBED_RESERVED_ODDS_CREDITS)))
+    morning_reserve = min(hard, max(0, int(MORNING_RESERVED_ODDS_CREDITS)))
 
     if is_prebed(now):
         return hard
 
-    # Before the 8 PM look-ahead window, do not let daytime scans consume the
-    # final reserved credits. After the pre-bed window/late at night, fall back
-    # to v16's ordinary pacing; the hard ceiling still applies.
-    if _hour_value(local_now(now)) < PREBED_START_HOUR:
-        return min(base, max(0, hard - reserve))
-    return min(base, hard)
+    # After midnight but before wake-up, cap consumption so a known amount of
+    # the budget unlocked at wake remains available to revalidate deferred bets.
+    if is_quiet(now) and hour < WAKE_HOUR:
+        wake_local = local.replace(
+            hour=int(WAKE_HOUR) % 24,
+            minute=int((WAKE_HOUR % 1) * 60),
+            second=0,
+            microsecond=0,
+        )
+        wake_budget = max(0, int(v16.paced_odds_budget(wake_local)))
+        quiet_cap = max(0, wake_budget - morning_reserve)
+        return min(base, quiet_cap, max(0, hard - prebed_reserve))
 
+    # Before the pre-bed look-ahead window, preserve the evening reserve.
+    if hour < PREBED_START_HOUR:
+        return min(base, max(0, hard - prebed_reserve))
+    return min(base, hard)
 
 def _event_start_utc(event_or_fair: dict | None) -> datetime | None:
     d = watcher.parse_dt((event_or_fair or {}).get("commence_time"))
@@ -308,11 +333,21 @@ def install_v21_patch() -> None:
     original_load_state = watcher.load_state
 
     def load_state_v21():
+        global _DEFERRED_TICKERS
         state = original_load_state()
         if int(state.get("data_semantics_version", 0) or 0) == 20:
             state["data_semantics_version"] = 21
             V21_STATS["v20_state_migrations"] += 1
         state.setdefault("overnight_missed", {})
+
+        cutoff = watcher.now_utc() - timedelta(hours=24)
+        kept = {}
+        for ticker, row in (state.setdefault("overnight_deferred", {}) or {}).items():
+            seen = watcher.parse_dt((row or {}).get("last_seen_at"))
+            if seen is not None and seen >= cutoff:
+                kept[str(ticker)] = row
+        state["overnight_deferred"] = kept
+        _DEFERRED_TICKERS = set(kept)
         return state
 
     watcher.load_state = load_state_v21
@@ -329,6 +364,9 @@ def install_v21_patch() -> None:
         if morning_bonus > 0:
             V21_STATS["morning_priority_boosts"] += 1
             score += morning_bonus
+        if is_post_wake_revalidation() and str(market.get("ticker") or "") in _DEFERRED_TICKERS:
+            V21_STATS["post_wake_priority_boosts"] += 1
+            score += POST_WAKE_PRIORITY_BONUS
         return score
 
     watcher.priority_score = priority_score_v21
@@ -354,6 +392,8 @@ def install_v21_patch() -> None:
     # is NOT raised, so this only changes when the existing budget is spent.
     if is_prebed():
         watcher.MAX_REFRESH_GROUPS = max(watcher.MAX_REFRESH_GROUPS, PREBED_MAX_REFRESH_GROUPS)
+    if is_post_wake_revalidation():
+        watcher.MAX_REFRESH_GROUPS = max(watcher.MAX_REFRESH_GROUPS, POST_WAKE_MAX_REFRESH_GROUPS)
 
     original_should_alert = watcher.should_alert
 
@@ -363,6 +403,9 @@ def install_v21_patch() -> None:
             return False, ""
 
         if not is_quiet():
+            ticker = str(market.get("ticker") or "")
+            state.setdefault("overnight_deferred", {}).pop(ticker, None)
+            _DEFERRED_TICKERS.discard(ticker)
             return ok, reason
 
         # Actionable pushes are deferred during sleep. PASS/CANCEL messages do
@@ -370,6 +413,20 @@ def install_v21_patch() -> None:
         V21_STATS["quiet_alerts_deferred"] += 1
         start_local = _event_start_local(fair_entry)
         wake_local = _wake_boundary_local()
+
+        # Persist genuinely new/back opportunities so the first post-wake scan
+        # prioritizes revalidation before ordinary daytime candidates.
+        if reason in {"NEW", "BACK"}:
+            ticker = str(market.get("ticker") or "")
+            if ticker:
+                state.setdefault("overnight_deferred", {})[ticker] = {
+                    "last_seen_at": watcher.iso_now(),
+                    "commence_time": fair_entry.get("commence_time"),
+                    "side": str(getattr(q, "side", "") or "").upper(),
+                    "tier": tier,
+                }
+                _DEFERRED_TICKERS.add(ticker)
+                V21_STATS["quiet_revalidation_queued"] += 1
 
         # Only genuinely new/back opportunities count as missed. PRICE/EDGE
         # updates and REMINDERs refer to an opportunity the owner already saw.
@@ -421,6 +478,14 @@ def self_test() -> None:
     morning_event = {"commence_time": "2026-09-18T13:00:00+00:00"}  # 9:00 AM ET
     assert is_quiet(quiet_utc) is True
     assert morning_priority_bonus(morning_event, quiet_utc) == MORNING_PRIORITY_BONUS
+
+    post_wake_utc = datetime(2026, 9, 18, 11, 30, tzinfo=timezone.utc)  # 7:30 AM ET
+    assert is_post_wake_revalidation(post_wake_utc) is True
+    assert overnight_aware_odds_budget(quiet_utc) <= overnight_aware_odds_budget(post_wake_utc)
+    assert (
+        overnight_aware_odds_budget(post_wake_utc) - overnight_aware_odds_budget(quiet_utc)
+        >= min(MORNING_RESERVED_ODDS_CREDITS, 2)
+    )
 
     # Existing 14-credit hard budget stays intact, but the configured reserve
     # cannot be spent before pre-bed and is fully unlocked during pre-bed.

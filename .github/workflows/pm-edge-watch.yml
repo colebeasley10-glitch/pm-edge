@@ -62,6 +62,11 @@ jobs:
           PM_EDGE_MAX_ODDS_REFRESH_PER_RUN: "3"
           PM_EDGE_EVENT_CACHE_HOURS: "8"
 
+          # Coverage fix: use sport-wide featured odds to price many events per
+          # credit, then reserve event-specific requests for alternates/props.
+          PM_EDGE_BULK_FEATURED_ENABLED: "1"
+          PM_EDGE_MAX_BULK_SPORTS_PER_RUN: "2"
+
           # Primary remains the strongest tier and is unchanged.
           PM_EDGE_MIN_NET_EDGE: "0.04"
           PM_EDGE_MODEL_ERROR_BUFFER: "0.01"
@@ -142,6 +147,13 @@ jobs:
           PM_EDGE_MORNING_FAIR_TTL_HOURS: "2.0"
           PM_EDGE_PREBED_MAX_ODDS_REFRESH_PER_RUN: "5"
           PM_EDGE_PREBED_RESERVED_ODDS_CREDITS: "4"
+
+          # Keep two early-morning credits untouched during quiet hours so any
+          # deferred edge gets fresh pricing immediately after 7 AM ET.
+          PM_EDGE_MORNING_RESERVED_ODDS_CREDITS: "2"
+          PM_EDGE_POST_WAKE_REVALIDATION_HOURS: "2"
+          PM_EDGE_POST_WAKE_PRIORITY_BONUS: "250"
+          PM_EDGE_POST_WAKE_MAX_ODDS_REFRESH_PER_RUN: "5"
           PM_EDGE_MORNING_LOOKAHEAD_AFTER_WAKE_HOURS: "4"
           PM_EDGE_OVERNIGHT_MISSED_RETENTION_DAYS: "14"
 

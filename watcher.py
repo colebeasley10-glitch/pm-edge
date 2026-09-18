@@ -160,6 +160,8 @@ MATCH_MIN_UNKNOWN_SPORT = float(os.getenv("PM_EDGE_WATCH_MATCH_CONFIDENCE_UNKNOW
 DAILY_ODDS_BUDGET = int(os.getenv("PM_EDGE_ODDS_DAILY_BUDGET", "12"))
 MAX_REFRESH_GROUPS = int(os.getenv("PM_EDGE_MAX_ODDS_REFRESH_PER_RUN", "3"))
 EVENT_CACHE_HOURS = float(os.getenv("PM_EDGE_EVENT_CACHE_HOURS", "8"))
+BULK_FEATURED_ENABLED = os.getenv("PM_EDGE_BULK_FEATURED_ENABLED", "1").strip().lower() not in {"0", "false", "no", "off"}
+MAX_BULK_SPORTS_PER_RUN = max(0, int(os.getenv("PM_EDGE_MAX_BULK_SPORTS_PER_RUN", "2")))
 ALERT_COOLDOWN_HOURS = float(os.getenv("PM_EDGE_ALERT_COOLDOWN_HOURS", "6"))
 MAX_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_ALERTS_PER_RUN", "3"))
 
@@ -263,6 +265,43 @@ def usage_cost(usage):
         return max(0, int(float(raw)))
     except Exception:
         return 1
+
+def _region_count(regions) -> int:
+    return max(1, len([x for x in str(regions or "us").split(",") if x.strip()]))
+
+def estimated_featured_odds_cost(settings, markets) -> int:
+    return max(0, len(list(markets or []))) * _region_count(getattr(settings, "odds_regions", "us"))
+
+def fetch_featured_sport_odds(settings, sport_key: str, markets):
+    """Fetch featured h2h/spreads/totals for every listed event in one sport."""
+    markets = [m for m in dict.fromkeys(markets or []) if m in {"h2h", "spreads", "totals"}]
+    if not sport_key or not markets:
+        return [], {"requests_last": 0}
+
+    url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/"
+    response = requests.get(
+        url,
+        params={
+            "apiKey": settings.odds_api_key,
+            "regions": settings.odds_regions,
+            "markets": ",".join(markets),
+            "oddsFormat": "decimal",
+            "dateFormat": "iso",
+        },
+        timeout=25,
+    )
+    if response.status_code >= 400:
+        raise RuntimeError(
+            f"Odds bulk refresh failed: {sport_key} {response.status_code} {response.text[:200]}"
+        )
+
+    usage = {
+        "requests_last": response.headers.get("x-requests-last"),
+        "requests_used": response.headers.get("x-requests-used"),
+        "requests_remaining": response.headers.get("x-requests-remaining"),
+    }
+    payload = response.json()
+    return (payload if isinstance(payload, list) else []), usage
 
 def cents(x):
     return f"{float(x)*100:.1f}¢"
@@ -1128,8 +1167,13 @@ def main():
             "no_ask": market.get("no_ask"),
         }
 
-    # Refresh a small number of high-priority fair values each run.
+    # Refresh fair values. Featured markets use the sport-wide Odds API endpoint
+    # first so one paid request can price many events. Alternate lines and team
+    # totals still fall back to the single-event endpoint below.
     refreshed_groups = 0
+    bulk_refreshes = 0
+    bulk_events_seen = 0
+    bulk_fair_successes = 0
     run_event_odds_cache = {}
     credits_remaining_today = max(0, DAILY_ODDS_BUDGET - int(daily.get("credits", 0)))
 
@@ -1137,6 +1181,107 @@ def main():
     fair_successes = 0
     odds_errors = 0
 
+    featured_key_for_type = {
+        "h2h": "h2h",
+        "spread": "spreads",
+        "total": "totals",
+    }
+
+    bulk_plan = {}
+    if BULK_FEATURED_ENABLED and MAX_BULK_SPORTS_PER_RUN > 0:
+        # candidates are already priority-sorted, so insertion order preserves
+        # the sports whose stale fair values matter most right now.
+        for score, market, spec, em in candidates:
+            cached = state["fair_cache"].get(market["ticker"])
+            ttl = fair_ttl_hours(em.event)
+            if cached and age_hours(cached.get("fetched_at")) <= ttl:
+                continue
+            featured_key = featured_key_for_type.get(spec.market_type)
+            sport_key = em.event.get("_sport_key")
+            if not featured_key or not sport_key:
+                continue
+            row = bulk_plan.setdefault(sport_key, {"markets": [], "priority": score})
+            if featured_key not in row["markets"]:
+                row["markets"].append(featured_key)
+
+    bulk_covered = set()
+    for sport_key, plan in list(bulk_plan.items())[:MAX_BULK_SPORTS_PER_RUN]:
+        if credits_remaining_today <= 0:
+            break
+
+        markets_to_fetch = list(plan["markets"])
+        per_market_cost = _region_count(settings.odds_regions)
+        affordable_markets = credits_remaining_today // per_market_cost
+        if affordable_markets <= 0:
+            break
+        markets_to_fetch = markets_to_fetch[:affordable_markets]
+        if not markets_to_fetch:
+            continue
+
+        estimated_cost = estimated_featured_odds_cost(settings, markets_to_fetch)
+        if estimated_cost > credits_remaining_today:
+            continue
+
+        try:
+            sport_rows, usage = fetch_featured_sport_odds(settings, sport_key, markets_to_fetch)
+        except Exception as exc:
+            odds_errors += 1
+            print("Bulk odds refresh failed:", sport_key, markets_to_fetch, exc)
+            continue
+
+        cost = usage_cost(usage)
+        # We estimate before calling and then account from the API's authoritative
+        # x-requests-last header after the response.
+        credits_remaining_today = max(0, credits_remaining_today - cost)
+        daily["credits"] = int(daily.get("credits", 0)) + cost
+        bulk_refreshes += 1
+        bulk_events_seen += len(sport_rows)
+        by_event_id = {
+            str(row.get("id")): row
+            for row in sport_rows
+            if isinstance(row, dict) and row.get("id")
+        }
+
+        for market_key in markets_to_fetch:
+            bulk_covered.add((sport_key, market_key))
+
+        for _, market, spec, em in candidates:
+            featured_key = featured_key_for_type.get(spec.market_type)
+            if featured_key not in markets_to_fetch:
+                continue
+            if em.event.get("_sport_key") != sport_key:
+                continue
+
+            cached = state["fair_cache"].get(market["ticker"])
+            ttl = fair_ttl_hours(em.event)
+            if cached and age_hours(cached.get("fetched_at")) <= ttl:
+                continue
+
+            event_odds = by_event_id.get(str(em.event.get("id")))
+            if not event_odds:
+                continue
+            event_odds = dict(event_odds)
+            event_odds["_sport_key"] = em.event.get("_sport_key")
+            event_odds["_sport_title"] = em.event.get("_sport_title")
+            event_odds["_sport_group"] = em.event.get("_sport_group")
+            fair_attempts += 1
+
+            min_books_required = 3 if spec.market_type == "h2h" else 2
+            consensus = fair_from_event(
+                spec, event_odds, aliases,
+                min_books=min_books_required,
+                max_dispersion=settings.odds_max_dispersion,
+            )
+            fair = blend_fair_value(market["ticker"], consensus, overlay)
+            if fair:
+                fair_successes += 1
+                bulk_fair_successes += 1
+                state["fair_cache"][market["ticker"]] = fair_to_dict(
+                    fair, em.event, spec, usage
+                )
+
+    # Event-specific fallback for alternate spreads/totals, team totals and
+    # any featured market not covered by the bulk pass.
     for _, market, spec, em in candidates:
         cached = state["fair_cache"].get(market["ticker"])
         ttl = fair_ttl_hours(em.event)
@@ -1147,11 +1292,27 @@ def main():
         if not requested_markets:
             continue
 
-        group = (em.event.get("_sport_key"), em.event.get("id"), requested_markets)
+        sport_key = em.event.get("_sport_key")
+        featured_key = featured_key_for_type.get(spec.market_type)
+
+        # A sport-wide h2h fetch is authoritative for the featured moneyline.
+        # Avoid paying again event-by-event when that same h2h feed had no fair.
+        if spec.market_type == "h2h" and (sport_key, "h2h") in bulk_covered:
+            continue
+
+        group = (sport_key, em.event.get("id"), requested_markets)
 
         if group not in run_event_odds_cache:
             if refreshed_groups >= MAX_REFRESH_GROUPS or credits_remaining_today <= 0:
                 continue
+
+            # The event endpoint can charge more than one credit when requesting
+            # featured + alternate markets. Estimate from the requested keys and
+            # regions before making the call so the local daily cap stays hard.
+            estimated_cost = len([m for m in requested_markets.split(",") if m.strip()]) * _region_count(settings.odds_regions)
+            if estimated_cost > credits_remaining_today:
+                continue
+
             try:
                 event_odds, usage = odds.event_odds(group[0], group[1], group[2])
             except OddsAPIError as exc:
@@ -1160,10 +1321,7 @@ def main():
                 continue
 
             cost = usage_cost(usage)
-            if cost > credits_remaining_today:
-                continue
-
-            credits_remaining_today -= cost
+            credits_remaining_today = max(0, credits_remaining_today - cost)
             daily["credits"] = int(daily.get("credits", 0)) + cost
             refreshed_groups += 1
 
@@ -1435,6 +1593,10 @@ def main():
         "kalshi_horizon_filtered": kalshi_horizon_filtered,
         "sportsbook_horizon_filtered": sportsbook_horizon_filtered,
         "candidates": len(candidates),
+        "bulk_refreshes": bulk_refreshes,
+        "bulk_events_seen": bulk_events_seen,
+        "bulk_fair_successes": bulk_fair_successes,
+        "event_refreshes": refreshed_groups,
         "fair_attempts": fair_attempts,
         "fair_successes": fair_successes,
         "odds_errors": odds_errors,
