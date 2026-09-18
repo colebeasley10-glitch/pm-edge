@@ -19,9 +19,25 @@ jobs:
           python-version: "3.12"
           cache: "pip"
       - run: pip install -r requirements.txt
+
+      - name: Restore NCAA beta state
+        uses: actions/cache@v4
+        with:
+          path: .ncaa_beta_state.json
+          key: ncaa-beta-${{ github.run_id }}
+          restore-keys: |
+            ncaa-beta-
+
       - name: Run NCAA model beta
         env:
           CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
           PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
           PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
+          NCAA_BETA_MIN_TOTAL_EDGE: "4.0"
+          NCAA_BETA_MIN_SPREAD_EDGE: "3.0"
+          NCAA_BETA_MIN_PROB: "0.57"
+          NCAA_BETA_TOTAL_SD: "14.0"
+          NCAA_BETA_MARGIN_SD: "16.0"
+          NCAA_BETA_MAX_ALERTS: "3"
+          NCAA_BETA_COOLDOWN_HOURS: "6"
         run: python ncaa_beta_runner.py
