@@ -8,11 +8,12 @@ Kalshi rate-limit guard
   * cap Kalshi event-fetch concurrency at four workers;
   * retry HTTP 429 / transient 5xx responses with bounded backoff.
 
-Odds API free-tier budget guard
+Odds API budget guard
   * reset the daily counter at Eastern midnight instead of UTC midnight;
   * pace the daily allowance across the day so early scans cannot spend it all;
-  * count every paid refresh as at least two budget units so a two-market
-    spread/total request can never slip through a one-credit remainder.
+  * account using The Odds API's authoritative x-requests-last response header.
+    watcher.py estimates multi-market cost before a request and records the
+    actual charge afterward, so 1-credit h2h calls are no longer double-counted.
 
 This launcher never places real-money orders; watcher.py remains paper-alert only.
 """
@@ -176,19 +177,9 @@ def install_v16_patch() -> None:
     watcher.DAILY_ODDS_BUDGET = current_paced_budget
     V16_STATS["odds_paced_budget"] = current_paced_budget
 
-    # watcher.py makes the Odds request before it learns the exact API cost.
-    # Count any positive request as at least two local budget units. That is a
-    # conservative guard: h2h may really cost 1, while spread/total calls can
-    # cost 2. This prevents an untracked 2-credit request when only 1 remains.
-    original_usage_cost = watcher.usage_cost
-
-    def conservative_usage_cost(usage):
-        actual = original_usage_cost(usage)
-        if actual <= 0:
-            return 0
-        return max(2, actual)
-
-    watcher.usage_cost = conservative_usage_cost
+    # watcher.py now checks estimated market/region cost before each paid call
+    # and uses the API's x-requests-last header afterward. Keep usage_cost exact:
+    # an h2h request that costs 1 credit must count as 1, not 2.
 
     # watcher.py's heartbeat title is a literal; rewrite only that title so the
     # notification accurately reports the active operational version.
