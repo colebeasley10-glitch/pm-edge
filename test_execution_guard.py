@@ -8,6 +8,7 @@ import execution_guard
 
 
 NOW = datetime(2026, 9, 17, 18, 0, tzinfo=timezone.utc)
+AFTER_TEMP_DAILY_CAP_TEST = datetime(2026, 9, 19, 1, 0, tzinfo=timezone.utc)
 
 
 def stage(path: Path, ticker: str, *, risk: float = 3.78, price: float = 0.42, shares: int = 9):
@@ -90,7 +91,7 @@ def main() -> None:
                 shares=20,
                 max_loss=10.00,
                 path=path,
-                now=NOW,
+                now=AFTER_TEMP_DAILY_CAP_TEST,
             )
             assert result["staged"] is True
 
@@ -103,10 +104,27 @@ def main() -> None:
             shares=2,
             max_loss=1.00,
             path=path,
-            now=NOW,
+            now=AFTER_TEMP_DAILY_CAP_TEST,
         )
         assert cap["staged"] is False
         assert cap["reason"] == "daily_risk_limit"
+
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "temp-daily-cap.json"
+        # During the temporary 24-hour window, the normal $50 staging cap is disabled.
+        for i in range(6):
+            result = execution_guard.stage_order_intent(
+                ticker=f"TEMP-CAP-{i}",
+                market_title=f"Temp cap {i}",
+                side="YES",
+                lane="primary",
+                limit_price=0.50,
+                shares=20,
+                max_loss=10.00,
+                path=path,
+                now=NOW,
+            )
+            assert result["staged"] is True
 
     summary = execution_guard.queue_summary(Path("/definitely/not/a/real/queue.json"))
     assert summary["live_submission_permitted"] is False
