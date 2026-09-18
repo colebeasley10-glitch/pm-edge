@@ -1,8 +1,9 @@
-"""Live NCAA beta evaluator. Read-only; never submits wagers."""
+"""Live NCAA beta evaluator with tightly capped Kalshi auto-submit for BUY NOW signals."""
 from datetime import datetime, timezone
 from pathlib import Path
-import json, math, os, re, statistics, requests
+import hashlib, json, math, os, re, statistics, requests
 import approval_links
+from kalshi_submit import KalshiSubmitClient
 from cfbd_client import CFBD
 from ncaa_predictive import ratings_map, project
 from watcher import fetch_open_kalshi_sports_markets, inferred_sport_rule, parse_market
@@ -19,6 +20,8 @@ COOLDOWN_HOURS=float(os.getenv("NCAA_BETA_COOLDOWN_HOURS","6"))
 MAX_RISK=float(os.getenv("NCAA_BETA_MAX_RISK_DOLLARS","5.00"))
 MAX_SHARES=int(os.getenv("NCAA_BETA_MAX_SHARES","20"))
 APPROVAL_TTL_SECONDS=int(os.getenv("PM_EDGE_APPROVAL_TTL_SECONDS","1800"))
+AUTO_ENABLED=str(os.getenv("NCAA_BETA_AUTO_SUBMIT","0")).strip().lower() in {"1","true","yes","on"}
+AUTO_DAILY_RISK=float(os.getenv("NCAA_BETA_AUTO_DAILY_RISK_DOLLARS","20.00"))
 PRICE_BUFFER=float(os.getenv("NCAA_BETA_PRICE_BUFFER","0.055"))
 MAX_FISH_GAP=float(os.getenv("NCAA_BETA_MAX_FISH_GAP","0.05"))
 KALSHI_BASE=os.getenv("PM_EDGE_KALSHI_PUBLIC_BASE_URL","https://api.elections.kalshi.com/trade-api/v2")
@@ -136,6 +139,69 @@ def approval_booking(signal, kalshi):
     except Exception as e:
         print("NCAA_APPROVAL_LINK_SKIPPED", kalshi.get("ticker"), type(e).__name__, str(e)[:160])
         return None
+
+
+def _market_ask(ticker, side):
+    """Re-check the exact Kalshi contract immediately before any auto order."""
+    r=requests.get(f'{KALSHI_BASE}/markets/{ticker}',timeout=12)
+    r.raise_for_status()
+    payload=r.json()
+    market=payload.get("market") if isinstance(payload,dict) else None
+    if not isinstance(market,dict):
+        return None
+    prefix="yes" if str(side).upper()=="YES" else "no"
+    for key in (f"{prefix}_ask_dollars",f"{prefix}_ask"):
+        value=market.get(key)
+        if value in (None,""): continue
+        try: x=float(value)
+        except (TypeError,ValueError): continue
+        if key.endswith("_ask") and x>1: x/=100.0
+        if 0<=x<=1: return x
+    return None
+
+
+def _auto_client_order_id(signal, kalshi, now):
+    prefix=f'ncaa-{now.strftime("%Y%m%d")}-'
+    raw=(f'{signal["game"]}|{signal["kind"]}|{signal["side"]}|'
+         f'{kalshi.get("ticker")}|{kalshi.get("side")}|{float(kalshi["target"]):.4f}')
+    return prefix+hashlib.sha256(raw.encode("utf-8")).hexdigest()[:18]
+
+
+def auto_submit(signal, kalshi, booking, client, now):
+    """Submit one capped IOC BUY NOW order. Never auto-places resting limits."""
+    if not (AUTO_ENABLED and client and booking):
+        return None
+    if booking.get("execution")!="TAKE":
+        return {"ok":False,"reason":"resting_limit_requires_review"}
+    client_order_id=_auto_client_order_id(signal,kalshi,now)
+    existing=client.find_order_by_client_id(client_order_id)
+    if existing is not None:
+        return {"ok":True,"existing":True,"order":existing,"client_order_id":client_order_id}
+    day_prefix=f'ncaa-{now.strftime("%Y%m%d")}-'
+    submitted_today=client.submitted_cost_for_prefix(day_prefix)
+    projected=submitted_today+float(booking["max_loss"])
+    if projected>AUTO_DAILY_RISK+1e-9:
+        return {"ok":False,"reason":"daily_auto_risk_cap","projected":projected}
+    live_ask=_market_ask(kalshi["ticker"],kalshi["side"])
+    if live_ask is None:
+        return {"ok":False,"reason":"live_quote_unavailable"}
+    if live_ask>float(kalshi["target"])+1e-9:
+        return {"ok":False,"reason":"price_moved_above_target","live_ask":live_ask}
+    order=client.create_buy_order(
+        ticker=str(kalshi["ticker"]),
+        outcome_side=str(kalshi["side"]).upper(),
+        count=int(booking["shares"]),
+        max_price=float(kalshi["target"]),
+        execution="TAKE",
+        client_order_id=client_order_id,
+    )
+    return {"ok":True,"existing":False,"order":order,"client_order_id":client_order_id,
+            "live_ask":live_ask,"daily_risk_after":projected}
+
+
+def _filled_count(order):
+    try:return float(order.get("fill_count_fp") or order.get("fill_count") or 0)
+    except (TypeError,ValueError):return 0.0
 
 
 def match_kalshi(signal,markets,home,away,home_spread):
@@ -257,6 +323,16 @@ def main():
            "line_games":len(line_rows),"model_qualified":len(signals),"kalshi_priced":len(priced),
            "kalshi_markets":len(kalshi_markets),"kalshi_game_events":kalshi_stats.get("kalshi_events_seen")})
 
+    auto_client=None
+    if AUTO_ENABLED:
+        try:
+            auto_client=KalshiSubmitClient.from_env()
+            if auto_client is None:
+                print("NCAA_AUTO_DISABLED_MISSING_WRITE_CREDENTIALS")
+        except Exception as e:
+            print("NCAA_AUTO_CLIENT_ERROR",type(e).__name__,str(e)[:240])
+            auto_client=None
+
     sent=0
     for s in priced:
         if sent>=MAX_ALERTS: break
@@ -268,24 +344,50 @@ def main():
             f'AUTO-SIZED: {booking["shares"]} shares | max cost ${booking["max_loss"]:.2f}\n'
             if booking else ''
         )
+        auto_result=None
+        if AUTO_ENABLED and auto_client and booking:
+            try:
+                auto_result=auto_submit(s,k,booking,auto_client,now)
+            except Exception as e:
+                auto_result={"ok":False,"reason":f'{type(e).__name__}: {str(e)[:180]}'}
+                print("NCAA_AUTO_SUBMIT_ERROR",k.get("ticker"),type(e).__name__,str(e)[:240])
+
+        order=(auto_result or {}).get("order") or {}
+        filled=_filled_count(order)
+        auto_booked=bool(auto_result and auto_result.get("ok") and filled>0)
+        auto_sent=bool(auto_result and auto_result.get("ok"))
+        if auto_booked:
+            execution_note=(f'AUTO-BOOKED: {filled:g}/{booking["shares"]} shares filled immediately. '
+                            f'Order ID: {order.get("order_id") or "—"}')
+        elif auto_sent:
+            execution_note=(f'AUTO ORDER SENT: 0/{booking["shares"]} immediate fills. '
+                            f'Use Review & submit below if you still want it at the capped price.')
+        elif auto_result and auto_result.get("reason")=="resting_limit_requires_review":
+            execution_note="LIMIT ORDER: review required; beta auto mode does not leave unattended resting orders."
+        elif auto_result:
+            execution_note=f'AUTO NOT SENT: {auto_result.get("reason","safety check blocked it")}.'
+        else:
+            execution_note="AUTO NOT AVAILABLE: use Review & submit below."
+
         msg=(f'{s["game"]}\nTAKE: {s["side"]}\n'
              f'KALSHI: BUY {k["side"]}\n'
              f'{k["action"]}: {k["target"]*100:.0f}¢\n'
              f'DO NOT PAY OVER: {k["hard_max"]*100:.0f}¢\n'
              f'Current ask: {k["ask"]*100:.0f}¢\n'
              f'{booking_text}'
+             f'{execution_note}\n'
              f'Model probability: {s["prob"]:.1%}\n'
              f'Model projection: {s["proj"]}\n'
              f'Model-vs-market gap: {s["edge_pts"]:.1f} pts\n'
              f'Price cushion at target: {(s["prob"]-k["target"]):.1%}\n'
              f'Market consensus: {s["providers"]} provider(s)\n'
              f'{s["qualifier"]}\n\n'
-             f'BETA: small stake only. '
-             f'{("Tap below to review & submit; PM Edge re-checks the live price before sending." if booking else "Tap below to open the exact Kalshi market.")}')
+             f'BETA: max ${MAX_RISK:.2f} risk/order; auto BUY NOW daily cap ${AUTO_DAILY_RISK:.2f}.')
         alert_url=booking["url"] if booking else k["url"]
         alert_title="Review & submit" if booking else "Open Kalshi Market"
-        if notify("🧪 NCAA MODEL BETA — TAKE",msg,url=alert_url,url_title=alert_title):
-            mark(state,key,s["line"],s["prob"],now,k); sent+=1
+        push_title="🧪 NCAA MODEL BETA — AUTO BOOKED" if auto_booked else "🧪 NCAA MODEL BETA — TAKE"
+        if notify(push_title,msg,url=alert_url,url_title=alert_title):
+            mark(state,key,s["line"],s["prob"],now,{**k,"auto_result":auto_result or {}}); sent+=1
     save_state(state)
     if not priced: print("No NCAA beta bet cleared both model and Kalshi-price thresholds.")
 if __name__=="__main__": main()
