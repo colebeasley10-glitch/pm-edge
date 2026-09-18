@@ -105,6 +105,24 @@ def _price(market: dict, side: str, kind: str) -> float | None:
             x /= 100.0
         if 0 < x < 1:
             return x
+
+    # Some Kalshi payloads only expose the YES book. Binary complements are:
+    # NO bid = 1 - YES ask; NO ask = 1 - YES bid.
+    if side == "NO" and kind in {"bid", "ask"}:
+        yes_kind = "ask" if kind == "bid" else "bid"
+        for key in (f"yes_{yes_kind}_dollars", f"yes_{yes_kind}"):
+            v = market.get(key)
+            if v in (None, ""):
+                continue
+            try:
+                y = float(v)
+            except (TypeError, ValueError):
+                continue
+            if not key.endswith("_dollars") and y > 1:
+                y /= 100.0
+            x = 1.0 - y
+            if 0 < x < 1:
+                return x
     return None
 
 
