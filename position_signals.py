@@ -25,9 +25,9 @@ PUBLIC_BASE = os.getenv(
 ).rstrip("/")
 PUSH_URL = "https://api.pushover.net/1/messages.json"
 
-SELL_OVER_FAIR = float(os.getenv("PM_EDGE_SELL_OVER_FAIR", "0.07"))
+SELL_OVER_FAIR = float(os.getenv("PM_EDGE_SELL_OVER_FAIR", "0.08"))
 ADD_UNDER_FAIR = float(os.getenv("PM_EDGE_ADD_UNDER_FAIR", "0.08"))
-MIN_BOOKS_SELL = int(os.getenv("PM_EDGE_POSITION_SELL_MIN_BOOKS", "3"))
+MIN_BOOKS_SELL = int(os.getenv("PM_EDGE_POSITION_SELL_MIN_BOOKS", "4"))
 MIN_BOOKS_ADD = int(os.getenv("PM_EDGE_POSITION_ADD_MIN_BOOKS", "4"))
 MAX_LIVE_FAIR_AGE_MINUTES = float(os.getenv("PM_EDGE_POSITION_LIVE_FAIR_MAX_AGE_MINUTES", "20"))
 MAX_PREGAME_FAIR_AGE_MINUTES = float(os.getenv("PM_EDGE_POSITION_PREGAME_FAIR_MAX_AGE_MINUTES", "90"))
