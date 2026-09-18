@@ -50,6 +50,11 @@ def main() -> None:
             signals = position_signals.evaluate_positions(FakeClient())
             assert signals[0]["action"] == "ADD"
             assert signals[0]["shares"] >= 1
+
+            # NO-side quotes can be derived when Kalshi only returns a YES book.
+            yes_only = {"yes_bid_dollars": "0.42", "yes_ask_dollars": "0.44"}
+            assert position_signals._price(yes_only, "NO", "bid") == 0.56
+            assert position_signals._price(yes_only, "NO", "ask") == 0.58
     finally:
         position_signals.WATCH_STATE_PATH = old_state
         position_signals._market = old_market
