@@ -61,7 +61,7 @@ def main() -> None:
     assert client.get_positions() == [{"ticker": "ABC", "position_fp": "3.00"}]
     assert session.calls[0][1]["params"]["ticker"] == "ABC"
     assert session.calls[1][1]["params"]["ticker"] == "ABC"
-    assert session.calls[2][1]["params"]["count_filter"] == "position"
+    assert session.calls[2][1]["params"]["limit"] == 100
 
     for forbidden in ("create_order", "cancel_order", "amend_order", "decrease_order", "post", "delete"):
         assert not hasattr(client, forbidden), forbidden
