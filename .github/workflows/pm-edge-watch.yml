@@ -38,6 +38,7 @@ jobs:
             .pm_edge_order_queue.json
             .pm_edge_performance_history.json
             .pm_edge_pushover_status.json
+            .pm_edge_position_signal_state.json
           key: pm-edge-watch-${{ github.run_id }}
           restore-keys: |
             pm-edge-watch-
@@ -106,6 +107,21 @@ jobs:
           PM_EDGE_EXECUTION_DAILY_RISK_LIMIT: "50.00"
           PM_EDGE_EXECUTION_QUEUE_RETENTION_DAYS: "14"
           PM_EDGE_APPROVAL_TTL_SECONDS: "7200"
+
+          # Strong position management alerts. These use fresh sportsbook fair
+          # value and current executable Kalshi prices. Detection is automatic;
+          # any ADD or SELL still requires an explicit approval tap.
+          PM_EDGE_POSITION_ACTION_TTL_SECONDS: "1800"
+          PM_EDGE_SELL_OVER_FAIR: "0.07"
+          PM_EDGE_ADD_UNDER_FAIR: "0.08"
+          PM_EDGE_POSITION_SELL_MIN_BOOKS: "3"
+          PM_EDGE_POSITION_ADD_MIN_BOOKS: "4"
+          PM_EDGE_POSITION_LIVE_FAIR_MAX_AGE_MINUTES: "20"
+          PM_EDGE_POSITION_PREGAME_FAIR_MAX_AGE_MINUTES: "90"
+          PM_EDGE_POSITION_ADD_MAX_RISK: "5.00"
+          PM_EDGE_POSITION_ADD_MAX_SHARES: "10"
+          PM_EDGE_POSITION_SIGNAL_COOLDOWN_HOURS: "4"
+          PM_EDGE_POSITION_SIGNAL_MAX_ALERTS_PER_RUN: "2"
 
           # v21 overnight look-ahead remains active.
           PM_EDGE_LOCAL_TIMEZONE: "America/New_York"
