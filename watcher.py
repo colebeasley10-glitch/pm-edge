@@ -172,6 +172,11 @@ MAX_SPECULATIVE_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_SPECULATIVE_ALERTS_P
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
 MAX_EVENT_HOURS = float(os.getenv("PM_EDGE_MAX_EVENT_HOURS", "96"))
 MAX_AUTO_EDGE = float(os.getenv("PM_EDGE_MAX_AUTO_EDGE", "0.15"))
+# v25 may populate this before scanning so currently held markets get first
+# priority for fresh fair-value refreshes and remain eligible slightly longer
+# after kickoff/first pitch for position-management decisions.
+HELD_POSITION_TICKERS: set[str] = set()
+HELD_EVENT_LOOKBACK_HOURS = float(os.getenv("PM_EDGE_HELD_EVENT_LOOKBACK_HOURS", "6"))
 WATCHER_VERSION = 15
 
 PRIMARY_MARKET = {
@@ -318,6 +323,8 @@ def fair_ttl_hours(event):
 def priority_score(market, event, prev_quote, fair_entry):
     vol = max(0.0, float(market.get("volume_24h") or 0.0))
     score = min(40.0, math.log1p(vol) * 4.0)
+    if str(market.get("ticker") or "") in HELD_POSITION_TICKERS:
+        score += 5000.0
     h = event_hours(event)
     if 0 <= h <= 3:
         score += 45
@@ -1098,8 +1105,11 @@ def main():
             accepted_unknown_sport += 1
 
         if not event_is_near_term(em.event):
-            sportsbook_horizon_filtered += 1
-            continue
+            held = str(market.get("ticker") or "") in HELD_POSITION_TICKERS
+            h = event_hours(em.event)
+            if not held or h < -HELD_EVENT_LOOKBACK_HOURS or h > MAX_EVENT_HOURS:
+                sportsbook_horizon_filtered += 1
+                continue
 
         cached = state.setdefault("fair_cache", {}).get(market["ticker"])
         prevq = state.setdefault("quotes", {}).get(market["ticker"])
