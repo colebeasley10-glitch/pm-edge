@@ -72,29 +72,35 @@ jobs:
           PM_EDGE_ALERT_COOLDOWN_HOURS: "6"
           PM_EDGE_MAX_MARKETS: "3000"
 
-          # v22 VALUE lane: more volume at current prices without turning
-          # Primary into a looser model. Require 3+ books, 2.5% with 4+ books,
-          # 3.0% with exactly 3, realistic 20c-80c entries, and >=25% fair win
-          # probability for the side. VALUE gets its own daily cap and 0.5x size.
-          PM_EDGE_VALUE_MIN_NET_EDGE: "0.025"
-          PM_EDGE_VALUE_THREE_BOOK_EDGE: "0.03"
+          # v26 VALUE lane: retain modest extra volume without accepting the
+          # old marginal edge band. Require 3+ books, 3.5% with 4+ books and
+          # 4.0% with exactly 3. VALUE remains half-size and separately capped.
+          PM_EDGE_VALUE_MIN_NET_EDGE: "0.035"
+          PM_EDGE_VALUE_THREE_BOOK_EDGE: "0.04"
           PM_EDGE_VALUE_MIN_BOOKS: "3"
           PM_EDGE_VALUE_MIN_TARGET: "0.20"
           PM_EDGE_VALUE_MAX_TARGET: "0.80"
           PM_EDGE_VALUE_MIN_FAIR_SIDE_PROB: "0.25"
-          PM_EDGE_VALUE_DAILY_CAP: "20"
-          PM_EDGE_MAX_SECONDARY_ALERTS_PER_RUN: "6"
+          PM_EDGE_VALUE_DAILY_CAP: "12"
+          PM_EDGE_MAX_SECONDARY_ALERTS_PER_RUN: "4"
           PM_EDGE_VALUE_TARGET_WIN_PROFIT_DOLLARS: "2.50"
           PM_EDGE_VALUE_MAX_RISK_DOLLARS: "5.00"
 
-          # Price Fish stays at the normal 4% edge requirement, fishes 2c-8c
-          # below the current ask, and rejects unrealistic moonshot prices.
+          # v26 Price Fish stays at the normal 4% edge requirement, fishes only
+          # 2c-5c below ask, requires 3+ books and <=60m fair data, and rejects
+          # lower-probability / low-price targets. Old targets are revalidated.
           PM_EDGE_PRICE_FISH_MIN_GAP: "0.02"
-          PM_EDGE_PRICE_FISH_MAX_GAP: "0.08"
-          PM_EDGE_PRICE_FISH_MIN_TARGET: "0.20"
-          PM_EDGE_PRICE_FISH_MIN_FAIR_SIDE_PROB: "0.25"
+          PM_EDGE_PRICE_FISH_MAX_GAP: "0.05"
+          PM_EDGE_PRICE_FISH_MIN_TARGET: "0.25"
+          PM_EDGE_PRICE_FISH_MIN_FAIR_SIDE_PROB: "0.30"
           PM_EDGE_MAX_PRICE_FISH_ALERTS_PER_RUN: "4"
           PM_EDGE_PRICE_FISH_DAILY_CAP: "12"
+          PM_EDGE_PRICE_FISH_MIN_BOOKS: "3"
+          PM_EDGE_PRICE_FISH_MAX_FAIR_AGE_MINUTES: "60"
+
+          # v26 cross-market quality controls.
+          PM_EDGE_MAX_BOOK_DISPERSION: "0.055"
+          PM_EDGE_MAX_ACTIVE_ALERTS_PER_EVENT: "1"
 
           # Primary / Price Fish automatic sizing.
           PM_EDGE_TARGET_WIN_PROFIT_DOLLARS: "5.00"
@@ -106,7 +112,7 @@ jobs:
           PM_EDGE_EXECUTION_MAX_ORDER_RISK: "10.00"
           PM_EDGE_EXECUTION_DAILY_RISK_LIMIT: "50.00"
           PM_EDGE_EXECUTION_QUEUE_RETENTION_DAYS: "14"
-          PM_EDGE_APPROVAL_TTL_SECONDS: "7200"
+          PM_EDGE_APPROVAL_TTL_SECONDS: "1800"
 
           # Strong position management alerts. These use fresh sportsbook fair
           # value and current executable Kalshi prices. Detection is automatic;
@@ -139,4 +145,4 @@ jobs:
           PM_EDGE_MORNING_LOOKAHEAD_AFTER_WAKE_HOURS: "4"
           PM_EDGE_OVERNIGHT_MISSED_RETENTION_DAYS: "14"
 
-        run: python pm_edge_runner_v25.py
+        run: python pm_edge_runner_v26.py
