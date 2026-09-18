@@ -33,11 +33,14 @@ jobs:
           CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
           PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
           PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
+          PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
           NCAA_BETA_MIN_TOTAL_EDGE: "4.0"
           NCAA_BETA_MIN_SPREAD_EDGE: "3.0"
           NCAA_BETA_MIN_PROB: "0.57"
           NCAA_BETA_TOTAL_SD: "14.0"
           NCAA_BETA_MARGIN_SD: "16.0"
+          NCAA_BETA_PRICE_BUFFER: "0.055"
+          NCAA_BETA_MAX_FISH_GAP: "0.05"
           NCAA_BETA_MAX_ALERTS: "3"
           NCAA_BETA_COOLDOWN_HOURS: "6"
         run: python ncaa_beta_runner.py
