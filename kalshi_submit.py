@@ -115,7 +115,7 @@ class KalshiSubmitClient:
         payload = self._request(
             "GET",
             "/portfolio/positions",
-            params={"limit": max(1, min(int(limit), 200)), "count_filter": "position"},
+            params={"limit": max(1, min(int(limit), 200))},
         )
         rows = payload.get("market_positions", [])
         return rows if isinstance(rows, list) else []
