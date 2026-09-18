@@ -2,6 +2,7 @@
 from datetime import datetime, timezone
 from pathlib import Path
 import json, math, os, re, statistics, requests
+import approval_links
 from cfbd_client import CFBD
 from ncaa_predictive import ratings_map, project
 from watcher import fetch_open_kalshi_sports_markets, inferred_sport_rule, parse_market
@@ -15,16 +16,19 @@ TOTAL_SD=float(os.getenv("NCAA_BETA_TOTAL_SD","14.0"))
 MARGIN_SD=float(os.getenv("NCAA_BETA_MARGIN_SD","16.0"))
 MAX_ALERTS=int(os.getenv("NCAA_BETA_MAX_ALERTS","3"))
 COOLDOWN_HOURS=float(os.getenv("NCAA_BETA_COOLDOWN_HOURS","6"))
+MAX_RISK=float(os.getenv("NCAA_BETA_MAX_RISK_DOLLARS","5.00"))
+MAX_SHARES=int(os.getenv("NCAA_BETA_MAX_SHARES","20"))
+APPROVAL_TTL_SECONDS=int(os.getenv("PM_EDGE_APPROVAL_TTL_SECONDS","1800"))
 PRICE_BUFFER=float(os.getenv("NCAA_BETA_PRICE_BUFFER","0.055"))
 MAX_FISH_GAP=float(os.getenv("NCAA_BETA_MAX_FISH_GAP","0.05"))
 KALSHI_BASE=os.getenv("PM_EDGE_KALSHI_PUBLIC_BASE_URL","https://api.elections.kalshi.com/trade-api/v2")
 
-def notify(title,msg,url=None):
+def notify(title,msg,url=None,url_title="Open Kalshi Market"):
     u=os.getenv("PUSHOVER_USER_KEY"); t=os.getenv("PUSHOVER_APP_TOKEN")
     if not (u and t): return False
     payload={"token":t,"user":u,"title":title,"message":msg}
     if url:
-        payload["url"]=url; payload["url_title"]="Open Kalshi Market"
+        payload["url"]=url; payload["url_title"]=url_title
     r=requests.post(PUSH,data=payload,timeout=15)
     r.raise_for_status(); return True
 
@@ -99,6 +103,40 @@ def price_plan(prob,ask):
     if gap<=MAX_FISH_GAP:
         return {"action":"PLACE LIMIT","target":hard,"hard_max":hard,"gap":gap}
     return None
+
+def approval_booking(signal, kalshi):
+    """Build the same signed PM Edge Review & Submit flow used by normal alerts."""
+    base_url=os.getenv("STREAMLIT_APP_URL","").strip()
+    if not base_url:
+        return None
+    try:
+        price=float(kalshi["target"])
+        if not (0 < price < 1):
+            return None
+        shares=min(max(1, int(math.floor(MAX_RISK / price))), max(1, MAX_SHARES))
+        max_loss=round(shares * price, 2)
+        execution="TAKE" if str(kalshi.get("action") or "").upper()=="BUY NOW" else "MAKE"
+        token=approval_links.create_approval_token(
+            ticker=str(kalshi.get("ticker") or ""),
+            side=str(kalshi.get("side") or "").upper(),
+            lane="primary",
+            execution=execution,
+            limit_price=price,
+            shares=shares,
+            max_loss=max_loss,
+            fair_probability=float(signal["prob"]),
+            net_edge=float(signal["prob"])-price,
+            books=int(signal.get("providers") or 0),
+            ttl_seconds=APPROVAL_TTL_SECONDS,
+        )
+        url=approval_links.build_approval_url(base_url, token)
+        if len(url) > 512:
+            return None
+        return {"url":url,"shares":shares,"max_loss":max_loss,"execution":execution}
+    except Exception as e:
+        print("NCAA_APPROVAL_LINK_SKIPPED", kalshi.get("ticker"), type(e).__name__, str(e)[:160])
+        return None
+
 
 def match_kalshi(signal,markets,home,away,home_spread):
     desired_team=signal.get("team")
@@ -225,19 +263,28 @@ def main():
         k=s["kalshi"]
         key=f'{s["game"]}|{s["kind"]}|{s["side"]}|{k["side"]}'
         if not alert_ok(state,key,s["line"],now): continue
+        booking=approval_booking(s,k)
+        booking_text=(
+            f'AUTO-SIZED: {booking["shares"]} shares | max cost ${booking["max_loss"]:.2f}\n'
+            if booking else ''
+        )
         msg=(f'{s["game"]}\nTAKE: {s["side"]}\n'
              f'KALSHI: BUY {k["side"]}\n'
              f'{k["action"]}: {k["target"]*100:.0f}¢\n'
              f'DO NOT PAY OVER: {k["hard_max"]*100:.0f}¢\n'
              f'Current ask: {k["ask"]*100:.0f}¢\n'
+             f'{booking_text}'
              f'Model probability: {s["prob"]:.1%}\n'
              f'Model projection: {s["proj"]}\n'
              f'Model-vs-market gap: {s["edge_pts"]:.1f} pts\n'
              f'Price cushion at target: {(s["prob"]-k["target"]):.1%}\n'
              f'Market consensus: {s["providers"]} provider(s)\n'
              f'{s["qualifier"]}\n\n'
-             f'BETA: small stake only. Tap below to open the exact Kalshi market.')
-        if notify("🧪 NCAA MODEL BETA — TAKE",msg,url=k["url"]):
+             f'BETA: small stake only. '
+             f'{("Tap below to review & submit; PM Edge re-checks the live price before sending." if booking else "Tap below to open the exact Kalshi market.")}')
+        alert_url=booking["url"] if booking else k["url"]
+        alert_title="Review & submit" if booking else "Open Kalshi Market"
+        if notify("🧪 NCAA MODEL BETA — TAKE",msg,url=alert_url,url_title=alert_title):
             mark(state,key,s["line"],s["prob"],now,k); sent+=1
     save_state(state)
     if not priced: print("No NCAA beta bet cleared both model and Kalshi-price thresholds.")
