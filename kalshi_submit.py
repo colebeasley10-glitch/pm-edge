@@ -247,6 +247,7 @@ class KalshiSubmitClient:
             "time_in_force": "immediate_or_cancel",
             "self_trade_prevention_type": "taker_at_cross",
             "cancel_order_on_pause": True,
+            "reduce_only": True,
         }
         return self._request("POST", "/portfolio/events/orders", json_body=payload)
 
