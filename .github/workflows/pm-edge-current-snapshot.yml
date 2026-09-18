@@ -1,0 +1,69 @@
+name: PM Edge Current Snapshot
+
+on:
+  push:
+    paths:
+      - ".github/workflows/pm-edge-current-snapshot.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Snapshot current positions
+        env:
+          KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
+          KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
+          PM_EDGE_KALSHI_READONLY_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
+        run: |
+          python - <<'PY'
+          import json, requests
+          from kalshi_readonly import KalshiReadOnlyClient
+          c=KalshiReadOnlyClient.from_env()
+          p=c.get_positions(limit=200) if hasattr(c,"get_positions") else c._get("/portfolio/positions", params={"limit":200}).get("market_positions",[])
+          rows=p if isinstance(p,list) else []
+          out=[]
+          total_cost=total_value=0.0
+          for x in rows:
+              pos=float(x.get("position_fp",x.get("position",0)) or 0)
+              if pos==0: continue
+              t=x.get("ticker")
+              r=requests.get(f"https://external-api.kalshi.com/trade-api/v2/markets/{t}",timeout=10)
+              md=r.json().get("market",{}) if r.ok else {}
+              qty=abs(pos)
+              cost=float(x.get("market_exposure_dollars",x.get("market_exposure",0)) or 0)
+              if pos>0:
+                  sell=md.get("yes_bid_dollars",md.get("yes_bid"))
+                  side="YES"
+              else:
+                  sell=md.get("no_bid_dollars",md.get("no_bid"))
+                  side="NO"
+              try:
+                  sell=float(sell)
+                  if sell>1: sell/=100
+              except: sell=0.0
+              value=qty*sell
+              pnl=value-cost
+              total_cost+=cost
+              total_value+=value
+              out.append({
+                "title":md.get("title") or t,
+                "side":side,
+                "shares":qty,
+                "cost":round(cost,2),
+                "sell_bid":round(sell,4),
+                "value":round(value,2),
+                "pnl":round(pnl,2),
+                "status":md.get("status")
+              })
+          out.sort(key=lambda z:z["pnl"], reverse=True)
+          print("SUMMARY",json.dumps({"count":len(out),"cost":round(total_cost,2),"value":round(total_value,2),"pnl":round(total_value-total_cost,2)}))
+          print("POSITIONS",json.dumps(out,indent=2))
+          PY
