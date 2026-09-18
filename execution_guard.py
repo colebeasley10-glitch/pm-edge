@@ -21,7 +21,10 @@ from typing import Any
 
 QUEUE_PATH = Path(os.getenv("PM_EDGE_ORDER_QUEUE_PATH", ".pm_edge_order_queue.json"))
 MAX_ORDER_RISK = float(os.getenv("PM_EDGE_EXECUTION_MAX_ORDER_RISK", "10.00"))
-DAILY_RISK_LIMIT = float(os.getenv("PM_EDGE_EXECUTION_DAILY_RISK_LIMIT", "50.00"))
+DAILY_RISK_LIMIT_BASELINE = float(os.getenv("PM_EDGE_EXECUTION_DAILY_RISK_LIMIT", "50.00"))
+# Temporary 24-hour test requested by the user. Staging returns to the normal
+# daily risk limit after 2026-09-18 20:19 America/New_York.
+TEMP_DAILY_CAP_DISABLED_UNTIL_UTC = datetime(2026, 9, 19, 0, 19, tzinfo=timezone.utc)
 MAX_QUEUE_AGE_DAYS = int(os.getenv("PM_EDGE_EXECUTION_QUEUE_RETENTION_DAYS", "14"))
 RECONCILE_MATCH_WINDOW_HOURS = float(os.getenv("PM_EDGE_RECONCILE_MATCH_WINDOW_HOURS", "3"))
 EXECUTION_MODE = str(os.getenv("PM_EDGE_EXECUTION_MODE", "preview") or "preview").strip().lower()
@@ -52,6 +55,11 @@ class OrderIntent:
 
 def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _effective_daily_risk_limit(now: datetime | None = None) -> float:
+    current = (now or _utc_now()).astimezone(timezone.utc)
+    return float("inf") if current < TEMP_DAILY_CAP_DISABLED_UNTIL_UTC else DAILY_RISK_LIMIT_BASELINE
 
 
 def _safe_float(value: Any) -> float | None:
@@ -188,7 +196,8 @@ def stage_order_intent(
             return {"staged": False, "reason": "duplicate", "intent_id": intent_id}
 
     projected = _today_risk(payload, trade_date) + risk
-    if projected > DAILY_RISK_LIMIT + 1e-9:
+    daily_limit = _effective_daily_risk_limit(now)
+    if projected > daily_limit + 1e-9:
         return {
             "staged": False,
             "reason": "daily_risk_limit",

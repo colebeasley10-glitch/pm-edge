@@ -9,8 +9,9 @@ from __future__ import annotations
 import hashlib
 import html
 import json
+import math
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
@@ -40,12 +41,20 @@ KALSHI_PUBLIC_BASE = os.getenv(
     "https://external-api.kalshi.com/trade-api/v2",
 ).rstrip("/")
 MAX_ORDER_RISK = 10.00
-MAX_DAILY_RISK = 50.00
+MAX_DAILY_RISK_BASELINE = 50.00
+# Temporary 24-hour test requested by the user. The daily cap automatically
+# returns to $50 after 2026-09-18 20:19 America/New_York (2026-09-19 00:19 UTC).
+TEMP_DAILY_CAP_DISABLED_UNTIL_UTC = datetime(2026, 9, 19, 0, 19, tzinfo=timezone.utc)
 EASTERN = ZoneInfo("America/New_York")
+
+def _effective_daily_risk_limit() -> float:
+    return float("inf") if datetime.now(timezone.utc) < TEMP_DAILY_CAP_DISABLED_UNTIL_UTC else MAX_DAILY_RISK_BASELINE
 
 st.set_page_config(page_title="PM Edge — Approve", page_icon="✅", layout="centered")
 st.title("PM Edge — Review & Submit")
 st.caption("PM Edge re-checks the live price. Nothing is sent to Kalshi until you press Submit.")
+if math.isinf(_effective_daily_risk_limit()):
+    st.caption("24-hour test: the $50/day PM Edge cap is temporarily disabled until Sep 18 at 8:19 PM ET. The $10 per-order cap still applies.")
 
 
 def _as_price(market: dict, side: str) -> float | None:
@@ -300,10 +309,10 @@ else:
     elif risk_check_error:
         st.error("Safety stop: PM Edge could not verify today's submitted-risk total, so Submit is disabled.")
         st.caption(risk_check_error)
-    elif daily_submitted + computed_risk > MAX_DAILY_RISK + 1e-9:
+    elif (not math.isinf(_effective_daily_risk_limit())) and daily_submitted + computed_risk > _effective_daily_risk_limit() + 1e-9:
         st.error(
             f"Daily cap stop: {_money(daily_submitted)} has already been submitted through PM Edge today. "
-            f"This {_money(computed_risk)} order would exceed the {_money(MAX_DAILY_RISK)} daily cap."
+            f"This {_money(computed_risk)} order would exceed the {_money(_effective_daily_risk_limit())} daily cap."
         )
     elif submit_price_ok:
         st.markdown("### Ready to submit")
@@ -333,8 +342,9 @@ else:
                         st.success("Already submitted. No duplicate order was sent.")
                         st.stop()
                 fresh_daily = _today_pm_edge_cost(fresh_orders)
-                if fresh_daily + computed_risk > MAX_DAILY_RISK + 1e-9:
-                    st.error("NOT SUBMITTED — the $50 PM Edge daily risk cap would be exceeded.")
+                fresh_daily_limit = _effective_daily_risk_limit()
+                if (not math.isinf(fresh_daily_limit)) and fresh_daily + computed_risk > fresh_daily_limit + 1e-9:
+                    st.error(f"NOT SUBMITTED — the {_money(fresh_daily_limit)} PM Edge daily risk cap would be exceeded.")
                     st.stop()
 
                 result = submit_client.create_buy_order(
