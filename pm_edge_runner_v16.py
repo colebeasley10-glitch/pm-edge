@@ -50,19 +50,17 @@ def paced_odds_budget(now: datetime | None = None) -> int:
     now = now or eastern_now()
     hour = now.hour
 
-    # All values are even on purpose. Spread/total refreshes can cost two API
-    # credits, so this avoids ending a pacing window with an unsafe 1-credit gap.
+    # Front-load pricing coverage. PM Edge is most useful when it can surface
+    # opportunities early enough to rest limit orders, while still preserving
+    # a small reserve for morning/later revalidation. Do not lower quality
+    # thresholds merely to manufacture alert volume.
     if hour < 4:
         allowance = 2
-    elif hour < 8:
+    elif hour < 7:
         allowance = 4
-    elif hour < 12:
-        allowance = 6
-    elif hour < 15:
-        allowance = 8
-    elif hour < 18:
+    elif hour < 10:
         allowance = 10
-    elif hour < 21:
+    elif hour < 12:
         allowance = 12
     else:
         allowance = 14
@@ -223,8 +221,9 @@ def self_test() -> None:
 
     # Verify budget pacing boundaries and local-day reset behavior.
     assert paced_odds_budget(datetime(2026, 9, 15, 0, 0, tzinfo=EASTERN)) <= 2
-    assert paced_odds_budget(datetime(2026, 9, 15, 14, 59, tzinfo=EASTERN)) <= 8
-    assert paced_odds_budget(datetime(2026, 9, 15, 21, 0, tzinfo=EASTERN)) <= 14
+    assert paced_odds_budget(datetime(2026, 9, 15, 9, 59, tzinfo=EASTERN)) <= 10
+    assert paced_odds_budget(datetime(2026, 9, 15, 10, 0, tzinfo=EASTERN)) <= 12
+    assert paced_odds_budget(datetime(2026, 9, 15, 12, 0, tzinfo=EASTERN)) <= 14
     state = {"daily_usage": {"date": "1900-01-01", "credits": 99}}
     reset_daily_usage_eastern(state)
     assert state["daily_usage"]["date"] == eastern_now().date().isoformat()
