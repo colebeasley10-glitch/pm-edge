@@ -261,7 +261,7 @@ def main():
     for s in priced:
         if sent>=MAX_ALERTS: break
         k=s["kalshi"]
-        key=f'{s["game"]}|{s["kind"]}|{s["side"]}|{k["side"]}'
+        key=f'{s["game"]}|{s["kind"]}|{s["side"]}|{k["side"]}|booking-v1'
         if not alert_ok(state,key,s["line"],now): continue
         booking=approval_booking(s,k)
         booking_text=(
