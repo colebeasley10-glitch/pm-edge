@@ -67,6 +67,22 @@ def _px(m: dict, side: str, kind: str) -> float | None:
             x /= 100
         if 0 < x < 1:
             return x
+
+    if side == "NO" and kind in {"bid", "ask"}:
+        yes_kind = "ask" if kind == "bid" else "bid"
+        for key in (f"yes_{yes_kind}_dollars", f"yes_{yes_kind}"):
+            v = m.get(key)
+            if v in (None, ""):
+                continue
+            try:
+                y = float(v)
+            except (TypeError, ValueError):
+                continue
+            if not key.endswith("_dollars") and y > 1:
+                y /= 100
+            x = 1.0 - y
+            if 0 < x < 1:
+                return x
     return None
 
 
