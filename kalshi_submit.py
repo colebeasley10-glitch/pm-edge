@@ -1,8 +1,8 @@
 """Approval-gated Kalshi order submission client for PM Edge.
 
-This module intentionally exposes only two authenticated capabilities:
-* GET recent orders, for replay/daily-risk checks;
-* POST one new order through Kalshi's current event-order endpoint.
+This module intentionally exposes only approval-gated order capabilities:
+* GET recent orders/positions for replay and safety checks;
+* POST a new buy or position-reducing sell order through Kalshi's event-order endpoint.
 
 It contains no cancel, amend, decrease, transfer, withdrawal, or autonomous
 submission path. Callers must require an explicit user approval action.
@@ -111,6 +111,15 @@ class KalshiSubmitClient:
         rows = payload.get("orders", [])
         return rows if isinstance(rows, list) else []
 
+    def get_positions(self, *, limit: int = 200) -> list[dict]:
+        payload = self._request(
+            "GET",
+            "/portfolio/positions",
+            params={"limit": max(1, min(int(limit), 200))},
+        )
+        rows = payload.get("market_positions", [])
+        return rows if isinstance(rows, list) else []
+
     def find_order_by_client_id(self, client_order_id: str) -> dict | None:
         target = str(client_order_id)
         for row in self.get_orders(limit=200):
@@ -192,6 +201,54 @@ class KalshiSubmitClient:
         }
         if execution == "MAKE":
             payload["post_only"] = True
+        return self._request("POST", "/portfolio/events/orders", json_body=payload)
+
+    def create_sell_order(
+        self,
+        *,
+        ticker: str,
+        outcome_side: str,
+        count: int,
+        min_price: float,
+        client_order_id: str,
+    ) -> dict:
+        """Create one position-reducing IOC SELL order after explicit approval.
+
+        Kalshi's V2 event-order API quotes the YES book:
+        * SELL YES at p -> ask YES at p
+        * SELL NO at p -> bid YES at (1 - p)
+
+        The approval page verifies the current position first so this method is
+        only used to reduce an existing same-side position, not to open a short.
+        """
+        side = str(outcome_side).upper()
+        ticker = str(ticker).strip()
+        count = int(count)
+        min_price = float(min_price)
+        if not ticker:
+            raise ValueError("ticker is required")
+        if side not in {"YES", "NO"}:
+            raise ValueError("outcome_side must be YES or NO")
+        if count < 1:
+            raise ValueError("count must be positive")
+        if not (0 < min_price < 1):
+            raise ValueError("min_price must be between 0 and 1")
+        if not str(client_order_id).strip():
+            raise ValueError("client_order_id is required")
+
+        book_side = "ask" if side == "YES" else "bid"
+        book_price = min_price if side == "YES" else (1.0 - min_price)
+        payload = {
+            "ticker": ticker,
+            "client_order_id": str(client_order_id),
+            "side": book_side,
+            "count": f"{count:.2f}",
+            "price": _fixed_price(book_price),
+            "time_in_force": "immediate_or_cancel",
+            "self_trade_prevention_type": "taker_at_cross",
+            "cancel_order_on_pause": True,
+            "reduce_only": True,
+        }
         return self._request("POST", "/portfolio/events/orders", json_body=payload)
 
 

@@ -13,6 +13,7 @@ import json
 from kalshi_readonly import KalshiReadOnlyClient
 import performance_tracker
 import pm_edge_runner_v24 as v24
+import position_signals
 import pushover_status
 
 
@@ -25,6 +26,29 @@ def self_test() -> None:
 
 
 def main() -> int:
+    # Read current positions before the scan so held markets get priority for
+    # fresh sportsbook fair values. This is GET-only and cannot trade.
+    client = None
+    held_tickers = set()
+    try:
+        client = KalshiReadOnlyClient.from_env()
+        if client is not None:
+            for row in client.get_positions(limit=200):
+                try:
+                    position = float(
+                        row.get("position_fp")
+                        if row.get("position_fp") is not None
+                        else row.get("position") or 0
+                    )
+                except (TypeError, ValueError):
+                    position = 0.0
+                ticker = str(row.get("ticker") or "")
+                if ticker and abs(position) >= 1:
+                    held_tickers.add(ticker)
+            v24.watcher.HELD_POSITION_TICKERS = held_tickers
+    except Exception as exc:
+        print("PM_EDGE_HELD_POSITION_PREFETCH_ERROR", type(exc).__name__, str(exc)[:300])
+
     rc = v24.main()
 
     # v24 has already reconciled the order queue against Kalshi at this point.
@@ -43,11 +67,24 @@ def main() -> int:
         "errors": 0,
         "summary": performance_tracker.performance_summary(),
     }
+    signal_result = {"configured": False, "candidates": 0, "sent": 0}
     try:
-        client = KalshiReadOnlyClient.from_env()
+        if client is None:
+            client = KalshiReadOnlyClient.from_env()
         if client is not None:
             result = performance_tracker.update_performance(client)
             result["configured"] = True
+            try:
+                signal_result = position_signals.notify_position_signals(client)
+                signal_result["configured"] = True
+            except Exception as exc:
+                signal_result = {
+                    "configured": True,
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "candidates": 0,
+                    "sent": 0,
+                }
+                print("PM_EDGE_POSITION_SIGNAL_ERROR", type(exc).__name__, str(exc)[:300])
     except Exception as exc:
         result = {
             "configured": True,
@@ -57,6 +94,8 @@ def main() -> int:
         print("PM_EDGE_PERFORMANCE_ERROR", type(exc).__name__, str(exc)[:300])
 
     print("PM_EDGE_PUSH_STATUS " + json.dumps(push_status, sort_keys=True))
+    print("PM_EDGE_HELD_POSITIONS " + json.dumps({"count": len(held_tickers)}, sort_keys=True))
+    print("PM_EDGE_POSITION_SIGNALS " + json.dumps(signal_result, sort_keys=True))
     print("PM_EDGE_V25_PERFORMANCE " + json.dumps(result, sort_keys=True))
     return int(rc or 0)
 

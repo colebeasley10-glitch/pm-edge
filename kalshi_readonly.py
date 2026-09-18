@@ -94,6 +94,14 @@ class KalshiReadOnlyClient:
         rows = payload.get("fills", [])
         return rows if isinstance(rows, list) else []
 
+    def get_positions(self, *, limit: int = 100) -> list[dict]:
+        payload = self._get(
+            "/portfolio/positions",
+            params={"limit": max(1, min(int(limit), 200))},
+        )
+        rows = payload.get("market_positions", [])
+        return rows if isinstance(rows, list) else []
+
 
 def tracking_configured() -> bool:
     return bool(os.getenv("KALSHI_API_KEY_ID", "").strip() and _private_key_bytes())

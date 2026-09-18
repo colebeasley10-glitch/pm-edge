@@ -29,6 +29,8 @@ class FakeSession:
             return FakeResponse({"orders": [{"order_id": "o1"}]})
         if url.endswith("/portfolio/fills"):
             return FakeResponse({"fills": [{"trade_id": "f1"}]})
+        if url.endswith("/portfolio/positions"):
+            return FakeResponse({"market_positions": [{"ticker": "ABC", "position_fp": "3.00"}]})
         raise AssertionError(url)
 
 
@@ -56,8 +58,10 @@ def main() -> None:
 
     assert client.get_orders(ticker="ABC") == [{"order_id": "o1"}]
     assert client.get_fills(ticker="ABC") == [{"trade_id": "f1"}]
+    assert client.get_positions() == [{"ticker": "ABC", "position_fp": "3.00"}]
     assert session.calls[0][1]["params"]["ticker"] == "ABC"
     assert session.calls[1][1]["params"]["ticker"] == "ABC"
+    assert session.calls[2][1]["params"]["limit"] == 100
 
     for forbidden in ("create_order", "cancel_order", "amend_order", "decrease_order", "post", "delete"):
         assert not hasattr(client, forbidden), forbidden

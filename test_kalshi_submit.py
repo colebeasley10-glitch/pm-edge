@@ -34,6 +34,8 @@ class FakeSession:
         self.calls.append((method, url, kwargs))
         if method == "GET" and url.endswith("/portfolio/orders"):
             return FakeResponse(200, {"orders": self.orders})
+        if method == "GET" and url.endswith("/portfolio/positions"):
+            return FakeResponse(200, {"market_positions": [{"ticker": "TEST-YES", "position_fp": "9.00"}]})
         if method == "POST" and url.endswith("/portfolio/events/orders"):
             body = kwargs["json"]
             return FakeResponse(
@@ -102,6 +104,36 @@ def main() -> None:
     assert no_body["price"] == "0.62"
     assert no_body["time_in_force"] == "good_till_canceled"
     assert no_body["post_only"] is True
+
+    positions = client.get_positions()
+    assert positions[0]["ticker"] == "TEST-YES"
+
+    sell_yes = client.create_sell_order(
+        ticker="TEST-YES",
+        outcome_side="YES",
+        count=4,
+        min_price=0.57,
+        client_order_id="pmedge-sell-yes",
+    )
+    assert sell_yes["order_id"] == "o-test"
+    sell_yes_body = session.calls[-1][2]["json"]
+    assert sell_yes_body["side"] == "ask"
+    assert sell_yes_body["price"] == "0.57"
+    assert sell_yes_body["time_in_force"] == "immediate_or_cancel"
+    assert sell_yes_body["reduce_only"] is True
+
+    sell_no = client.create_sell_order(
+        ticker="TEST-NO",
+        outcome_side="NO",
+        count=4,
+        min_price=0.35,
+        client_order_id="pmedge-sell-no",
+    )
+    assert sell_no["order_id"] == "o-test"
+    sell_no_body = session.calls[-1][2]["json"]
+    assert sell_no_body["side"] == "bid"
+    assert sell_no_body["price"] == "0.65"
+    assert sell_no_body["reduce_only"] is True
 
     assert client.submitted_cost_for_prefix("pmedge-20260917-") == 2.5
     assert client.find_order_by_client_id("pmedge-20260917-old") is not None
