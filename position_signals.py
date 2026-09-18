@@ -275,14 +275,14 @@ def notify_position_signals(client) -> dict:
             )
             url_title = "Review & sell"
         else:
-            title = "🟢 PM EDGE — ADD NOW"
+            title = "🟢 PM EDGE — BUY MORE NOW"
             cost = int(s["shares"]) * float(s["limit_price"])
             body = (
                 f"{s['side']} — {s['title'][:170]}\n"
                 f"Current buy: {s['market_price']*100:.1f}¢\n"
                 f"Fresh fair: {s['fair_probability']*100:.1f}%\n"
                 f"Value gap: +{s['gap']*100:.1f} pts ({s['books']} books).\n"
-                f"ADD {s['shares']} shares at {s['limit_price']*100:.1f}¢ max · ${cost:.2f} max."
+                f"BUY MORE: {s['shares']} shares at {s['limit_price']*100:.1f}¢ max · ${cost:.2f} max."
             )
             url_title = "Review & add"
 
