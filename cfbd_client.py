@@ -16,6 +16,10 @@ class CFBD:
         return self.get("/games",**p)
     def core(self,year):
         return self.get("/ratings/core",year=year)
+    def lines(self,year,week=None):
+        p={"year":year,"seasonType":"regular"}
+        if week is not None:p["week"]=week
+        return self.get("/lines",**p)
     def team_box(self,year,week=None,team=None):
         p={"year":year,"seasonType":"regular"}
         if week is not None:p["week"]=week
