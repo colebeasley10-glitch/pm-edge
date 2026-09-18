@@ -97,7 +97,7 @@ class KalshiReadOnlyClient:
     def get_positions(self, *, limit: int = 100) -> list[dict]:
         payload = self._get(
             "/portfolio/positions",
-            params={"limit": max(1, min(int(limit), 200)), "count_filter": "position"},
+            params={"limit": max(1, min(int(limit), 200))},
         )
         rows = payload.get("market_positions", [])
         return rows if isinstance(rows, list) else []
