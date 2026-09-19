@@ -80,11 +80,11 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "daily.json"
-        # Five unique $10 intents consume the default $50 daily staging budget.
-        for i in range(5):
+        # The default configuration has no aggregate daily staging cap.
+        for i in range(6):
             result = execution_guard.stage_order_intent(
-                ticker=f"CAP-{i}",
-                market_title=f"Cap {i}",
+                ticker=f"NO-CAP-{i}",
+                market_title=f"No cap {i}",
                 side="NO",
                 lane="primary",
                 limit_price=0.50,
@@ -94,20 +94,6 @@ def main() -> None:
                 now=AFTER_DAILY_CAP_TEST,
             )
             assert result["staged"] is True
-
-        cap = execution_guard.stage_order_intent(
-            ticker="CAP-OVER",
-            market_title="Cap over",
-            side="NO",
-            lane="primary",
-            limit_price=0.50,
-            shares=2,
-            max_loss=1.00,
-            path=path,
-            now=AFTER_DAILY_CAP_TEST,
-        )
-        assert cap["staged"] is False
-        assert cap["reason"] == "daily_risk_limit"
 
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "disabled-daily-cap.json"
