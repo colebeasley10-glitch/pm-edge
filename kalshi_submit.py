@@ -22,7 +22,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 DEFAULT_BASE_URL = "https://external-api.kalshi.com/trade-api/v2"
 # Resting PM Edge maker orders are intentionally short-lived. A stale live-sports
 # limit can become adverse selection as the game state changes.
-MAKE_ORDER_TTL_SECONDS = int(os.getenv("PM_EDGE_MAKE_ORDER_TTL_SECONDS", "300"))
+LIVE_MAKE_ORDER_TTL_SECONDS = int(os.getenv("PM_EDGE_LIVE_MAKE_ORDER_TTL_SECONDS", "180"))
 
 
 class KalshiSubmitError(RuntimeError):
@@ -165,6 +165,8 @@ class KalshiSubmitClient:
         max_price: float,
         execution: str,
         client_order_id: str,
+        expires_at: int | None = None,
+        is_live: bool = False,
     ) -> dict:
         """Create exactly one BUY exposure order after explicit caller approval.
 
@@ -207,10 +209,16 @@ class KalshiSubmitClient:
         }
         if execution == "MAKE":
             payload["post_only"] = True
-            # Kalshi V2 supports an expiration timestamp with GTC orders. Five
-            # minutes is the default: enough time to price-fish without leaving
-            # an old recommendation resting into a materially different game state.
-            payload["expiration_time"] = int(time.time()) + max(60, MAKE_ORDER_TTL_SECONDS)
+            # Pregame maker orders expire at the event-start timestamp carried
+            # by the signed approval. Live maker orders get a short TTL because
+            # score/time information changes rapidly.
+            if is_live:
+                payload["expiration_time"] = int(time.time()) + max(60, LIVE_MAKE_ORDER_TTL_SECONDS)
+            elif expires_at is not None:
+                payload["expiration_time"] = max(int(time.time()) + 60, int(expires_at))
+            else:
+                # Fail safe for legacy approvals that do not yet carry event start.
+                payload["expiration_time"] = int(time.time()) + max(60, LIVE_MAKE_ORDER_TTL_SECONDS)
         return self._request("POST", "/portfolio/events/orders", json_body=payload)
 
     def create_sell_order(
