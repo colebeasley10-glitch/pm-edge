@@ -1,0 +1,68 @@
+name: PM Edge Order Audit
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Restore PM Edge state
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .pm_edge_order_queue.json
+            .pm_edge_performance_history.json
+          key: pm-edge-audit-${{ github.run_id }}
+          restore-keys: |
+            pm-edge-watch-
+
+      - name: Print sanitized order ledger
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          def load(path, default):
+              p = Path(path)
+              if not p.exists():
+                  return default
+              try:
+                  return json.loads(p.read_text(encoding="utf-8"))
+              except Exception as exc:
+                  return {"error": f"{type(exc).__name__}: {exc}"}
+
+          queue = load(".pm_edge_order_queue.json", {"intents": []})
+          history = load(".pm_edge_performance_history.json", {"records": []})
+
+          rows = []
+          for x in queue.get("intents", []):
+              if not isinstance(x, dict):
+                  continue
+              rows.append({
+                  "trade_date": x.get("trade_date"),
+                  "created_at": x.get("created_at"),
+                  "ticker": x.get("ticker"),
+                  "market_title": x.get("market_title"),
+                  "side": x.get("side"),
+                  "lane": x.get("lane"),
+                  "shares": x.get("shares"),
+                  "limit_price": x.get("limit_price"),
+                  "max_loss": x.get("max_loss"),
+                  "status": x.get("status"),
+                  "filled_shares": x.get("filled_shares"),
+                  "average_fill_price": x.get("average_fill_price"),
+                  "event_id": x.get("event_id"),
+              })
+
+          print("PM_EDGE_ORDER_AUDIT_BEGIN")
+          print(json.dumps(rows, sort_keys=True))
+          print("PM_EDGE_ORDER_AUDIT_END")
+          print("PM_EDGE_HISTORY_AUDIT_BEGIN")
+          print(json.dumps(history.get("records", []), sort_keys=True))
+          print("PM_EDGE_HISTORY_AUDIT_END")
