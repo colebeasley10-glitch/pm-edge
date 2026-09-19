@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import html
+import inspect
 import json
 import math
 import os
@@ -345,16 +346,30 @@ else:
                     st.error(f"NOT SUBMITTED — the {_money(fresh_daily_limit)} PM Edge daily risk cap would be exceeded.")
                     st.stop()
 
-                result = submit_client.create_buy_order(
-                    ticker=trade["ticker"],
-                    outcome_side=trade["side"],
-                    count=shares,
-                    max_price=max_price,
-                    execution=trade["execution"],
-                    client_order_id=client_order_id,
-                    expires_at=trade.get("event_start_at"),
-                    is_live=bool(trade.get("is_live", False)),
-                )
+                order_kwargs = {
+                    "ticker": trade["ticker"],
+                    "outcome_side": trade["side"],
+                    "count": shares,
+                    "max_price": max_price,
+                    "execution": trade["execution"],
+                    "client_order_id": client_order_id,
+                }
+
+                # TAKE orders do not need an expiry. Keeping those kwargs off the
+                # call also makes approval links tolerant of a briefly stale
+                # Streamlit worker that still has the older submit-client
+                # signature cached during a deploy.
+                if trade["execution"] == "MAKE":
+                    supported = inspect.signature(submit_client.create_buy_order).parameters
+                    if "expires_at" not in supported or "is_live" not in supported:
+                        raise RuntimeError(
+                            "Submit worker is still on an older order client. "
+                            "Reload/restart the app before placing a resting limit."
+                        )
+                    order_kwargs["expires_at"] = trade.get("event_start_at")
+                    order_kwargs["is_live"] = bool(trade.get("is_live", False))
+
+                result = submit_client.create_buy_order(**order_kwargs)
             except KalshiSubmitError as exc:
                 if exc.status_code == 409:
                     st.warning("Kalshi reports this order already exists or conflicts. Check your Kalshi Orders before trying anything else.")
