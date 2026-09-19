@@ -59,6 +59,8 @@ def create_approval_token(
     books: int | None = None,
     now: int | None = None,
     ttl_seconds: int = DEFAULT_TTL_SECONDS,
+    event_start_at: int | None = None,
+    is_live: bool = False,
 ) -> str:
     now = int(time.time() if now is None else now)
     side = str(side or "").upper()
@@ -94,6 +96,10 @@ def create_approval_token(
         payload["e"] = int(round(float(net_edge) * 10000))
     if books is not None:
         payload["b"] = int(books)
+    if event_start_at is not None:
+        payload["g"] = int(event_start_at)
+    if is_live:
+        payload["i"] = 1
 
     body = _b64e(json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8"))
     # 128-bit truncated HMAC is ample for an expiring, non-transactional link
@@ -144,6 +150,8 @@ def verify_approval_token(token: str, *, now: int | None = None) -> dict:
         "net_edge": (int(payload["e"]) / 10000.0) if "e" in payload else None,
         "books": int(payload["b"]) if "b" in payload else None,
         "expires_at": int(payload["x"]),
+        "event_start_at": int(payload["g"]) if "g" in payload else None,
+        "is_live": bool(payload.get("i", 0)),
     }
 
 
