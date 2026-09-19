@@ -187,14 +187,17 @@ class KalshiSubmitClient:
         if not str(client_order_id).strip():
             raise ValueError("client_order_id is required")
 
+        # Event-order API expects dollar prices at cent precision. Round before
+        # serializing to avoid float artifacts such as 0.49999999999999994,
+        # which Kalshi rejects as invalid dollar precision.
         book_side = "bid" if side == "YES" else "ask"
-        book_price = max_price if side == "YES" else (1.0 - max_price)
+        book_price = round(max_price if side == "YES" else (1.0 - max_price), 2)
         payload = {
             "ticker": ticker,
             "client_order_id": str(client_order_id),
             "side": book_side,
             "count": f"{count:.2f}",
-            "price": _fixed_price(book_price),
+            "price": f"{book_price:.2f}",
             "time_in_force": "immediate_or_cancel" if execution == "TAKE" else "good_till_canceled",
             "self_trade_prevention_type": "taker_at_cross",
             "cancel_order_on_pause": True,
