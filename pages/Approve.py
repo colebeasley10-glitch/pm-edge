@@ -42,13 +42,11 @@ KALSHI_PUBLIC_BASE = os.getenv(
 ).rstrip("/")
 MAX_ORDER_RISK = 10.00
 MAX_DAILY_RISK_BASELINE = 0.00
-# Temporary 24-hour test requested by the user. The daily cap automatically
-# returns to $50 after 2026-09-18 20:19 America/New_York (2026-09-19 00:19 UTC).
-TEMP_DAILY_CAP_DISABLED_UNTIL_UTC = datetime(2026, 9, 19, 0, 19, tzinfo=timezone.utc)
 EASTERN = ZoneInfo("America/New_York")
 
 def _effective_daily_risk_limit() -> float:
-    return float("inf") if datetime.now(timezone.utc) < TEMP_DAILY_CAP_DISABLED_UNTIL_UTC else MAX_DAILY_RISK_BASELINE
+    # A non-positive baseline means there is no aggregate daily cap.
+    return float("inf") if MAX_DAILY_RISK_BASELINE <= 0 else MAX_DAILY_RISK_BASELINE
 
 st.set_page_config(page_title="PM Edge — Approve", page_icon="✅", layout="centered")
 st.title("PM Edge — Review & Submit")
