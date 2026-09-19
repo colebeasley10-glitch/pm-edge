@@ -21,7 +21,7 @@ from typing import Any
 
 QUEUE_PATH = Path(os.getenv("PM_EDGE_ORDER_QUEUE_PATH", ".pm_edge_order_queue.json"))
 MAX_ORDER_RISK = float(os.getenv("PM_EDGE_EXECUTION_MAX_ORDER_RISK", "10.00"))
-DAILY_RISK_LIMIT_BASELINE = float(os.getenv("PM_EDGE_EXECUTION_DAILY_RISK_LIMIT", "50.00"))
+DAILY_RISK_LIMIT_BASELINE = float(os.getenv("PM_EDGE_EXECUTION_DAILY_RISK_LIMIT", "0"))
 MAX_QUEUE_AGE_DAYS = int(os.getenv("PM_EDGE_EXECUTION_QUEUE_RETENTION_DAYS", "14"))
 RECONCILE_MATCH_WINDOW_HOURS = float(os.getenv("PM_EDGE_RECONCILE_MATCH_WINDOW_HOURS", "3"))
 EXECUTION_MODE = str(os.getenv("PM_EDGE_EXECUTION_MODE", "preview") or "preview").strip().lower()
