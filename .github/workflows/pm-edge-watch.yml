@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   watch:
@@ -124,3 +124,15 @@ jobs:
           PM_EDGE_MORNING_LOOKAHEAD_AFTER_WAKE_HOURS: "4"
           PM_EDGE_OVERNIGHT_MISSED_RETENTION_DAYS: "14"
         run: python pm_edge_runner_v26.py
+
+      - name: Persist PM Edge auto ledger
+        run: |
+          if [ -f pm_edge_auto_ledger.csv ]; then
+            git config user.name "pm-edge-bot"
+            git config user.email "pm-edge-bot@users.noreply.github.com"
+            git add pm_edge_auto_ledger.csv
+            if ! git diff --cached --quiet; then
+              git commit -m "Update PM Edge auto ledger [skip ci]"
+              git push
+            fi
+          fi
