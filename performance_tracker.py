@@ -238,6 +238,94 @@ def _settled_record(intent: dict, fill_summary: dict, settlement: dict) -> dict:
     return record
 
 
+
+def _normalize_order_status(order: dict) -> str:
+    fill_count = _count(order.get("fill_count_fp") if order.get("fill_count_fp") is not None else order.get("fill_count"))
+    initial_count = _count(order.get("initial_count_fp") if order.get("initial_count_fp") is not None else order.get("initial_count"))
+    raw = str(order.get("status") or "").lower()
+    if fill_count > 0 and initial_count > 0 and fill_count + 1e-9 >= initial_count:
+        return "filled"
+    if fill_count > 0:
+        return "partially_filled"
+    if raw in {"canceled", "cancelled"}:
+        return "canceled"
+    return "submitted"
+
+
+def _discover_submitted_pm_edge_orders(client, queue: dict) -> int:
+    """Backfill real PM Edge submissions directly from Kalshi.
+
+    Approval-page orders carry a pmedge-* client_order_id. This makes Kalshi
+    the source of truth even when Streamlit and GitHub Actions do not share a
+    local queue file.
+    """
+    try:
+        orders = client.get_orders(limit=200)
+    except Exception:
+        return 0
+
+    intents = queue.setdefault("intents", [])
+    known_client_ids = {str(x.get("client_order_id") or "") for x in intents}
+    known_order_ids = {str(x.get("kalshi_order_id") or "") for x in intents}
+    added = 0
+
+    for order in orders:
+        client_id = str(order.get("client_order_id") or "")
+        if not client_id.startswith("pmedge-"):
+            continue
+        order_id = str(order.get("order_id") or "")
+        if client_id in known_client_ids or (order_id and order_id in known_order_ids):
+            continue
+
+        side = execution_guard._order_side(order)
+        if side not in {"YES", "NO"}:
+            continue
+
+        ticker = str(order.get("ticker") or order.get("market_ticker") or "")
+        if not ticker:
+            continue
+
+        shares = _count(order.get("initial_count_fp") if order.get("initial_count_fp") is not None else order.get("initial_count"))
+        if shares <= 0:
+            shares = _count(order.get("count_fp") if order.get("count_fp") is not None else order.get("count"))
+        price = execution_guard._order_price(order, side)
+        if shares <= 0 or price is None:
+            continue
+
+        created_at = str(order.get("created_time") or order.get("created_at") or "")
+        trade_date = created_at[:10] if len(created_at) >= 10 else None
+        filled = _count(order.get("fill_count_fp") if order.get("fill_count_fp") is not None else order.get("fill_count"))
+
+        intent = {
+            "intent_id": f"kalshi:{client_id}",
+            "client_order_id": client_id,
+            "created_at": created_at or None,
+            "trade_date": trade_date,
+            "ticker": ticker,
+            "market_title": ticker,
+            "side": side,
+            "lane": "approval_link",
+            "limit_price": round(float(price), 6),
+            "shares": int(round(shares)),
+            "max_loss": round(float(price) * float(shares), 6),
+            "fair_probability": None,
+            "net_edge": None,
+            "books": None,
+            "status": _normalize_order_status(order),
+            "kalshi_order_id": order_id or None,
+            "kalshi_order_status": str(order.get("status") or "") or None,
+            "filled_shares": round(filled, 6),
+            "remaining_shares": round(max(0.0, shares - filled), 6),
+            "reconciliation_note": "discovered_by_pmedge_client_order_id",
+        }
+        intents.append(intent)
+        known_client_ids.add(client_id)
+        if order_id:
+            known_order_ids.add(order_id)
+        added += 1
+    return added
+
+
 def update_performance(
     client,
     *,
@@ -247,8 +335,12 @@ def update_performance(
 ) -> dict:
     """Finalize PM Edge intents when they are unfilled or their markets settle."""
     queue = execution_guard._load_queue(queue_path)
+    discovered = _discover_submitted_pm_edge_orders(client, queue)
+    if discovered:
+        execution_guard._save_queue(queue, queue_path)
     history = _load_history(history_path)
     known = {str(r.get("intent_id") or "") for r in history.get("records", [])}
+    known_order_ids = {str(r.get("kalshi_order_id") or "") for r in history.get("records", []) if r.get("kalshi_order_id")}
     market_cache: dict[str, dict | None] = {}
 
     checked = finalized = errors = 0
@@ -256,7 +348,8 @@ def update_performance(
 
     for intent in queue.get("intents", []):
         intent_id = str(intent.get("intent_id") or "")
-        if not intent_id or intent_id in known:
+        order_id = str(intent.get("kalshi_order_id") or "")
+        if not intent_id or intent_id in known or (order_id and order_id in known_order_ids):
             continue
 
         status = str(intent.get("status") or "")
@@ -304,6 +397,8 @@ def update_performance(
 
         history.setdefault("records", []).append(record)
         known.add(intent_id)
+        if record.get("kalshi_order_id"):
+            known_order_ids.add(str(record.get("kalshi_order_id")))
         finalized += 1
         intent["performance_recorded"] = True
         intent["performance_status"] = record.get("status")
@@ -322,6 +417,7 @@ def update_performance(
 
     summary = performance_summary(history_path=history_path, payload=history)
     return {
+        "discovered_orders": discovered,
         "checked": checked,
         "finalized": finalized,
         "errors": errors,
