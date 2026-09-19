@@ -85,7 +85,7 @@ def main() -> None:
     assert yes["order_id"] == "o-test"
     yes_body = session.calls[-1][2]["json"]
     assert yes_body["side"] == "bid"
-    assert yes_body["price"] == "0.38"
+    assert yes_body["price"] == "0.3800"
     assert yes_body["count"] == "9.00"
     assert yes_body["time_in_force"] == "immediate_or_cancel"
     assert "post_only" not in yes_body
@@ -101,9 +101,22 @@ def main() -> None:
     assert no["order_id"] == "o-test"
     no_body = session.calls[-1][2]["json"]
     assert no_body["side"] == "ask"
-    assert no_body["price"] == "0.62"
+    assert no_body["price"] == "0.6200"
     assert no_body["time_in_force"] == "good_till_canceled"
     assert no_body["post_only"] is True
+
+    round_no = client.create_buy_order(
+        ticker="TEST-NO-ROUND",
+        outcome_side="NO",
+        count=10,
+        max_price=0.50,
+        execution="TAKE",
+        client_order_id="pmedge-no-round",
+    )
+    assert round_no["order_id"] == "o-test"
+    round_no_body = session.calls[-1][2]["json"]
+    assert round_no_body["side"] == "ask"
+    assert round_no_body["price"] == "0.5000"
 
     positions = client.get_positions()
     assert positions[0]["ticker"] == "TEST-YES"
@@ -118,7 +131,7 @@ def main() -> None:
     assert sell_yes["order_id"] == "o-test"
     sell_yes_body = session.calls[-1][2]["json"]
     assert sell_yes_body["side"] == "ask"
-    assert sell_yes_body["price"] == "0.57"
+    assert sell_yes_body["price"] == "0.5700"
     assert sell_yes_body["time_in_force"] == "immediate_or_cancel"
     assert sell_yes_body["reduce_only"] is True
 
@@ -132,7 +145,7 @@ def main() -> None:
     assert sell_no["order_id"] == "o-test"
     sell_no_body = session.calls[-1][2]["json"]
     assert sell_no_body["side"] == "bid"
-    assert sell_no_body["price"] == "0.65"
+    assert sell_no_body["price"] == "0.6500"
     assert sell_no_body["reduce_only"] is True
 
     assert client.submitted_cost_for_prefix("pmedge-20260917-") == 2.5
