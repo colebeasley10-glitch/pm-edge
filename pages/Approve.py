@@ -352,6 +352,8 @@ else:
                     max_price=max_price,
                     execution=trade["execution"],
                     client_order_id=client_order_id,
+                    expires_at=trade.get("event_start_at"),
+                    is_live=bool(trade.get("is_live", False)),
                 )
             except KalshiSubmitError as exc:
                 if exc.status_code == 409:
