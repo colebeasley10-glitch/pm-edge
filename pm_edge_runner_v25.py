@@ -93,6 +93,11 @@ def main() -> int:
         }
         print("PM_EDGE_PERFORMANCE_ERROR", type(exc).__name__, str(exc)[:300])
 
+    try:
+        performance_tracker.export_auto_ledger()
+    except Exception as exc:
+        print("PM_EDGE_LEDGER_EXPORT_ERROR", type(exc).__name__, str(exc)[:300])
+
     print("PM_EDGE_PUSH_STATUS " + json.dumps(push_status, sort_keys=True))
     print("PM_EDGE_HELD_POSITIONS " + json.dumps({"count": len(held_tickers)}, sort_keys=True))
     print("PM_EDGE_POSITION_SIGNALS " + json.dumps(signal_result, sort_keys=True))
