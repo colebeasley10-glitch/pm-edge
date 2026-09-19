@@ -6,6 +6,7 @@ persists finalized PM Edge performance records locally.
 """
 from __future__ import annotations
 
+import csv
 import json
 import math
 import os
@@ -423,6 +424,65 @@ def update_performance(
         "errors": errors,
         "summary": summary,
     }
+
+
+
+def export_auto_ledger(
+    *,
+    queue_path: Path = execution_guard.QUEUE_PATH,
+    history_path: Path = HISTORY_PATH,
+    output_path: Path = Path("pm_edge_auto_ledger.csv"),
+) -> Path:
+    """Write a redacted, queryable ledger of PM Edge approval-link orders."""
+    queue = execution_guard._load_queue(queue_path)
+    history = _load_history(history_path)
+    settled_by_order = {
+        str(r.get("kalshi_order_id") or ""): r
+        for r in history.get("records", [])
+        if r.get("kalshi_order_id")
+    }
+    settled_by_intent = {
+        str(r.get("intent_id") or ""): r
+        for r in history.get("records", [])
+        if r.get("intent_id")
+    }
+
+    rows = []
+    for intent in queue.get("intents", []):
+        client_id = str(intent.get("client_order_id") or "")
+        if client_id and not client_id.startswith("pmedge-"):
+            continue
+        order_id = str(intent.get("kalshi_order_id") or "")
+        record = settled_by_order.get(order_id) or settled_by_intent.get(str(intent.get("intent_id") or "")) or {}
+        rows.append({
+            "trade_date": intent.get("trade_date") or record.get("trade_date"),
+            "ticker": intent.get("ticker") or record.get("ticker"),
+            "side": intent.get("side") or record.get("side"),
+            "status": record.get("status") or intent.get("status"),
+            "requested_shares": intent.get("shares") or record.get("requested_shares"),
+            "filled_shares": record.get("filled_shares") if record else intent.get("filled_shares"),
+            "limit_price": intent.get("limit_price") or record.get("limit_price"),
+            "average_fill_price": record.get("average_fill_price") if record else intent.get("average_fill_price"),
+            "entry_cost": record.get("entry_cost") if record else None,
+            "outcome": record.get("outcome") if record else None,
+            "net_pl": record.get("net_pl") if record else None,
+            "settled_at": record.get("settled_at") if record else None,
+            "kalshi_order_id": order_id or record.get("kalshi_order_id"),
+            "client_order_id": client_id,
+        })
+
+    rows.sort(key=lambda x: (str(x.get("trade_date") or ""), str(x.get("ticker") or ""), str(x.get("side") or "")))
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fields = [
+        "trade_date", "ticker", "side", "status", "requested_shares",
+        "filled_shares", "limit_price", "average_fill_price", "entry_cost",
+        "outcome", "net_pl", "settled_at", "kalshi_order_id", "client_order_id",
+    ]
+    with output_path.open("w", encoding="utf-8", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows)
+    return output_path
 
 
 def performance_summary(*, history_path: Path = HISTORY_PATH, payload: dict | None = None) -> dict:
