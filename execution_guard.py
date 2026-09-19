@@ -22,9 +22,6 @@ from typing import Any
 QUEUE_PATH = Path(os.getenv("PM_EDGE_ORDER_QUEUE_PATH", ".pm_edge_order_queue.json"))
 MAX_ORDER_RISK = float(os.getenv("PM_EDGE_EXECUTION_MAX_ORDER_RISK", "10.00"))
 DAILY_RISK_LIMIT_BASELINE = float(os.getenv("PM_EDGE_EXECUTION_DAILY_RISK_LIMIT", "50.00"))
-# Temporary 24-hour test requested by the user. Staging returns to the normal
-# daily risk limit after 2026-09-18 20:19 America/New_York.
-TEMP_DAILY_CAP_DISABLED_UNTIL_UTC = datetime(2026, 9, 19, 0, 19, tzinfo=timezone.utc)
 MAX_QUEUE_AGE_DAYS = int(os.getenv("PM_EDGE_EXECUTION_QUEUE_RETENTION_DAYS", "14"))
 RECONCILE_MATCH_WINDOW_HOURS = float(os.getenv("PM_EDGE_RECONCILE_MATCH_WINDOW_HOURS", "3"))
 EXECUTION_MODE = str(os.getenv("PM_EDGE_EXECUTION_MODE", "preview") or "preview").strip().lower()
@@ -58,8 +55,9 @@ def _utc_now() -> datetime:
 
 
 def _effective_daily_risk_limit(now: datetime | None = None) -> float:
-    current = (now or _utc_now()).astimezone(timezone.utc)
-    return float("inf") if current < TEMP_DAILY_CAP_DISABLED_UNTIL_UTC else DAILY_RISK_LIMIT_BASELINE
+    # A configured value <= 0 disables the aggregate daily risk ceiling while
+    # preserving the per-order cap and all other approval/execution safeguards.
+    return float("inf") if DAILY_RISK_LIMIT_BASELINE <= 0 else DAILY_RISK_LIMIT_BASELINE
 
 
 def _safe_float(value: Any) -> float | None:
