@@ -12,6 +12,7 @@ from __future__ import annotations
 import base64
 import os
 import time
+from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -43,8 +44,14 @@ def _private_key_bytes() -> bytes | None:
 
 
 def _fixed_price(value: float) -> str:
-    text = f"{float(value):.6f}".rstrip("0").rstrip(".")
-    return text if "." in text else text + ".0"
+    """Serialize a Kalshi V2 fixed-point dollar price with explicit 4dp scale.
+
+    Kalshi's V2 event-order endpoint accepts fixed-point dollar strings up to
+    four decimal places. Keeping the scale explicit also avoids the exchange
+    rejecting round values such as 0.50 as an invalid dollar precision.
+    """
+    price = Decimal(str(value)).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+    return f"{price:.4f}"
 
 
 class KalshiSubmitClient:
@@ -192,17 +199,17 @@ class KalshiSubmitClient:
         if not str(client_order_id).strip():
             raise ValueError("client_order_id is required")
 
-        # Event-order API expects dollar prices at cent precision. Round before
-        # serializing to avoid float artifacts such as 0.49999999999999994,
-        # which Kalshi rejects as invalid dollar precision.
+        # Event-order API expects a fixed-point dollar string. Whole-cent
+        # prices remain valid, but we serialize at 4dp so round values such as
+        # 0.50 retain an unambiguous fixed-point scale.
         book_side = "bid" if side == "YES" else "ask"
-        book_price = round(max_price if side == "YES" else (1.0 - max_price), 2)
+        book_price = max_price if side == "YES" else (1.0 - max_price)
         payload = {
             "ticker": ticker,
             "client_order_id": str(client_order_id),
             "side": book_side,
             "count": f"{count:.2f}",
-            "price": f"{book_price:.2f}",
+            "price": _fixed_price(book_price),
             "time_in_force": "immediate_or_cancel" if execution == "TAKE" else "good_till_canceled",
             "self_trade_prevention_type": "taker_at_cross",
             "cancel_order_on_pause": True,
