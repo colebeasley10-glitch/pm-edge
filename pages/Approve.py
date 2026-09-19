@@ -41,7 +41,7 @@ KALSHI_PUBLIC_BASE = os.getenv(
     "https://external-api.kalshi.com/trade-api/v2",
 ).rstrip("/")
 MAX_ORDER_RISK = 10.00
-MAX_DAILY_RISK_BASELINE = 50.00
+MAX_DAILY_RISK_BASELINE = 0.00
 # Temporary 24-hour test requested by the user. The daily cap automatically
 # returns to $50 after 2026-09-18 20:19 America/New_York (2026-09-19 00:19 UTC).
 TEMP_DAILY_CAP_DISABLED_UNTIL_UTC = datetime(2026, 9, 19, 0, 19, tzinfo=timezone.utc)
@@ -54,7 +54,7 @@ st.set_page_config(page_title="PM Edge — Approve", page_icon="✅", layout="ce
 st.title("PM Edge — Review & Submit")
 st.caption("PM Edge re-checks the live price. Nothing is sent to Kalshi until you press Submit.")
 if math.isinf(_effective_daily_risk_limit()):
-    st.caption("24-hour test: the $50/day PM Edge cap is temporarily disabled until Sep 18 at 8:19 PM ET. The $10 per-order cap still applies.")
+    st.caption("The PM Edge daily aggregate cap is disabled. The $10 per-order cap still applies.")
 
 
 def _as_price(market: dict, side: str) -> float | None:
