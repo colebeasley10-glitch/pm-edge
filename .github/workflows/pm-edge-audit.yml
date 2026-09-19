@@ -13,11 +13,14 @@ jobs:
     timeout-minutes: 2
     steps:
       - name: Restore PM Edge state
-        uses: actions/cache/restore@v4
+        uses: actions/cache@v4
         with:
           path: |
+            .pm_edge_watch_state.json
             .pm_edge_order_queue.json
             .pm_edge_performance_history.json
+            .pm_edge_pushover_status.json
+            .pm_edge_position_signal_state.json
           key: pm-edge-audit-${{ github.run_id }}
           restore-keys: |
             pm-edge-watch-
