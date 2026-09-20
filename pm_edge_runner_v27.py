@@ -91,9 +91,21 @@ def _mark_risk(q, bucket: str):
     try:
         setattr(q, "pmedge_risk_multiplier", REDUCED_RISK_MULTIPLIER)
         setattr(q, "pmedge_audit_bucket", bucket)
+        return q
     except Exception:
-        pass
-    return q
+        from types import SimpleNamespace
+        return SimpleNamespace(
+            qualifies=getattr(q, "qualifies", False),
+            side=getattr(q, "side", None),
+            recommended_limit=getattr(q, "recommended_limit", None),
+            hard_max=getattr(q, "hard_max", None),
+            net_edge=getattr(q, "net_edge", None),
+            best_ask=getattr(q, "best_ask", None),
+            execution=getattr(q, "execution", None),
+            pmedge_lane=getattr(q, "pmedge_lane", None),
+            pmedge_risk_multiplier=REDUCED_RISK_MULTIPLIER,
+            pmedge_audit_bucket=bucket,
+        )
 
 
 def _force_unqualified(q, bucket: str):
