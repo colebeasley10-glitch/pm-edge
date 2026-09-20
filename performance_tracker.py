@@ -10,7 +10,7 @@ import csv
 import json
 import math
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import quote
@@ -73,6 +73,45 @@ def _fill_price(fill: dict, side: str) -> float | None:
     return legacy / 100.0 if legacy is not None and legacy > 1 else legacy
 
 
+def _parse_timestamp(value: Any) -> datetime | None:
+    if value is None or value == "":
+        return None
+    if isinstance(value, (int, float)):
+        try:
+            return datetime.fromtimestamp(float(value), tz=timezone.utc)
+        except (OverflowError, OSError, ValueError):
+            return None
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        return datetime.fromisoformat(text.replace("Z", "+00:00")).astimezone(timezone.utc)
+    except ValueError:
+        try:
+            return datetime.fromtimestamp(float(text), tz=timezone.utc)
+        except (OverflowError, OSError, ValueError):
+            return None
+
+
+def _fill_time(fill: dict) -> datetime | None:
+    return _parse_timestamp(
+        fill.get("created_time")
+        or fill.get("created_at")
+        or fill.get("ts")
+    )
+
+
+def _fill_key(fill: dict) -> str:
+    return str(
+        fill.get("fill_id")
+        or fill.get("trade_id")
+        or (
+            f"{fill.get('order_id','')}|{fill.get('created_time') or fill.get('ts') or ''}|"
+            f"{fill.get('count_fp') or fill.get('count') or ''}"
+        )
+    )
+
+
 def _fill_summary(client, intent: dict) -> dict:
     ticker = str(intent.get("ticker") or "")
     order_id = str(intent.get("kalshi_order_id") or "")
@@ -82,6 +121,7 @@ def _fill_summary(client, intent: dict) -> dict:
     count = cost = fees = 0.0
     fee_rows = 0
     matched_rows = 0
+    fill_times: list[datetime] = []
     for fill in rows:
         if order_id and str(fill.get("order_id") or "") != order_id:
             continue
@@ -93,6 +133,9 @@ def _fill_summary(client, intent: dict) -> dict:
         if qty > 0 and price is not None:
             count += qty
             cost += qty * price
+        dt = _fill_time(fill)
+        if dt is not None:
+            fill_times.append(dt)
         fee = _safe_float(fill.get("fee_cost"))
         if fee is not None:
             fees += max(0.0, fee)
@@ -111,7 +154,115 @@ def _fill_summary(client, intent: dict) -> dict:
         "entry_fees": round(fees, 6),
         "average_fill_price": round(cost / count, 6) if count > 0 else None,
         "fees_complete": matched_rows > 0 and fee_rows == matched_rows,
+        "first_fill_time": min(fill_times).isoformat().replace("+00:00", "Z") if fill_times else None,
+        "last_fill_time": max(fill_times).isoformat().replace("+00:00", "Z") if fill_times else None,
     }
+
+
+def _early_exit_record(
+    client,
+    intent: dict,
+    fill_summary: dict,
+    *,
+    known_entry_order_ids: set[str],
+    consumed_exit_qty: dict[str, float],
+    settlement_time: str | None = None,
+) -> dict | None:
+    """Recognize a full pre-settlement close from opposite-direction fills."""
+    side = str(intent.get("side") or "").upper()
+    opposite = "NO" if side == "YES" else "YES"
+    filled = _count(fill_summary.get("filled_shares"))
+    if side not in {"YES", "NO"} or filled <= 0:
+        return None
+
+    entry_time = _parse_timestamp(fill_summary.get("last_fill_time") or intent.get("created_at"))
+    settlement_dt = _parse_timestamp(settlement_time)
+    ticker = str(intent.get("ticker") or "")
+    try:
+        rows = client.get_fills(ticker=ticker, limit=200)
+    except Exception:
+        return None
+
+    candidates = []
+    for fill in rows:
+        order_id = str(fill.get("order_id") or "")
+        if order_id and order_id in known_entry_order_ids:
+            continue
+        if _fill_side(fill) != opposite:
+            continue
+        qty = _count(fill.get("count_fp") if fill.get("count_fp") is not None else fill.get("count"))
+        exit_price = _fill_price(fill, side)
+        if qty <= 0 or exit_price is None:
+            continue
+        dt = _fill_time(fill)
+        if entry_time is not None and dt is not None and dt + timedelta(microseconds=1) < entry_time:
+            continue
+        if settlement_dt is not None and dt is not None and dt >= settlement_dt:
+            continue
+        candidates.append((dt or datetime.max.replace(tzinfo=timezone.utc), fill, qty, exit_price))
+
+    candidates.sort(key=lambda x: x[0])
+    closed = proceeds = exit_fees = 0.0
+    close_times: list[datetime] = []
+    for dt, fill, qty, exit_price in candidates:
+        if closed + 1e-9 >= filled:
+            break
+        key = _fill_key(fill)
+        already = max(0.0, float(consumed_exit_qty.get(key, 0.0) or 0.0))
+        available = max(0.0, qty - already)
+        if available <= 0:
+            continue
+        take = min(available, filled - closed)
+        if take <= 0:
+            continue
+        proceeds += take * exit_price
+        fee = _safe_float(fill.get("fee_cost"))
+        if fee is not None and qty > 0:
+            exit_fees += max(0.0, fee) * (take / qty)
+        consumed_exit_qty[key] = already + take
+        closed += take
+        if dt.year < 9999:
+            close_times.append(dt)
+
+    if closed + 1e-6 < filled:
+        return None
+
+    entry_cost = _safe_float(fill_summary.get("entry_cost")) or 0.0
+    entry_fees = _safe_float(fill_summary.get("entry_fees")) or 0.0
+    net_pl = proceeds - entry_cost - entry_fees - exit_fees
+    risked = entry_cost + entry_fees
+    roi = net_pl / risked if risked > 0 else None
+
+    record = _record_base(intent)
+    if net_pl > 1e-9:
+        status, outcome = "closed_early_profit", "PROFIT"
+    elif net_pl < -1e-9:
+        status, outcome = "closed_early_loss", "LOSS"
+    else:
+        status, outcome = "closed_early_flat", "PUSH"
+
+    record.update({
+        "status": status,
+        "outcome": outcome,
+        "market_result": None,
+        "filled_shares": round(filled, 6),
+        "average_fill_price": fill_summary.get("average_fill_price"),
+        "entry_cost": round(entry_cost, 6),
+        "entry_fees": round(entry_fees, 6),
+        "fees_complete": bool(fill_summary.get("fees_complete")),
+        "payout": round(proceeds, 6),
+        "net_pl": round(net_pl, 6),
+        "roi": round(roi, 6) if roi is not None else None,
+        "exit_shares": round(closed, 6),
+        "average_exit_price": round(proceeds / closed, 6) if closed > 0 else None,
+        "exit_fees": round(exit_fees, 6),
+        "closed_at": max(close_times).isoformat().replace("+00:00", "Z") if close_times else None,
+        "settled_at": None,
+        "market_settled_at": settlement_time,
+        "recorded_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "pnl_method": "pm_edge_realized_exit_fills",
+    })
+    return record
 
 
 def _load_market_settlement(ticker: str) -> dict | None:
@@ -160,11 +311,17 @@ def _record_base(intent: dict) -> dict:
         "side": intent.get("side"),
         "lane": intent.get("lane"),
         "limit_price": intent.get("limit_price"),
-        "requested_shares": intent.get("shares"),
+        "requested_shares": (
+            intent.get("shares")
+            if intent.get("shares") is not None
+            else intent.get("requested_shares")
+        ),
         "kalshi_order_id": intent.get("kalshi_order_id"),
         "fair_probability": intent.get("fair_probability"),
         "net_edge": intent.get("net_edge"),
         "books": intent.get("books"),
+        "source_version": intent.get("source_version"),
+        "client_order_id": intent.get("client_order_id"),
     }
 
 
@@ -272,7 +429,7 @@ def _discover_submitted_pm_edge_orders(client, queue: dict) -> int:
 
     for order in orders:
         client_id = str(order.get("client_order_id") or "")
-        if not client_id.startswith("pmedge-"):
+        if not client_id.startswith("pmedge-") or client_id.startswith("pmedge-pos-"):
             continue
         order_id = str(order.get("order_id") or "")
         if client_id in known_client_ids or (order_id and order_id in known_order_ids):
@@ -334,18 +491,72 @@ def update_performance(
     history_path: Path = HISTORY_PATH,
     market_loader: Callable[[str], dict | None] = _load_market_settlement,
 ) -> dict:
-    """Finalize PM Edge intents when they are unfilled or their markets settle."""
+    """Finalize fills at settlement or at a verified full early exit."""
     queue = execution_guard._load_queue(queue_path)
     discovered = _discover_submitted_pm_edge_orders(client, queue)
     if discovered:
         execution_guard._save_queue(queue, queue_path)
-    history = _load_history(history_path)
-    known = {str(r.get("intent_id") or "") for r in history.get("records", [])}
-    known_order_ids = {str(r.get("kalshi_order_id") or "") for r in history.get("records", []) if r.get("kalshi_order_id")}
-    market_cache: dict[str, dict | None] = {}
 
-    checked = finalized = errors = 0
-    queue_changed = False
+    history = _load_history(history_path)
+    records = history.setdefault("records", [])
+    known = {str(r.get("intent_id") or "") for r in records}
+    known_order_ids = {
+        str(r.get("kalshi_order_id") or "")
+        for r in records
+        if r.get("kalshi_order_id")
+    }
+    known_entry_order_ids = {
+        str(r.get("kalshi_order_id") or "")
+        for r in records
+        if r.get("kalshi_order_id")
+        and not str(r.get("client_order_id") or "").startswith("pmedge-pos-")
+    }
+    known_entry_order_ids.update(
+        str(x.get("kalshi_order_id") or "")
+        for x in queue.get("intents", [])
+        if x.get("kalshi_order_id")
+        and not str(x.get("client_order_id") or "").startswith("pmedge-pos-")
+    )
+
+    market_cache: dict[str, dict | None] = {}
+    consumed_exit_qty: dict[str, float] = {}
+    checked = finalized = errors = retro_corrected = 0
+    queue_changed = history_changed = False
+
+    def _sort_key(row: dict):
+        return (
+            str(row.get("trade_date") or ""),
+            str(row.get("ticker") or ""),
+            str(row.get("recorded_at") or ""),
+        )
+
+    for existing in sorted(records, key=_sort_key):
+        if str(existing.get("pnl_method") or "") not in {
+            "pm_edge_order_fills_held_to_settlement",
+            "pm_edge_realized_exit_fills",
+        }:
+            continue
+        if not existing.get("kalshi_order_id") or _count(existing.get("filled_shares")) <= 0:
+            continue
+        try:
+            fill_summary = _fill_summary(client, existing)
+            exit_record = _early_exit_record(
+                client,
+                existing,
+                fill_summary,
+                known_entry_order_ids=known_entry_order_ids,
+                consumed_exit_qty=consumed_exit_qty,
+                settlement_time=existing.get("settled_at") or existing.get("market_settled_at"),
+            )
+        except Exception:
+            exit_record = None
+        if exit_record is None:
+            continue
+        if str(existing.get("pnl_method") or "") != "pm_edge_realized_exit_fills":
+            existing.clear()
+            existing.update(exit_record)
+            retro_corrected += 1
+            history_changed = True
 
     for intent in queue.get("intents", []):
         intent_id = str(intent.get("intent_id") or "")
@@ -361,8 +572,8 @@ def update_performance(
             continue
         checked += 1
 
-        filled = _count(intent.get("filled_shares"))
-        if status in {"canceled", "cancelled"} and filled <= 0:
+        filled_hint = _count(intent.get("filled_shares"))
+        if status in {"canceled", "cancelled"} and filled_hint <= 0:
             record = _unfilled_record(intent)
         else:
             ticker = str(intent.get("ticker") or "")
@@ -375,8 +586,6 @@ def update_performance(
                 errors += 1
                 queue_changed = True
                 continue
-            if settlement is None:
-                continue
 
             try:
                 fill_summary = _fill_summary(client, intent)
@@ -388,19 +597,35 @@ def update_performance(
 
             filled = _count(fill_summary.get("filled_shares"))
             if filled <= 0:
+                if settlement is None:
+                    continue
                 record = _unfilled_record(
                     intent,
                     result=settlement.get("market_result"),
                     settled_time=settlement.get("settled_time"),
                 )
             else:
-                record = _settled_record(intent, fill_summary, settlement)
+                exit_record = _early_exit_record(
+                    client,
+                    intent,
+                    fill_summary,
+                    known_entry_order_ids=known_entry_order_ids,
+                    consumed_exit_qty=consumed_exit_qty,
+                    settlement_time=(settlement or {}).get("settled_time") if settlement else None,
+                )
+                if exit_record is not None:
+                    record = exit_record
+                elif settlement is None:
+                    continue
+                else:
+                    record = _settled_record(intent, fill_summary, settlement)
 
-        history.setdefault("records", []).append(record)
+        records.append(record)
         known.add(intent_id)
         if record.get("kalshi_order_id"):
             known_order_ids.add(str(record.get("kalshi_order_id")))
         finalized += 1
+        history_changed = True
         intent["performance_recorded"] = True
         intent["performance_status"] = record.get("status")
         intent["performance_recorded_at"] = record.get("recorded_at")
@@ -411,7 +636,7 @@ def update_performance(
         intent.pop("performance_error", None)
         queue_changed = True
 
-    if finalized:
+    if history_changed:
         _save_history(history, history_path)
     if queue_changed:
         execution_guard._save_queue(queue, queue_path)
@@ -421,10 +646,10 @@ def update_performance(
         "discovered_orders": discovered,
         "checked": checked,
         "finalized": finalized,
+        "retro_early_exit_corrections": retro_corrected,
         "errors": errors,
         "summary": summary,
     }
-
 
 
 def export_auto_ledger(
@@ -450,7 +675,10 @@ def export_auto_ledger(
     rows = []
     for intent in queue.get("intents", []):
         client_id = str(intent.get("client_order_id") or "")
-        if client_id and not client_id.startswith("pmedge-"):
+        if client_id and (
+            not client_id.startswith("pmedge-")
+            or client_id.startswith("pmedge-pos-")
+        ):
             continue
         order_id = str(intent.get("kalshi_order_id") or "")
         record = settled_by_order.get(order_id) or settled_by_intent.get(str(intent.get("intent_id") or "")) or {}
@@ -458,15 +686,25 @@ def export_auto_ledger(
             "trade_date": intent.get("trade_date") or record.get("trade_date"),
             "ticker": intent.get("ticker") or record.get("ticker"),
             "side": intent.get("side") or record.get("side"),
+            "lane": intent.get("lane") or record.get("lane"),
             "status": record.get("status") or intent.get("status"),
             "requested_shares": intent.get("shares") or record.get("requested_shares"),
             "filled_shares": record.get("filled_shares") if record else intent.get("filled_shares"),
             "limit_price": intent.get("limit_price") or record.get("limit_price"),
             "average_fill_price": record.get("average_fill_price") if record else intent.get("average_fill_price"),
             "entry_cost": record.get("entry_cost") if record else None,
+            "fair_probability": intent.get("fair_probability") if intent.get("fair_probability") is not None else record.get("fair_probability"),
+            "net_edge": intent.get("net_edge") if intent.get("net_edge") is not None else record.get("net_edge"),
+            "books": intent.get("books") if intent.get("books") is not None else record.get("books"),
+            "source_version": intent.get("source_version") if intent.get("source_version") is not None else record.get("source_version"),
             "outcome": record.get("outcome") if record else None,
             "net_pl": record.get("net_pl") if record else None,
+            "pnl_method": record.get("pnl_method") if record else None,
+            "closed_at": record.get("closed_at") if record else None,
+            "average_exit_price": record.get("average_exit_price") if record else None,
+            "exit_fees": record.get("exit_fees") if record else None,
             "settled_at": record.get("settled_at") if record else None,
+            "market_settled_at": record.get("market_settled_at") if record else None,
             "kalshi_order_id": order_id or record.get("kalshi_order_id"),
             "client_order_id": client_id,
         })
@@ -474,9 +712,12 @@ def export_auto_ledger(
     rows.sort(key=lambda x: (str(x.get("trade_date") or ""), str(x.get("ticker") or ""), str(x.get("side") or "")))
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fields = [
-        "trade_date", "ticker", "side", "status", "requested_shares",
+        "trade_date", "ticker", "side", "lane", "status", "requested_shares",
         "filled_shares", "limit_price", "average_fill_price", "entry_cost",
-        "outcome", "net_pl", "settled_at", "kalshi_order_id", "client_order_id",
+        "fair_probability", "net_edge", "books", "source_version",
+        "outcome", "net_pl", "pnl_method", "closed_at", "average_exit_price",
+        "exit_fees", "settled_at", "market_settled_at",
+        "kalshi_order_id", "client_order_id",
     ]
     with output_path.open("w", encoding="utf-8", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=fields)
@@ -492,9 +733,17 @@ def performance_summary(*, history_path: Path = HISTORY_PATH, payload: dict | No
     submitted = len(records)
     filled_records = [r for r in records if _count(r.get("filled_shares")) > 0]
     unfilled = sum(1 for r in records if r.get("status") == "unfilled")
-    wins = sum(1 for r in records if r.get("outcome") == "WIN")
-    losses = sum(1 for r in records if r.get("outcome") == "LOSS")
+    wins = sum(1 for r in records if r.get("status") == "settled_win")
+    losses = sum(1 for r in records if r.get("status") == "settled_loss")
     voids = sum(1 for r in records if r.get("outcome") == "VOID")
+    early_profits = sum(1 for r in records if r.get("status") == "closed_early_profit")
+    early_losses = sum(1 for r in records if r.get("status") == "closed_early_loss")
+    early_flats = sum(1 for r in records if r.get("status") == "closed_early_flat")
+    realized_exit_pl = sum(
+        (_safe_float(r.get("net_pl")) or 0.0)
+        for r in records
+        if str(r.get("status") or "").startswith("closed_early_")
+    )
 
     net_pl = sum((_safe_float(r.get("net_pl")) or 0.0) for r in records)
     entry_cost = sum((_safe_float(r.get("entry_cost")) or 0.0) for r in records)
@@ -504,12 +753,17 @@ def performance_summary(*, history_path: Path = HISTORY_PATH, payload: dict | No
     lanes: dict[str, dict] = {}
     for r in records:
         lane = str(r.get("lane") or "unknown")
-        bucket = lanes.setdefault(lane, {"bets": 0, "wins": 0, "losses": 0, "unfilled": 0, "net_pl": 0.0})
+        bucket = lanes.setdefault(
+            lane,
+            {"bets": 0, "wins": 0, "losses": 0, "early_exits": 0, "unfilled": 0, "net_pl": 0.0},
+        )
         bucket["bets"] += 1
-        if r.get("outcome") == "WIN":
+        if r.get("status") == "settled_win":
             bucket["wins"] += 1
-        elif r.get("outcome") == "LOSS":
+        elif r.get("status") == "settled_loss":
             bucket["losses"] += 1
+        if str(r.get("status") or "").startswith("closed_early_"):
+            bucket["early_exits"] += 1
         if r.get("status") == "unfilled":
             bucket["unfilled"] += 1
         bucket["net_pl"] += _safe_float(r.get("net_pl")) or 0.0
@@ -524,6 +778,11 @@ def performance_summary(*, history_path: Path = HISTORY_PATH, payload: dict | No
         "wins": wins,
         "losses": losses,
         "voids": voids,
+        "early_exit_profits": early_profits,
+        "early_exit_losses": early_losses,
+        "early_exit_flats": early_flats,
+        "realized_exits": early_profits + early_losses + early_flats,
+        "realized_exit_pl": round(realized_exit_pl, 2),
         "record": f"{wins}-{losses}",
         "entry_cost": round(entry_cost, 2),
         "fees": round(fees, 2),

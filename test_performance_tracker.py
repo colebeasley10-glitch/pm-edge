@@ -138,6 +138,139 @@ def main() -> None:
         assert again["finalized"] == 0
         assert again["summary"]["tracked_orders"] == 2
 
+    # A full manual cash-out before settlement is finalized immediately from
+    # opposite-direction fills and does not wait for the game result.
+    with TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        queue_path = root / "queue.json"
+        history_path = root / "history.json"
+        early_intent = {
+            "intent_id": "early-1",
+            "created_at": "2026-09-19T14:00:00Z",
+            "trade_date": "2026-09-19",
+            "ticker": "TEST-EARLY",
+            "market_title": "Test early exit",
+            "side": "YES",
+            "lane": "primary",
+            "limit_price": 0.40,
+            "shares": 10,
+            "max_loss": 4.00,
+            "fair_probability": 0.58,
+            "net_edge": 0.10,
+            "books": 5,
+            "status": "filled",
+            "kalshi_order_id": "entry-early",
+            "filled_shares": 10.0,
+            "average_fill_price": 0.40,
+        }
+        write_queue(queue_path, [early_intent])
+        client = FakeClient([
+            {
+                "fill_id": "entry-fill",
+                "ticker": "TEST-EARLY",
+                "order_id": "entry-early",
+                "outcome_side": "yes",
+                "count_fp": "10.00",
+                "yes_price_dollars": "0.40",
+                "no_price_dollars": "0.60",
+                "fee_cost": "0.05",
+                "created_time": "2026-09-19T14:01:00Z",
+            },
+            {
+                "fill_id": "exit-fill",
+                "ticker": "TEST-EARLY",
+                "order_id": "manual-exit",
+                "outcome_side": "no",
+                "count_fp": "10.00",
+                "yes_price_dollars": "0.70",
+                "no_price_dollars": "0.30",
+                "fee_cost": "0.05",
+                "created_time": "2026-09-19T15:00:00Z",
+            },
+        ])
+        result = performance_tracker.update_performance(
+            client,
+            queue_path=queue_path,
+            history_path=history_path,
+            market_loader=lambda _ticker: None,
+        )
+        assert result["finalized"] == 1
+        assert result["summary"]["realized_exits"] == 1
+        assert abs(result["summary"]["realized_exit_pl"] - 2.90) < 1e-9
+        history = json.loads(history_path.read_text(encoding="utf-8"))
+        row = history["records"][0]
+        assert row["status"] == "closed_early_profit"
+        assert row["pnl_method"] == "pm_edge_realized_exit_fills"
+        assert abs(row["net_pl"] - 2.90) < 1e-9
+        assert abs(row["average_exit_price"] - 0.70) < 1e-9
+
+    # Existing held-to-settlement history is repaired when fill history proves
+    # the position was already closed before the market settled.
+    with TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        queue_path = root / "queue.json"
+        history_path = root / "history.json"
+        write_queue(queue_path, [])
+        history_path.write_text(json.dumps({
+            "version": 1,
+            "records": [{
+                "intent_id": "retro-1",
+                "trade_date": "2026-09-19",
+                "ticker": "TEST-RETRO",
+                "market_title": "Retro exit",
+                "side": "YES",
+                "lane": "primary",
+                "limit_price": 0.40,
+                "requested_shares": 5,
+                "kalshi_order_id": "entry-retro",
+                "filled_shares": 5.0,
+                "average_fill_price": 0.40,
+                "entry_cost": 2.00,
+                "entry_fees": 0.02,
+                "status": "settled_loss",
+                "outcome": "LOSS",
+                "net_pl": -2.02,
+                "settled_at": "2026-09-19T18:00:00Z",
+                "pnl_method": "pm_edge_order_fills_held_to_settlement",
+            }],
+        }), encoding="utf-8")
+        client = FakeClient([
+            {
+                "fill_id": "retro-entry-fill",
+                "ticker": "TEST-RETRO",
+                "order_id": "entry-retro",
+                "outcome_side": "yes",
+                "count_fp": "5.00",
+                "yes_price_dollars": "0.40",
+                "no_price_dollars": "0.60",
+                "fee_cost": "0.02",
+                "created_time": "2026-09-19T14:00:00Z",
+            },
+            {
+                "fill_id": "retro-exit-fill",
+                "ticker": "TEST-RETRO",
+                "order_id": "manual-retro-exit",
+                "outcome_side": "no",
+                "count_fp": "5.00",
+                "yes_price_dollars": "0.65",
+                "no_price_dollars": "0.35",
+                "fee_cost": "0.02",
+                "created_time": "2026-09-19T16:00:00Z",
+            },
+        ])
+        result = performance_tracker.update_performance(
+            client,
+            queue_path=queue_path,
+            history_path=history_path,
+            market_loader=lambda _ticker: None,
+        )
+        assert result["retro_early_exit_corrections"] == 1
+        history = json.loads(history_path.read_text(encoding="utf-8"))
+        row = history["records"][0]
+        assert row["status"] == "closed_early_profit"
+        assert abs(row["net_pl"] - 1.21) < 1e-9
+        assert row["market_settled_at"] == "2026-09-19T18:00:00Z"
+
     print("PM Edge performance tracker tests: PASS")
 
 

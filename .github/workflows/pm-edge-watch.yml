@@ -87,6 +87,11 @@ jobs:
           PM_EDGE_PRICE_FISH_MAX_FAIR_AGE_MINUTES: "60"
           PM_EDGE_MAX_BOOK_DISPERSION: "0.055"
           PM_EDGE_MAX_ACTIVE_ALERTS_PER_EVENT: "1"
+          PM_EDGE_AUDIT_MLB_MIN_NET_EDGE: "0.075"
+          PM_EDGE_AUDIT_NFL_TEAM_TOTAL_MIN_NET_EDGE: "0.075"
+          PM_EDGE_AUDIT_KBO_MIN_NET_EDGE: "0.065"
+          PM_EDGE_AUDIT_RESTRICTED_MIN_BOOKS: "4"
+          PM_EDGE_AUDIT_REDUCED_RISK_MULTIPLIER: "0.50"
           PM_EDGE_TARGET_WIN_PROFIT_DOLLARS: "5.00"
           PM_EDGE_MAX_RISK_DOLLARS: "10.00"
           PM_EDGE_EXECUTION_MODE: "preview"
@@ -123,16 +128,15 @@ jobs:
           PM_EDGE_POST_WAKE_MAX_ODDS_REFRESH_PER_RUN: "5"
           PM_EDGE_MORNING_LOOKAHEAD_AFTER_WAKE_HOURS: "4"
           PM_EDGE_OVERNIGHT_MISSED_RETENTION_DAYS: "14"
-        run: python pm_edge_runner_v26.py
+        run: python pm_edge_runner_v27.py
 
-      - name: Persist PM Edge auto ledger
+      - name: Persist PM Edge audit ledgers
         run: |
-          if [ -f pm_edge_auto_ledger.csv ]; then
-            git config user.name "pm-edge-bot"
-            git config user.email "pm-edge-bot@users.noreply.github.com"
-            git add pm_edge_auto_ledger.csv
-            if ! git diff --cached --quiet; then
-              git commit -m "Update PM Edge auto ledger [skip ci]"
-              git push
-            fi
+          git config user.name "pm-edge-bot"
+          git config user.email "pm-edge-bot@users.noreply.github.com"
+          [ -f pm_edge_auto_ledger.csv ] && git add pm_edge_auto_ledger.csv
+          [ -f pm_edge_signal_ledger.csv ] && git add pm_edge_signal_ledger.csv
+          if ! git diff --cached --quiet; then
+            git commit -m "Update PM Edge audit ledgers [skip ci]"
+            git push
           fi

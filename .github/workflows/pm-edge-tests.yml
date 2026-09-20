@@ -28,7 +28,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Compile approval and performance code
-        run: python -m py_compile approval_links.py position_actions.py position_signals.py kalshi_readonly.py kalshi_submit.py performance_tracker.py pushover_status.py pm_edge_runner_v24.py pm_edge_runner_v25.py ncaa_beta_runner.py pages/Approve.py pages/Position_Action.py
+        run: python -m py_compile approval_links.py position_actions.py position_signals.py kalshi_readonly.py kalshi_submit.py performance_tracker.py signal_tracker.py pushover_status.py pm_edge_runner_v24.py pm_edge_runner_v25.py pm_edge_runner_v26.py pm_edge_runner_v27.py ncaa_beta_runner.py pages/Approve.py pages/Position_Action.py
 
       - name: Run regression tests
         run: python test_pm_edge_regressions.py
@@ -74,6 +74,15 @@ jobs:
 
       - name: Run settlement/performance tracker tests
         run: python test_performance_tracker.py
+
+      - name: Run durable signal ledger tests
+        run: python test_signal_tracker.py
+
+      - name: Run v26 quality-guard self-test
+        run: python pm_edge_runner_v26.py --self-test
+
+      - name: Run v27 audit-guard self-test
+        run: python pm_edge_runner_v27.py --self-test
 
       - name: Run Pushover taken-status tests
         run: python test_pushover_status.py
