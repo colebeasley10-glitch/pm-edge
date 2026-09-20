@@ -321,6 +321,7 @@ def _record_base(intent: dict) -> dict:
         "net_edge": intent.get("net_edge"),
         "books": intent.get("books"),
         "source_version": intent.get("source_version"),
+        "client_order_id": intent.get("client_order_id"),
     }
 
 
@@ -428,7 +429,7 @@ def _discover_submitted_pm_edge_orders(client, queue: dict) -> int:
 
     for order in orders:
         client_id = str(order.get("client_order_id") or "")
-        if not client_id.startswith("pmedge-"):
+        if not client_id.startswith("pmedge-") or client_id.startswith("pmedge-pos-"):
             continue
         order_id = str(order.get("order_id") or "")
         if client_id in known_client_ids or (order_id and order_id in known_order_ids):
@@ -504,11 +505,17 @@ def update_performance(
         for r in records
         if r.get("kalshi_order_id")
     }
-    known_entry_order_ids = set(known_order_ids)
+    known_entry_order_ids = {
+        str(r.get("kalshi_order_id") or "")
+        for r in records
+        if r.get("kalshi_order_id")
+        and not str(r.get("client_order_id") or "").startswith("pmedge-pos-")
+    }
     known_entry_order_ids.update(
         str(x.get("kalshi_order_id") or "")
         for x in queue.get("intents", [])
         if x.get("kalshi_order_id")
+        and not str(x.get("client_order_id") or "").startswith("pmedge-pos-")
     )
 
     market_cache: dict[str, dict | None] = {}
@@ -668,7 +675,10 @@ def export_auto_ledger(
     rows = []
     for intent in queue.get("intents", []):
         client_id = str(intent.get("client_order_id") or "")
-        if client_id and not client_id.startswith("pmedge-"):
+        if client_id and (
+            not client_id.startswith("pmedge-")
+            or client_id.startswith("pmedge-pos-")
+        ):
             continue
         order_id = str(intent.get("kalshi_order_id") or "")
         record = settled_by_order.get(order_id) or settled_by_intent.get(str(intent.get("intent_id") or "")) or {}
@@ -723,8 +733,8 @@ def performance_summary(*, history_path: Path = HISTORY_PATH, payload: dict | No
     submitted = len(records)
     filled_records = [r for r in records if _count(r.get("filled_shares")) > 0]
     unfilled = sum(1 for r in records if r.get("status") == "unfilled")
-    wins = sum(1 for r in records if r.get("outcome") == "WIN")
-    losses = sum(1 for r in records if r.get("outcome") == "LOSS")
+    wins = sum(1 for r in records if r.get("status") == "settled_win")
+    losses = sum(1 for r in records if r.get("status") == "settled_loss")
     voids = sum(1 for r in records if r.get("outcome") == "VOID")
     early_profits = sum(1 for r in records if r.get("status") == "closed_early_profit")
     early_losses = sum(1 for r in records if r.get("status") == "closed_early_loss")
@@ -743,12 +753,17 @@ def performance_summary(*, history_path: Path = HISTORY_PATH, payload: dict | No
     lanes: dict[str, dict] = {}
     for r in records:
         lane = str(r.get("lane") or "unknown")
-        bucket = lanes.setdefault(lane, {"bets": 0, "wins": 0, "losses": 0, "unfilled": 0, "net_pl": 0.0})
+        bucket = lanes.setdefault(
+            lane,
+            {"bets": 0, "wins": 0, "losses": 0, "early_exits": 0, "unfilled": 0, "net_pl": 0.0},
+        )
         bucket["bets"] += 1
-        if r.get("outcome") == "WIN":
+        if r.get("status") == "settled_win":
             bucket["wins"] += 1
-        elif r.get("outcome") == "LOSS":
+        elif r.get("status") == "settled_loss":
             bucket["losses"] += 1
+        if str(r.get("status") or "").startswith("closed_early_"):
+            bucket["early_exits"] += 1
         if r.get("status") == "unfilled":
             bucket["unfilled"] += 1
         bucket["net_pl"] += _safe_float(r.get("net_pl")) or 0.0
