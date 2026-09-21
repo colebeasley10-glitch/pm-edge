@@ -137,6 +137,11 @@ jobs:
           PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
         run: python clv_tracker.py
 
+      - name: Track all PM Edge signal outcomes
+        env:
+          PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
+        run: python signal_outcome_tracker.py
+
       - name: Persist PM Edge audit ledgers
         run: |
           git config user.name "pm-edge-bot"
@@ -146,6 +151,7 @@ jobs:
           [ -f pm_edge_candidate_ledger.csv ] && git add pm_edge_candidate_ledger.csv
           [ -f pm_edge_clv_ledger.csv ] && git add pm_edge_clv_ledger.csv
           [ -f pm_edge_fill_ledger.csv ] && git add pm_edge_fill_ledger.csv
+          [ -f pm_edge_signal_outcomes.csv ] && git add pm_edge_signal_outcomes.csv
           [ -f .pm_edge_watch_state.json ] && git add .pm_edge_watch_state.json
           if ! git diff --cached --quiet; then
             git commit -m "Update PM Edge audit ledgers [skip ci]"
