@@ -235,7 +235,6 @@ function ReviewModal({
   const [result, setResult] = useState<SubmitResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [passcode, setPasscode] = useState("");
-  const [passcode, setPasscode] = useState("");
 
   const load = useCallback(async () => {
     if (!signal) return;
@@ -787,6 +786,7 @@ export default function App() {
   const [selected, setSelected] = useState<Signal | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [passcode, setPasscode] = useState("");
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
