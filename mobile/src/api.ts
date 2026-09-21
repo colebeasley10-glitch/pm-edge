@@ -1,5 +1,13 @@
 import * as Linking from "expo-linking";
-import type { BetListResponse, DashboardResponse } from "./types";
+import type {
+  AnalyticsResponse,
+  BetListResponse,
+  DashboardResponse,
+  HistoryBet,
+  OpenBet,
+  Signal,
+  SystemResponse,
+} from "./types";
 
 const API_BASE = process.env.EXPO_PUBLIC_PM_EDGE_API_BASE_URL?.replace(/\/$/, "") ?? "";
 const API_TOKEN = process.env.EXPO_PUBLIC_PM_EDGE_API_TOKEN ?? "";
@@ -24,10 +32,11 @@ async function request<T>(path: string): Promise<T> {
 
 export const api = {
   dashboard: () => request<DashboardResponse>("/v1/dashboard"),
-  bets: (status: "new" | "open" | "history") =>
-    request<BetListResponse>(`/v1/bets?status=${status}`),
-  analytics: () => request<Record<string, unknown>>("/v1/analytics"),
-  system: () => request<Record<string, unknown>>("/v1/system"),
+  newBets: () => request<BetListResponse<Signal>>("/v1/bets?status=new"),
+  openBets: () => request<BetListResponse<OpenBet>>("/v1/bets?status=open"),
+  history: () => request<BetListResponse<HistoryBet>>("/v1/bets?status=history"),
+  analytics: () => request<AnalyticsResponse>("/v1/analytics"),
+  system: () => request<SystemResponse>("/v1/system"),
   async openApproval(signalId: string) {
     const payload = await request<{ approval_url: string }>(
       `/v1/bets/${encodeURIComponent(signalId)}/approval`,

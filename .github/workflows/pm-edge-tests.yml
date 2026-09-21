@@ -12,7 +12,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - name: Check out PM Edge
@@ -52,6 +52,17 @@ jobs:
 
       - name: Run PM Edge Hub MVP tests
         run: python test_pm_edge_hub.py
+
+      - name: Set up Node for native app
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Type-check native PM Edge app
+        run: |
+          cd mobile
+          npm install --no-audit --no-fund
+          npm run typecheck
 
       - name: Run regression tests
         run: python test_pm_edge_regressions.py

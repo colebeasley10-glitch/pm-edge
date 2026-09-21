@@ -102,7 +102,33 @@ def bets(
     if status == "new":
         df = dashboard_data.new_signals(data["signals"], data["orders"])
     elif status == "open":
-        df = dashboard_data.open_order_rows(data["orders"])
+        df = dashboard_data.open_order_rows(data["orders"]).copy()
+        if not df.empty:
+            live_rows = []
+            for row in df.head(25).to_dict("records"):
+                item = dict(row)
+                ticker = str(item.get("ticker") or "")
+                side = str(item.get("side") or "").upper()
+                try:
+                    snap = dashboard_data.market_snapshot(ticker) if ticker else {}
+                except Exception:
+                    snap = {}
+                current_bid = snap.get("yes_bid") if side == "YES" else snap.get("no_bid")
+                try:
+                    filled = float(item.get("filled_shares") or 0)
+                except (TypeError, ValueError):
+                    filled = 0.0
+                try:
+                    entry_cost = float(item.get("entry_cost") or 0)
+                except (TypeError, ValueError):
+                    entry_cost = 0.0
+                current_value = filled * float(current_bid) if current_bid is not None and filled > 0 else None
+                item["current_bid"] = current_bid
+                item["current_value"] = current_value
+                item["unrealized_pl"] = (current_value - entry_cost) if current_value is not None and entry_cost > 0 else None
+                item["kalshi_status"] = snap.get("status")
+                live_rows.append(item)
+            df = pd.DataFrame(live_rows)
     else:
         df = data["orders"].copy()
 
