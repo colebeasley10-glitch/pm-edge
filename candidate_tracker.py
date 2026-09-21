@@ -40,6 +40,10 @@ FIELDS = [
     "recommended_limit",
     "hard_max",
     "fair_probability",
+    "fair_proportional",
+    "fair_power",
+    "fair_shin",
+    "devig_method",
     "net_edge",
     "books",
     "dispersion",
@@ -123,7 +127,6 @@ def record_candidate(
     path: Path = CANDIDATE_LEDGER_PATH,
     evaluated_at: str | None = None,
 ) -> dict:
-    """Append one candidate decision, deduped within each 30-minute run bucket."""
     ticker = str(market.get("ticker") or "").strip()
     if not ticker:
         return {"recorded": False, "reason": "missing_ticker"}
@@ -176,6 +179,10 @@ def record_candidate(
         "recommended_limit": price,
         "hard_max": _safe_float(getattr(q, "hard_max", None)),
         "fair_probability": _side_probability(fair_entry, side),
+        "fair_proportional": _safe_float(fair_entry.get("fair_proportional")),
+        "fair_power": _safe_float(fair_entry.get("fair_power")),
+        "fair_shin": _safe_float(fair_entry.get("fair_shin")),
+        "devig_method": str(fair_entry.get("devig_method") or ""),
         "net_edge": _safe_float(getattr(q, "net_edge", None)),
         "books": books,
         "dispersion": _safe_float(fair_entry.get("dispersion")),

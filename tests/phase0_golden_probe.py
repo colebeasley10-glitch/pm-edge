@@ -10,12 +10,14 @@ from pathlib import Path
 from types import SimpleNamespace
 
 BASELINE_SHA = "2a390a68a251cc1375241ddcceece6bffe3d922a"
+UNPACK_SHA = "1a3506330bb948892998eb67fadbd0800ea478ce"
 GOLDEN_PATH = Path("tests/golden/phase0_baseline.json")
 
 # Lock the same baseline inputs on both sides of the unpack boundary.
 os.environ["PM_EDGE_MIN_NET_EDGE"] = "0.04"
 os.environ["PM_EDGE_MODEL_ERROR_BUFFER"] = "0.01"
 os.environ["PM_EDGE_SLIPPAGE_BUFFER"] = "0.0025"
+os.environ["PM_EDGE_DEVIG_METHOD"] = "proportional"
 
 sys.path.insert(0, os.getcwd())
 
@@ -109,20 +111,15 @@ def snapshot_bytes() -> bytes:
         snapshot(), sort_keys=True, separators=(",", ":"), ensure_ascii=False
     ).encode("utf-8")
 
-def _verify_parent() -> None:
-    current = snapshot_bytes()
-    golden = GOLDEN_PATH.read_bytes()
-    if current != golden:
-        raise SystemExit("FAIL: unpacked source differs from tests/golden/phase0_baseline.json")
-
+def _snapshot_at_commit(sha: str) -> bytes:
     with tempfile.TemporaryDirectory(prefix="pmedge-phase0-") as td:
-        worktree = Path(td) / "baseline"
+        worktree = Path(td) / "tree"
         add = subprocess.run(
-            ["git", "worktree", "add", "--detach", str(worktree), BASELINE_SHA],
+            ["git", "worktree", "add", "--detach", str(worktree), sha],
             capture_output=True, text=True,
         )
         if add.returncode != 0:
-            raise SystemExit("FAIL: could not create baseline worktree: " + add.stderr.strip())
+            raise SystemExit("FAIL: could not create worktree: " + add.stderr.strip())
         try:
             env = dict(os.environ)
             env["PYTHONPATH"] = str(worktree)
@@ -132,21 +129,30 @@ def _verify_parent() -> None:
             )
             if run.returncode != 0:
                 raise SystemExit(
-                    "FAIL: baseline probe failed: " + run.stderr.decode("utf-8", errors="replace").strip()
+                    "FAIL: golden probe failed: "
+                    + run.stderr.decode("utf-8", errors="replace").strip()
                 )
-            baseline = run.stdout
+            return run.stdout
         finally:
             subprocess.run(
                 ["git", "worktree", "remove", "--force", str(worktree)],
                 capture_output=True,
             )
 
-    if baseline != golden:
-        raise SystemExit("FAIL: v28 baseline differs from tests/golden/phase0_baseline.json")
-    if baseline != current:
-        raise SystemExit("FAIL: v28 baseline and unpacked source are not byte-identical")
 
-    print("PHASE0 GOLDEN PASS: v28 baseline == unpacked source == committed artifact")
+def _verify_parent() -> None:
+    baseline = _snapshot_at_commit(BASELINE_SHA)
+    unpacked = _snapshot_at_commit(UNPACK_SHA)
+    golden = GOLDEN_PATH.read_bytes()
+
+    if baseline != golden:
+        raise SystemExit("FAIL: v28 baseline differs from committed golden artifact")
+    if unpacked != golden:
+        raise SystemExit("FAIL: Commit 1 unpack differs from committed golden artifact")
+    if baseline != unpacked:
+        raise SystemExit("FAIL: v28 baseline and Commit 1 unpack are not byte-identical")
+
+    print("PHASE0 GOLDEN PASS: v28 baseline == Commit 1 unpack == committed artifact")
 
 def main() -> None:
     mode = sys.argv[1] if len(sys.argv) > 1 else "--check-golden"

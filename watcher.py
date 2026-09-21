@@ -839,7 +839,7 @@ def sport_rule_matches(event: dict, rule) -> bool:
         return key.startswith(value)
     return True
 
-def fair_to_dict(fair, event, spec, usage=None):
+def fair_to_dict(fair, event, spec, usage=None, devig_diag=None):
     return {
         "fetched_at": iso_now(),
         "fair_yes_prob": float(fair.fair_yes_prob),
@@ -858,6 +858,10 @@ def fair_to_dict(fair, event, spec, usage=None):
         "point": spec.point,
         "commence_time": event.get("commence_time"),
         "requests_remaining": (usage or {}).get("requests_remaining"),
+        "devig_method": (devig_diag or {}).get("devig_method"),
+        "fair_proportional": (devig_diag or {}).get("fair_proportional"),
+        "fair_power": (devig_diag or {}).get("fair_power"),
+        "fair_shin": (devig_diag or {}).get("fair_shin"),
     }
 
 def score_market(market, fair_entry, settings, base_min_edge=None):
@@ -1244,17 +1248,18 @@ def main():
             fair_attempts += 1
 
             min_books_required = 3 if spec.market_type == "h2h" else 2
-            consensus = fair_from_event(
+            consensus, devig_diag = fair_from_event(
                 spec, event_odds, aliases,
                 min_books=min_books_required,
                 max_dispersion=settings.odds_max_dispersion,
+                return_diagnostics=True,
             )
             fair = blend_fair_value(market["ticker"], consensus, overlay)
             if fair:
                 fair_successes += 1
                 bulk_fair_successes += 1
                 state["fair_cache"][market["ticker"]] = fair_to_dict(
-                    fair, em.event, spec, usage
+                    fair, em.event, spec, usage, devig_diag
                 )
 
     # Event-specific fallback for alternate spreads/totals, team totals and
@@ -1325,7 +1330,7 @@ def main():
         fair = blend_fair_value(market["ticker"], consensus, overlay)
         if fair:
             fair_successes += 1
-            state["fair_cache"][market["ticker"]] = fair_to_dict(fair, em.event, spec, usage)
+            state["fair_cache"][market["ticker"]] = fair_to_dict(fair, em.event, spec, usage, devig_diag)
 
     # Manual fair values override any cache.
     for ticker, x in manual.items():
@@ -1346,6 +1351,10 @@ def main():
             "selection": None,
             "point": None,
             "commence_time": None,
+            "devig_method": None,
+            "fair_proportional": None,
+            "fair_power": None,
+            "fair_shin": None,
         }
 
     # Score cached, sufficiently fresh fair values.

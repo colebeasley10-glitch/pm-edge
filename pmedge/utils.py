@@ -38,7 +38,7 @@ def normalize_text(s: str) -> str:
     s = unicodedata.normalize("NFKD", s or "")
     s = "".join(ch for ch in s if not unicodedata.combining(ch))
     s = s.lower().replace("&", " and ")
-    s = re.sub(r"\bno\.?\b", "north", s)
+    s = re.sub(r"\bno\.\s*(?=\d)", "number ", s)
     s = re.sub(r"\bst\.?\b", "state", s)
     s = re.sub(r"\buniversity\b", "", s)
     s = re.sub(r"\bcollege\b", "", s)

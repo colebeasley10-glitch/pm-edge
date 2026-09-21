@@ -1,10 +1,13 @@
 from __future__ import annotations
 from dataclasses import dataclass
+import logging
 from pathlib import Path
 import pandas as pd
 
-from .devig import devig_outcomes, robust_consensus
+from .devig import active_devig_method, devig_all, robust_consensus
 from .matcher import team_similarity
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -75,14 +78,17 @@ def _pick_name(target: str, candidates: list[str], aliases: dict[str, str]) -> s
     return scored[0][1] if scored and scored[0][0] >= 0.70 else None
 
 
+def _target_bundle(outcomes: list[dict], target_name: str) -> dict[str, float | None]:
+    all_methods = devig_all(outcomes)
+    return {method: probs.get(target_name) for method, probs in all_methods.items()}
+
+
 def _book_prob_h2h(bookmaker, selection, aliases):
     for outcomes in _group_market_outcomes(bookmaker, "h2h"):
         names = [str(o.get("name", "")) for o in outcomes]
         picked = _pick_name(selection, names, aliases)
-        if not picked:
-            continue
-        fair = devig_outcomes(outcomes)
-        return fair.get(picked)
+        if picked:
+            return _target_bundle(outcomes, picked)
     return None
 
 
@@ -91,10 +97,9 @@ def _book_prob_total(bookmaker, point, market_keys=("totals", "alternate_totals"
         for outcomes in _group_market_outcomes(bookmaker, key):
             pair = [o for o in outcomes if abs(float(o.get("point", -999)) - point) < 1e-6]
             if len(pair) >= 2:
-                fair = devig_outcomes(pair)
-                for name, p in fair.items():
-                    if name.lower() == "over":
-                        return p
+                over = next((str(o.get("name", "")) for o in pair if str(o.get("name", "")).lower() == "over"), None)
+                if over:
+                    return _target_bundle(pair, over)
     return None
 
 
@@ -104,63 +109,90 @@ def _book_prob_spread(bookmaker, selection, point, aliases, market_keys=("spread
             candidates = [o for o in outcomes if abs(float(o.get("point", -999)) - point) < 1e-6]
             if not candidates:
                 continue
-            # Need both sides of same spread for a proper devig. Opponent is usually opposite point.
-            target = None
-            for o in candidates:
-                if team_similarity(selection, str(o.get("name", "")), aliases) >= 0.70:
-                    target = o
-                    break
+            target = next((o for o in candidates if team_similarity(selection, str(o.get("name", "")), aliases) >= 0.70), None)
             if not target:
                 continue
-            pair = []
-            for o in outcomes:
-                opoint = float(o.get("point", -999))
-                if abs(abs(opoint) - abs(point)) < 1e-6:
-                    pair.append(o)
+            pair = [o for o in outcomes if abs(abs(float(o.get("point", -999))) - abs(point)) < 1e-6]
             if len(pair) >= 2:
-                fair = devig_outcomes(pair[:2])
-                return fair.get(str(target.get("name")))
+                return _target_bundle(pair[:2], str(target.get("name")))
     return None
 
 
 def _book_prob_team_total(bookmaker, selection, point, aliases, market_keys=("team_totals", "alternate_team_totals")):
     for key in market_keys:
         for outcomes in _group_market_outcomes(bookmaker, key):
+            point_outcomes = [o for o in outcomes if abs(float(o.get("point", -999)) - point) <= 1e-6]
+            if not point_outcomes:
+                continue
+
             candidates = []
-            for o in outcomes:
-                if abs(float(o.get("point", -999)) - point) > 1e-6:
-                    continue
-                desc = str(o.get("description") or o.get("team") or "")
-                if desc and team_similarity(selection, desc, aliases) < 0.70:
+            for o in point_outcomes:
+                desc = str(o.get("description") or o.get("team") or "").strip()
+                if not desc:
+                    logger.info("team_total_reject reason=missing_team_description selection=%r point=%s", selection, point)
+                    return None
+                if team_similarity(selection, desc, aliases) < 0.70:
                     continue
                 candidates.append(o)
-            if len(candidates) >= 2:
-                fair = devig_outcomes(candidates[:2])
-                for name, p in fair.items():
-                    if name.lower() == "over":
-                        return p
+
+            names = {str(o.get("name", "")).strip().lower() for o in candidates}
+            if "over" not in names or "under" not in names:
+                logger.info("team_total_reject reason=missing_over_under_pair selection=%r point=%s names=%r", selection, point, sorted(names))
+                return None
+
+            over = next(o for o in candidates if str(o.get("name", "")).strip().lower() == "over")
+            under = next(o for o in candidates if str(o.get("name", "")).strip().lower() == "under")
+            return _target_bundle([over, under], str(over.get("name")))
     return None
 
 
-def fair_from_event(spec, event: dict, aliases: dict[str, str], min_books: int, max_dispersion: float):
-    probs = []
+def fair_from_event(
+    spec,
+    event: dict,
+    aliases: dict[str, str],
+    min_books: int,
+    max_dispersion: float,
+    *,
+    return_diagnostics: bool = False,
+):
+    method_probs = {"proportional": [], "power": [], "shin": []}
+
     for book in event.get("bookmakers", []):
         try:
             if spec.market_type == "h2h" and spec.selection:
-                p = _book_prob_h2h(book, spec.selection, aliases)
+                bundle = _book_prob_h2h(book, spec.selection, aliases)
             elif spec.market_type == "total" and spec.point is not None:
-                p = _book_prob_total(book, spec.point)
+                bundle = _book_prob_total(book, spec.point)
             elif spec.market_type == "spread" and spec.selection and spec.point is not None:
-                p = _book_prob_spread(book, spec.selection, spec.point, aliases)
+                bundle = _book_prob_spread(book, spec.selection, spec.point, aliases)
             elif spec.market_type == "team_total" and spec.selection and spec.point is not None:
-                p = _book_prob_team_total(book, spec.selection, spec.point, aliases)
+                bundle = _book_prob_team_total(book, spec.selection, spec.point, aliases)
             else:
-                p = None
-            if p is not None:
-                probs.append(float(p))
+                bundle = None
+
+            if bundle:
+                for method in method_probs:
+                    p = bundle.get(method)
+                    if p is not None:
+                        method_probs[method].append(float(p))
         except (ValueError, TypeError, ZeroDivisionError):
             continue
-    return robust_consensus(probs, min_books=min_books, max_dispersion=max_dispersion)
+
+    consensuses = {
+        method: robust_consensus(probs, min_books=min_books, max_dispersion=max_dispersion)
+        for method, probs in method_probs.items()
+    }
+    method = active_devig_method()
+    consensus = consensuses.get(method)
+    diagnostics = {
+        "devig_method": method,
+        "fair_proportional": consensuses["proportional"].fair_prob if consensuses["proportional"] else None,
+        "fair_power": consensuses["power"].fair_prob if consensuses["power"] else None,
+        "fair_shin": consensuses["shin"].fair_prob if consensuses["shin"] else None,
+    }
+    if return_diagnostics:
+        return consensus, diagnostics
+    return consensus
 
 
 def blend_fair_value(ticker: str, consensus, overlay: dict[str, dict]) -> FairValue | None:

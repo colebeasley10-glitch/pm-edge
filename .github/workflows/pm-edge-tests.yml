@@ -35,6 +35,9 @@ jobs:
       - name: Run Phase 0 golden equivalence
         run: python tests/phase0_golden_probe.py --verify-parent
 
+      - name: Run Commit 2 engine-fix tests
+        run: python test_pm_edge_commit2.py
+
       - name: Run regression tests
         run: python test_pm_edge_regressions.py
 

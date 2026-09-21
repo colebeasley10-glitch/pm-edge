@@ -21,14 +21,13 @@ class QuoteDecision:
     reason: str
 
 
-def fee_per_contract(price: float, rate: float) -> float:
-    # Expected/model fee per contract. Exchange rounding can add small differences,
-    # especially for fractional fills, so the strategy also keeps a separate buffer.
-    return max(0.0, rate * price * (1.0 - price))
+def fee_per_contract(price: float, rate: float, contracts: int = 1) -> float:
+    contracts = max(1, int(contracts))
+    raw = rate * contracts * price * (1.0 - price)
+    return max(0.0, math.ceil(raw * 100.0) / 100.0) / contracts
 
 
 def _hard_max(fair_prob: float, min_net_edge: float, nonfee_buffer: float, fee_rate: float) -> float:
-    # Solve conservatively by grid because fee depends on price.
     best = 0.01
     for i in range(1, 10000):
         p = i / 10000
@@ -64,7 +63,6 @@ def price_side(
     if best_bid is not None and best_ask is not None:
         spread = max(0.0, best_ask - best_bid)
 
-    # Prefer providing liquidity one tick above current bid while remaining below ask.
     maker_price = None
     maker_edge = None
     if best_bid is not None:
