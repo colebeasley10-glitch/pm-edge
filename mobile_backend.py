@@ -9,6 +9,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 import dashboard_data
+from kalshi_readonly import KalshiReadOnlyClient
 
 app = FastAPI(title="PM Edge Mobile API", version="1.0.0")
 
@@ -78,8 +79,29 @@ def dashboard() -> dict:
     new = dashboard_data.new_signals(data["signals"], data["orders"]).head(8)
     state = dashboard_data.read_state()
     last = dashboard_data.last_model_activity(data)
+    account = {"connected": False, "balance": None}
+    client = KalshiReadOnlyClient.from_env()
+    if client is not None:
+        try:
+            balance_payload = client.get_balance()
+            raw_balance = balance_payload.get("balance")
+            if raw_balance is None:
+                raw_balance = balance_payload.get("balance_dollars")
+            balance = None
+            if raw_balance is not None:
+                try:
+                    balance = float(raw_balance)
+                    if balance > 1000:
+                        balance /= 100.0
+                except (TypeError, ValueError):
+                    balance = None
+            account = {"connected": True, "balance": balance}
+        except Exception:
+            account = {"connected": False, "balance": None}
+
     return {
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "account": account,
         "actual": actual,
         "model": model,
         "new_bets": _records(new, limit=8),

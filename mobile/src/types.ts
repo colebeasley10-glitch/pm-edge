@@ -61,6 +61,10 @@ export type PerformanceRow = {
 
 export type DashboardResponse = {
   generated_at: string;
+  account: {
+    connected: boolean;
+    balance: number | null;
+  };
   actual: Summary;
   model: Partial<Summary>;
   new_bets: Signal[];

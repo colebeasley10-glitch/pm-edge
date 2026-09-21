@@ -103,5 +103,11 @@ class KalshiReadOnlyClient:
         return rows if isinstance(rows, list) else []
 
 
+    def get_balance(self) -> dict:
+        """Return account cash/balance metadata using the read-only client."""
+        payload = self._get("/portfolio/balance")
+        return payload if isinstance(payload, dict) else {}
+
+
 def tracking_configured() -> bool:
     return bool(os.getenv("KALSHI_API_KEY_ID", "").strip() and _private_key_bytes())

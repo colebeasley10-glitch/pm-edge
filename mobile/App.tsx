@@ -301,9 +301,10 @@ function DashboardScreen({
         </View>
       </View>
       <View style={styles.metricsGrid}>
+        <Metric label="Kalshi Balance" value={fmtMoney(data.account.balance)} />
         <Metric label="Record" value={data.actual.record} />
         <Metric label="Amount Risked" value={fmtMoney(data.actual.risked)} />
-        <Metric label="Open Exposure" value={String(data.open_count)} />
+        <Metric label="Open Bets" value={String(data.open_count)} />
         <Metric label="Unfilled Orders" value={String(data.actual.unfilled)} />
       </View>
 
