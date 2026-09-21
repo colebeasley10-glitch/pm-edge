@@ -87,6 +87,19 @@ def install_v28_patch() -> None:
     v22.VALUE_MIN_EDGE = STANDARD_MIN_EDGE
     v22.VALUE_THREE_BOOK_EDGE = STANDARD_THREE_BOOK_EDGE
 
+    # v26 intentionally stamped its semantics version to 26. Once v28 is the
+    # active launcher, normalize that marker to 28 so watcher.main does not
+    # purge the fair-value cache and active-alert state on every scheduled run.
+    original_load_state = watcher.load_state
+
+    def load_state_v28():
+        state = original_load_state()
+        state["data_semantics_version"] = 28
+        state["v28_broader_coverage_version"] = 1
+        return state
+
+    watcher.load_state = load_state_v28
+
     original_score_market = watcher.score_market
 
     def score_market_v28(market, fair_entry, settings, base_min_edge=None):
