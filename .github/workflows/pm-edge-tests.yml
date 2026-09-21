@@ -29,8 +29,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Compile approval and performance code
-        run: python -m py_compile approval_links.py position_actions.py position_signals.py kalshi_readonly.py kalshi_submit.py performance_tracker.py signal_tracker.py pushover_status.py pm_edge_runner_v24.py pm_edge_runner_v25.py pm_edge_runner_v26.py pm_edge_runner_v27.py ncaa_beta_runner.py pages/Approve.py pages/Position_Action.py
+      - name: Compile approval, performance, and hub code
+        run: python -m py_compile approval_links.py position_actions.py position_signals.py kalshi_readonly.py kalshi_submit.py performance_tracker.py signal_tracker.py dashboard_data.py signal_outcome_tracker.py app.py pushover_status.py pm_edge_runner_v24.py pm_edge_runner_v25.py pm_edge_runner_v26.py pm_edge_runner_v27.py ncaa_beta_runner.py pages/Approve.py pages/Position_Action.py
 
       - name: Run Phase 0 golden equivalence
         run: python tests/phase0_golden_probe.py --verify-parent
@@ -49,6 +49,9 @@ jobs:
 
       - name: Run Commit 6 data-pipeline tests
         run: python test_pm_edge_commit6.py
+
+      - name: Run PM Edge Hub MVP tests
+        run: python test_pm_edge_hub.py
 
       - name: Run regression tests
         run: python test_pm_edge_regressions.py
