@@ -11,7 +11,8 @@ import type {
 } from "./types";
 
 const API_BASE = process.env.EXPO_PUBLIC_PM_EDGE_API_BASE_URL?.replace(/\/$/, "") ?? "";
-const API_TOKEN = process.env.EXPO_PUBLIC_PM_EDGE_API_TOKEN ?? "";
+const ENV_TOKEN = process.env.EXPO_PUBLIC_PM_EDGE_API_TOKEN ?? "";
+const API_TOKEN = ENV_TOKEN || (typeof window !== "undefined" ? window.localStorage.getItem("pm_edge_api_token") ?? "" : "");
 
 function headers() {
   return {
@@ -23,7 +24,7 @@ function headers() {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!API_BASE || !API_TOKEN) {
-    throw new Error("PM Edge mobile API is not configured");
+    throw new Error("PM Edge access is not configured on this device");
   }
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
