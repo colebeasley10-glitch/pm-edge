@@ -34,7 +34,6 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            .pm_edge_watch_state.json
             .pm_edge_order_queue.json
             .pm_edge_performance_history.json
             .pm_edge_pushover_status.json
@@ -55,11 +54,11 @@ jobs:
           KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
           PM_EDGE_KALSHI_READONLY_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
           PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
-          PM_EDGE_ODDS_DAILY_BUDGET: "18"
+          PM_EDGE_ODDS_DAILY_BUDGET: "15"
           PM_EDGE_MAX_ODDS_REFRESH_PER_RUN: "4"
           PM_EDGE_EVENT_CACHE_HOURS: "8"
           PM_EDGE_BULK_FEATURED_ENABLED: "1"
-          PM_EDGE_MAX_BULK_SPORTS_PER_RUN: "3"
+          PM_EDGE_MAX_BULK_SPORTS_PER_RUN: "2"
           PM_EDGE_MIN_NET_EDGE: "0.04"
           PM_EDGE_MODEL_ERROR_BUFFER: "0.01"
           PM_EDGE_SLIPPAGE_BUFFER: "0.0025"
@@ -86,7 +85,7 @@ jobs:
           PM_EDGE_MAX_PRICE_FISH_ALERTS_PER_RUN: "6"
           PM_EDGE_PRICE_FISH_DAILY_CAP: "15"
           PM_EDGE_PRICE_FISH_MIN_BOOKS: "3"
-          PM_EDGE_PRICE_FISH_MAX_FAIR_AGE_MINUTES: "60"
+          PM_EDGE_PRICE_FISH_MAX_FAIR_AGE_MINUTES: "95"
           PM_EDGE_MAX_BOOK_DISPERSION: "0.055"
           PM_EDGE_MAX_ACTIVE_ALERTS_PER_EVENT: "1"
           PM_EDGE_DAILY_RISK_BUDGET_DOLLARS: "40"
@@ -147,6 +146,7 @@ jobs:
           [ -f pm_edge_candidate_ledger.csv ] && git add pm_edge_candidate_ledger.csv
           [ -f pm_edge_clv_ledger.csv ] && git add pm_edge_clv_ledger.csv
           [ -f pm_edge_fill_ledger.csv ] && git add pm_edge_fill_ledger.csv
+          [ -f .pm_edge_watch_state.json ] && git add .pm_edge_watch_state.json
           if ! git diff --cached --quiet; then
             git commit -m "Update PM Edge audit ledgers [skip ci]"
             git push

@@ -35,7 +35,7 @@ PRICE_FISH_MIN_BOOKS = max(
     2, int(os.getenv("PM_EDGE_PRICE_FISH_MIN_BOOKS", "3"))
 )
 PRICE_FISH_MAX_FAIR_AGE_MINUTES = max(
-    15.0, float(os.getenv("PM_EDGE_PRICE_FISH_MAX_FAIR_AGE_MINUTES", "60"))
+    15.0, float(os.getenv("PM_EDGE_PRICE_FISH_MAX_FAIR_AGE_MINUTES", "95"))
 )
 
 # Process-local reservations prevent two correlated candidates from both passing

@@ -136,7 +136,7 @@ TEAM_PAIR_MIN_SAME_SPORT = float(os.getenv("PM_EDGE_WATCH_TEAM_PAIR_MIN_SAME_SPO
 TEAM_PAIR_STRONG_SAME_SPORT = float(os.getenv("PM_EDGE_WATCH_TEAM_PAIR_STRONG_SAME_SPORT", "0.70"))
 LOW_SCORE_MAX_TIME_DELTA_HOURS = float(os.getenv("PM_EDGE_WATCH_LOW_SCORE_MAX_TIME_DELTA_HOURS", "18"))
 MATCH_MIN_UNKNOWN_SPORT = float(os.getenv("PM_EDGE_WATCH_MATCH_CONFIDENCE_UNKNOWN_SPORT", "0.72"))
-DAILY_ODDS_BUDGET = int(os.getenv("PM_EDGE_ODDS_DAILY_BUDGET", "12"))
+DAILY_ODDS_BUDGET = int(os.getenv("PM_EDGE_ODDS_DAILY_BUDGET", "15"))
 MAX_REFRESH_GROUPS = int(os.getenv("PM_EDGE_MAX_ODDS_REFRESH_PER_RUN", "3"))
 EVENT_CACHE_HOURS = float(os.getenv("PM_EDGE_EVENT_CACHE_HOURS", "8"))
 BULK_FEATURED_ENABLED = os.getenv("PM_EDGE_BULK_FEATURED_ENABLED", "1").strip().lower() not in {"0", "false", "no", "off"}
@@ -166,6 +166,11 @@ PRIMARY_MARKET = {
     "total": "totals",
     "team_total": "team_totals",
 }
+
+# The 500-credit/month Odds API plan makes bulk multi-market refreshes too
+# expensive. Bulk refresh only moneylines; other market types keep the existing
+# event-specific fallback inside the same hard daily credit budget.
+BULK_FEATURED_KEY_FOR_TYPE = {"h2h": "h2h"}
 
 ODDS_MARKETS_FOR_TYPE = {
     "h2h": "h2h",
@@ -1235,11 +1240,7 @@ def main():
     fair_successes = 0
     odds_errors = 0
 
-    featured_key_for_type = {
-        "h2h": "h2h",
-        "spread": "spreads",
-        "total": "totals",
-    }
+    featured_key_for_type = BULK_FEATURED_KEY_FOR_TYPE
 
     bulk_plan = {}
     if BULK_FEATURED_ENABLED and MAX_BULK_SPORTS_PER_RUN > 0:

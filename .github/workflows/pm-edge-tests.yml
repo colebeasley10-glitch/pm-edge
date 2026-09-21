@@ -47,6 +47,9 @@ jobs:
       - name: Run Commit 5 guard tests
         run: python test_pm_edge_commit5.py
 
+      - name: Run Commit 6 data-pipeline tests
+        run: python test_pm_edge_commit6.py
+
       - name: Run regression tests
         run: python test_pm_edge_regressions.py
 
