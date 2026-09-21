@@ -30,7 +30,7 @@ import type {
 } from "./src/types";
 
 type Tab = "Dashboard" | "Bets" | "Live" | "Analytics" | "More";
-type MoreView = "Menu" | "History" | "System" | "Settings";
+type MoreView = "Menu" | "History" | "Pending" | "Account" | "System" | "Settings";
 type BetFilter = "All" | "Primary" | "Value" | "Fish";
 
 const fmtMoney = (x?: number | null, signed = false) => {
@@ -122,14 +122,17 @@ function Metric({
   value,
   positive,
   compact = false,
+  onPress,
 }: {
   label: string;
   value: string;
   positive?: boolean;
   compact?: boolean;
+  onPress?: () => void;
 }) {
+  const Wrapper = onPress ? Pressable : View;
   return (
-    <View style={[styles.metric, compact && styles.metricCompact]}>
+    <Wrapper onPress={onPress} style={[styles.metric, compact && styles.metricCompact]}>
       <Text
         style={[
           compact ? styles.metricValueCompact : styles.metricValue,
@@ -138,8 +141,8 @@ function Metric({
       >
         {value}
       </Text>
-      <Text style={styles.metricLabel}>{label}</Text>
-    </View>
+      <View style={styles.metricLabelRow}><Text style={styles.metricLabel}>{label}</Text>{onPress ? <Ionicons name="chevron-forward" size={14} color={colors.muted} /> : null}</View>
+    </Wrapper>
   );
 }
 
@@ -476,11 +479,13 @@ function DashboardScreen({
   refresh,
   refreshing,
   onReview,
+  navigate,
 }: {
   data: DashboardResponse;
   refresh: () => void;
   refreshing: boolean;
   onReview: (signal: Signal) => void;
+  navigate: (target: "Analytics" | "Live" | "Bets" | "History" | "Pending" | "Account") => void;
 }) {
   return (
     <ScrollView
@@ -488,7 +493,7 @@ function DashboardScreen({
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.blue} />}
     >
       <Header title="Dashboard" subtitle="Today · PM Edge command center" />
-      <View style={styles.heroProfit}>
+      <Pressable style={styles.heroProfit} onPress={() => navigate("Analytics")}>
         <View>
           <Text style={styles.heroProfitValue}>{fmtMoney(data.actual.net_pl, true)}</Text>
           <Text style={styles.heroProfitLabel}>Total tracked P/L</Text>
@@ -497,19 +502,19 @@ function DashboardScreen({
           <Text style={styles.heroRoiValue}>{fmtPct(data.actual.roi)}</Text>
           <Text style={styles.mutedSmall}>ROI</Text>
         </View>
-      </View>
+      </Pressable>
       <View style={styles.metricsGrid}>
-        <Metric label="Kalshi Balance" value={fmtMoney(data.account.balance)} />
-        <Metric label="Record" value={data.actual.record} />
-        <Metric label="Amount Risked" value={fmtMoney(data.actual.risked)} />
-        <Metric label="Open Bets" value={String(data.open_count)} />
-        <Metric label="Unfilled Orders" value={String(data.actual.unfilled)} />
+        <Metric label="Kalshi Balance" value={fmtMoney(data.account.balance)} onPress={() => navigate("Account")} />
+        <Metric label="Record" value={data.actual.record} onPress={() => navigate("History")} />
+        <Metric label="Amount Risked" value={fmtMoney(data.actual.risked)} onPress={() => navigate("History")} />
+        <Metric label="Open Bets" value={String(data.open_count)} onPress={() => navigate("Live")} />
+        <Metric label="Unfilled Orders" value={String(data.actual.unfilled)} onPress={() => navigate("Pending")} />
       </View>
 
-      <View style={styles.sectionHeader}>
+      <Pressable style={styles.sectionHeader} onPress={() => navigate("Bets")}>
         <Text style={styles.sectionTitle}>New PM Edge Bets</Text>
-        <Text style={styles.linkText}>{data.new_bets.length} waiting</Text>
-      </View>
+        <Text style={styles.linkText}>{data.new_bets.length} waiting  ›</Text>
+      </Pressable>
       {data.new_bets.length ? (
         data.new_bets.slice(0, 4).map((bet) => <BetCard key={bet.signal_id} signal={bet} onReview={onReview} />)
       ) : (
