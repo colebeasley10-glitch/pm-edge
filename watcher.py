@@ -862,6 +862,9 @@ def fair_to_dict(fair, event, spec, usage=None, devig_diag=None):
         "fair_proportional": (devig_diag or {}).get("fair_proportional"),
         "fair_power": (devig_diag or {}).get("fair_power"),
         "fair_shin": (devig_diag or {}).get("fair_shin"),
+        "books_available": (devig_diag or {}).get("books_available"),
+        "books_matched": (devig_diag or {}).get("books_matched"),
+        "book_drop_reasons": (devig_diag or {}).get("book_drop_reasons") or [],
     }
 
 def score_market(market, fair_entry, settings, base_min_edge=None):
@@ -918,7 +921,13 @@ def should_alert(state, market, fair_entry, q, tier="primary"):
         return True, "EDGE"
     if age_hours(prev.get("sent_at")) >= ALERT_COOLDOWN_HOURS:
         return True, "REMINDER"
-    return False, ""
+    return False, "cooldown_active"
+
+
+def record_suppression(state, market, fair_entry, q, tier, reason):
+    """Instrumentation hook; v28 records cap/policy suppressions durably."""
+    return None
+
 
 def record_alert(state, market, fair_entry, q, tier="primary"):
     suffix = "" if tier == "primary" else f"|{tier.upper()}"
@@ -1322,10 +1331,11 @@ def main():
         # can legitimately have fewer books, so allow two but demand more edge later.
         min_books_required = 3 if spec.market_type == "h2h" else 2
 
-        consensus = fair_from_event(
+        consensus, devig_diag = fair_from_event(
             spec, event_odds, aliases,
             min_books=min_books_required,
             max_dispersion=settings.odds_max_dispersion,
+            return_diagnostics=True,
         )
         fair = blend_fair_value(market["ticker"], consensus, overlay)
         if fair:
@@ -1434,7 +1444,8 @@ def main():
         n_sent = 0
         for net_edge, market, fair_entry, q, reason in rows:
             if n_sent >= cap:
-                break
+                record_suppression(state, market, fair_entry, q, tier, "run_cap")
+                continue
             yes_prob = float(fair_entry["fair_yes_prob"])
             side_prob = yes_prob if q.side == "YES" else 1.0 - yes_prob
             action = "BUY NOW" if q.execution == "TAKE" else "PLACE LIMIT"

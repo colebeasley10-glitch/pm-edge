@@ -339,7 +339,7 @@ def install_v26_patch() -> None:
         reserved_other = {x for x in reserved if x != key}
         if event_id and active_count + len(reserved_other) >= MAX_ACTIVE_ALERTS_PER_EVENT:
             V26_STATS["correlation_blocks"] += 1
-            return False, ""
+            return False, "event_cap"
 
         ok, reason = original_should_alert(state, market, fair_entry, q, tier=tier)
         if ok and event_id:

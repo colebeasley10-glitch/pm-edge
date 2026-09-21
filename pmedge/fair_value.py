@@ -156,8 +156,13 @@ def fair_from_event(
     return_diagnostics: bool = False,
 ):
     method_probs = {"proportional": [], "power": [], "shin": []}
+    bookmakers = list(event.get("bookmakers", []) or [])
+    books_available = len(bookmakers)
+    books_matched = 0
+    book_drop_reasons: list[str] = []
 
-    for book in event.get("bookmakers", []):
+    for index, book in enumerate(bookmakers):
+        book_name = str(book.get("title") or book.get("key") or f"book_{index + 1}")
         try:
             if spec.market_type == "h2h" and spec.selection:
                 bundle = _book_prob_h2h(book, spec.selection, aliases)
@@ -171,11 +176,15 @@ def fair_from_event(
                 bundle = None
 
             if bundle:
+                books_matched += 1
                 for method in method_probs:
                     p = bundle.get(method)
                     if p is not None:
                         method_probs[method].append(float(p))
-        except (ValueError, TypeError, ZeroDivisionError):
+            else:
+                book_drop_reasons.append(f"{book_name}:market_or_selection_unmatched")
+        except (ValueError, TypeError, ZeroDivisionError) as exc:
+            book_drop_reasons.append(f"{book_name}:{type(exc).__name__}")
             continue
 
     consensuses = {
@@ -189,6 +198,9 @@ def fair_from_event(
         "fair_proportional": consensuses["proportional"].fair_prob if consensuses["proportional"] else None,
         "fair_power": consensuses["power"].fair_prob if consensuses["power"] else None,
         "fair_shin": consensuses["shin"].fair_prob if consensuses["shin"] else None,
+        "books_available": books_available,
+        "books_matched": books_matched,
+        "book_drop_reasons": book_drop_reasons,
     }
     if return_diagnostics:
         return consensus, diagnostics

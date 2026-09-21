@@ -148,11 +148,24 @@ def install_v28_patch() -> None:
             lane=lane,
             stage="gate",
             decision="ALERT_ELIGIBLE" if ok else "ALERT_SUPPRESSED",
-            reason=reason or "policy_duplicate_correlation_or_position_guard",
+            reason=reason or "cooldown_active",
         )
         return ok, reason
 
     watcher.should_alert = should_alert_v28
+
+    def record_suppression_v28(state, market, fair_entry, q, tier, reason):
+        _record(
+            market,
+            fair_entry,
+            q,
+            lane=_lane_name(tier, q),
+            stage="gate",
+            decision="ALERT_SUPPRESSED",
+            reason=str(reason or "run_cap"),
+        )
+
+    watcher.record_suppression = record_suppression_v28
 
     original_record_alert = watcher.record_alert
 

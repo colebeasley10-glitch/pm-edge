@@ -132,6 +132,11 @@ jobs:
           PM_EDGE_OVERNIGHT_MISSED_RETENTION_DAYS: "14"
         run: python pm_edge_runner_v28.py
 
+      - name: Capture PM Edge closing-line value
+        env:
+          PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
+        run: python clv_tracker.py
+
       - name: Persist PM Edge audit ledgers
         run: |
           git config user.name "pm-edge-bot"
@@ -139,6 +144,8 @@ jobs:
           [ -f pm_edge_auto_ledger.csv ] && git add pm_edge_auto_ledger.csv
           [ -f pm_edge_signal_ledger.csv ] && git add pm_edge_signal_ledger.csv
           [ -f pm_edge_candidate_ledger.csv ] && git add pm_edge_candidate_ledger.csv
+          [ -f pm_edge_clv_ledger.csv ] && git add pm_edge_clv_ledger.csv
+          [ -f pm_edge_fill_ledger.csv ] && git add pm_edge_fill_ledger.csv
           if ! git diff --cached --quiet; then
             git commit -m "Update PM Edge audit ledgers [skip ci]"
             git push

@@ -255,12 +255,12 @@ def install_v18_patch() -> None:
         if tier == "speculative":
             if int(_daily_bucket(state).get("sent", 0) or 0) >= PRICE_FISH_DAILY_CAP:
                 V18_STATS["price_fish_daily_cap_blocks"] += 1
-                return False, ""
+                return False, "daily_cap"
 
         ok, reason = original_should_alert(state, market, fair_entry, q, tier=tier)
         if tier == "speculative" and ok and reason == "REMINDER":
             V18_STATS["price_fish_reminders_suppressed"] += 1
-            return False, ""
+            return False, "no_price_move"
         return ok, reason
 
     watcher.should_alert = should_alert_v18
