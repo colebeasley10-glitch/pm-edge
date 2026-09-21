@@ -10,6 +10,7 @@ import csv
 import json
 import math
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -20,6 +21,8 @@ import requests
 import execution_guard
 
 HISTORY_PATH = Path(os.getenv("PM_EDGE_PERFORMANCE_HISTORY_PATH", ".pm_edge_performance_history.json"))
+SIGNAL_LEDGER_PATH = Path(os.getenv("PM_EDGE_SIGNAL_LEDGER_PATH", "pm_edge_signal_ledger.csv"))
+FILL_LEDGER_PATH = Path(os.getenv("PM_EDGE_FILL_LEDGER_PATH", "pm_edge_fill_ledger.csv"))
 KALSHI_PUBLIC_BASE = os.getenv(
     "PM_EDGE_KALSHI_PUBLIC_BASE_URL",
     "https://external-api.kalshi.com/trade-api/v2",
@@ -112,7 +115,56 @@ def _fill_key(fill: dict) -> str:
     )
 
 
-def _fill_summary(client, intent: dict) -> dict:
+def _fill_type(fill: dict) -> str:
+    if fill.get("is_taker") is not None:
+        return "taker" if bool(fill.get("is_taker")) else "maker"
+    for key in ("liquidity", "role", "fill_type", "maker_taker"):
+        value = str(fill.get(key) or "").strip().lower()
+        if value in {"maker", "taker"}:
+            return value
+    return "unknown"
+
+
+def _append_fill_audit(fill: dict, intent: dict, side: str, *, path: Path = FILL_LEDGER_PATH) -> None:
+    fields = ["fill_id","order_id","client_order_id","signal_id","ticker","side","fill_type","shares","price","realized_fee","filled_at"]
+    fill_id = _fill_key(fill)
+    if not fill_id:
+        return
+    existing = set()
+    if path.exists():
+        try:
+            with path.open("r", encoding="utf-8", newline="") as fh:
+                existing = {str(row.get("fill_id") or "") for row in csv.DictReader(fh)}
+        except OSError:
+            existing = set()
+    if fill_id in existing:
+        return
+    qty = _count(fill.get("count_fp") if fill.get("count_fp") is not None else fill.get("count"))
+    price = _fill_price(fill, side)
+    fee = _safe_float(fill.get("fee_cost"))
+    row = {
+        "fill_id": fill_id,
+        "order_id": str(fill.get("order_id") or ""),
+        "client_order_id": str(intent.get("client_order_id") or ""),
+        "signal_id": str(intent.get("signal_id") or ""),
+        "ticker": str(intent.get("ticker") or fill.get("ticker") or ""),
+        "side": side,
+        "fill_type": _fill_type(fill),
+        "shares": qty,
+        "price": price,
+        "realized_fee": max(0.0, fee) if fee is not None else "",
+        "filled_at": str(fill.get("created_time") or fill.get("created_at") or fill.get("ts") or ""),
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    write_header = not path.exists() or path.stat().st_size == 0
+    with path.open("a", encoding="utf-8", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fields)
+        if write_header:
+            writer.writeheader()
+        writer.writerow(row)
+
+
+def _fill_summary(client, intent: dict, *, fill_ledger_path: Path = FILL_LEDGER_PATH) -> dict:
     ticker = str(intent.get("ticker") or "")
     order_id = str(intent.get("kalshi_order_id") or "")
     side = str(intent.get("side") or "").upper()
@@ -128,6 +180,7 @@ def _fill_summary(client, intent: dict) -> dict:
         if _fill_side(fill) and _fill_side(fill) != side:
             continue
         matched_rows += 1
+        _append_fill_audit(fill, intent, side, path=fill_ledger_path)
         qty = _count(fill.get("count_fp") if fill.get("count_fp") is not None else fill.get("count"))
         price = _fill_price(fill, side)
         if qty > 0 and price is not None:
@@ -322,6 +375,9 @@ def _record_base(intent: dict) -> dict:
         "books": intent.get("books"),
         "source_version": intent.get("source_version"),
         "client_order_id": intent.get("client_order_id"),
+        "signal_id": intent.get("signal_id"),
+        "fair_fetched_at": intent.get("fair_fetched_at"),
+        "dispersion": intent.get("dispersion"),
     }
 
 
@@ -410,7 +466,32 @@ def _normalize_order_status(order: dict) -> str:
     return "submitted"
 
 
-def _discover_submitted_pm_edge_orders(client, queue: dict) -> int:
+def _signal_id_from_client_order_id(client_order_id: str) -> str | None:
+    match = re.fullmatch(r"pmedge-([a-f0-9]{20})-([a-f0-9]{8,})", str(client_order_id or "").lower())
+    return match.group(1) if match else None
+
+
+def _load_signal_metadata(path: Path = SIGNAL_LEDGER_PATH) -> dict[str, dict]:
+    if not path.exists() or path.stat().st_size == 0:
+        return {}
+    out: dict[str, dict] = {}
+    try:
+        with path.open("r", encoding="utf-8", newline="") as fh:
+            for row in csv.DictReader(fh):
+                signal_id = str(row.get("signal_id") or "").strip().lower()
+                if not signal_id:
+                    continue
+                # Prefer the original alert row, which carries complete event metadata.
+                current = out.get(signal_id)
+                is_signal = str(row.get("record_type") or "signal") == "signal"
+                if current is None or is_signal:
+                    out[signal_id] = dict(row)
+    except OSError:
+        return {}
+    return out
+
+
+def _discover_submitted_pm_edge_orders(client, queue: dict, signal_ledger_path: Path = SIGNAL_LEDGER_PATH) -> int:
     """Backfill real PM Edge submissions directly from Kalshi.
 
     Approval-page orders carry a pmedge-* client_order_id. This makes Kalshi
@@ -423,6 +504,7 @@ def _discover_submitted_pm_edge_orders(client, queue: dict) -> int:
         return 0
 
     intents = queue.setdefault("intents", [])
+    signal_metadata = _load_signal_metadata(signal_ledger_path)
     known_client_ids = {str(x.get("client_order_id") or "") for x in intents}
     known_order_ids = {str(x.get("kalshi_order_id") or "") for x in intents}
     added = 0
@@ -453,28 +535,38 @@ def _discover_submitted_pm_edge_orders(client, queue: dict) -> int:
         created_at = str(order.get("created_time") or order.get("created_at") or "")
         trade_date = created_at[:10] if len(created_at) >= 10 else None
         filled = _count(order.get("fill_count_fp") if order.get("fill_count_fp") is not None else order.get("fill_count"))
+        signal_id = _signal_id_from_client_order_id(client_id)
+        signal = signal_metadata.get(signal_id or "", {})
 
         intent = {
             "intent_id": f"kalshi:{client_id}",
             "client_order_id": client_id,
+            "signal_id": signal_id,
             "created_at": created_at or None,
-            "trade_date": trade_date,
+            "trade_date": trade_date or signal.get("trade_date") or None,
             "ticker": ticker,
-            "market_title": ticker,
+            "market_title": signal.get("market_title") or ticker,
             "side": side,
-            "lane": "approval_link",
+            "lane": signal.get("lane") or "approval_link",
             "limit_price": round(float(price), 6),
             "shares": int(round(shares)),
             "max_loss": round(float(price) * float(shares), 6),
-            "fair_probability": None,
-            "net_edge": None,
-            "books": None,
+            "fair_probability": _safe_float(signal.get("fair_probability")),
+            "net_edge": _safe_float(signal.get("net_edge")),
+            "books": int(signal["books"]) if str(signal.get("books") or "").isdigit() else None,
+            "dispersion": _safe_float(signal.get("dispersion")),
+            "fair_fetched_at": signal.get("fair_fetched_at") or None,
+            "source_version": int(signal["source_version"]) if str(signal.get("source_version") or "").isdigit() else None,
             "status": _normalize_order_status(order),
             "kalshi_order_id": order_id or None,
             "kalshi_order_status": str(order.get("status") or "") or None,
             "filled_shares": round(filled, 6),
             "remaining_shares": round(max(0.0, shares - filled), 6),
-            "reconciliation_note": "discovered_by_pmedge_client_order_id",
+            "reconciliation_note": (
+                "joined_signal_ledger_by_signal_id"
+                if signal
+                else "client_order_id_no_signal_metadata"
+            ),
         }
         intents.append(intent)
         known_client_ids.add(client_id)
@@ -490,10 +582,12 @@ def update_performance(
     queue_path: Path = execution_guard.QUEUE_PATH,
     history_path: Path = HISTORY_PATH,
     market_loader: Callable[[str], dict | None] = _load_market_settlement,
+    signal_ledger_path: Path = SIGNAL_LEDGER_PATH,
+    fill_ledger_path: Path = FILL_LEDGER_PATH,
 ) -> dict:
     """Finalize fills at settlement or at a verified full early exit."""
     queue = execution_guard._load_queue(queue_path)
-    discovered = _discover_submitted_pm_edge_orders(client, queue)
+    discovered = _discover_submitted_pm_edge_orders(client, queue, signal_ledger_path)
     if discovered:
         execution_guard._save_queue(queue, queue_path)
 
@@ -539,7 +633,7 @@ def update_performance(
         if not existing.get("kalshi_order_id") or _count(existing.get("filled_shares")) <= 0:
             continue
         try:
-            fill_summary = _fill_summary(client, existing)
+            fill_summary = _fill_summary(client, existing, fill_ledger_path=fill_ledger_path)
             exit_record = _early_exit_record(
                 client,
                 existing,
@@ -588,7 +682,7 @@ def update_performance(
                 continue
 
             try:
-                fill_summary = _fill_summary(client, intent)
+                fill_summary = _fill_summary(client, intent, fill_ledger_path=fill_ledger_path)
             except Exception as exc:
                 intent["performance_error"] = f"{type(exc).__name__}: {exc}"[:300]
                 errors += 1

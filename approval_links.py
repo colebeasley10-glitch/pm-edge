@@ -11,6 +11,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import time
 from urllib.parse import quote
 
@@ -57,6 +58,10 @@ def create_approval_token(
     fair_probability: float | None = None,
     net_edge: float | None = None,
     books: int | None = None,
+    dispersion: float | None = None,
+    source_version: int | None = None,
+    fair_fetched_at: str | None = None,
+    signal_id: str | None = None,
     now: int | None = None,
     ttl_seconds: int = DEFAULT_TTL_SECONDS,
     event_start_at: int | None = None,
@@ -79,6 +84,12 @@ def create_approval_token(
     lane_code = {"primary": "p", "value": "v", "price_fish": "f"}.get(
         str(lane or "").lower(), "p"
     )
+    if signal_id is None:
+        seed = f"{now}|{ticker}|{side}|{lane_code}|{limit_price}|{time.time_ns()}".encode("utf-8")
+        signal_id = hashlib.sha256(seed).hexdigest()[:20]
+    signal_id = str(signal_id).strip().lower()
+    if not re.fullmatch(r"[a-f0-9]{20}", signal_id):
+        raise ValueError("signal_id must be 20 lowercase hex characters")
     payload = {
         "v": TOKEN_VERSION,
         "t": str(ticker),
@@ -89,6 +100,7 @@ def create_approval_token(
         "n": int(shares),
         "r": int(round(float(max_loss) * 100)),
         "x": now + max(60, int(ttl_seconds)),
+        "u": signal_id,
     }
     if fair_probability is not None:
         payload["f"] = int(round(float(fair_probability) * 10000))
@@ -96,6 +108,12 @@ def create_approval_token(
         payload["e"] = int(round(float(net_edge) * 10000))
     if books is not None:
         payload["b"] = int(books)
+    if dispersion is not None:
+        payload["q"] = int(round(float(dispersion) * 10000))
+    if source_version is not None:
+        payload["z"] = int(source_version)
+    if fair_fetched_at:
+        payload["h"] = str(fair_fetched_at)
     if event_start_at is not None:
         payload["g"] = int(event_start_at)
     if is_live:
@@ -149,6 +167,10 @@ def verify_approval_token(token: str, *, now: int | None = None) -> dict:
         "fair_probability": (int(payload["f"]) / 10000.0) if "f" in payload else None,
         "net_edge": (int(payload["e"]) / 10000.0) if "e" in payload else None,
         "books": int(payload["b"]) if "b" in payload else None,
+        "dispersion": (int(payload["q"]) / 10000.0) if "q" in payload else None,
+        "source_version": int(payload["z"]) if "z" in payload else None,
+        "fair_fetched_at": str(payload["h"]) if "h" in payload else None,
+        "signal_id": str(payload["u"]),
         "expires_at": int(payload["x"]),
         "event_start_at": int(payload["g"]) if "g" in payload else None,
         "is_live": bool(payload.get("i", 0)),
@@ -160,3 +182,12 @@ def build_approval_url(base_url: str, token: str) -> str:
     if not base:
         raise ValueError("STREAMLIT_APP_URL is required for approval links")
     return f"{base}/Approve?trade={quote(token, safe='.-_~')}"
+
+
+def client_order_id(signal_id: str, token_text: str) -> str:
+    """Deterministic idempotency key with provenance embedded for later joins."""
+    signal_id = str(signal_id or "").strip().lower()
+    if not re.fullmatch(r"[a-f0-9]{20}", signal_id):
+        raise ValueError("invalid signal_id")
+    nonce = hashlib.sha256(str(token_text).encode("utf-8")).hexdigest()[:8]
+    return f"pmedge-{signal_id}-{nonce}"

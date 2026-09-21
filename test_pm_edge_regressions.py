@@ -224,7 +224,7 @@ def test_speculative_tier_catches_a_market_the_primary_tier_rejects():
     the speculative 2% bar should qualify under score_market's speculative
     base -- and still respect the book-count scaling."""
     fair_entry = {"fair_yes_prob": 0.50, "n_books": 4}
-    market = {"yes_bid": 0.44, "yes_ask": 0.45, "no_bid": 0.55, "no_ask": 0.56}
+    market = {"yes_bid": 0.43, "yes_ask": 0.44, "no_bid": 0.56, "no_ask": 0.57}
 
     class FakeSettings:
         maker_fee_rate = 0.0175

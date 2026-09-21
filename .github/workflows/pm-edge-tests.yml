@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Check out PM Edge
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -29,6 +31,24 @@ jobs:
 
       - name: Compile approval and performance code
         run: python -m py_compile approval_links.py position_actions.py position_signals.py kalshi_readonly.py kalshi_submit.py performance_tracker.py signal_tracker.py pushover_status.py pm_edge_runner_v24.py pm_edge_runner_v25.py pm_edge_runner_v26.py pm_edge_runner_v27.py ncaa_beta_runner.py pages/Approve.py pages/Position_Action.py
+
+      - name: Run Phase 0 golden equivalence
+        run: python tests/phase0_golden_probe.py --verify-parent
+
+      - name: Run Commit 2 engine-fix tests
+        run: python test_pm_edge_commit2.py
+
+      - name: Run Commit 3 provenance tests
+        run: python test_pm_edge_commit3.py
+
+      - name: Run Commit 4 instrumentation tests
+        run: python test_pm_edge_commit4.py
+
+      - name: Run Commit 5 guard tests
+        run: python test_pm_edge_commit5.py
+
+      - name: Run Commit 6 data-pipeline tests
+        run: python test_pm_edge_commit6.py
 
       - name: Run regression tests
         run: python test_pm_edge_regressions.py

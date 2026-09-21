@@ -35,7 +35,7 @@ PRICE_FISH_MIN_BOOKS = max(
     2, int(os.getenv("PM_EDGE_PRICE_FISH_MIN_BOOKS", "3"))
 )
 PRICE_FISH_MAX_FAIR_AGE_MINUTES = max(
-    15.0, float(os.getenv("PM_EDGE_PRICE_FISH_MAX_FAIR_AGE_MINUTES", "60"))
+    15.0, float(os.getenv("PM_EDGE_PRICE_FISH_MAX_FAIR_AGE_MINUTES", "95"))
 )
 
 # Process-local reservations prevent two correlated candidates from both passing
@@ -339,7 +339,7 @@ def install_v26_patch() -> None:
         reserved_other = {x for x in reserved if x != key}
         if event_id and active_count + len(reserved_other) >= MAX_ACTIVE_ALERTS_PER_EVENT:
             V26_STATS["correlation_blocks"] += 1
-            return False, ""
+            return False, "event_cap"
 
         ok, reason = original_should_alert(state, market, fair_entry, q, tier=tier)
         if ok and event_id:

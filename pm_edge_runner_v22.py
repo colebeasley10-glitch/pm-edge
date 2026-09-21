@@ -314,7 +314,7 @@ def install_v22_patch() -> None:
         if effective_tier == "value":
             if int(_value_bucket(state).get("sent", 0) or 0) >= VALUE_DAILY_CAP:
                 V22_STATS["value_daily_cap_blocks"] += 1
-                return False, ""
+                return False, "daily_cap"
         return original_should_alert(
             state, market, fair_entry, q, tier=effective_tier
         )

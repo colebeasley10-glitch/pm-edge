@@ -10,6 +10,7 @@ import csv
 import hashlib
 import math
 import os
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -40,8 +41,15 @@ FIELDS = [
     "recommended_limit",
     "hard_max",
     "fair_probability",
+    "fair_proportional",
+    "fair_power",
+    "fair_shin",
+    "devig_method",
     "net_edge",
     "books",
+    "books_available",
+    "books_matched",
+    "book_drop_reasons",
     "dispersion",
     "risk_multiplier",
     "audit_bucket",
@@ -93,7 +101,29 @@ def _decision_id(
     return hashlib.sha256(raw).hexdigest()[:20]
 
 
+def _ensure_schema(path: Path) -> None:
+    if not path.exists() or path.stat().st_size == 0:
+        return
+    try:
+        with path.open("r", encoding="utf-8", newline="") as fh:
+            reader = csv.DictReader(fh)
+            old_fields = list(reader.fieldnames or [])
+            if old_fields == FIELDS:
+                return
+            rows = list(reader)
+    except OSError:
+        return
+    tmp = path.with_suffix(path.suffix + ".schema.tmp")
+    with tmp.open("w", encoding="utf-8", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=FIELDS)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({field: row.get(field, "") for field in FIELDS})
+    tmp.replace(path)
+
+
 def _existing_ids(path: Path) -> set[str]:
+    _ensure_schema(path)
     key = str(path.resolve())
     cached = _SEEN_BY_PATH.get(key)
     if cached is not None:
@@ -123,7 +153,6 @@ def record_candidate(
     path: Path = CANDIDATE_LEDGER_PATH,
     evaluated_at: str | None = None,
 ) -> dict:
-    """Append one candidate decision, deduped within each 30-minute run bucket."""
     ticker = str(market.get("ticker") or "").strip()
     if not ticker:
         return {"recorded": False, "reason": "missing_ticker"}
@@ -176,8 +205,15 @@ def record_candidate(
         "recommended_limit": price,
         "hard_max": _safe_float(getattr(q, "hard_max", None)),
         "fair_probability": _side_probability(fair_entry, side),
+        "fair_proportional": _safe_float(fair_entry.get("fair_proportional")),
+        "fair_power": _safe_float(fair_entry.get("fair_power")),
+        "fair_shin": _safe_float(fair_entry.get("fair_shin")),
+        "devig_method": str(fair_entry.get("devig_method") or ""),
         "net_edge": _safe_float(getattr(q, "net_edge", None)),
         "books": books,
+        "books_available": fair_entry.get("books_available"),
+        "books_matched": fair_entry.get("books_matched"),
+        "book_drop_reasons": json.dumps(fair_entry.get("book_drop_reasons") or [], separators=(",", ":")),
         "dispersion": _safe_float(fair_entry.get("dispersion")),
         "risk_multiplier": _safe_float(getattr(q, "pmedge_risk_multiplier", 1.0)),
         "audit_bucket": str(getattr(q, "pmedge_audit_bucket", "") or ""),
