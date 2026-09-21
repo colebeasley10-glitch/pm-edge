@@ -105,7 +105,9 @@ def enrich_orders(orders: pd.DataFrame, signals: pd.DataFrame) -> pd.DataFrame:
     ]
     for col in enrich_cols:
         if col not in out.columns:
-            out[col] = pd.NA
+            out[col] = pd.Series(pd.NA, index=out.index, dtype="object")
+        else:
+            out[col] = out[col].astype("object")
 
     for idx, row in out.iterrows():
         sid = signal_id_from_client_order_id(row.get("client_order_id"))
