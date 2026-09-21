@@ -130,9 +130,8 @@ function Metric({
   compact?: boolean;
   onPress?: () => void;
 }) {
-  const Wrapper = onPress ? Pressable : View;
   return (
-    <Wrapper onPress={onPress} style={[styles.metric, compact && styles.metricCompact]}>
+    <Pressable disabled={!onPress} onPress={onPress} style={[styles.metric, compact && styles.metricCompact]}>
       <Text
         style={[
           compact ? styles.metricValueCompact : styles.metricValue,
@@ -142,7 +141,7 @@ function Metric({
         {value}
       </Text>
       <View style={styles.metricLabelRow}><Text style={styles.metricLabel}>{label}</Text>{onPress ? <Ionicons name="chevron-forward" size={14} color={colors.muted} /> : null}</View>
-    </Wrapper>
+    </Pressable>
   );
 }
 
@@ -685,6 +684,38 @@ function HistoryScreen({ items, back }: { items: HistoryBet[]; back: () => void 
   );
 }
 
+
+function PendingScreen({ items, back }: { items: HistoryBet[]; back: () => void }) {
+  return (
+    <FlatList
+      style={{ flex: 1 }}
+      contentContainerStyle={styles.screen}
+      data={items}
+      keyExtractor={(item, i) => `${item.ticker}-pending-${i}`}
+      ListHeaderComponent={<Header title="Unfilled Orders" subtitle="Orders waiting for a fill" back={back} />}
+      renderItem={({ item }) => <HistoryRow bet={item} />}
+      ListEmptyComponent={<View style={styles.emptyCard}><Text style={styles.muted}>No unfilled orders right now.</Text></View>}
+    />
+  );
+}
+
+function AccountScreen({ data, back }: { data: DashboardResponse; back: () => void }) {
+  return (
+    <ScrollView contentContainerStyle={styles.screen}>
+      <Header title="Kalshi Account" subtitle="Connection and tracked balance" back={back} />
+      <View style={styles.statusBanner}>
+        <Ionicons name={data.account.connected ? "checkmark-circle" : "alert-circle"} size={20} color={data.account.connected ? colors.green : colors.orange} />
+        <Text style={styles.statusBannerText}>{data.account.connected ? "Read connection active" : "Account read connection unavailable"}</Text>
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Balance</Text>
+        <Text style={styles.heroProfitValue}>{fmtMoney(data.account.balance)}</Text>
+        <Text style={styles.muted}>PM Edge reads this value from the connected account. Order placement uses a separate protected write connection.</Text>
+      </View>
+    </ScrollView>
+  );
+}
+
 function SystemScreen({ data, back }: { data: SystemResponse; back: () => void }) {
   const drawdownActive = Boolean(data.drawdown?.active);
   return (
@@ -786,6 +817,7 @@ export default function App() {
   const [bets, setBets] = useState<Signal[]>([]);
   const [openBets, setOpenBets] = useState<OpenBet[]>([]);
   const [history, setHistory] = useState<HistoryBet[]>([]);
+  const [unfilled, setUnfilled] = useState<HistoryBet[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsResponse | null>(null);
   const [system, setSystem] = useState<SystemResponse | null>(null);
   const [selected, setSelected] = useState<Signal | null>(null);
@@ -797,11 +829,12 @@ export default function App() {
     setRefreshing(true);
     setError(null);
     try {
-      const [d, b, o, h, a, s] = await Promise.all([
+      const [d, b, o, h, u, a, s] = await Promise.all([
         api.dashboard(),
         api.newBets(),
         api.openBets(),
         api.history(),
+        api.unfilled(),
         api.analytics(),
         api.system(),
       ]);
@@ -809,6 +842,7 @@ export default function App() {
       setBets(b.items);
       setOpenBets(o.items);
       setHistory(h.items);
+      setUnfilled(u.items);
       setAnalytics(a);
       setSystem(s);
     } catch (e) {
@@ -863,16 +897,21 @@ export default function App() {
       );
     }
 
-    if (tab === "Dashboard") return <DashboardScreen data={dashboard} refresh={refresh} refreshing={refreshing} onReview={setSelected} />;
+    if (tab === "Dashboard") return <DashboardScreen data={dashboard} refresh={refresh} refreshing={refreshing} onReview={setSelected} navigate={(target) => {
+      if (target === "Analytics" || target === "Live" || target === "Bets") { setTab(target); setMoreView("Menu"); return; }
+      setTab("More"); setMoreView(target);
+    }} />;
     if (tab === "Bets") return <BetsScreen items={bets} refresh={refresh} refreshing={refreshing} onReview={setSelected} />;
     if (tab === "Live") return <LiveScreen items={openBets} refresh={refresh} refreshing={refreshing} />;
     if (tab === "Analytics" && analytics) return <AnalyticsScreen data={analytics} />;
 
     if (moreView === "History") return <HistoryScreen items={history} back={() => setMoreView("Menu")} />;
+    if (moreView === "Pending") return <PendingScreen items={unfilled} back={() => setMoreView("Menu")} />;
+    if (moreView === "Account") return <AccountScreen data={dashboard} back={() => setMoreView("Menu")} />;
     if (moreView === "System" && system) return <SystemScreen data={system} back={() => setMoreView("Menu")} />;
     if (moreView === "Settings") return <SettingsScreen back={() => setMoreView("Menu")} />;
     return <MoreMenu select={setMoreView} />;
-  }, [analytics, bets, dashboard, error, history, moreView, openBets, passcode, refresh, refreshing, system, tab]);
+  }, [analytics, bets, dashboard, error, history, moreView, openBets, passcode, refresh, refreshing, system, tab, unfilled]);
 
   return (
     <SafeAreaView style={styles.root}>
@@ -917,6 +956,7 @@ const styles = StyleSheet.create({
   metricValue: { color: colors.text, fontSize: 22, fontWeight: "800" },
   metricValueCompact: { color: colors.text, fontSize: 18, fontWeight: "800" },
   metricLabel: { color: colors.muted, fontSize: 12, marginTop: 4 },
+  metricLabelRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 6 },
   sectionTitle: { color: colors.text, fontSize: 18, fontWeight: "800" },
   linkText: { color: colors.blue2, fontWeight: "700" },
