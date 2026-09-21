@@ -63,6 +63,17 @@ def main():
     )
     assert cap["reason"] == "sport_position_cap"
 
+    # Per-sport dollar exposure is intentionally uncapped for now. A strong
+    # same-sport candidate may proceed as long as it does not hit the separate
+    # 3-position sport cap or the $40 total open-risk cap.
+    one_sport_position = [pos("KXNFLGAME-E1-A", "YES")]
+    one_sport_orders = [order("KXNFLGAME-E1-A", "YES", 9.5)]
+    no_sport_dollar_cap = approval_guardrails.evaluate_position_guard(
+        ticker="KXNFLGAME-E2-A", side="YES", candidate_risk=9.52,
+        positions=one_sport_position, orders=one_sport_orders, now=NOW,
+    )
+    assert no_sport_dollar_cap["blocked"] is False
+
     market = {"ticker":"T","yes_bid":0.20,"yes_ask":0.21,"no_bid":0.79,"no_ask":0.80}
     fair = {"fair_yes_prob":0.50,"n_books":4}
     q = watcher.score_market(market, fair, settings())
