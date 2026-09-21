@@ -67,7 +67,7 @@ jobs:
           PM_EDGE_MAX_ALERTS_PER_RUN: "3"
           PM_EDGE_ALERT_COOLDOWN_HOURS: "6"
           PM_EDGE_MAX_MARKETS: "3000"
-          PM_EDGE_VALUE_MIN_NET_EDGE: "0.035"
+          PM_EDGE_VALUE_MIN_NET_EDGE: "0.035"\n          PM_EDGE_STANDARD_MIN_NET_EDGE: "0.035"\n          PM_EDGE_STANDARD_THREE_BOOK_EDGE: "0.040"
           PM_EDGE_VALUE_THREE_BOOK_EDGE: "0.04"
           PM_EDGE_VALUE_MIN_BOOKS: "3"
           PM_EDGE_VALUE_MIN_TARGET: "0.20"
@@ -77,10 +77,10 @@ jobs:
           PM_EDGE_MAX_SECONDARY_ALERTS_PER_RUN: "4"
           PM_EDGE_VALUE_TARGET_WIN_PROFIT_DOLLARS: "2.50"
           PM_EDGE_VALUE_MAX_RISK_DOLLARS: "5.00"
-          PM_EDGE_PRICE_FISH_MIN_GAP: "0.01"
-          PM_EDGE_PRICE_FISH_MAX_GAP: "0.05"
-          PM_EDGE_PRICE_FISH_MIN_TARGET: "0.25"
-          PM_EDGE_PRICE_FISH_MIN_FAIR_SIDE_PROB: "0.30"
+          PM_EDGE_PRICE_FISH_MIN_GAP: "0.02"
+          PM_EDGE_PRICE_FISH_MAX_GAP: "0.08"
+          PM_EDGE_PRICE_FISH_MIN_TARGET: "0.20"
+          PM_EDGE_PRICE_FISH_MIN_FAIR_SIDE_PROB: "0.25"
           PM_EDGE_MAX_PRICE_FISH_ALERTS_PER_RUN: "6"
           PM_EDGE_PRICE_FISH_DAILY_CAP: "15"
           PM_EDGE_PRICE_FISH_MIN_BOOKS: "3"
@@ -128,14 +128,14 @@ jobs:
           PM_EDGE_POST_WAKE_MAX_ODDS_REFRESH_PER_RUN: "5"
           PM_EDGE_MORNING_LOOKAHEAD_AFTER_WAKE_HOURS: "4"
           PM_EDGE_OVERNIGHT_MISSED_RETENTION_DAYS: "14"
-        run: python pm_edge_runner_v27.py
+        run: python pm_edge_runner_v28.py
 
       - name: Persist PM Edge audit ledgers
         run: |
           git config user.name "pm-edge-bot"
           git config user.email "pm-edge-bot@users.noreply.github.com"
           [ -f pm_edge_auto_ledger.csv ] && git add pm_edge_auto_ledger.csv
-          [ -f pm_edge_signal_ledger.csv ] && git add pm_edge_signal_ledger.csv
+          [ -f pm_edge_signal_ledger.csv ] && git add pm_edge_signal_ledger.csv\n          [ -f pm_edge_candidate_ledger.csv ] && git add pm_edge_candidate_ledger.csv
           if ! git diff --cached --quiet; then
             git commit -m "Update PM Edge audit ledgers [skip ci]"
             git push
