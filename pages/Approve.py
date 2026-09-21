@@ -152,7 +152,13 @@ def _copy_button(label: str, value: str) -> None:
 
 def _client_order_id(token_text: str, signal_id: str) -> str:
     # Stable across page reloads; the provenance id remains machine-joinable.
-    return approval_links.client_order_id(signal_id, token_text)
+    # Keep a local fallback so a rolling Streamlit deploy cannot strand a valid
+    # alert if the page reloads before approval_links.py is re-imported.
+    helper = getattr(approval_links, "client_order_id", None)
+    if callable(helper):
+        return helper(signal_id, token_text)
+    nonce = hashlib.sha256(str(token_text).encode("utf-8")).hexdigest()[:8]
+    return f"pmedge-{signal_id}-{nonce}"
 
 
 def _created_today(row: dict) -> bool:
@@ -221,6 +227,15 @@ except Exception as exc:
     st.error(f"This approval link is not valid: {exc}")
     st.stop()
 
+# Compatibility for an already-running Streamlit worker that may still have
+# the pre-provenance approval module loaded while this page has hot-reloaded.
+if not trade.get("signal_id"):
+    body = token.split(".", 1)[0]
+    trade["signal_id"] = hashlib.sha256(
+        ("legacy-approval|" + body).encode("ascii")
+    ).hexdigest()[:20]
+    trade["legacy_signal_id"] = True
+
 try:
     market = _load_market(trade["ticker"])
     quote_error = None
@@ -261,6 +276,11 @@ st.caption(
     f"Estimated edge: {_pct(trade.get('net_edge'))} · "
     f"Books: {trade.get('books') if trade.get('books') is not None else '—'}"
 )
+if trade.get("legacy_signal_id"):
+    st.caption(
+        "Legacy PM Edge alert: this link is still usable, but some PR A provenance "
+        "metadata may be unavailable for this one order."
+    )
 
 submit_price_ok = quote_error is None and current_ask is not None
 if quote_error:

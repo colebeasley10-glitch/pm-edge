@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
+import json
 import os
 
 import approval_links
@@ -32,6 +35,37 @@ def main() -> None:
     assert decoded["fair_probability"] == 0.558
     assert decoded["net_edge"] == 0.149
     assert decoded["books"] == 6
+
+    # A still-valid alert created before signal_id provenance must continue to
+    # open safely instead of crashing the approval page.
+    legacy_payload = {
+        "v": approval_links.TOKEN_VERSION,
+        "t": "LEGACY-FISH",
+        "s": "Y",
+        "l": "f",
+        "a": "M",
+        "p": 4200,
+        "n": 5,
+        "r": 210,
+        "x": 1_007_200,
+    }
+    legacy_body = approval_links._b64e(
+        json.dumps(legacy_payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    )
+    legacy_sig = hmac.new(
+        approval_links.signing_secret(),
+        legacy_body.encode("ascii"),
+        hashlib.sha256,
+    ).digest()[:16]
+    legacy_token = f"{legacy_body}.{approval_links._b64e(legacy_sig)}"
+    legacy = approval_links.verify_approval_token(legacy_token, now=1_000_001)
+    assert legacy["ticker"] == "LEGACY-FISH"
+    assert legacy["lane"] == "price_fish"
+    assert legacy["legacy_signal_id"] is True
+    assert len(legacy["signal_id"]) == 20
+    assert approval_links.verify_approval_token(
+        legacy_token, now=1_000_002
+    )["signal_id"] == legacy["signal_id"]
 
     limit_token = approval_links.create_approval_token(
         ticker="LIMIT-TEST",
