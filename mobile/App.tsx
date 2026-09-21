@@ -235,6 +235,7 @@ function ReviewModal({
   const [result, setResult] = useState<SubmitResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [passcode, setPasscode] = useState("");
+  const [passcode, setPasscode] = useState("");
 
   const load = useCallback(async () => {
     if (!signal) return;
