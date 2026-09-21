@@ -283,7 +283,7 @@ def dashboard() -> dict:
 
 @app.get("/v1/bets", dependencies=[Depends(_auth)])
 def bets(
-    status: str = Query(default="new", pattern="^(new|open|history)$"),
+    status: str = Query(default="new", pattern="^(new|open|unfilled|history)$"),
     sport: str | None = None,
     lane: str | None = None,
 ) -> dict:
@@ -292,6 +292,9 @@ def bets(
         df = dashboard_data.new_signals(data["signals"], data["orders"])
     elif status == "open":
         df = dashboard_data.open_order_rows(data["orders"])
+    elif status == "unfilled":
+        order_status = data["orders"].get("status", pd.Series("", index=data["orders"].index)).fillna("").astype(str)
+        df = data["orders"][order_status.eq("unfilled")].copy()
     else:
         df = data["orders"].copy()
 
