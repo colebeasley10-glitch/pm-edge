@@ -12,7 +12,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - name: Check out PM Edge
@@ -29,8 +29,19 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Compile approval, performance, and hub code
-        run: python -m py_compile approval_links.py position_actions.py position_signals.py kalshi_readonly.py kalshi_submit.py performance_tracker.py signal_tracker.py dashboard_data.py signal_outcome_tracker.py app.py pushover_status.py pm_edge_runner_v24.py pm_edge_runner_v25.py pm_edge_runner_v26.py pm_edge_runner_v27.py ncaa_beta_runner.py pages/Approve.py pages/Position_Action.py
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Typecheck native app
+        working-directory: mobile
+        run: |
+          npm install --no-audit --no-fund
+          npm run typecheck
+
+      - name: Compile approval, performance, hub, and mobile API code
+        run: python -m py_compile approval_links.py position_actions.py position_signals.py kalshi_readonly.py kalshi_submit.py performance_tracker.py signal_tracker.py dashboard_data.py signal_outcome_tracker.py mobile_backend.py app.py pushover_status.py pm_edge_runner_v24.py pm_edge_runner_v25.py pm_edge_runner_v26.py pm_edge_runner_v27.py ncaa_beta_runner.py pages/Approve.py pages/Position_Action.py
 
       - name: Run Phase 0 golden equivalence
         run: python tests/phase0_golden_probe.py --verify-parent
@@ -52,6 +63,20 @@ jobs:
 
       - name: Run PM Edge Hub MVP tests
         run: python test_pm_edge_hub.py
+
+      - name: Run native mobile API smoke tests
+        run: python test_mobile_backend.py
+
+      - name: Set up Node for native app
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Type-check native PM Edge app
+        run: |
+          cd mobile
+          npm install --no-audit --no-fund
+          npm run typecheck
 
       - name: Run regression tests
         run: python test_pm_edge_regressions.py
