@@ -200,6 +200,31 @@ def new_signals(signals: pd.DataFrame, orders: pd.DataFrame, *, now: datetime | 
     sigs = signals[signals["record_type"].fillna("signal").astype(str).eq("signal")].copy()
     submitted = submitted_signal_ids(signals, orders)
     sigs = sigs[~sigs["signal_id"].fillna("").astype(str).isin(submitted)]
+
+    # Historical pre-provenance orders cannot expose signal_id. For the Bet
+    # Center only, suppress an alert when the account ledger already contains
+    # the exact ticker + side + trade date. Settlement reconciliation remains
+    # signal_id-only for the new provenance path.
+    if not orders.empty and {"ticker", "side", "trade_date"}.issubset(orders.columns):
+        placed_keys = {
+            (
+                str(r.get("ticker") or ""),
+                str(r.get("side") or "").upper(),
+                str(r.get("trade_date") or ""),
+            )
+            for r in orders.to_dict("records")
+            if str(r.get("client_order_id") or "").startswith("pmedge-")
+        }
+        keep = [
+            (
+                str(r.get("ticker") or ""),
+                str(r.get("side") or "").upper(),
+                str(r.get("trade_date") or ""),
+            ) not in placed_keys
+            for r in sigs.to_dict("records")
+        ]
+        sigs = sigs[pd.Series(keep, index=sigs.index)]
+
     alerted = pd.to_datetime(sigs["alerted_at"], errors="coerce", utc=True)
     commence = pd.to_datetime(sigs["commence_time"], errors="coerce", utc=True)
     recent = alerted.ge(now - pd.Timedelta(hours=24))
