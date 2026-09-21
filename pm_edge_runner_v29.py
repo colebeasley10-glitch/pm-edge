@@ -17,12 +17,14 @@ from __future__ import annotations
 import math
 import re
 
+# Import watcher first: it materializes the embedded pmedge runtime and adds
+# it to sys.path. Only then can the quantitative engine modules be imported.
+import watcher
 import pmedge.devig as devig
 import pmedge.fair_value as fair_value
 import pmedge.matcher as matcher
 import pmedge.utils as utils
 import pm_edge_runner_v28 as v28
-import watcher
 
 
 def _power_devig_outcomes(outcomes: list[dict]) -> dict[str, float]:
