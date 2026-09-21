@@ -11,22 +11,17 @@ import type {
 } from "./types";
 
 const API_BASE = process.env.EXPO_PUBLIC_PM_EDGE_API_BASE_URL?.replace(/\/$/, "") ?? "";
-const ENV_TOKEN = process.env.EXPO_PUBLIC_PM_EDGE_API_TOKEN ?? "";
-const API_TOKEN = ENV_TOKEN || (typeof window !== "undefined" ? window.localStorage.getItem("pm_edge_api_token") ?? "" : "");
 
 function headers() {
   return {
     Accept: "application/json",
     "Content-Type": "application/json",
-    Authorization: `Bearer ${API_TOKEN}`,
   };
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  if (!API_BASE || !API_TOKEN) {
-    throw new Error("PM Edge access is not configured on this device");
-  }
-  const response = await fetch(`${API_BASE}${path}`, {
+
+  const response = await fetch(`${API_BASE}/api${path}`, {
     ...init,
     headers: { ...headers(), ...(init?.headers ?? {}) },
   });
