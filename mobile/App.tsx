@@ -12,6 +12,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
@@ -233,6 +234,7 @@ function ReviewModal({
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SubmitResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [passcode, setPasscode] = useState("");
 
   const load = useCallback(async () => {
     if (!signal) return;
@@ -824,9 +826,33 @@ export default function App() {
           <Text style={[styles.subtitle, { textAlign: "center" }]}>
             {error ?? "Connect the mobile API to continue."}
           </Text>
-          <Pressable style={styles.primaryButtonStandalone} onPress={refresh}>
-            <Text style={styles.primaryButtonText}>Try Again</Text>
-          </Pressable>
+          {error?.includes("sign-in required") ? (
+            <>
+              <TextInput
+                value={passcode}
+                onChangeText={setPasscode}
+                placeholder="Access code"
+                placeholderTextColor={colors.muted}
+                secureTextEntry
+                autoCapitalize="none"
+                style={{ width: "78%", maxWidth: 360, backgroundColor: colors.panel2, color: colors.text, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, marginTop: 18 }}
+              />
+              <Pressable style={styles.primaryButtonStandalone} onPress={async () => {
+                try {
+                  const r = await fetch("/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ passcode }) });
+                  if (!r.ok) throw new Error("Incorrect access code");
+                  setPasscode("");
+                  await refresh();
+                } catch (e) { setError(e instanceof Error ? e.message : "Sign-in failed"); }
+              }}>
+                <Text style={styles.primaryButtonText}>Connect PM Edge</Text>
+              </Pressable>
+            </>
+          ) : (
+            <Pressable style={styles.primaryButtonStandalone} onPress={refresh}>
+              <Text style={styles.primaryButtonText}>Try Again</Text>
+            </Pressable>
+          )}
         </View>
       );
     }
@@ -840,7 +866,7 @@ export default function App() {
     if (moreView === "System" && system) return <SystemScreen data={system} back={() => setMoreView("Menu")} />;
     if (moreView === "Settings") return <SettingsScreen back={() => setMoreView("Menu")} />;
     return <MoreMenu select={setMoreView} />;
-  }, [analytics, bets, dashboard, error, history, moreView, openBets, refresh, refreshing, system, tab]);
+  }, [analytics, bets, dashboard, error, history, moreView, openBets, passcode, refresh, refreshing, system, tab]);
 
   return (
     <SafeAreaView style={styles.root}>
