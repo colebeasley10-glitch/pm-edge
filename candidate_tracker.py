@@ -18,6 +18,8 @@ CANDIDATE_LEDGER_PATH = Path(
     os.getenv("PM_EDGE_CANDIDATE_LEDGER_PATH", "pm_edge_candidate_ledger.csv")
 )
 
+_SEEN_BY_PATH: dict[str, set[str]] = {}
+
 FIELDS = [
     "decision_id",
     "evaluated_at",
@@ -92,13 +94,20 @@ def _decision_id(
 
 
 def _existing_ids(path: Path) -> set[str]:
+    key = str(path.resolve())
+    cached = _SEEN_BY_PATH.get(key)
+    if cached is not None:
+        return cached
     if not path.exists():
-        return set()
-    try:
-        with path.open("r", encoding="utf-8", newline="") as fh:
-            return {str(row.get("decision_id") or "") for row in csv.DictReader(fh)}
-    except OSError:
-        return set()
+        cached = set()
+    else:
+        try:
+            with path.open("r", encoding="utf-8", newline="") as fh:
+                cached = {str(row.get("decision_id") or "") for row in csv.DictReader(fh)}
+        except OSError:
+            cached = set()
+    _SEEN_BY_PATH[key] = cached
+    return cached
 
 
 def record_candidate(
@@ -182,4 +191,5 @@ def record_candidate(
             writer.writeheader()
         writer.writerow(row)
 
+    _existing_ids(path).add(decision_id)
     return {"recorded": True, "decision_id": decision_id}
