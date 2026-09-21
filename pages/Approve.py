@@ -35,6 +35,7 @@ for _name in (
         pass
 
 import approval_links
+import approval_guardrails
 import signal_tracker
 from kalshi_submit import KalshiSubmitClient, KalshiSubmitError
 
@@ -198,6 +199,17 @@ def _today_pm_edge_cost(orders: list[dict]) -> float:
     )
 
 
+def _position_guard_message(reason: str) -> str:
+    messages = {
+        "event_position_exists": "another position is already open for this event",
+        "second_ladder_rung": "a second spread/total rung on the same game and side is blocked",
+        "sport_position_cap": "this would exceed 3 open PM Edge positions in the same sport today",
+        "sport_risk_cap": "this would exceed 25% of today's risk budget in one sport",
+        "daily_open_risk_cap": "this would exceed $40 of open PM Edge risk today",
+    }
+    return messages.get(str(reason or ""), str(reason or "position guard"))
+
+
 token = str(st.query_params.get("trade", "") or "").strip()
 if not token:
     st.error("This approval link is missing its trade token.")
@@ -286,27 +298,40 @@ if submit_client is None:
         st.caption(f"Key configuration error: {submit_config_error}")
 else:
     orders = None
+    positions = None
     risk_check_error = None
     try:
         orders = submit_client.get_orders(limit=200)
+        positions = submit_client.get_positions(limit=200)
     except Exception as exc:
         risk_check_error = str(exc)
 
     existing = None
     daily_submitted = 0.0
-    if orders is not None:
+    position_guard = None
+    if orders is not None and positions is not None:
         for row in orders:
             if str(row.get("client_order_id") or "") == client_order_id:
                 existing = row
         daily_submitted = _today_pm_edge_cost(orders)
+        position_guard = approval_guardrails.evaluate_position_guard(
+            ticker=trade["ticker"],
+            side=trade["side"],
+            candidate_risk=computed_risk,
+            positions=positions,
+            orders=orders,
+            now=datetime.now(timezone.utc),
+        )
 
     if existing is not None:
         st.success("This approval has already been submitted to Kalshi. No duplicate order will be sent.")
         status = str(existing.get("status") or "submitted")
         st.caption(f"Kalshi status: {status} · Client order ID: {client_order_id}")
     elif risk_check_error:
-        st.error("Safety stop: PM Edge could not verify today's submitted-risk total, so Submit is disabled.")
+        st.error("Safety stop: PM Edge could not verify orders and open positions, so Submit is disabled.")
         st.caption(risk_check_error)
+    elif position_guard and position_guard.get("blocked"):
+        st.error(f"Position guard stop: {_position_guard_message(position_guard.get('reason'))}.")
     elif (not math.isinf(_effective_daily_risk_limit())) and daily_submitted + computed_risk > _effective_daily_risk_limit() + 1e-9:
         st.error(
             f"Daily cap stop: {_money(daily_submitted)} has already been submitted through PM Edge today. "
@@ -335,10 +360,22 @@ else:
 
                 # Re-read PM Edge orders immediately before POST to enforce replay + daily caps.
                 fresh_orders = submit_client.get_orders(limit=200)
+                fresh_positions = submit_client.get_positions(limit=200)
                 for row in fresh_orders:
                     if str(row.get("client_order_id") or "") == client_order_id:
                         st.success("Already submitted. No duplicate order was sent.")
                         st.stop()
+                fresh_guard = approval_guardrails.evaluate_position_guard(
+                    ticker=trade["ticker"],
+                    side=trade["side"],
+                    candidate_risk=computed_risk,
+                    positions=fresh_positions,
+                    orders=fresh_orders,
+                    now=datetime.now(timezone.utc),
+                )
+                if fresh_guard.get("blocked"):
+                    st.error(f"NOT SUBMITTED — {_position_guard_message(fresh_guard.get('reason'))}.")
+                    st.stop()
                 fresh_daily = _today_pm_edge_cost(fresh_orders)
                 fresh_daily_limit = _effective_daily_risk_limit()
                 if (not math.isinf(fresh_daily_limit)) and fresh_daily + computed_risk > fresh_daily_limit + 1e-9:

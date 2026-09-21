@@ -44,6 +44,9 @@ jobs:
       - name: Run Commit 4 instrumentation tests
         run: python test_pm_edge_commit4.py
 
+      - name: Run Commit 5 guard tests
+        run: python test_pm_edge_commit5.py
+
       - name: Run regression tests
         run: python test_pm_edge_regressions.py
 

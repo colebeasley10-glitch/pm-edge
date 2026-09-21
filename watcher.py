@@ -9,7 +9,7 @@ import os
 import re
 import sys
 import time
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -122,6 +122,8 @@ def _smart_team_similarity(a: str, b: str, aliases: dict[str, str]) -> float:
 _matcher_mod.team_similarity = _smart_team_similarity
 
 STATE_PATH = Path(os.getenv("PM_EDGE_WATCH_STATE", ".pm_edge_watch_state.json"))
+PERFORMANCE_HISTORY_PATH = Path(os.getenv("PM_EDGE_PERFORMANCE_HISTORY_PATH", ".pm_edge_performance_history.json"))
+DAILY_RISK_BUDGET_DOLLARS = float(os.getenv("PM_EDGE_DAILY_RISK_BUDGET_DOLLARS", "40"))
 
 PUSHOVER_USER_KEY = os.getenv("PUSHOVER_USER_KEY", "").strip()
 PUSHOVER_APP_TOKEN = os.getenv("PUSHOVER_APP_TOKEN", "").strip()
@@ -890,7 +892,7 @@ def score_market(market, fair_entry, settings, base_min_edge=None):
     else:
         required_edge = max(base, floor_2)
 
-    return best_binary_trade(
+    q = best_binary_trade(
         fair_yes_prob=float(fair_entry["fair_yes_prob"]),
         yes_bid=market.get("yes_bid"),
         yes_ask=market.get("yes_ask"),
@@ -902,8 +904,70 @@ def score_market(market, fair_entry, settings, base_min_edge=None):
         taker_fee_rate=settings.taker_fee_rate,
         tick_size=tick,
     )
+    if q.net_edge is not None and float(q.net_edge) > 0.12:
+        return replace(q, execution="PASS", recommended_limit=None, qualifies=False, reason="implausible_edge")
+    if q.best_bid is None or q.best_ask is None:
+        return replace(q, execution="PASS", recommended_limit=None, qualifies=False, reason="degenerate_book")
+    if float(q.best_ask) - float(q.best_bid) > 0.10:
+        return replace(q, execution="PASS", recommended_limit=None, qualifies=False, reason="wide_spread")
+    return q
+
+
+def drawdown_circuit_active(
+    state: dict,
+    *,
+    history_path: Path = PERFORMANCE_HISTORY_PATH,
+    daily_risk_budget: float = DAILY_RISK_BUDGET_DOLLARS,
+) -> bool:
+    """Latch alerts off after a severe trailing-20 drawdown; never auto-rearm."""
+    circuit = state.setdefault("drawdown_circuit", {"active": False})
+    if bool(circuit.get("active")):
+        return True
+    if not history_path.exists():
+        return False
+    try:
+        payload = json.loads(history_path.read_text(encoding="utf-8"))
+        records = list(payload.get("records", [])) if isinstance(payload, dict) else []
+    except Exception:
+        return False
+
+    graded = []
+    for row in records:
+        try:
+            filled = float(row.get("filled_shares") or 0)
+            pl = float(row.get("net_pl"))
+        except (TypeError, ValueError):
+            continue
+        status = str(row.get("status") or "")
+        if filled <= 0 or status == "unfilled":
+            continue
+        stamp = str(row.get("recorded_at") or row.get("settled_at") or row.get("trade_date") or "")
+        graded.append((stamp, pl))
+    graded.sort(key=lambda x: x[0])
+    if len(graded) < 20:
+        return False
+
+    recent = graded[-20:]
+    last_stamp = recent[-1][0]
+    if circuit.get("last_trigger_record") == last_stamp:
+        return False
+    trailing_pl = sum(x[1] for x in recent)
+    threshold = -3.0 * float(daily_risk_budget)
+    if trailing_pl < threshold:
+        circuit.update({
+            "active": True,
+            "triggered_at": iso_now(),
+            "trailing_20_pl": round(trailing_pl, 6),
+            "threshold": round(threshold, 6),
+            "last_trigger_record": last_stamp,
+        })
+        return True
+    return False
+
 
 def should_alert(state, market, fair_entry, q, tier="primary"):
+    if drawdown_circuit_active(state):
+        return False, "drawdown_circuit"
     # Primary tier keeps the original key format for backward compatibility
     # with already-active alerts recorded before tiers existed.
     suffix = "" if tier == "primary" else f"|{tier.upper()}"
