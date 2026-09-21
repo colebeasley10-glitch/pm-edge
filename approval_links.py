@@ -156,6 +156,16 @@ def verify_approval_token(token: str, *, now: int | None = None) -> dict:
         raise ValueError("Invalid execution mode")
     lane = {"p": "primary", "v": "value", "f": "price_fish"}.get(payload.get("l"), "primary")
 
+    legacy_signal_id = not bool(payload.get("u"))
+    signal_id = str(payload.get("u") or "").strip().lower()
+    if not signal_id:
+        # Alerts minted before deterministic provenance did not carry "u".
+        # The token body is already HMAC-verified, so deriving a stable ID from
+        # that signed body is safe and makes old still-valid alerts usable.
+        signal_id = hashlib.sha256(
+            ("legacy-approval|" + body).encode("ascii")
+        ).hexdigest()[:20]
+
     return {
         "ticker": str(payload["t"]),
         "side": side,
@@ -170,7 +180,8 @@ def verify_approval_token(token: str, *, now: int | None = None) -> dict:
         "dispersion": (int(payload["q"]) / 10000.0) if "q" in payload else None,
         "source_version": int(payload["z"]) if "z" in payload else None,
         "fair_fetched_at": str(payload["h"]) if "h" in payload else None,
-        "signal_id": str(payload["u"]),
+        "signal_id": signal_id,
+        "legacy_signal_id": legacy_signal_id,
         "expires_at": int(payload["x"]),
         "event_start_at": int(payload["g"]) if "g" in payload else None,
         "is_live": bool(payload.get("i", 0)),
