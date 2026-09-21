@@ -100,7 +100,7 @@ def enrich_orders(orders: pd.DataFrame, signals: pd.DataFrame) -> pd.DataFrame:
     out = orders.copy()
     by_id, by_pair = _best_signal_lookup(signals)
     enrich_cols = [
-        "signal_id","market_title","sport_title","sport_key","market_type",
+        "signal_id","market_title","sport_title","sport_key","market_type","lane",
         "event_id","commence_time","fair_fetched_at","dispersion",
     ]
     for col in enrich_cols:
