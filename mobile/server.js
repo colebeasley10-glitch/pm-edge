@@ -1,0 +1,13 @@
+const http=require("http"),fs=require("fs"),path=require("path"),crypto=require("crypto");
+const PORT=process.env.PORT||8080, ROOT=path.join(__dirname,"dist");
+const API=(process.env.PM_EDGE_UPSTREAM_API||"https://pm-edge-mobile-api-live-production.up.railway.app").replace(/\/$/,"");
+const TOKEN=process.env.PM_EDGE_UPSTREAM_TOKEN||"", PASS=process.env.PM_EDGE_APP_PASSCODE||"", SECRET=process.env.PM_EDGE_SESSION_SECRET||"";
+const sig=()=>crypto.createHmac("sha256",SECRET).update("pm-edge-session").digest("hex");
+const authed=req=>(req.headers.cookie||"").split(";").map(x=>x.trim()).includes("pm_edge_session="+sig());
+const send=(res,n,b,h={})=>{res.writeHead(n,{"Content-Type":"application/json",...h});res.end(JSON.stringify(b))};
+http.createServer(async(req,res)=>{
+ if(req.url==="/auth/status") return send(res,200,{authenticated:authed(req)});
+ if(req.url==="/auth/login"&&req.method==="POST"){let b="";for await(const x of req)b+=x;let p="";try{p=JSON.parse(b).passcode||""}catch{};if(!PASS||p!==PASS)return send(res,401,{detail:"Incorrect access code"});return send(res,200,{ok:true},{"Set-Cookie":"pm_edge_session="+sig()+"; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=2592000"});}
+ if(req.url.startsWith("/api/")){if(!authed(req))return send(res,401,{detail:"PM Edge sign-in required"});const u=API+req.url.slice(4);let body; if(!["GET","HEAD"].includes(req.method)){let a=[];for await(const x of req)a.push(x);body=Buffer.concat(a)};try{const r=await fetch(u,{method:req.method,headers:{Authorization:"Bearer "+TOKEN,"Content-Type":req.headers["content-type"]||"application/json"},body});res.writeHead(r.status,{"Content-Type":r.headers.get("content-type")||"application/json"});res.end(Buffer.from(await r.arrayBuffer()))}catch(e){send(res,502,{detail:"PM Edge API unavailable"})}return}
+ let p=req.url.split("?")[0];if(p==="/")p="/index.html";let f=path.join(ROOT,p);if(!f.startsWith(ROOT))return res.end();if(!fs.existsSync(f)||fs.statSync(f).isDirectory())f=path.join(ROOT,"index.html");const ext=path.extname(f),types={".html":"text/html",".js":"application/javascript",".css":"text/css",".json":"application/json",".png":"image/png",".svg":"image/svg+xml",".ico":"image/x-icon"};res.writeHead(200,{"Content-Type":types[ext]||"application/octet-stream"});fs.createReadStream(f).pipe(res)
+}).listen(PORT,"0.0.0.0",()=>console.log("PM Edge PWA listening on",PORT));
