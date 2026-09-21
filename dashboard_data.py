@@ -94,6 +94,29 @@ def _best_signal_lookup(signals: pd.DataFrame) -> tuple[dict[str, dict], dict[tu
     return by_id, by_pair
 
 
+def _infer_order_metadata(ticker: str) -> tuple[str | None, str | None]:
+    value = str(ticker or "").upper()
+    sport = None
+    prefixes = [
+        ("KXNCAAF", "NCAAF"), ("KXNFL", "NFL"), ("KXMLB", "MLB"),
+        ("KXKBO", "KBO"), ("KXNPB", "NPB"), ("KXWNBA", "WNBA"), ("KXUFC", "MMA"),
+    ]
+    for prefix, label in prefixes:
+        if value.startswith(prefix):
+            sport = label
+            break
+    market_type = None
+    if "TEAMTOTAL" in value:
+        market_type = "team_total"
+    elif "SPREAD" in value:
+        market_type = "spread"
+    elif "TOTAL" in value:
+        market_type = "total"
+    elif "GAME" in value or "FIGHT" in value:
+        market_type = "h2h"
+    return sport, market_type
+
+
 def enrich_orders(orders: pd.DataFrame, signals: pd.DataFrame) -> pd.DataFrame:
     if orders.empty:
         return orders.copy()
@@ -128,6 +151,20 @@ def enrich_orders(orders: pd.DataFrame, signals: pd.DataFrame) -> pd.DataFrame:
             lane = str(signal.get("lane") or "")
             if lane:
                 out.at[idx, "lane"] = lane
+
+    # Backfill legacy rows that predate full signal provenance. Do not invent a
+    # Primary/Value/Fish strategy when it cannot be recovered; mark it Legacy.
+    for idx, row in out.iterrows():
+        sport, market_type = _infer_order_metadata(row.get("ticker"))
+        current_sport = str(row.get("sport_title") or "").strip()
+        current_type = str(row.get("market_type") or "").strip()
+        current_lane = str(row.get("lane") or "").strip().lower()
+        if current_sport in {"", "nan", "None"} and sport:
+            out.at[idx, "sport_title"] = sport
+        if current_type in {"", "nan", "None"} and market_type:
+            out.at[idx, "market_type"] = market_type
+        if current_lane in {"", "nan", "none", "approval_link"}:
+            out.at[idx, "lane"] = "legacy"
 
     for col in ("net_pl","entry_cost","entry_fees","roi","filled_shares","requested_shares","limit_price","average_fill_price"):
         if col in out.columns:
