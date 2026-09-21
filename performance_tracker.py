@@ -410,6 +410,60 @@ def _normalize_order_status(order: dict) -> str:
     return "submitted"
 
 
+SIGNAL_LEDGER_PATH = Path(os.getenv("PM_EDGE_SIGNAL_LEDGER_PATH", "pm_edge_signal_ledger.csv"))
+
+def _recover_signal_metadata(ticker: str, side: str, price: float, created_at: str | None) -> dict:
+    """Recover alert-time model metadata for approval-link orders.
+
+    Approval happens on Streamlit, while tracking happens on GitHub Actions.
+    The signed approval was created from a signal already persisted in the
+    signal ledger, so reconcile by ticker+side, then nearest limit price and
+    alert time. Fail closed if no unambiguous candidate exists.
+    """
+    if not SIGNAL_LEDGER_PATH.exists():
+        return {}
+    created = _parse_time(created_at)
+    candidates = []
+    try:
+        with SIGNAL_LEDGER_PATH.open("r", encoding="utf-8", newline="") as fh:
+            for row in csv.DictReader(fh):
+                if str(row.get("ticker") or "") != str(ticker):
+                    continue
+                if str(row.get("side") or "").upper() != str(side).upper():
+                    continue
+                rp = _safe_float(row.get("recommended_limit"))
+                if rp is None or abs(float(rp) - float(price)) > 0.011:
+                    continue
+                alerted = _parse_time(row.get("alerted_at"))
+                # Approval links are short-lived. Do not attach future signals
+                # or old same-ticker signals from a different alert cycle.
+                if created is not None and alerted is not None:
+                    delta = (created - alerted).total_seconds()
+                    if delta < -60 or delta > 7200:
+                        continue
+                    time_distance = abs(delta)
+                else:
+                    time_distance = 999999.0
+                candidates.append((time_distance, row))
+    except (OSError, csv.Error):
+        return {}
+    if not candidates:
+        return {}
+    candidates.sort(key=lambda x: x[0])
+    row = candidates[0][1]
+    return {
+        "market_title": row.get("market_title") or ticker,
+        "lane": row.get("lane") or "approval_link",
+        "fair_probability": _safe_float(row.get("fair_probability")),
+        "net_edge": _safe_float(row.get("net_edge")),
+        "books": int(float(row.get("books"))) if _safe_float(row.get("books")) is not None else None,
+        "dispersion": _safe_float(row.get("dispersion")),
+        "source_version": int(float(row.get("source_version"))) if _safe_float(row.get("source_version")) is not None else None,
+        "signal_id": row.get("signal_id") or None,
+        "signal_alerted_at": row.get("alerted_at") or None,
+    }
+
+
 def _discover_submitted_pm_edge_orders(client, queue: dict) -> int:
     """Backfill real PM Edge submissions directly from Kalshi.
 
@@ -454,27 +508,32 @@ def _discover_submitted_pm_edge_orders(client, queue: dict) -> int:
         trade_date = created_at[:10] if len(created_at) >= 10 else None
         filled = _count(order.get("fill_count_fp") if order.get("fill_count_fp") is not None else order.get("fill_count"))
 
+        recovered = _recover_signal_metadata(ticker, side, float(price), created_at or None)
         intent = {
             "intent_id": f"kalshi:{client_id}",
             "client_order_id": client_id,
             "created_at": created_at or None,
             "trade_date": trade_date,
             "ticker": ticker,
-            "market_title": ticker,
+            "market_title": recovered.get("market_title") or ticker,
             "side": side,
-            "lane": "approval_link",
+            "lane": recovered.get("lane") or "approval_link",
             "limit_price": round(float(price), 6),
             "shares": int(round(shares)),
             "max_loss": round(float(price) * float(shares), 6),
-            "fair_probability": None,
-            "net_edge": None,
-            "books": None,
+            "fair_probability": recovered.get("fair_probability"),
+            "net_edge": recovered.get("net_edge"),
+            "books": recovered.get("books"),
+            "dispersion": recovered.get("dispersion"),
+            "source_version": recovered.get("source_version"),
+            "signal_id": recovered.get("signal_id"),
+            "signal_alerted_at": recovered.get("signal_alerted_at"),
             "status": _normalize_order_status(order),
             "kalshi_order_id": order_id or None,
             "kalshi_order_status": str(order.get("status") or "") or None,
             "filled_shares": round(filled, 6),
             "remaining_shares": round(max(0.0, shares - filled), 6),
-            "reconciliation_note": "discovered_by_pmedge_client_order_id",
+            "reconciliation_note": "discovered_by_pmedge_client_order_id_with_signal_recovery" if recovered else "discovered_by_pmedge_client_order_id",
         }
         intents.append(intent)
         known_client_ids.add(client_id)
