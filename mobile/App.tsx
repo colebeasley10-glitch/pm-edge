@@ -3,7 +3,9 @@ import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
+  Modal,
   Pressable,
   RefreshControl,
   SafeAreaView,
@@ -20,7 +22,9 @@ import type {
   DashboardResponse,
   HistoryBet,
   OpenBet,
+  ReviewResponse,
   Signal,
+  SubmitResponse,
   SystemResponse,
 } from "./src/types";
 
@@ -165,7 +169,13 @@ function PillTabs<T extends string>({
   );
 }
 
-function BetCard({ signal }: { signal: Signal }) {
+function BetCard({
+  signal,
+  onReview,
+}: {
+  signal: Signal;
+  onReview: (signal: Signal) => void;
+}) {
   return (
     <View style={styles.card}>
       <View style={styles.rowBetween}>
@@ -196,17 +206,201 @@ function BetCard({ signal }: { signal: Signal }) {
         </View>
       </View>
       <View style={styles.buttonRow}>
-        <Pressable style={styles.secondaryButton}>
+        <Pressable style={styles.secondaryButton} onPress={() => onReview(signal)}>
           <Text style={styles.secondaryButtonText}>View Details</Text>
         </Pressable>
-        <Pressable
-          style={styles.primaryButton}
-          onPress={() => api.openApproval(signal.signal_id).catch(() => undefined)}
-        >
+        <Pressable style={styles.primaryButton} onPress={() => onReview(signal)}>
           <Text style={styles.primaryButtonText}>Place Bet</Text>
         </Pressable>
       </View>
     </View>
+  );
+}
+
+function ReviewModal({
+  signal,
+  visible,
+  onClose,
+  onSubmitted,
+}: {
+  signal: Signal | null;
+  visible: boolean;
+  onClose: () => void;
+  onSubmitted: () => void;
+}) {
+  const [review, setReview] = useState<ReviewResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState<SubmitResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!signal) return;
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    try {
+      setReview(await api.review(signal.signal_id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not review this bet");
+    } finally {
+      setLoading(false);
+    }
+  }, [signal]);
+
+  useEffect(() => {
+    if (visible && signal) void load();
+  }, [load, signal, visible]);
+
+  const submit = useCallback(async () => {
+    if (!signal || !review?.can_submit || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const response = await api.submit(signal.signal_id);
+      setResult(response);
+      onSubmitted();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Order was not submitted");
+      void load();
+    } finally {
+      setSubmitting(false);
+    }
+  }, [load, onSubmitted, review?.can_submit, signal, submitting]);
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <SafeAreaView style={styles.modalRoot}>
+        <View style={styles.modalTopBar}>
+          <Pressable onPress={onClose} style={styles.iconButton}>
+            <Ionicons name="close" size={24} color={colors.text} />
+          </Pressable>
+          <Text style={styles.modalTitle}>Review Bet</Text>
+          <Pressable onPress={load} style={styles.iconButton}>
+            <Ionicons name="refresh" size={21} color={colors.blue2} />
+          </Pressable>
+        </View>
+
+        {loading ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={colors.blue} />
+            <Text style={styles.muted}>Checking live price and risk guards…</Text>
+          </View>
+        ) : error && !review ? (
+          <View style={styles.center}>
+            <Ionicons name="warning-outline" size={44} color={colors.orange} />
+            <Text style={styles.screenTitle}>Couldn’t review this bet</Text>
+            <Text style={[styles.subtitle, { textAlign: "center" }]}>{error}</Text>
+            <Pressable style={styles.primaryButtonStandalone} onPress={load}>
+              <Text style={styles.primaryButtonText}>Try Again</Text>
+            </Pressable>
+          </View>
+        ) : review ? (
+          <ScrollView contentContainerStyle={styles.modalContent}>
+            <View style={styles.rowGap}>
+              <Chip label={laneLabel(review.lane)} tone={toneForLane(review.lane)} />
+              <Chip label={(review.sport_title || "SPORT").toUpperCase()} />
+            </View>
+            <Text style={[styles.betTitle, { fontSize: 23 }]}>{review.market_title}</Text>
+            <Text style={styles.betSide}>BUY {review.side}</Text>
+
+            <View style={styles.metricsGrid}>
+              <Metric label="Shares" value={String(review.shares)} />
+              <Metric label="Max Price" value={fmtCents(review.limit_price)} />
+              <Metric label="Live Ask" value={fmtCents(review.live_ask)} positive={review.price_ok} />
+              <Metric label="Max Cost" value={fmtMoney(review.max_loss)} />
+              <Metric label="Fair Chance" value={fmtPct(review.fair_probability)} />
+              <Metric label="Estimated Edge" value={fmtPct(review.net_edge)} positive />
+            </View>
+
+            <View style={[styles.notice, review.price_ok ? styles.noticeBlue : styles.noticeRed]}>
+              <Ionicons
+                name={review.price_ok ? "information-circle-outline" : "alert-circle-outline"}
+                size={21}
+                color={review.price_ok ? colors.blue2 : colors.red}
+              />
+              <Text style={styles.noticeText}>{review.price_message}</Text>
+            </View>
+
+            {review.guard?.blocked ? (
+              <View style={[styles.notice, styles.noticeRed]}>
+                <Ionicons name="shield-outline" size={21} color={colors.red} />
+                <Text style={styles.noticeText}>
+                  Position guard: {(review.guard.reason ?? "blocked").replaceAll("_", " ")}
+                </Text>
+              </View>
+            ) : (
+              <View style={[styles.notice, styles.noticeGreen]}>
+                <Ionicons name="shield-checkmark-outline" size={21} color={colors.green} />
+                <Text style={styles.noticeText}>Portfolio checks passed.</Text>
+              </View>
+            )}
+
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Order Summary</Text>
+              <View style={styles.rowBetween}><Text style={styles.muted}>Execution</Text><Text style={styles.statValue}>{review.execution === "MAKE" ? "Limit / maker" : "Buy now / taker"}</Text></View>
+              <View style={styles.divider} />
+              <View style={styles.rowBetween}><Text style={styles.muted}>Books</Text><Text style={styles.statValue}>{review.books ?? "—"}</Text></View>
+              <View style={styles.divider} />
+              <View style={styles.rowBetween}><Text style={styles.muted}>Gross profit if correct</Text><Text style={styles.greenValue}>{fmtMoney(review.gross_profit_if_correct)}</Text></View>
+            </View>
+
+            {result?.submitted ? (
+              <View style={[styles.notice, styles.noticeGreen]}>
+                <Ionicons name="checkmark-circle" size={24} color={colors.green} />
+                <Text style={styles.noticeText}>Order sent to Kalshi. PM Edge will track it automatically.</Text>
+              </View>
+            ) : result?.already_exists ? (
+              <View style={[styles.notice, styles.noticeBlue]}>
+                <Ionicons name="checkmark-circle-outline" size={24} color={colors.blue2} />
+                <Text style={styles.noticeText}>This bet was already submitted. No duplicate was sent.</Text>
+              </View>
+            ) : null}
+
+            {error ? (
+              <View style={[styles.notice, styles.noticeRed]}>
+                <Ionicons name="warning-outline" size={21} color={colors.red} />
+                <Text style={styles.noticeText}>{error}</Text>
+              </View>
+            ) : null}
+
+            {!result ? (
+              <>
+                <Text style={styles.submitWarning}>
+                  Pressing Submit sends a real Kalshi order. PM Edge checks the price and all risk guards again before sending it.
+                </Text>
+                <Pressable
+                  style={[styles.submitButton, !review.can_submit && styles.disabledButton]}
+                  disabled={!review.can_submit || submitting}
+                  onPress={() => {
+                    Alert.alert(
+                      "Submit real Kalshi order?",
+                      `BUY ${review.side} · ${review.shares} shares · max ${fmtCents(review.limit_price)} · max cost ${fmtMoney(review.max_loss)}`,
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        { text: "Submit", onPress: () => void submit() },
+                      ],
+                    );
+                  }}
+                >
+                  {submitting ? (
+                    <ActivityIndicator color={colors.white} />
+                  ) : (
+                    <Text style={styles.submitButtonText}>
+                      SUBMIT TO KALSHI — {review.shares} @ {fmtCents(review.limit_price)}
+                    </Text>
+                  )}
+                </Pressable>
+              </>
+            ) : (
+              <Pressable style={styles.primaryButtonStandalone} onPress={onClose}>
+                <Text style={styles.primaryButtonText}>Done</Text>
+              </Pressable>
+            )}
+          </ScrollView>
+        ) : null}
+      </SafeAreaView>
+    </Modal>
   );
 }
 
@@ -279,10 +473,12 @@ function DashboardScreen({
   data,
   refresh,
   refreshing,
+  onReview,
 }: {
   data: DashboardResponse;
   refresh: () => void;
   refreshing: boolean;
+  onReview: (signal: Signal) => void;
 }) {
   return (
     <ScrollView
@@ -313,7 +509,7 @@ function DashboardScreen({
         <Text style={styles.linkText}>{data.new_bets.length} waiting</Text>
       </View>
       {data.new_bets.length ? (
-        data.new_bets.slice(0, 4).map((bet) => <BetCard key={bet.signal_id} signal={bet} />)
+        data.new_bets.slice(0, 4).map((bet) => <BetCard key={bet.signal_id} signal={bet} onReview={onReview} />)
       ) : (
         <View style={styles.emptyCard}>
           <Ionicons name="checkmark-circle-outline" size={26} color={colors.green} />
@@ -348,10 +544,12 @@ function BetsScreen({
   items,
   refresh,
   refreshing,
+  onReview,
 }: {
   items: Signal[];
   refresh: () => void;
   refreshing: boolean;
+  onReview: (signal: Signal) => void;
 }) {
   const [filter, setFilter] = useState<BetFilter>("All");
   const filtered = items.filter((bet) => {
@@ -373,7 +571,7 @@ function BetsScreen({
           <PillTabs values={["All", "Primary", "Value", "Fish"]} selected={filter} onSelect={setFilter} />
         </View>
       }
-      renderItem={({ item }) => <BetCard signal={item} />}
+      renderItem={({ item }) => <BetCard signal={item} onReview={onReview} />}
       ListEmptyComponent={<View style={styles.emptyCard}><Text style={styles.muted}>No matching PM Edge bets.</Text></View>}
     />
   );
@@ -583,6 +781,7 @@ export default function App() {
   const [history, setHistory] = useState<HistoryBet[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsResponse | null>(null);
   const [system, setSystem] = useState<SystemResponse | null>(null);
+  const [selected, setSelected] = useState<Signal | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -632,8 +831,8 @@ export default function App() {
       );
     }
 
-    if (tab === "Dashboard") return <DashboardScreen data={dashboard} refresh={refresh} refreshing={refreshing} />;
-    if (tab === "Bets") return <BetsScreen items={bets} refresh={refresh} refreshing={refreshing} />;
+    if (tab === "Dashboard") return <DashboardScreen data={dashboard} refresh={refresh} refreshing={refreshing} onReview={setSelected} />;
+    if (tab === "Bets") return <BetsScreen items={bets} refresh={refresh} refreshing={refreshing} onReview={setSelected} />;
     if (tab === "Live") return <LiveScreen items={openBets} refresh={refresh} refreshing={refreshing} />;
     if (tab === "Analytics" && analytics) return <AnalyticsScreen data={analytics} />;
 
@@ -653,6 +852,12 @@ export default function App() {
           setTab(next);
           if (next !== "More") setMoreView("Menu");
         }}
+      />
+      <ReviewModal
+        signal={selected}
+        visible={selected != null}
+        onClose={() => setSelected(null)}
+        onSubmitted={() => void refresh()}
       />
     </SafeAreaView>
   );
@@ -725,4 +930,17 @@ const styles = StyleSheet.create({
   menuRow: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, borderRadius: radius.md, padding: 15 },
   menuIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.panel2, alignItems: "center", justifyContent: "center" },
   menuLabel: { flex: 1, color: colors.text, fontSize: 16, fontWeight: "800" },
+  modalRoot: { flex: 1, backgroundColor: colors.bg },
+  modalTopBar: { height: 54, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12, borderBottomColor: colors.border, borderBottomWidth: 1 },
+  modalTitle: { color: colors.text, fontWeight: "900", fontSize: 17 },
+  modalContent: { padding: 16, paddingBottom: 36, gap: 14 },
+  notice: { borderRadius: radius.md, padding: 13, flexDirection: "row", gap: 10, alignItems: "flex-start", borderWidth: 1 },
+  noticeBlue: { backgroundColor: "#102B48", borderColor: "#1C4C78" },
+  noticeGreen: { backgroundColor: "#0D3127", borderColor: "#176047" },
+  noticeRed: { backgroundColor: "#381A22", borderColor: "#71313C" },
+  noticeText: { color: colors.text, flex: 1, lineHeight: 19 },
+  submitWarning: { color: colors.muted, fontSize: 12, lineHeight: 18, textAlign: "center" },
+  submitButton: { backgroundColor: colors.blue, borderRadius: radius.md, padding: 15, alignItems: "center" },
+  disabledButton: { opacity: 0.42 },
+  submitButtonText: { color: colors.white, fontWeight: "900", fontSize: 13 },
 });

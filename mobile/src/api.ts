@@ -1,11 +1,12 @@
-import * as Linking from "expo-linking";
 import type {
   AnalyticsResponse,
   BetListResponse,
   DashboardResponse,
   HistoryBet,
   OpenBet,
+  ReviewResponse,
   Signal,
+  SubmitResponse,
   SystemResponse,
 } from "./types";
 
@@ -15,32 +16,42 @@ const API_TOKEN = process.env.EXPO_PUBLIC_PM_EDGE_API_TOKEN ?? "";
 function headers() {
   return {
     Accept: "application/json",
+    "Content-Type": "application/json",
     Authorization: `Bearer ${API_TOKEN}`,
   };
 }
 
-async function request<T>(path: string): Promise<T> {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!API_BASE || !API_TOKEN) {
     throw new Error("PM Edge mobile API is not configured");
   }
-  const response = await fetch(`${API_BASE}${path}`, { headers: headers() });
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...init,
+    headers: { ...headers(), ...(init?.headers ?? {}) },
+  });
+  const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(`PM Edge API error ${response.status}`);
+    const detail = payload?.detail;
+    const message =
+      typeof detail === "string"
+        ? detail
+        : detail?.message ?? `PM Edge API error ${response.status}`;
+    throw new Error(message);
   }
-  return response.json() as Promise<T>;
+  return payload as T;
 }
 
 export const api = {
   dashboard: () => request<DashboardResponse>("/v1/dashboard"),
   newBets: () => request<BetListResponse<Signal>>("/v1/bets?status=new"),
-  openBets: () => request<BetListResponse<OpenBet>>("/v1/bets?status=open"),
+  openBets: () => request<BetListResponse<OpenBet>>("/v1/live"),
   history: () => request<BetListResponse<HistoryBet>>("/v1/bets?status=history"),
   analytics: () => request<AnalyticsResponse>("/v1/analytics"),
   system: () => request<SystemResponse>("/v1/system"),
-  async openApproval(signalId: string) {
-    const payload = await request<{ approval_url: string }>(
-      `/v1/bets/${encodeURIComponent(signalId)}/approval`,
-    );
-    await Linking.openURL(payload.approval_url);
-  },
+  review: (signalId: string) =>
+    request<ReviewResponse>(`/v1/bets/${encodeURIComponent(signalId)}/review`),
+  submit: (signalId: string) =>
+    request<SubmitResponse>(`/v1/bets/${encodeURIComponent(signalId)}/submit`, {
+      method: "POST",
+    }),
 };

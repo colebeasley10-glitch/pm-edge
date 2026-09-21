@@ -18,6 +18,7 @@ export type Signal = {
   market_type?: string | null;
   side: "YES" | "NO";
   lane?: string | null;
+  execution?: string | null;
   recommended_limit?: number | null;
   fair_probability?: number | null;
   net_edge?: number | null;
@@ -39,6 +40,7 @@ export type OpenBet = {
   current_value?: number | null;
   unrealized_pl?: number | null;
   kalshi_status?: string | null;
+  client_order_id?: string | null;
 };
 
 export type HistoryBet = OpenBet & {
@@ -68,6 +70,7 @@ export type DashboardResponse = {
   actual: Summary;
   model: Partial<Summary>;
   new_bets: Signal[];
+  recent_activity?: HistoryBet[];
   open_count: number;
   system: {
     last_model_activity?: string | null;
@@ -95,13 +98,51 @@ export type SystemResponse = {
   odds_credits_today?: number | null;
   odds_budget_date?: string | null;
   drawdown?: Record<string, unknown>;
-  tracking?: {
-    signals?: number;
-    candidate_decisions?: number;
-    clv_rows?: number;
-    fill_rows?: number;
-    signal_outcomes?: number;
+  guardrails: {
+    max_per_order_dollars: number;
+    max_open_risk_dollars: number;
+    max_open_positions_per_sport: number;
+    per_sport_dollar_cap: number | null;
   };
+  tracking: {
+    signals: number;
+    candidate_decisions: number;
+    clv_rows: number;
+    fill_rows: number;
+    signal_outcomes: number;
+  };
+};
+
+export type ReviewResponse = {
+  signal_id: string;
+  ticker: string;
+  market_title: string;
+  sport_title: string;
+  market_type: string;
+  lane: string;
+  side: "YES" | "NO";
+  execution: "MAKE" | "TAKE";
+  fair_probability?: number | null;
+  net_edge?: number | null;
+  books?: number | null;
+  limit_price: number;
+  live_ask: number;
+  shares: number;
+  max_loss: number;
+  gross_profit_if_correct: number;
+  price_ok: boolean;
+  price_message: string;
+  guard: { blocked?: boolean; reason?: string };
+  existing_order?: Record<string, unknown> | null;
+  kalshi_ready: boolean;
+  can_submit: boolean;
+};
+
+export type SubmitResponse = {
+  submitted: boolean;
+  already_exists: boolean;
+  order: Record<string, unknown>;
+  review: ReviewResponse;
 };
 
 export type BetListResponse<T = Record<string, unknown>> = { items: T[] };
