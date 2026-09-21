@@ -68,7 +68,12 @@ def _prepare_approval_url(market: dict, fair_entry: dict, q, tier: str) -> str |
             fair_probability=fair_side,
             net_edge=getattr(q, "net_edge", None),
             books=fair_entry.get("n_books"),
+            dispersion=fair_entry.get("dispersion"),
+            source_version=int(getattr(watcher, "WATCHER_VERSION", 24)),
+            fair_fetched_at=fair_entry.get("fetched_at"),
         )
+        decoded = approval_links.verify_approval_token(token)
+        fair_entry["_signal_id"] = decoded["signal_id"]
         url = approval_links.build_approval_url(base_url, token)
     except Exception as exc:
         print("APPROVAL_LINK_SKIPPED", market.get("ticker"), type(exc).__name__, str(exc)[:160])

@@ -255,7 +255,12 @@ def install_v27_patch() -> None:
         lane = v23._effective_lane(tier, q)
         try:
             result = signal_tracker.record_signal(
-                market, fair_entry, q, lane=lane, source_version=27
+                market,
+                fair_entry,
+                q,
+                lane=lane,
+                source_version=int(getattr(watcher, "WATCHER_VERSION", 27)),
+                signal_id=fair_entry.get("_signal_id"),
             )
             if result.get("recorded"):
                 V27_STATS["signals_recorded"] += 1

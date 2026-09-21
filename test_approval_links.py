@@ -49,7 +49,9 @@ def main() -> None:
     assert url.startswith("https://example.streamlit.app/Approve?trade=")
     assert len(url) < 512
 
-    tampered = token[:-1] + ("A" if token[-1] != "A" else "B")
+    body, signature = token.split(".", 1)
+    tampered_body = ("A" if body[0] != "A" else "B") + body[1:]
+    tampered = tampered_body + "." + signature
     try:
         approval_links.verify_approval_token(tampered, now=1_000_001)
     except ValueError:

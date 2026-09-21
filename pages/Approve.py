@@ -35,6 +35,7 @@ for _name in (
         pass
 
 import approval_links
+import signal_tracker
 from kalshi_submit import KalshiSubmitClient, KalshiSubmitError
 
 KALSHI_PUBLIC_BASE = os.getenv(
@@ -148,11 +149,9 @@ def _copy_button(label: str, value: str) -> None:
     )
 
 
-def _client_order_id(token_text: str) -> str:
-    # Stable across page reloads and midnight boundaries: one approval token can
-    # map to only one Kalshi client_order_id.
-    digest = hashlib.sha256(str(token_text).encode("utf-8")).hexdigest()[:28]
-    return "pmedge-" + digest
+def _client_order_id(token_text: str, signal_id: str) -> str:
+    # Stable across page reloads; the provenance id remains machine-joinable.
+    return approval_links.client_order_id(signal_id, token_text)
 
 
 def _created_today(row: dict) -> bool:
@@ -224,7 +223,7 @@ shares = int(trade["shares"])
 computed_risk = shares * max_price
 price_input = _price_input(max_price)
 action_label = "BUY NOW" if trade["execution"] == "TAKE" else "PLACE LIMIT"
-client_order_id = _client_order_id(token)
+client_order_id = _client_order_id(token, trade["signal_id"])
 
 # Fail closed if the signed token's stated risk and independently computed risk disagree.
 if abs(float(trade["max_loss"]) - computed_risk) > 0.02:
@@ -370,6 +369,18 @@ else:
                     order_kwargs["is_live"] = bool(trade.get("is_live", False))
 
                 result = submit_client.create_buy_order(**order_kwargs)
+                try:
+                    signal_tracker.record_submission(
+                        trade,
+                        client_order_id=client_order_id,
+                        order_result=result,
+                    )
+                except Exception as ledger_exc:
+                    # The order already exists at Kalshi; provenance logging
+                    # failure must be visible but must never retry the order.
+                    st.caption(
+                        f"Provenance ledger warning: {type(ledger_exc).__name__}: {ledger_exc}"
+                    )
             except KalshiSubmitError as exc:
                 if exc.status_code == 409:
                     st.warning("Kalshi reports this order already exists or conflicts. Check your Kalshi Orders before trying anything else.")

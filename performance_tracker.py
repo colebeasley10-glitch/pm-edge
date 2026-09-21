@@ -10,6 +10,7 @@ import csv
 import json
 import math
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -20,6 +21,7 @@ import requests
 import execution_guard
 
 HISTORY_PATH = Path(os.getenv("PM_EDGE_PERFORMANCE_HISTORY_PATH", ".pm_edge_performance_history.json"))
+SIGNAL_LEDGER_PATH = Path(os.getenv("PM_EDGE_SIGNAL_LEDGER_PATH", "pm_edge_signal_ledger.csv"))
 KALSHI_PUBLIC_BASE = os.getenv(
     "PM_EDGE_KALSHI_PUBLIC_BASE_URL",
     "https://external-api.kalshi.com/trade-api/v2",
@@ -322,6 +324,9 @@ def _record_base(intent: dict) -> dict:
         "books": intent.get("books"),
         "source_version": intent.get("source_version"),
         "client_order_id": intent.get("client_order_id"),
+        "signal_id": intent.get("signal_id"),
+        "fair_fetched_at": intent.get("fair_fetched_at"),
+        "dispersion": intent.get("dispersion"),
     }
 
 
@@ -410,7 +415,32 @@ def _normalize_order_status(order: dict) -> str:
     return "submitted"
 
 
-def _discover_submitted_pm_edge_orders(client, queue: dict) -> int:
+def _signal_id_from_client_order_id(client_order_id: str) -> str | None:
+    match = re.fullmatch(r"pmedge-([a-f0-9]{20})-([a-f0-9]{8,})", str(client_order_id or "").lower())
+    return match.group(1) if match else None
+
+
+def _load_signal_metadata(path: Path = SIGNAL_LEDGER_PATH) -> dict[str, dict]:
+    if not path.exists() or path.stat().st_size == 0:
+        return {}
+    out: dict[str, dict] = {}
+    try:
+        with path.open("r", encoding="utf-8", newline="") as fh:
+            for row in csv.DictReader(fh):
+                signal_id = str(row.get("signal_id") or "").strip().lower()
+                if not signal_id:
+                    continue
+                # Prefer the original alert row, which carries complete event metadata.
+                current = out.get(signal_id)
+                is_signal = str(row.get("record_type") or "signal") == "signal"
+                if current is None or is_signal:
+                    out[signal_id] = dict(row)
+    except OSError:
+        return {}
+    return out
+
+
+def _discover_submitted_pm_edge_orders(client, queue: dict, signal_ledger_path: Path = SIGNAL_LEDGER_PATH) -> int:
     """Backfill real PM Edge submissions directly from Kalshi.
 
     Approval-page orders carry a pmedge-* client_order_id. This makes Kalshi
@@ -423,6 +453,7 @@ def _discover_submitted_pm_edge_orders(client, queue: dict) -> int:
         return 0
 
     intents = queue.setdefault("intents", [])
+    signal_metadata = _load_signal_metadata(signal_ledger_path)
     known_client_ids = {str(x.get("client_order_id") or "") for x in intents}
     known_order_ids = {str(x.get("kalshi_order_id") or "") for x in intents}
     added = 0
@@ -453,28 +484,38 @@ def _discover_submitted_pm_edge_orders(client, queue: dict) -> int:
         created_at = str(order.get("created_time") or order.get("created_at") or "")
         trade_date = created_at[:10] if len(created_at) >= 10 else None
         filled = _count(order.get("fill_count_fp") if order.get("fill_count_fp") is not None else order.get("fill_count"))
+        signal_id = _signal_id_from_client_order_id(client_id)
+        signal = signal_metadata.get(signal_id or "", {})
 
         intent = {
             "intent_id": f"kalshi:{client_id}",
             "client_order_id": client_id,
+            "signal_id": signal_id,
             "created_at": created_at or None,
-            "trade_date": trade_date,
+            "trade_date": trade_date or signal.get("trade_date") or None,
             "ticker": ticker,
-            "market_title": ticker,
+            "market_title": signal.get("market_title") or ticker,
             "side": side,
-            "lane": "approval_link",
+            "lane": signal.get("lane") or "approval_link",
             "limit_price": round(float(price), 6),
             "shares": int(round(shares)),
             "max_loss": round(float(price) * float(shares), 6),
-            "fair_probability": None,
-            "net_edge": None,
-            "books": None,
+            "fair_probability": _safe_float(signal.get("fair_probability")),
+            "net_edge": _safe_float(signal.get("net_edge")),
+            "books": int(signal["books"]) if str(signal.get("books") or "").isdigit() else None,
+            "dispersion": _safe_float(signal.get("dispersion")),
+            "fair_fetched_at": signal.get("fair_fetched_at") or None,
+            "source_version": int(signal["source_version"]) if str(signal.get("source_version") or "").isdigit() else None,
             "status": _normalize_order_status(order),
             "kalshi_order_id": order_id or None,
             "kalshi_order_status": str(order.get("status") or "") or None,
             "filled_shares": round(filled, 6),
             "remaining_shares": round(max(0.0, shares - filled), 6),
-            "reconciliation_note": "discovered_by_pmedge_client_order_id",
+            "reconciliation_note": (
+                "joined_signal_ledger_by_signal_id"
+                if signal
+                else "client_order_id_no_signal_metadata"
+            ),
         }
         intents.append(intent)
         known_client_ids.add(client_id)
@@ -490,10 +531,11 @@ def update_performance(
     queue_path: Path = execution_guard.QUEUE_PATH,
     history_path: Path = HISTORY_PATH,
     market_loader: Callable[[str], dict | None] = _load_market_settlement,
+    signal_ledger_path: Path = SIGNAL_LEDGER_PATH,
 ) -> dict:
     """Finalize fills at settlement or at a verified full early exit."""
     queue = execution_guard._load_queue(queue_path)
-    discovered = _discover_submitted_pm_edge_orders(client, queue)
+    discovered = _discover_submitted_pm_edge_orders(client, queue, signal_ledger_path)
     if discovered:
         execution_guard._save_queue(queue, queue_path)
 
