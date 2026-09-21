@@ -183,24 +183,12 @@ def _review_payload(row: dict, client: KalshiSubmitClient) -> dict:
     if live_ask is None:
         raise HTTPException(status_code=503, detail="Could not read the live Kalshi ask")
 
-    price_ok = execution == "MAKE" or live_ask <= limit_price + 1e-9
-    if execution == "MAKE" and live_ask > limit_price + 1e-9:
-        price_message = (
-            f"Limit order will rest at {limit_price * 100:.1f}¢ and will not chase "
-            f"the {live_ask * 100:.1f}¢ ask."
-        )
-    elif price_ok:
+    # Never allow stale signals to become resting orders after the market has moved\n    # beyond the approved price. This protects both review and submit paths.\n    price_ok = live_ask <= limit_price + 1e-9\n    if price_ok:
         price_message = (
             f"Live ask {live_ask * 100:.1f}¢ is within the "
             f"{limit_price * 100:.1f}¢ maximum."
         )
-    else:
-        price_message = (
-            f"Live ask {live_ask * 100:.1f}¢ is above the "
-            f"{limit_price * 100:.1f}¢ maximum."
-        )
-
-    try:
+    else:\n        price_message = (\n            f"Expired: live ask {live_ask * 100:.1f}¢ is above the "\n            f"{limit_price * 100:.1f}¢ maximum. This bet can no longer be submitted."\n        )\n\n    try:
         orders = client.get_orders(limit=200)
         positions = client.get_positions(limit=200)
     except Exception as exc:
