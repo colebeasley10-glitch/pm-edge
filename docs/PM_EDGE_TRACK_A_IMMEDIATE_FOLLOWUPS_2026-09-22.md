@@ -1,3 +1,5 @@
+> **ADDENDUM 4 FUNNEL INTERPRETATION CORRECTION:** The earlier wording that attempted-to-filled was the current "bottleneck" is **SUPERSEDED as a remediation conclusion**. Addendum 3/4 show that low fill rate may be intentional/protective and cannot be labeled defective from counts alone. Also, the historical single >60c settlement is from an older execution cohort and is not a descendant of the 250 three-devig-comparable >60c Power-qualified observations.
+
 > **CORRECTION / SUPERSEDED SECTION:** The threshold-flip counts in Section 3 below were reconstructed with an incorrect Price Fish edge floor. Addendum 3 re-ran the calculation against the current code/workflow and reproduced the ledger's 1,006 Power-qualified rows exactly. The corrected Power-vs-Proportional count is 339 Power-only qualifiers (not 103), including 237 in the >60c bucket. Use `PM_EDGE_TRACK_A_FILL_RATE_INVESTIGATION_2026-09-22.md` for the corrected threshold-flip analysis. Sections 1, 2, and 4 remain unchanged.
 
 # PM Edge — Immediate Follow-ups to Track A Preliminary
