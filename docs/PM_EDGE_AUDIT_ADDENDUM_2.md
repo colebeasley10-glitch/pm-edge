@@ -137,6 +137,41 @@ Log:
 - result
 - realized P/L
 
+### 7. Submission-time execution snapshot — Addendum 4
+Log at order submission:
+- explicit `execution_type_at_submission`: MAKER / TAKER
+- Kalshi best bid price and depth
+- Kalshi best ask price and depth
+- intended order size
+- source/feed quote timestamp when supplied
+- PM Edge fetch timestamp for the quote/order-book snapshot
+- order submission timestamp
+- computed quote age at submission
+
+### 8. Alert-time frozen devig snapshot — Addendum 4
+Log at alert creation, and link durably to signal/order:
+- proportional fair
+- Power fair
+- Shin fair
+- active production devig method
+- active qualifying benchmark
+- net edge under each devig method using the same alert-time trade state
+- alert timestamp
+
+Never use a later rescan to reconstruct alert-time devig flip status.
+
+### 9. Alert disposition — Addendum 4
+For every sent alert, persist one terminal/intermediate disposition with timestamp and reason:
+- submitted
+- owner_skipped
+- approval_expired
+- approval_dismissed
+- submit_failed
+- superseded
+- other
+
+This field is required to distinguish intentional non-execution from manual/tooling loss in the alert-to-attempt funnel.
+
 
 ### Addendum 4 forward-logging requirements
 
