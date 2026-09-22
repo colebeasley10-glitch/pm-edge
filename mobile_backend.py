@@ -287,6 +287,28 @@ def bets(
     data = _load()
     if status == "new":
         df = dashboard_data.new_signals(data["signals"], data["orders"])
+
+        # Bet Center must contain actionable signals only. Re-check the live
+        # Kalshi ask before returning each signal so stale/expired bets leave
+        # the list automatically instead of merely becoming disabled in Review.
+        actionable_rows = []
+        for row in df.head(80).to_dict("records"):
+            ticker = str(row.get("ticker") or "")
+            side = str(row.get("side") or "").upper()
+            sizing = dashboard_data.size_signal(row)
+            if not ticker or side not in {"YES", "NO"} or not sizing:
+                continue
+            try:
+                market = dashboard_data.market_snapshot(ticker)
+                live_ask = _market_ask(market, side)
+                max_price = float(sizing["price"])
+            except Exception:
+                # Fail closed: if the current market cannot be verified, do not
+                # advertise the signal as actionable.
+                continue
+            if live_ask is not None and live_ask <= max_price + 1e-9:
+                actionable_rows.append(row)
+        df = pd.DataFrame(actionable_rows, columns=df.columns)
     elif status == "open":
         df = dashboard_data.open_order_rows(data["orders"])
     elif status == "unfilled":
