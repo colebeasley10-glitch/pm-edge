@@ -31,7 +31,7 @@ import type {
 
 type Tab = "Dashboard" | "Bets" | "Live" | "Analytics" | "More";
 type MoreView = "Menu" | "History" | "Pending" | "Account" | "System" | "Settings";
-type BetFilter = "All" | "Primary" | "Value" | "Fish";
+type BetFilter = "Available" | "Filled" | "Unfilled";
 
 const fmtMoney = (x?: number | null, signed = false) => {
   if (x == null || Number.isNaN(x)) return "—";
@@ -548,37 +548,38 @@ function DashboardScreen({
 
 function BetsScreen({
   items,
+  positions,
+  unfilled,
   refresh,
   refreshing,
   onReview,
 }: {
   items: Signal[];
+  positions: OpenBet[];
+  unfilled: HistoryBet[];
   refresh: () => void;
   refreshing: boolean;
   onReview: (signal: Signal) => void;
 }) {
-  const [filter, setFilter] = useState<BetFilter>("All");
-  const filtered = items.filter((bet) => {
-    if (filter === "All") return true;
-    if (filter === "Primary") return bet.lane === "primary";
-    if (filter === "Value") return bet.lane === "value";
-    return bet.lane === "price_fish";
-  });
+  const [filter, setFilter] = useState<BetFilter>("Available");
+  const data = filter === "Available" ? items : filter === "Filled" ? positions : unfilled;
   return (
     <FlatList
       style={{ flex: 1 }}
       contentContainerStyle={styles.screen}
-      data={filtered}
-      keyExtractor={(item) => item.signal_id}
+      data={data}
+      keyExtractor={(item: any, i) => item.signal_id ?? `${item.ticker}-${item.side ?? ""}-${i}`}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.blue} />}
       ListHeaderComponent={
         <View style={{ gap: 12 }}>
-          <Header title="Bet Center" subtitle="All model bets, ranked by edge" />
-          <PillTabs values={["All", "Primary", "Value", "Fish"]} selected={filter} onSelect={setFilter} />
+          <Header title="Bet Center" subtitle="Available, filled, and unfilled PM Edge bets" />
+          <PillTabs values={["Available", "Filled", "Unfilled"]} selected={filter} onSelect={setFilter} />
         </View>
       }
-      renderItem={({ item }) => <BetCard signal={item} onReview={onReview} />}
-      ListEmptyComponent={<View style={styles.emptyCard}><Text style={styles.muted}>No matching PM Edge bets.</Text></View>}
+      renderItem={({ item }: any) =>
+        filter === "Available" ? <BetCard signal={item as Signal} onReview={onReview} /> : <LiveCard bet={item as OpenBet} />
+      }
+      ListEmptyComponent={<View style={styles.emptyCard}><Text style={styles.muted}>No {filter.toLowerCase()} bets right now.</Text></View>}
     />
   );
 }
@@ -816,6 +817,7 @@ export default function App() {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [bets, setBets] = useState<Signal[]>([]);
   const [openBets, setOpenBets] = useState<OpenBet[]>([]);
+  const [positions, setPositions] = useState<OpenBet[]>([]);
   const [history, setHistory] = useState<HistoryBet[]>([]);
   const [unfilled, setUnfilled] = useState<HistoryBet[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsResponse | null>(null);
@@ -829,10 +831,11 @@ export default function App() {
     setRefreshing(true);
     setError(null);
     try {
-      const [d, b, o, h, u, a, s] = await Promise.all([
+      const [d, b, o, p, h, u, a, s] = await Promise.all([
         api.dashboard(),
         api.newBets(),
         api.openBets(),
+        api.positions(),
         api.history(),
         api.unfilled(),
         api.analytics(),
@@ -841,6 +844,7 @@ export default function App() {
       setDashboard(d);
       setBets(b.items);
       setOpenBets(o.items);
+      setPositions(p.items);
       setHistory(h.items);
       setUnfilled(u.items);
       setAnalytics(a);
@@ -901,7 +905,7 @@ export default function App() {
       if (target === "Analytics" || target === "Live" || target === "Bets") { setTab(target); setMoreView("Menu"); return; }
       setTab("More"); setMoreView(target);
     }} />;
-    if (tab === "Bets") return <BetsScreen items={bets} refresh={refresh} refreshing={refreshing} onReview={setSelected} />;
+    if (tab === "Bets") return <BetsScreen items={bets} positions={positions} unfilled={unfilled} refresh={refresh} refreshing={refreshing} onReview={setSelected} />;
     if (tab === "Live") return <LiveScreen items={openBets} refresh={refresh} refreshing={refreshing} />;
     if (tab === "Analytics" && analytics) return <AnalyticsScreen data={analytics} />;
 
@@ -911,7 +915,7 @@ export default function App() {
     if (moreView === "System" && system) return <SystemScreen data={system} back={() => setMoreView("Menu")} />;
     if (moreView === "Settings") return <SettingsScreen back={() => setMoreView("Menu")} />;
     return <MoreMenu select={setMoreView} />;
-  }, [analytics, bets, dashboard, error, history, moreView, openBets, passcode, refresh, refreshing, system, tab, unfilled]);
+  }, [analytics, bets, dashboard, error, history, moreView, openBets, positions, passcode, refresh, refreshing, system, tab, unfilled]);
 
   return (
     <SafeAreaView style={styles.root}>
