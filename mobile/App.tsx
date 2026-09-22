@@ -528,6 +528,25 @@ function HistoryRow({ bet }: { bet: HistoryBet }) {
   );
 }
 
+function UnfilledRow({ bet }: { bet: HistoryBet }) {
+  return (
+    <View style={styles.historyRow}>
+      <View style={styles.historyMain}>
+        <View style={styles.rowGap}>
+          <Chip label={(bet.sport_title ?? "SPORT").toUpperCase()} />
+          <Chip label="UNFILLED" tone="orange" />
+        </View>
+        <Text style={styles.historyTitle}>{bet.market_title ?? bet.ticker}</Text>
+        <Text style={styles.mutedSmall}>BUY {String(bet.side ?? "—").toUpperCase()} · Order ended without a fill</Text>
+      </View>
+      <View style={styles.historyPnl}>
+        <Text style={styles.muted}>No action</Text>
+        <Text style={styles.mutedSmall}>{bet.trade_date ?? ""}</Text>
+      </View>
+    </View>
+  );
+}
+
 function DashboardScreen({
   data,
   refresh,
@@ -692,6 +711,7 @@ function AnalyticsScreen({ data, history }: { data: AnalyticsResponse; history: 
   const [period, setPeriod] = useState<"Day" | "Week" | "Month" | "Year" | "All">("Month");
   const [anchor, setAnchor] = useState(() => new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [showUnfilled, setShowUnfilled] = useState(false);
 
   const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const rangeFor = (kind: typeof period, value: Date) => {
@@ -720,6 +740,7 @@ function AnalyticsScreen({ data, history }: { data: AnalyticsResponse; history: 
   const movePeriod = (amount: number) => {
     if (period === "All") return;
     setSelectedDay(null);
+    setShowUnfilled(false);
     setAnchor((current) => {
       const next = new Date(current);
       if (period === "Day") next.setDate(next.getDate() + amount);
@@ -730,19 +751,26 @@ function AnalyticsScreen({ data, history }: { data: AnalyticsResponse; history: 
     });
   };
   const range = rangeFor(period, anchor);
-  const periodBets = history.filter((bet) => {
+  const isUnfilled = (bet: HistoryBet) => String(bet.status ?? "").toLowerCase() === "unfilled";
+  const filledHistory = history.filter((bet) => !isUnfilled(bet));
+  const unfilledHistory = history.filter(isUnfilled);
+  const inRange = (bet: HistoryBet) => {
     if (period === "All") return true;
     if (!bet.trade_date || !range.start || !range.end) return false;
     const d = new Date(`${bet.trade_date}T12:00:00`);
     return !Number.isNaN(d.getTime()) && d >= range.start && d <= range.end;
-  });
+  };
+  const periodBets = filledHistory.filter(inRange);
+  const periodUnfilled = unfilledHistory.filter(inRange);
   const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
   const calendarStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
   const calendarDays = Array.from({ length: new Date(anchor.getFullYear(), anchor.getMonth()+1, 0).getDate() }, (_, i) => new Date(anchor.getFullYear(), anchor.getMonth(), i+1));
   const leading = Array.from({ length: calendarStart.getDay() }, () => null as Date | null);
   const calendarCells = [...leading, ...calendarDays];
-  const betsForDay = (d: Date) => history.filter((bet) => bet.trade_date === dayKey(d));
+  const betsForDay = (d: Date) => filledHistory.filter((bet) => bet.trade_date === dayKey(d));
+  const unfilledForDay = (d: Date) => unfilledHistory.filter((bet) => bet.trade_date === dayKey(d));
   const selectedBets = selectedDay ? betsForDay(selectedDay) : periodBets;
+  const selectedUnfilled = selectedDay ? unfilledForDay(selectedDay) : periodUnfilled;
   const selectedLabel = selectedDay ? selectedDay.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" }) : range.label;
   const periodProfit = periodBets.reduce((sum, bet) => sum + Number(bet.net_pl ?? 0), 0);
   const periodRisked = periodBets.reduce((sum, bet) => sum + Number(bet.entry_cost ?? 0), 0);
@@ -754,7 +782,7 @@ function AnalyticsScreen({ data, history }: { data: AnalyticsResponse; history: 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
       <Header title="Analytics" subtitle="Track P/L by any day, week, month or year" />
-      <PillTabs values={["Day", "Week", "Month", "Year", "All"]} selected={period} onSelect={(value) => { setPeriod(value as typeof period); setAnchor(new Date()); setSelectedDay(null); }} />
+      <PillTabs values={["Day", "Week", "Month", "Year", "All"]} selected={period} onSelect={(value) => { setPeriod(value as typeof period); setAnchor(new Date()); setSelectedDay(null); setShowUnfilled(false); }} />
       {period !== "All" ? (
         <View style={styles.periodNavigator}>
           <Pressable style={styles.periodArrow} onPress={() => movePeriod(-1)}><Ionicons name="chevron-back" size={22} color={colors.text} /></Pressable>
@@ -774,7 +802,7 @@ function AnalyticsScreen({ data, history }: { data: AnalyticsResponse; history: 
               const db = betsForDay(d);
               const pl = db.reduce((sum,b)=>sum+Number(b.net_pl ?? 0),0);
               const active = selectedDay && dayKey(selectedDay) === dayKey(d);
-              return <Pressable key={dayKey(d)} onPress={()=>setSelectedDay(d)} style={[styles.calendarDay, db.length ? (pl >= 0 ? styles.calendarWin : styles.calendarLoss) : null, active ? styles.calendarSelected : null]}>
+              return <Pressable key={dayKey(d)} onPress={()=>{ setSelectedDay(d); setShowUnfilled(false); }} style={[styles.calendarDay, db.length ? (pl >= 0 ? styles.calendarWin : styles.calendarLoss) : null, active ? styles.calendarSelected : null]}>
                 <Text style={styles.calendarDate}>{d.getDate()}</Text>
                 {db.length ? <Text style={pl >= 0 ? styles.calendarProfit : styles.calendarNegative}>{fmtMoney(pl, true)}</Text> : null}
               </Pressable>;
@@ -789,8 +817,20 @@ function AnalyticsScreen({ data, history }: { data: AnalyticsResponse; history: 
         <Metric label="Amount Risked" value={fmtMoney(periodRisked)} />
       </View>
       <View style={styles.card}>
-        <View style={styles.rowBetween}><Text style={styles.sectionTitle}>{selectedLabel} Bets</Text><Text style={styles.mutedSmall}>{selectedBets.length} bets</Text></View>\n        {selectedBets.length ? selectedBets.map((bet, index) => <HistoryRow key={`${bet.ticker}-${bet.trade_date}-${index}`} bet={bet} />) : <Text style={styles.muted}>No settled bets for this selection.</Text>}
+        <View style={styles.rowBetween}><Text style={styles.sectionTitle}>{selectedLabel} Bets</Text><Text style={styles.mutedSmall}>{selectedBets.length} filled</Text></View>\n        {selectedBets.length ? selectedBets.map((bet, index) => <HistoryRow key={`${bet.ticker}-${bet.trade_date}-${index}`} bet={bet} />) : <Text style={styles.muted}>No filled bets for this selection.</Text>}
       </View>
+      {selectedUnfilled.length ? (
+        <View style={styles.card}>
+          <Pressable style={styles.rowBetween} onPress={() => setShowUnfilled((current) => !current)}>
+            <View>
+              <Text style={styles.sectionTitle}>Unfilled Orders</Text>
+              <Text style={styles.mutedSmall}>{selectedUnfilled.length} order{selectedUnfilled.length === 1 ? "" : "s"} for {selectedLabel}</Text>
+            </View>
+            <Ionicons name={showUnfilled ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
+          </Pressable>
+          {showUnfilled ? selectedUnfilled.map((bet, index) => <UnfilledRow key={`unfilled-${bet.ticker}-${bet.trade_date}-${index}`} bet={bet} />) : null}
+        </View>
+      ) : null}
       <PillTabs values={["Sport", "Category", "Type"]} selected={mode} onSelect={setMode} />
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Performance by {mode}</Text>
