@@ -423,18 +423,35 @@ const scoreForBet = (bet: OpenBet, scores: ScoreEvent[]) => {
 };
 
 function LiveCard({ bet, scores = [] }: { bet: OpenBet; scores?: ScoreEvent[] }) {
+  const [detailsOpen, setDetailsOpen] = React.useState(false);
   const pnl = Number(bet.unrealized_pl ?? 0);
   const event = scoreForBet(bet, scores);
   const scoreMap = new Map((event?.scores ?? []).map((row) => [row.name ?? "", row.score ?? "—"]));
+  const side = String(bet.side ?? "—").toUpperCase();
+  const shares = Number(bet.filled_shares ?? 0);
+  const livePrice = Number(bet.current_bid ?? 0);
+  const liveChance = Number.isFinite(livePrice) && livePrice > 0 ? Math.max(0, Math.min(100, livePrice * (livePrice <= 1 ? 100 : 1))) : null;
+  const chanceLabel = liveChance == null ? "—" : `${Math.round(liveChance)}%`;
+  const outlook = liveChance == null ? "LIVE" : liveChance >= 65 ? "LOOKING GOOD" : liveChance >= 45 ? "TOSS-UP" : "IN TROUBLE";
+  const outlookTone = liveChance == null || liveChance >= 65 ? "green" : liveChance >= 45 ? "default" : "red";
+  const market = String(bet.market_title ?? bet.ticker ?? "");
+  const cleanMarket = market
+    .replace(/Los Angeles R\b/gi, "Rams")
+    .replace(/New York G\b/gi, "Giants")
+    .replace(/wins by over\s+([0-9.]+)\s+points\??/i, (_, n) => `wins by ${Math.floor(Number(n)) + 1}+`)
+    .replace(/\s+/g, " ")
+    .trim();
+
   return (
     <View style={styles.card}>
       <View style={styles.rowBetween}>
         <View style={styles.rowGap}>
           <Chip label={(bet.sport_title ?? "SPORT").toUpperCase()} />
-          <Chip label={(bet.kalshi_status ?? bet.status ?? "OPEN").toUpperCase()} tone="red" />
+          <Chip label={event ? (event.completed ? "FINAL" : "LIVE") : (bet.kalshi_status ?? bet.status ?? "OPEN").toUpperCase()} tone={event?.completed ? "default" : "red"} />
         </View>
         <Text style={pnl >= 0 ? styles.greenValue : styles.redValue}>{fmtMoney(pnl, true)}</Text>
       </View>
+
       {event ? (
         <View style={styles.scoreboard}>
           <View style={styles.rowBetween}>
@@ -445,33 +462,50 @@ function LiveCard({ bet, scores = [] }: { bet: OpenBet; scores?: ScoreEvent[] })
             <Text style={styles.scoreTeam}>{event.home_team}</Text>
             <Text style={styles.scoreValue}>{String(scoreMap.get(event.home_team ?? "") ?? "—")}</Text>
           </View>
-          <Text style={event.completed ? styles.finalStatus : styles.liveStatus}>{event.completed ? "FINAL" : "LIVE"}</Text>
         </View>
       ) : null}
-      <Text style={styles.betTitle}>{bet.market_title ?? bet.ticker}</Text>
-      <Text style={styles.betSide}>
-        {bet.side ?? "—"} · {Number(bet.filled_shares ?? 0).toFixed(0)} @ {fmtCents(bet.average_fill_price)}
-      </Text>
-      <View style={styles.statRow}>
+
+      <View style={styles.livePickBox}>
+        <Text style={[styles.livePickSide, side === "NO" ? { color: colors.red } : { color: colors.green }]}>
+          YOU PICKED {side}
+        </Text>
+        <Text style={styles.livePickTitle}>{cleanMarket}</Text>
+        <Text style={styles.mutedSmall}>{shares.toFixed(0)} shares @ {fmtCents(bet.average_fill_price)}</Text>
+      </View>
+
+      <View style={styles.liveOutlook}>
         <View>
-          <Text style={styles.statValue}>{fmtMoney(bet.entry_cost)}</Text>
-          <Text style={styles.mutedSmall}>Risked</Text>
+          <Text style={styles.mutedSmall}>Live market chance</Text>
+          <Text style={outlookTone === "red" ? styles.redValueLarge : outlookTone === "green" ? styles.greenValueLarge : styles.statValueLarge}>{chanceLabel}</Text>
         </View>
-        <View>
-          <Text style={styles.statValue}>{fmtCents(bet.current_bid)}</Text>
-          <Text style={styles.mutedSmall}>Current</Text>
-        </View>
-        <View>
-          <Text style={styles.statValue}>{fmtMoney(bet.current_value)}</Text>
-          <Text style={styles.mutedSmall}>Value</Text>
-        </View>
-        <View>
-          <Text style={pnl >= 0 ? styles.greenValue : styles.redValue}>
-            {bet.entry_cost ? fmtPct(pnl / Number(bet.entry_cost)) : "—"}
-          </Text>
-          <Text style={styles.mutedSmall}>Return</Text>
+        <View style={styles.liveOutlookRight}>
+          <Text style={outlookTone === "red" ? styles.redValue : outlookTone === "green" ? styles.greenValue : styles.statValue}>{outlook}</Text>
+          <Text style={styles.mutedSmall}>Based on current contract price</Text>
         </View>
       </View>
+
+      <View style={styles.statRow}>
+        <View><Text style={styles.statValue}>{fmtMoney(bet.entry_cost)}</Text><Text style={styles.mutedSmall}>Risked</Text></View>
+        <View><Text style={styles.statValue}>{fmtCents(bet.current_bid)}</Text><Text style={styles.mutedSmall}>Current</Text></View>
+        <View><Text style={styles.statValue}>{fmtMoney(bet.current_value)}</Text><Text style={styles.mutedSmall}>Value</Text></View>
+        <View><Text style={pnl >= 0 ? styles.greenValue : styles.redValue}>{bet.entry_cost ? fmtPct(pnl / Number(bet.entry_cost)) : "—"}</Text><Text style={styles.mutedSmall}>Return</Text></View>
+      </View>
+
+      <Pressable style={styles.detailsButton} onPress={() => setDetailsOpen((v) => !v)}>
+        <Text style={styles.detailsButtonText}>{detailsOpen ? "Hide Details" : "View Details"}</Text>
+        <Ionicons name={detailsOpen ? "chevron-up" : "chevron-down"} size={18} color={colors.blue} />
+      </Pressable>
+
+      {detailsOpen ? (
+        <View style={styles.gameTracker}>
+          <Text style={styles.gameTrackerTitle}>Game Tracker</Text>
+          <Text style={styles.gameTrackerText}>Bet: {side} — {cleanMarket}</Text>
+          <Text style={styles.gameTrackerText}>Live market chance: {chanceLabel}</Text>
+          <Text style={styles.gameTrackerText}>Current contract: {fmtCents(bet.current_bid)} · Position value: {fmtMoney(bet.current_value)}</Text>
+          <Text style={styles.gameTrackerText}>{outlook === "LOOKING GOOD" ? "The live market currently favors your side." : outlook === "IN TROUBLE" ? "The live market currently has your side as an underdog." : "The live market currently sees this as close."}</Text>
+          <Text style={styles.mutedSmall}>This percentage is market-implied, not a guaranteed win probability.</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -1097,6 +1131,19 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 9, paddingVertical: 5, borderRadius: 8 },
   chipText: { fontSize: 11, fontWeight: "800" },
   betTitle: { color: colors.text, fontSize: 17, fontWeight: "800" },
+  livePickBox: { marginTop: 14, padding: 14, borderRadius: 14, backgroundColor: colors.surface2, gap: 5 },
+  livePickSide: { fontSize: 14, fontWeight: "900", letterSpacing: 0.4 },
+  livePickTitle: { color: colors.text, fontSize: 20, fontWeight: "800", lineHeight: 27 },
+  liveOutlook: { marginTop: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10 },
+  liveOutlookRight: { alignItems: "flex-end", maxWidth: "58%" },
+  greenValueLarge: { color: colors.green, fontSize: 30, fontWeight: "900" },
+  redValueLarge: { color: colors.red, fontSize: 30, fontWeight: "900" },
+  statValueLarge: { color: colors.text, fontSize: 30, fontWeight: "900" },
+  detailsButton: { marginTop: 14, minHeight: 46, borderWidth: 1, borderColor: colors.border, borderRadius: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  detailsButtonText: { color: colors.blue, fontSize: 15, fontWeight: "800" },
+  gameTracker: { marginTop: 10, padding: 14, borderRadius: 12, backgroundColor: colors.surface2, gap: 7 },
+  gameTrackerTitle: { color: colors.text, fontSize: 17, fontWeight: "900" },
+  gameTrackerText: { color: colors.text, fontSize: 14, lineHeight: 20 },
   scoreboard: { backgroundColor: colors.panel2, borderRadius: radius.md, padding: 12, gap: 8 },
   scoreTeam: { color: colors.text, fontSize: 16, fontWeight: "800", flex: 1 },
   scoreValue: { color: colors.text, fontSize: 24, fontWeight: "900" },
