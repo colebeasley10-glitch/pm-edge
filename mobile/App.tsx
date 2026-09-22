@@ -1089,7 +1089,15 @@ export default function App() {
       ]);
       setDashboard(d);
       setBets(b.items);
-      setOpenBets(o.items);
+      // Defense in depth: never show a position in Live before its scheduled start.
+      // Missing/invalid start times stay out of Live rather than being mislabeled.
+      const nowMs = Date.now();
+      const actuallyLive = (o.items ?? []).filter((item) => {
+        if (!item.commence_time) return false;
+        const startMs = new Date(item.commence_time).getTime();
+        return Number.isFinite(startMs) && startMs <= nowMs;
+      });
+      setOpenBets(actuallyLive);
       setPositions(p.items);
       setHistory(h.items);
       setUnfilled(u.items);
