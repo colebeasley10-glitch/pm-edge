@@ -116,7 +116,10 @@ class KalshiSubmitClient:
             raise KalshiSubmitError(response.status_code, "Unexpected Kalshi response", payload)
         return payload
 
-    def get_balance(self) -> dict:\n        return self._request("GET", "/portfolio/balance")\n\n    def get_orders(self, *, limit: int = 200) -> list[dict]:
+    def get_balance(self) -> dict:
+        return self._request("GET", "/portfolio/balance")
+
+    def get_orders(self, *, limit: int = 200) -> list[dict]:
         payload = self._request("GET", "/portfolio/orders", params={"limit": max(1, min(int(limit), 200))})
         rows = payload.get("orders", [])
         return rows if isinstance(rows, list) else []
