@@ -1,3 +1,5 @@
+> **ADDENDUM 4 RETRO-VALIDATION:** One preliminary count is superseded: "126 unique qualifying ticker/side/lane identities" should be **124**. The old 126 count was unique identities with a nonblank recommended limit, not unique Power-qualified identities. All other ledger-derived figures in this report reconcile to the pinned snapshot. See `PM_EDGE_RETRO_VALIDATION_2026-09-22.md`.
+
 > **RETROVALIDATION CORRECTION (Addendum 4):** the sentence below stating “126 unique qualifying ticker/side/lane identities” is **SUPERSEDED**. The pinned ledger has **124** identities with `decision=QUALIFIED`. The value **126** is the number of usable identities with a nonblank recommended limit. All other preliminary numerical figures were re-run and reconcile to reported rounding. See `PM_EDGE_TRACK_A_PRE_REG_AND_FUNNEL_GAPS_2026-09-22.md`.
 
 # PM Edge Track A — Devig Method Audit (Preliminary)
