@@ -494,7 +494,7 @@ function DashboardScreen({
       <Header title="Dashboard" subtitle="Today · PM Edge command center" />
       <Pressable style={styles.heroProfit} onPress={() => navigate("Analytics")}>
         <View>
-          <Text style={styles.heroProfitValue}>{fmtMoney(data.actual.net_pl, true)}</Text>
+          <Text style={[styles.heroProfitValue, { color: data.actual.net_pl >= 0 ? colors.green : colors.red }]}>{fmtMoney(data.actual.net_pl, true)}</Text>
           <Text style={styles.heroProfitLabel}>Total tracked P/L</Text>
         </View>
         <View style={styles.heroRoi}>
