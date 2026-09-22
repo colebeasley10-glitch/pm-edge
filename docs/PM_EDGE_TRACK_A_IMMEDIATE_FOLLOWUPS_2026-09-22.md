@@ -1,3 +1,5 @@
+> **CORRECTION / SUPERSEDED SECTION:** The threshold-flip counts in Section 3 below were reconstructed with an incorrect Price Fish edge floor. Addendum 3 re-ran the calculation against the current code/workflow and reproduced the ledger's 1,006 Power-qualified rows exactly. The corrected Power-vs-Proportional count is 339 Power-only qualifiers (not 103), including 237 in the >60c bucket. Use `PM_EDGE_TRACK_A_FILL_RATE_INVESTIGATION_2026-09-22.md` for the corrected threshold-flip analysis. Sections 1, 2, and 4 remain unchanged.
+
 # PM Edge — Immediate Follow-ups to Track A Preliminary
 
 **Cutoff:** 2026-09-22 13:13 UTC  
