@@ -813,7 +813,7 @@ def low_score_time_confirmed(market: dict, event: dict) -> tuple[bool, float | N
     """
     For weaker but same-sport team-name matches, require independent time agreement.
     """
-    kd = parse_dt(
+    kd = kalshi_ticker_game_time(market) or parse_dt(
         market.get("_kalshi_game_time")
         or market.get("_match_datetime")
         or market.get("occurrence_datetime")
@@ -844,6 +844,8 @@ def inferred_sport_rule(market: dict):
         (("WNBA",), "basketball_wnba"),
         (("NBA",), "basketball_nba"),
         (("MLB",), "baseball_mlb"),
+        (("KBO",), "baseball_kbo"),
+        (("NPB",), "baseball_npb"),
         (("NHL",), "icehockey_nhl"),
         (("MLS",), "soccer_usa_mls"),
         (("EPL", "PREMIERLEAGUE"), "soccer_epl"),
