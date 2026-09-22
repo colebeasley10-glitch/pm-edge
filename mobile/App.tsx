@@ -378,14 +378,9 @@ function ReviewModal({
                   style={[styles.submitButton, !review.can_submit && styles.disabledButton]}
                   disabled={!review.can_submit || submitting}
                   onPress={() => {
-                    Alert.alert(
-                      "Submit real Kalshi order?",
-                      `BUY ${review.side} · ${review.shares} shares · max ${fmtCents(review.limit_price)} · max cost ${fmtMoney(review.max_loss)}`,
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        { text: "Submit", onPress: () => void submit() },
-                      ],
-                    );
+                    // Alert.alert is unreliable in the exported Expo web/PWA build on iOS Safari.
+                    // The review screen itself is the confirmation step, so submit directly here.
+                    void submit();
                   }}
                 >
                   {submitting ? (
