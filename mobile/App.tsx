@@ -24,6 +24,7 @@ import type {
   HistoryBet,
   OpenBet,
   ReviewResponse,
+  ScoreEvent,
   Signal,
   SubmitResponse,
   SystemResponse,
@@ -408,8 +409,23 @@ function ReviewModal({
   );
 }
 
-function LiveCard({ bet }: { bet: OpenBet }) {
+const scoreForBet = (bet: OpenBet, scores: ScoreEvent[]) => {
+  const title = (bet.market_title ?? "").toLowerCase();
+  const words = title.replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((x) => x.length > 2);
+  let best: ScoreEvent | undefined;
+  let bestHits = 0;
+  for (const event of scores) {
+    const teams = `${event.away_team ?? ""} ${event.home_team ?? ""}`.toLowerCase();
+    const hits = words.filter((word) => teams.includes(word)).length;
+    if (hits > bestHits) { best = event; bestHits = hits; }
+  }
+  return bestHits >= 2 ? best : undefined;
+};
+
+function LiveCard({ bet, scores = [] }: { bet: OpenBet; scores?: ScoreEvent[] }) {
   const pnl = Number(bet.unrealized_pl ?? 0);
+  const event = scoreForBet(bet, scores);
+  const scoreMap = new Map((event?.scores ?? []).map((row) => [row.name ?? "", row.score ?? "—"]));
   return (
     <View style={styles.card}>
       <View style={styles.rowBetween}>
@@ -419,6 +435,19 @@ function LiveCard({ bet }: { bet: OpenBet }) {
         </View>
         <Text style={pnl >= 0 ? styles.greenValue : styles.redValue}>{fmtMoney(pnl, true)}</Text>
       </View>
+      {event ? (
+        <View style={styles.scoreboard}>
+          <View style={styles.rowBetween}>
+            <Text style={styles.scoreTeam}>{event.away_team}</Text>
+            <Text style={styles.scoreValue}>{String(scoreMap.get(event.away_team ?? "") ?? "—")}</Text>
+          </View>
+          <View style={styles.rowBetween}>
+            <Text style={styles.scoreTeam}>{event.home_team}</Text>
+            <Text style={styles.scoreValue}>{String(scoreMap.get(event.home_team ?? "") ?? "—")}</Text>
+          </View>
+          <Text style={event.completed ? styles.finalStatus : styles.liveStatus}>{event.completed ? "FINAL" : "LIVE"}</Text>
+        </View>
+      ) : null}
       <Text style={styles.betTitle}>{bet.market_title ?? bet.ticker}</Text>
       <Text style={styles.betSide}>
         {bet.side ?? "—"} · {Number(bet.filled_shares ?? 0).toFixed(0)} @ {fmtCents(bet.average_fill_price)}
@@ -600,6 +629,7 @@ function LiveScreen({
   items: OpenBet[];
   refresh: () => void;
   refreshing: boolean;
+  scores: ScoreEvent[];
 }) {
   return (
     <FlatList
@@ -609,7 +639,7 @@ function LiveScreen({
       keyExtractor={(item, i) => `${item.ticker}-${item.side ?? ""}-${i}`}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.blue} />}
       ListHeaderComponent={<Header title="Live Bets" subtitle="Track open positions and current value" />}
-      renderItem={({ item }) => <LiveCard bet={item} />}
+      renderItem={({ item }) => <LiveCard bet={item} scores={scores} />}
       ListEmptyComponent={<View style={styles.emptyCard}><Text style={styles.muted}>No open PM Edge positions right now.</Text></View>}
     />
   );
@@ -872,6 +902,7 @@ export default function App() {
   const [unfilled, setUnfilled] = useState<HistoryBet[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsResponse | null>(null);
   const [system, setSystem] = useState<SystemResponse | null>(null);
+  const [scores, setScores] = useState<ScoreEvent[]>([]);
   const [selected, setSelected] = useState<Signal | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -899,6 +930,7 @@ export default function App() {
       setUnfilled(u.items);
       setAnalytics(a);
       setSystem(s);
+      api.scores().then((x) => setScores(x.items ?? [])).catch(() => setScores([]));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load PM Edge");
     } finally {
@@ -956,7 +988,7 @@ export default function App() {
       setTab("More"); setMoreView(target);
     }} />;
     if (tab === "Bets") return <BetsScreen items={bets} positions={positions} unfilled={unfilled} refresh={refresh} refreshing={refreshing} onReview={setSelected} />;
-    if (tab === "Live") return <LiveScreen items={openBets} refresh={refresh} refreshing={refreshing} />;
+    if (tab === "Live") return <LiveScreen items={openBets} scores={scores} refresh={refresh} refreshing={refreshing} />;
     if (tab === "Analytics" && analytics) return <AnalyticsScreen data={analytics} history={history} />;
 
     if (moreView === "History") return <HistoryScreen items={history} back={() => setMoreView("Menu")} />;
@@ -965,7 +997,7 @@ export default function App() {
     if (moreView === "System" && system) return <SystemScreen data={system} back={() => setMoreView("Menu")} />;
     if (moreView === "Settings") return <SettingsScreen back={() => setMoreView("Menu")} />;
     return <MoreMenu select={setMoreView} />;
-  }, [analytics, bets, dashboard, error, history, moreView, openBets, positions, passcode, refresh, refreshing, system, tab, unfilled]);
+  }, [analytics, bets, dashboard, error, history, moreView, openBets, positions, passcode, refresh, refreshing, scores, system, tab, unfilled]);
 
   return (
     <SafeAreaView style={styles.root}>
@@ -1027,6 +1059,11 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 9, paddingVertical: 5, borderRadius: 8 },
   chipText: { fontSize: 11, fontWeight: "800" },
   betTitle: { color: colors.text, fontSize: 17, fontWeight: "800" },
+  scoreboard: { backgroundColor: colors.panel2, borderRadius: radius.md, padding: 12, gap: 8 },
+  scoreTeam: { color: colors.text, fontSize: 16, fontWeight: "800", flex: 1 },
+  scoreValue: { color: colors.text, fontSize: 24, fontWeight: "900" },
+  liveStatus: { color: colors.green, fontSize: 12, fontWeight: "900" },
+  finalStatus: { color: colors.muted, fontSize: 12, fontWeight: "900" },
   betSide: { color: colors.muted, fontWeight: "700" },
   statRow: { flexDirection: "row", justifyContent: "space-between" },
   statValue: { color: colors.text, fontSize: 17, fontWeight: "800" },
