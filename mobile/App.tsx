@@ -429,83 +429,75 @@ function LiveCard({ bet, scores = [] }: { bet: OpenBet; scores?: ScoreEvent[] })
   const scoreMap = new Map((event?.scores ?? []).map((row) => [row.name ?? "", row.score ?? "—"]));
   const side = String(bet.side ?? "—").toUpperCase();
   const shares = Number(bet.filled_shares ?? 0);
-  const livePrice = Number(bet.current_bid ?? 0);
-  const liveChance = Number.isFinite(livePrice) && livePrice > 0 ? Math.max(0, Math.min(100, livePrice * (livePrice <= 1 ? 100 : 1))) : null;
-  const chanceLabel = liveChance == null ? "—" : `${Math.round(liveChance)}%`;
-  const outlook = liveChance == null ? "LIVE" : liveChance >= 65 ? "LOOKING GOOD" : liveChance >= 45 ? "TOSS-UP" : "IN TROUBLE";
-  const outlookTone = liveChance == null || liveChance >= 65 ? "green" : liveChance >= 45 ? "default" : "red";
-  const market = String(bet.market_title ?? bet.ticker ?? "");
-  const cleanMarket = market
-    .replace(/Los Angeles R\b/gi, "Rams")
-    .replace(/New York G\b/gi, "Giants")
-    .replace(/wins by over\s+([0-9.]+)\s+points\??/i, (_, n) => `wins by ${Math.floor(Number(n)) + 1}+`)
-    .replace(/\s+/g, " ")
-    .trim();
+  const rawPrice = Number(bet.current_bid ?? 0);
+  const marketProb = Number.isFinite(rawPrice) && rawPrice > 0 ? Math.max(0, Math.min(100, rawPrice <= 1 ? rawPrice * 100 : rawPrice)) : null;
+  const pickProb = marketProb == null ? null : side === "NO" ? 100 - marketProb : marketProb;
+  const chanceLabel = pickProb == null ? "—" : `${Math.round(pickProb)}%`;
+  const outlook = pickProb == null ? "PRICE UNAVAILABLE" : pickProb >= 65 ? "LOOKING GOOD" : pickProb >= 45 ? "TOSS-UP" : "IN TROUBLE";
+  const outlookColor = pickProb == null ? colors.muted : pickProb >= 65 ? colors.green : pickProb >= 45 ? colors.orange : colors.red;
+  const market = String(bet.market_title ?? bet.ticker ?? "").replace(/\s+/g, " ").trim();
 
   return (
-    <View style={styles.card}>
-      <View style={styles.rowBetween}>
+    <View style={styles.liveCard}>
+      <View style={styles.liveCardTop}>
         <View style={styles.rowGap}>
-          <Chip label={(bet.sport_title ?? "SPORT").toUpperCase()} />
-          <Chip label={event ? (event.completed ? "FINAL" : "LIVE") : (bet.kalshi_status ?? bet.status ?? "OPEN").toUpperCase()} tone={event?.completed ? "default" : "red"} />
+          <View style={styles.liveSportBadge}><Text style={styles.liveSportText}>{(bet.sport_title ?? "SPORT").toUpperCase()}</Text></View>
+          <View style={styles.liveBadge}><View style={styles.liveDot}/><Text style={styles.liveBadgeText}>{event?.completed ? "FINAL" : "LIVE"}</Text></View>
         </View>
-        <Text style={pnl >= 0 ? styles.greenValue : styles.redValue}>{fmtMoney(pnl, true)}</Text>
+        <Text style={pnl >= 0 ? styles.livePnlGreen : styles.livePnlRed}>{fmtMoney(pnl, true)}</Text>
+      </View>
+
+      <Text style={styles.liveMarketTitle}>{market}</Text>
+      <View style={styles.pickBanner}>
+        <View>
+          <Text style={styles.pickBannerLabel}>YOUR BET</Text>
+          <Text style={styles.pickBannerValue}>{side}</Text>
+        </View>
+        <Text style={styles.pickBannerMeta}>{shares.toFixed(0)} shares  •  {fmtCents(bet.average_fill_price)}</Text>
       </View>
 
       {event ? (
-        <View style={styles.scoreboard}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.scoreTeam}>{event.away_team}</Text>
-            <Text style={styles.scoreValue}>{String(scoreMap.get(event.away_team ?? "") ?? "—")}</Text>
-          </View>
-          <View style={styles.rowBetween}>
-            <Text style={styles.scoreTeam}>{event.home_team}</Text>
-            <Text style={styles.scoreValue}>{String(scoreMap.get(event.home_team ?? "") ?? "—")}</Text>
-          </View>
+        <View style={styles.mockScoreBox}>
+          <View style={styles.mockScoreLine}><Text style={styles.mockScoreTeam}>{event.away_team}</Text><Text style={styles.mockScoreNumber}>{String(scoreMap.get(event.away_team ?? "") ?? "—")}</Text></View>
+          <View style={styles.mockScoreDivider}/>
+          <View style={styles.mockScoreLine}><Text style={styles.mockScoreTeam}>{event.home_team}</Text><Text style={styles.mockScoreNumber}>{String(scoreMap.get(event.home_team ?? "") ?? "—")}</Text></View>
+          <Text style={styles.mockScoreStatus}>{event.completed ? "FINAL" : "LIVE SCORE"}</Text>
         </View>
       ) : null}
 
-      <View style={styles.livePickBox}>
-        <Text style={[styles.livePickSide, side === "NO" ? { color: colors.red } : { color: colors.green }]}>
-          YOU PICKED {side}
-        </Text>
-        <Text style={styles.livePickTitle}>{cleanMarket}</Text>
-        <Text style={styles.mutedSmall}>{shares.toFixed(0)} shares @ {fmtCents(bet.average_fill_price)}</Text>
-      </View>
-
-      <View style={styles.liveOutlook}>
-        <View>
-          <Text style={styles.mutedSmall}>Live market chance</Text>
-          <Text style={outlookTone === "red" ? styles.redValueLarge : outlookTone === "green" ? styles.greenValueLarge : styles.statValueLarge}>{chanceLabel}</Text>
+      <View style={styles.probabilityPanel}>
+        <View style={styles.rowBetween}>
+          <Text style={styles.probabilityLabel}>Live Market Probability</Text>
+          <Text style={[styles.probabilityNumber,{color:outlookColor}]}>{chanceLabel}</Text>
         </View>
-        <View style={styles.liveOutlookRight}>
-          <Text style={outlookTone === "red" ? styles.redValue : outlookTone === "green" ? styles.greenValue : styles.statValue}>{outlook}</Text>
-          <Text style={styles.mutedSmall}>Based on current contract price</Text>
+        <View style={styles.probabilityTrack}>
+          <View style={[styles.probabilityFill,{width:`${pickProb ?? 0}%`,backgroundColor:outlookColor}]}/>
+        </View>
+        <View style={styles.rowBetween}>
+          <Text style={[styles.outlookText,{color:outlookColor}]}>{outlook}</Text>
+          <Text style={styles.probabilityHint}>for your {side} side</Text>
         </View>
       </View>
 
-      <View style={styles.statRow}>
-        <View><Text style={styles.statValue}>{fmtMoney(bet.entry_cost)}</Text><Text style={styles.mutedSmall}>Risked</Text></View>
-        <View><Text style={styles.statValue}>{fmtCents(bet.current_bid)}</Text><Text style={styles.mutedSmall}>Current</Text></View>
-        <View><Text style={styles.statValue}>{fmtMoney(bet.current_value)}</Text><Text style={styles.mutedSmall}>Value</Text></View>
-        <View><Text style={pnl >= 0 ? styles.greenValue : styles.redValue}>{bet.entry_cost ? fmtPct(pnl / Number(bet.entry_cost)) : "—"}</Text><Text style={styles.mutedSmall}>Return</Text></View>
+      <View style={styles.liveStats}>
+        <View style={styles.liveStat}><Text style={styles.liveStatValue}>{fmtMoney(bet.entry_cost)}</Text><Text style={styles.liveStatLabel}>Risked</Text></View>
+        <View style={styles.liveStat}><Text style={styles.liveStatValue}>{fmtMoney(bet.current_value)}</Text><Text style={styles.liveStatLabel}>Current Value</Text></View>
+        <View style={styles.liveStat}><Text style={pnl >= 0 ? styles.liveStatGreen : styles.liveStatRed}>{fmtMoney(pnl,true)}</Text><Text style={styles.liveStatLabel}>Live P/L</Text></View>
       </View>
 
-      <Pressable style={styles.detailsButton} onPress={() => setDetailsOpen((v) => !v)}>
-        <Text style={styles.detailsButtonText}>{detailsOpen ? "Hide Details" : "View Details"}</Text>
-        <Ionicons name={detailsOpen ? "chevron-up" : "chevron-down"} size={18} color={colors.blue} />
+      <Pressable style={styles.mockDetailsButton} onPress={() => setDetailsOpen(v=>!v)}>
+        <Text style={styles.mockDetailsText}>{detailsOpen ? "Hide Details" : "View Details"}</Text>
+        <Ionicons name={detailsOpen ? "chevron-up" : "chevron-forward"} size={18} color={colors.blue2}/>
       </Pressable>
 
-      {detailsOpen ? (
-        <View style={styles.gameTracker}>
-          <Text style={styles.gameTrackerTitle}>Game Tracker</Text>
-          <Text style={styles.gameTrackerText}>Bet: {side} — {cleanMarket}</Text>
-          <Text style={styles.gameTrackerText}>Live market chance: {chanceLabel}</Text>
-          <Text style={styles.gameTrackerText}>Current contract: {fmtCents(bet.current_bid)} · Position value: {fmtMoney(bet.current_value)}</Text>
-          <Text style={styles.gameTrackerText}>{outlook === "LOOKING GOOD" ? "The live market currently favors your side." : outlook === "IN TROUBLE" ? "The live market currently has your side as an underdog." : "The live market currently sees this as close."}</Text>
-          <Text style={styles.mutedSmall}>This percentage is market-implied, not a guaranteed win probability.</Text>
-        </View>
-      ) : null}
+      {detailsOpen ? <View style={styles.gameTracker}>
+        <Text style={styles.gameTrackerTitle}>Game Tracker</Text>
+        <Text style={styles.gameTrackerText}>You picked {side}: {market}</Text>
+        <Text style={styles.gameTrackerText}>Live market probability for your side: {chanceLabel}</Text>
+        <Text style={styles.gameTrackerText}>Current contract: {fmtCents(bet.current_bid)} · Position value: {fmtMoney(bet.current_value)}</Text>
+        <Text style={[styles.gameTrackerText,{color:outlookColor,fontWeight:"800"}]}>{outlook}</Text>
+        <Text style={styles.mutedSmall}>Market-implied probability from the live contract price; not a guaranteed outcome.</Text>
+      </View> : null}
     </View>
   );
 }
@@ -1131,6 +1123,41 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 9, paddingVertical: 5, borderRadius: 8 },
   chipText: { fontSize: 11, fontWeight: "800" },
   betTitle: { color: colors.text, fontSize: 17, fontWeight: "800" },
+  liveCard: { backgroundColor: "#0B1424", borderColor: "#23344D", borderWidth: 1, borderRadius: 18, padding: 16, gap: 14 },
+  liveCardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  liveSportBadge: { backgroundColor: "#16335C", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7 },
+  liveSportText: { color: "#68A9FF", fontSize: 11, fontWeight: "900" },
+  liveBadge: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "#391B25", paddingHorizontal: 9, paddingVertical: 5, borderRadius: 7 },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.red },
+  liveBadgeText: { color: colors.red, fontSize: 11, fontWeight: "900" },
+  livePnlGreen: { color: colors.green, fontSize: 21, fontWeight: "900" },
+  livePnlRed: { color: colors.red, fontSize: 21, fontWeight: "900" },
+  liveMarketTitle: { color: colors.text, fontSize: 21, fontWeight: "900", lineHeight: 27 },
+  pickBanner: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: "#101E31", borderRadius: 12, padding: 12 },
+  pickBannerLabel: { color: colors.muted, fontSize: 10, fontWeight: "800", letterSpacing: 0.8 },
+  pickBannerValue: { color: colors.text, fontSize: 23, fontWeight: "900" },
+  pickBannerMeta: { color: colors.muted, fontSize: 13, fontWeight: "700" },
+  mockScoreBox: { backgroundColor: "#101A2A", borderRadius: 12, padding: 13, gap: 8 },
+  mockScoreLine: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  mockScoreTeam: { color: colors.text, fontSize: 16, fontWeight: "800", flex: 1 },
+  mockScoreNumber: { color: colors.text, fontSize: 25, fontWeight: "900" },
+  mockScoreDivider: { height: 1, backgroundColor: "#26364D" },
+  mockScoreStatus: { color: colors.red, fontSize: 11, fontWeight: "900", textAlign: "center", letterSpacing: 0.7 },
+  probabilityPanel: { backgroundColor: "#101A2A", borderRadius: 12, padding: 13, gap: 9 },
+  probabilityLabel: { color: colors.muted, fontSize: 13, fontWeight: "700" },
+  probabilityNumber: { fontSize: 30, fontWeight: "900" },
+  probabilityTrack: { height: 9, backgroundColor: "#26364D", borderRadius: 5, overflow: "hidden" },
+  probabilityFill: { height: 9, borderRadius: 5 },
+  outlookText: { fontSize: 13, fontWeight: "900" },
+  probabilityHint: { color: colors.muted, fontSize: 11 },
+  liveStats: { flexDirection: "row", backgroundColor: "#101A2A", borderRadius: 12, paddingVertical: 12 },
+  liveStat: { flex: 1, alignItems: "center", gap: 3 },
+  liveStatValue: { color: colors.text, fontSize: 16, fontWeight: "900" },
+  liveStatGreen: { color: colors.green, fontSize: 16, fontWeight: "900" },
+  liveStatRed: { color: colors.red, fontSize: 16, fontWeight: "900" },
+  liveStatLabel: { color: colors.muted, fontSize: 10, fontWeight: "700" },
+  mockDetailsButton: { minHeight: 46, borderWidth: 1, borderColor: "#2D4770", borderRadius: 11, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  mockDetailsText: { color: colors.blue2, fontSize: 15, fontWeight: "900" },
   livePickBox: { marginTop: 14, padding: 14, borderRadius: 14, backgroundColor: colors.surface2, gap: 5 },
   livePickSide: { fontSize: 14, fontWeight: "900", letterSpacing: 0.4 },
   livePickTitle: { color: colors.text, fontSize: 20, fontWeight: "800", lineHeight: 27 },
