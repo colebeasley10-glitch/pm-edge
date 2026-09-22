@@ -66,10 +66,10 @@ jobs:
           PM_EDGE_MAX_ALERTS_PER_RUN: "3"
           PM_EDGE_ALERT_COOLDOWN_HOURS: "6"
           PM_EDGE_MAX_MARKETS: "3000"
-          PM_EDGE_VALUE_MIN_NET_EDGE: "0.030"
-          PM_EDGE_STANDARD_MIN_NET_EDGE: "0.030"
-          PM_EDGE_STANDARD_THREE_BOOK_EDGE: "0.035"
-          PM_EDGE_VALUE_THREE_BOOK_EDGE: "0.035"
+          PM_EDGE_VALUE_MIN_NET_EDGE: "0.035"
+          PM_EDGE_STANDARD_MIN_NET_EDGE: "0.035"
+          PM_EDGE_STANDARD_THREE_BOOK_EDGE: "0.040"
+          PM_EDGE_VALUE_THREE_BOOK_EDGE: "0.040"
           PM_EDGE_VALUE_MIN_BOOKS: "3"
           PM_EDGE_VALUE_MIN_TARGET: "0.20"
           PM_EDGE_VALUE_MAX_TARGET: "0.80"
@@ -132,6 +132,16 @@ jobs:
           PM_EDGE_OVERNIGHT_MISSED_RETENTION_DAYS: "14"
         run: python pm_edge_runner_v28.py
 
+      - name: Collect Pinnacle shadow diagnostics
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          PM_EDGE_ODDS_DAILY_BUDGET: "15"
+          PM_EDGE_PINNACLE_SHADOW_DAILY_CAP: "2"
+          PM_EDGE_PINNACLE_MIN_ACCOUNT_REMAINING: "25"
+          PM_EDGE_MODEL_ERROR_BUFFER: "0.01"
+          PM_EDGE_SLIPPAGE_BUFFER: "0.0025"
+        run: python pinnacle_shadow.py
+
       - name: Capture PM Edge closing-line value
         env:
           PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
@@ -153,6 +163,8 @@ jobs:
           [ -f pm_edge_fill_ledger.csv ] && git add pm_edge_fill_ledger.csv
           [ -f pm_edge_signal_outcomes.csv ] && git add pm_edge_signal_outcomes.csv
           [ -f .pm_edge_watch_state.json ] && git add .pm_edge_watch_state.json
+          [ -f pm_edge_pinnacle_shadow.csv ] && git add pm_edge_pinnacle_shadow.csv
+          [ -f .pm_edge_pinnacle_shadow_state.json ] && git add .pm_edge_pinnacle_shadow_state.json
           if ! git diff --cached --quiet; then
             git commit -m "Update PM Edge audit ledgers [skip ci]"
             git push
