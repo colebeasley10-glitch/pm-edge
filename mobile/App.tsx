@@ -6,6 +6,7 @@ import {
   Alert,
   FlatList,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   SafeAreaView,
@@ -1179,8 +1180,8 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  body: { flex: 1 },
+  root: { flex: 1, backgroundColor: colors.bg, ...(Platform.OS === "web" ? ({ height: "100dvh", overflow: "hidden" } as any) : {}) },
+  body: { flex: 1, paddingBottom: 68, minHeight: 0 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 28, gap: 16 },
   screen: { padding: 16, paddingBottom: 30, gap: 12 },
   header: { gap: 4, marginBottom: 8 },
@@ -1298,7 +1299,7 @@ const styles = StyleSheet.create({
   secondaryButtonText: { color: colors.text, fontWeight: "700" },
   systemLabel: { color: colors.text, fontWeight: "700" },
   divider: { height: 1, backgroundColor: colors.border },
-  nav: { flexDirection: "row", backgroundColor: "#091521", borderTopColor: colors.border, borderTopWidth: 1, paddingTop: 8, paddingBottom: 10 },
+  nav: { position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 100, flexDirection: "row", backgroundColor: "#091521", borderTopColor: colors.border, borderTopWidth: 1, paddingTop: 8, paddingBottom: Platform.OS === "web" ? 18 : 10 },
   navItem: { flex: 1, alignItems: "center", gap: 3 },
   navText: { color: colors.muted, fontSize: 10, fontWeight: "700" },
   pillTabs: { gap: 8, paddingVertical: 2 },
