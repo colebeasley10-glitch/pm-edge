@@ -665,6 +665,7 @@ function AnalyticsScreen({ data, history }: { data: AnalyticsResponse; history: 
   const [mode, setMode] = useState<"Sport" | "Category" | "Type">("Sport");
   const [period, setPeriod] = useState<"Day" | "Week" | "Month" | "Year" | "All">("Month");
   const [anchor, setAnchor] = useState(() => new Date());
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
   const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const rangeFor = (kind: typeof period, value: Date) => {
@@ -694,7 +695,7 @@ function AnalyticsScreen({ data, history }: { data: AnalyticsResponse; history: 
     if (period === "All") return;
     setAnchor((current) => {
       const next = new Date(current);
-      if (period === "Day") next.setDate(next.getDate() + amount);
+      setSelectedDay(null);\n      if (period === "Day") next.setDate(next.getDate() + amount);
       else if (period === "Week") next.setDate(next.getDate() + amount * 7);
       else if (period === "Month") next.setMonth(next.getMonth() + amount);
       else next.setFullYear(next.getFullYear() + amount);
@@ -708,6 +709,14 @@ function AnalyticsScreen({ data, history }: { data: AnalyticsResponse; history: 
     const d = new Date(`${bet.trade_date}T12:00:00`);
     return !Number.isNaN(d.getTime()) && d >= range.start && d <= range.end;
   });
+  const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const calendarStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+  const calendarDays = Array.from({ length: new Date(anchor.getFullYear(), anchor.getMonth()+1, 0).getDate() }, (_, i) => new Date(anchor.getFullYear(), anchor.getMonth(), i+1));
+  const leading = Array.from({ length: calendarStart.getDay() }, () => null as Date | null);
+  const calendarCells = [...leading, ...calendarDays];
+  const betsForDay = (d: Date) => history.filter((bet) => bet.trade_date === dayKey(d));
+  const selectedBets = selectedDay ? betsForDay(selectedDay) : periodBets;
+  const selectedLabel = selectedDay ? selectedDay.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" }) : range.label;
   const periodProfit = periodBets.reduce((sum, bet) => sum + Number(bet.net_pl ?? 0), 0);
   const periodRisked = periodBets.reduce((sum, bet) => sum + Number(bet.entry_cost ?? 0), 0);
   const periodWins = periodBets.filter((bet) => Number(bet.net_pl ?? 0) > 0).length;
@@ -718,7 +727,7 @@ function AnalyticsScreen({ data, history }: { data: AnalyticsResponse; history: 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
       <Header title="Analytics" subtitle="Track P/L by any day, week, month or year" />
-      <PillTabs values={["Day", "Week", "Month", "Year", "All"]} selected={period} onSelect={(value) => { setPeriod(value as typeof period); setAnchor(new Date()); }} />
+      <PillTabs values={["Day", "Week", "Month", "Year", "All"]} selected={period} onSelect={(value) => { setPeriod(value as typeof period); setAnchor(new Date()); setSelectedDay(null); }} />
       {period !== "All" ? (
         <View style={styles.periodNavigator}>
           <Pressable style={styles.periodArrow} onPress={() => movePeriod(-1)}><Ionicons name="chevron-back" size={22} color={colors.text} /></Pressable>
@@ -729,6 +738,23 @@ function AnalyticsScreen({ data, history }: { data: AnalyticsResponse; history: 
           <Pressable style={styles.periodArrow} onPress={() => movePeriod(1)}><Ionicons name="chevron-forward" size={22} color={colors.text} /></Pressable>
         </View>
       ) : <View style={styles.periodNavigator}><Text style={styles.periodLabel}>All Time</Text></View>}
+      {period === "Month" ? (
+        <View style={styles.calendarCard}>
+          <View style={styles.calendarWeek}>{["S","M","T","W","T","F","S"].map((x,i)=><Text key={i} style={styles.calendarDow}>{x}</Text>)}</View>
+          <View style={styles.calendarGrid}>
+            {calendarCells.map((d,i) => {
+              if (!d) return <View key={`blank-${i}`} style={styles.calendarDay} />;
+              const db = betsForDay(d);
+              const pl = db.reduce((sum,b)=>sum+Number(b.net_pl ?? 0),0);
+              const active = selectedDay && dayKey(selectedDay) === dayKey(d);
+              return <Pressable key={dayKey(d)} onPress={()=>setSelectedDay(d)} style={[styles.calendarDay, db.length ? (pl >= 0 ? styles.calendarWin : styles.calendarLoss) : null, active ? styles.calendarSelected : null]}>
+                <Text style={styles.calendarDate}>{d.getDate()}</Text>
+                {db.length ? <Text style={pl >= 0 ? styles.calendarProfit : styles.calendarNegative}>{fmtMoney(pl, true)}</Text> : null}
+              </Pressable>;
+            })}
+          </View>
+        </View>
+      ) : null}
       <View style={styles.metricsGrid}>
         <Metric label="Profit" value={fmtMoney(periodProfit, true)} positive={periodProfit >= 0} />
         <Metric label="ROI" value={fmtPct(periodRoi)} positive={(periodRoi ?? 0) >= 0} />
@@ -736,8 +762,7 @@ function AnalyticsScreen({ data, history }: { data: AnalyticsResponse; history: 
         <Metric label="Amount Risked" value={fmtMoney(periodRisked)} />
       </View>
       <View style={styles.card}>
-        <View style={styles.rowBetween}><Text style={styles.sectionTitle}>{range.label} Bets</Text><Text style={styles.mutedSmall}>{periodBets.length} bets</Text></View>
-        {periodBets.length ? periodBets.map((bet, index) => <HistoryRow key={`${bet.ticker}-${bet.trade_date}-${index}`} bet={bet} />) : <Text style={styles.muted}>No settled bets in this period.</Text>}
+        <View style={styles.rowBetween}><Text style={styles.sectionTitle}>{selectedLabel} Bets</Text><Text style={styles.mutedSmall}>{selectedBets.length} bets</Text></View>\n        {selectedBets.length ? selectedBets.map((bet, index) => <HistoryRow key={`${bet.ticker}-${bet.trade_date}-${index}`} bet={bet} />) : <Text style={styles.muted}>No settled bets for this selection.</Text>}
       </View>
       <PillTabs values={["Sport", "Category", "Type"]} selected={mode} onSelect={setMode} />
       <View style={styles.card}>
@@ -1032,6 +1057,17 @@ const styles = StyleSheet.create({
   screenTitle: { color: colors.text, fontSize: 29, fontWeight: "800" },
   subtitle: { color: colors.muted, fontSize: 14 },
   iconButton: { width: 30, height: 30, alignItems: "center", justifyContent: "center", marginLeft: -6 },
+  calendarCard: { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: radius.lg, padding: 10, gap: 8 },
+  calendarWeek: { flexDirection: "row" },
+  calendarDow: { width: "14.285%", textAlign: "center", color: colors.muted, fontWeight: "700" },
+  calendarGrid: { flexDirection: "row", flexWrap: "wrap" },
+  calendarDay: { width: "14.285%", aspectRatio: 0.9, padding: 5, borderRadius: 10, justifyContent: "space-between", alignItems: "center", borderWidth: 2, borderColor: "transparent" },
+  calendarWin: { backgroundColor: "#143B2C" },
+  calendarLoss: { backgroundColor: "#402126" },
+  calendarSelected: { borderColor: colors.blue2 },
+  calendarDate: { color: colors.text, fontSize: 14, fontWeight: "700" },
+  calendarProfit: { color: colors.green, fontSize: 10, fontWeight: "800" },
+  calendarNegative: { color: colors.red, fontSize: 10, fontWeight: "800" },
   periodNavigator: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 8 },
   periodArrow: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.md, backgroundColor: colors.cardAlt },
   periodLabelButton: { flex: 1, alignItems: "center", paddingHorizontal: 8 },
