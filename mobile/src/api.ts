@@ -5,6 +5,7 @@ import type {
   HistoryBet,
   OpenBet,
   ReviewResponse,
+  ScoresResponse,
   Signal,
   SubmitResponse,
   SystemResponse,
@@ -20,7 +21,6 @@ function headers() {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-
   const response = await fetch(`${API_BASE}/api${path}`, {
     ...init,
     headers: { ...headers(), ...(init?.headers ?? {}) },
@@ -45,6 +45,7 @@ export const api = {
   history: () => request<BetListResponse<HistoryBet>>("/v1/bets?status=history"),
   unfilled: () => request<BetListResponse<HistoryBet>>("/v1/bets?status=unfilled"),
   analytics: () => request<AnalyticsResponse>("/v1/analytics"),
+  scores: () => request<ScoresResponse>("/v1/scores"),
   system: () => request<SystemResponse>("/v1/system"),
   review: (signalId: string) =>
     request<ReviewResponse>(`/v1/bets/${encodeURIComponent(signalId)}/review`),
