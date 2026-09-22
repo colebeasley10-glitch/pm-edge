@@ -13,6 +13,7 @@ from dataclasses import asdict, replace
 from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -26,6 +27,36 @@ from pmedge.fair_value import fair_from_event, blend_fair_value, load_model_over
 from pmedge.pricing import best_binary_trade
 import pmedge.matcher as _matcher_mod
 from rapidfuzz.fuzz import ratio as _rf_ratio, token_set_ratio as _rf_token_set_ratio
+
+
+_KALSHI_TICKER_START_RE = re.compile(
+    r"-(?P<year>\d{2})(?P<month>JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)"
+    r"(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})"
+)
+_KALSHI_MONTHS = {m: i for i, m in enumerate(
+    ("JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"), start=1
+)}
+_KALSHI_TICKER_TZ = ZoneInfo("America/New_York")
+
+
+def kalshi_ticker_game_time(market: dict) -> datetime | None:
+    """Parse YYMONDDHHMM embedded in sports contract tickers as Eastern time."""
+    blob = str(market.get("ticker") or market.get("event_ticker") or "").upper()
+    match = _KALSHI_TICKER_START_RE.search(blob)
+    if not match:
+        return None
+    try:
+        local = datetime(
+            2000 + int(match.group("year")),
+            _KALSHI_MONTHS[match.group("month")],
+            int(match.group("day")),
+            int(match.group("hour")),
+            int(match.group("minute")),
+            tzinfo=_KALSHI_TICKER_TZ,
+        )
+        return local.astimezone(timezone.utc)
+    except (KeyError, ValueError):
+        return None
 
 
 def _abbr_matches(short_token: str, long_tokens: list[str]) -> bool:
@@ -755,7 +786,7 @@ def event_is_near_term(event: dict) -> bool:
     return -1.0 <= h <= MAX_EVENT_HOURS
 
 def kalshi_market_is_near_term(market: dict) -> bool:
-    kd = parse_dt(
+    kd = kalshi_ticker_game_time(market) or parse_dt(
         market.get("_kalshi_game_time")
         or market.get("_match_datetime")
         or market.get("occurrence_datetime")
@@ -1150,7 +1181,11 @@ def main():
         # is absent, match_event will rely on participant identity.
         em = match_event(
             spec, event_pool, aliases,
-            market.get("_match_datetime") or market.get("occurrence_datetime"),
+            (
+                kalshi_ticker_game_time(market).isoformat()
+                if kalshi_ticker_game_time(market)
+                else market.get("_match_datetime") or market.get("occurrence_datetime")
+            ),
         )
 
         team_score = event_match_team_score(em)
