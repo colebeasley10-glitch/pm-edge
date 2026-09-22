@@ -183,12 +183,21 @@ def _review_payload(row: dict, client: KalshiSubmitClient) -> dict:
     if live_ask is None:
         raise HTTPException(status_code=503, detail="Could not read the live Kalshi ask")
 
-    # Never allow stale signals to become resting orders after the market has moved\n    # beyond the approved price. This protects both review and submit paths.\n    price_ok = live_ask <= limit_price + 1e-9\n    if price_ok:
+    # Never allow stale signals to become resting orders after the market has moved
+    # beyond the approved price. This protects both review and submit paths.
+    price_ok = live_ask <= limit_price + 1e-9
+    if price_ok:
         price_message = (
             f"Live ask {live_ask * 100:.1f}¢ is within the "
             f"{limit_price * 100:.1f}¢ maximum."
         )
-    else:\n        price_message = (\n            f"Expired: live ask {live_ask * 100:.1f}¢ is above the "\n            f"{limit_price * 100:.1f}¢ maximum. This bet can no longer be submitted."\n        )\n\n    try:
+    else:
+        price_message = (
+            f"Expired: live ask {live_ask * 100:.1f}¢ is above the "
+            f"{limit_price * 100:.1f}¢ maximum. This bet can no longer be submitted."
+        )
+
+    try:
         orders = client.get_orders(limit=200)
         positions = client.get_positions(limit=200)
     except Exception as exc:
@@ -300,41 +309,65 @@ def bets(
 @app.get("/v1/live", dependencies=[Depends(_auth)])
 def live() -> dict:
     data = _load()
-    open_orders = dashboard_data.open_order_rows(data["orders"])
-    if "trade_date" in open_orders.columns:
-        open_orders = open_orders.sort_values("trade_date", ascending=False)
+    orders = data["orders"]
+
+    # Kalshi is the source of truth for Live. Audit-ledger rows can include
+    # attempted, unfilled, expired, or duplicated submissions and must never
+    # create a phantom position in the app.
+    try:
+        positions = _submit_client().get_positions(limit=200)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Kalshi position check failed: {exc}") from exc
 
     items = []
-    for row in open_orders.head(40).to_dict("records"):
-        ticker = str(row.get("ticker") or "")
-        side = str(row.get("side") or "").upper()
+    for position in positions:
+        ticker = str(position.get("ticker") or "").strip()
+        try:
+            signed_qty = float(position.get("position") or 0)
+        except (TypeError, ValueError):
+            signed_qty = 0.0
+        if not ticker or signed_qty == 0:
+            continue
+
+        side = "YES" if signed_qty > 0 else "NO"
+        qty = abs(signed_qty)
+
+        # Use the newest matching PM Edge ledger row only for descriptive
+        # metadata. Quantity/existence always comes from Kalshi.
+        row = {}
+        if not orders.empty and "ticker" in orders.columns:
+            matches = orders[
+                orders["ticker"].fillna("").astype(str).eq(ticker)
+                & orders.get("side", pd.Series("", index=orders.index)).fillna("").astype(str).str.upper().eq(side)
+            ].copy()
+            if not matches.empty:
+                if "trade_date" in matches.columns:
+                    matches = matches.sort_values("trade_date", ascending=False)
+                row = matches.iloc[0].to_dict()
+
         try:
             market = dashboard_data.market_snapshot(ticker)
         except Exception:
             market = {"status": "unknown"}
 
-        try:
-            qty = float(row.get("filled_shares") or 0)
-        except (TypeError, ValueError):
-            qty = 0.0
-        try:
-            entry_cost = float(row.get("entry_cost") or 0)
-        except (TypeError, ValueError):
-            entry_cost = 0.0
         bid = _market_bid(market, side)
-        current_value = qty * bid if qty > 0 and bid is not None else None
-        unrealized = current_value - entry_cost if current_value is not None and entry_cost > 0 else None
+        current_value = qty * bid if bid is not None else None
 
         item = {key: _clean(value) for key, value in row.items()}
+        item.update({key: _clean(value) for key, value in position.items()})
         item.update(
             {
+                "ticker": ticker,
+                "side": side,
+                "filled_shares": qty,
                 "kalshi_status": market.get("status"),
                 "current_bid": bid,
                 "current_value": current_value,
-                "unrealized_pl": unrealized,
+                "position_source": "kalshi",
             }
         )
         items.append(item)
+
     return {"items": items}
 
 
