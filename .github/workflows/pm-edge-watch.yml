@@ -133,6 +133,7 @@ jobs:
         run: python pm_edge_runner_v28.py
 
       - name: Collect Pinnacle shadow diagnostics
+        continue-on-error: true
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           PM_EDGE_ODDS_DAILY_BUDGET: "15"
