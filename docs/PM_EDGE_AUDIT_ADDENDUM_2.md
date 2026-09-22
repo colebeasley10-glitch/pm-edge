@@ -183,6 +183,15 @@ In addition to the fields above, freeze the following at the moment they become 
 
 These are logging/audit fields only and do not alter qualification, pricing, sizing or execution decisions.
 
+### 10. Qualified-to-gate disposition — Addendum 4
+For every score row that is marked qualified, persist whether downstream gate evaluation occurred and the terminal disposition:
+- gate_evaluated = true/false
+- gate decision / suppression reason when evaluated
+- explicit no-gate reason when gate evaluation does not occur
+- disposition timestamp
+
+This prevents qualified observations from disappearing between qualification and alert gating without an auditable reason.
+
 ## Promotion sample requirement
 
 Do not promote a Pinnacle/sharp benchmark to production because it looks favorable after a few dozen bets.
