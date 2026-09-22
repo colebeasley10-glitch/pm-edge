@@ -330,12 +330,25 @@ def bets(
 
 @app.get("/v1/live", dependencies=[Depends(_auth)])
 def live() -> dict:
+    # Live is a strict subset of real Kalshi positions whose market has started.
+    items = _kalshi_position_items()
+    live_items = [
+        item for item in items
+        if str(item.get("kalshi_status") or "").lower() in {"active", "open"}
+        and dashboard_data.signal_state(item).startswith("LIVE")
+    ]
+    return {"items": live_items}
+
+
+@app.get("/v1/positions", dependencies=[Depends(_auth)])
+def positions() -> dict:
+    # All real non-zero Kalshi positions, including upcoming and live.
+    return {"items": _kalshi_position_items()}
+
+
+def _kalshi_position_items() -> list[dict]:
     data = _load()
     orders = data["orders"]
-
-    # Kalshi is the source of truth for Live. Audit-ledger rows can include
-    # attempted, unfilled, expired, or duplicated submissions and must never
-    # create a phantom position in the app.
     try:
         positions = _submit_client().get_positions(limit=200)
     except Exception as exc:
@@ -350,12 +363,8 @@ def live() -> dict:
             signed_qty = 0.0
         if not ticker or signed_qty == 0:
             continue
-
         side = "YES" if signed_qty > 0 else "NO"
         qty = abs(signed_qty)
-
-        # Use the newest matching PM Edge ledger row only for descriptive
-        # metadata. Quantity/existence always comes from Kalshi.
         row = {}
         if not orders.empty and "ticker" in orders.columns:
             matches = orders[
@@ -366,31 +375,21 @@ def live() -> dict:
                 if "trade_date" in matches.columns:
                     matches = matches.sort_values("trade_date", ascending=False)
                 row = matches.iloc[0].to_dict()
-
         try:
             market = dashboard_data.market_snapshot(ticker)
         except Exception:
             market = {"status": "unknown"}
-
         bid = _market_bid(market, side)
         current_value = qty * bid if bid is not None else None
-
         item = {key: _clean(value) for key, value in row.items()}
         item.update({key: _clean(value) for key, value in position.items()})
-        item.update(
-            {
-                "ticker": ticker,
-                "side": side,
-                "filled_shares": qty,
-                "kalshi_status": market.get("status"),
-                "current_bid": bid,
-                "current_value": current_value,
-                "position_source": "kalshi",
-            }
-        )
+        item.update({
+            "ticker": ticker, "side": side, "filled_shares": qty,
+            "kalshi_status": market.get("status"), "current_bid": bid,
+            "current_value": current_value, "position_source": "kalshi",
+        })
         items.append(item)
-
-    return {"items": items}
+    return items
 
 
 @app.get("/v1/bets/{signal_id}/review", dependencies=[Depends(_auth)])
