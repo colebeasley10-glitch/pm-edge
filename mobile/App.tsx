@@ -630,18 +630,46 @@ function BarRow({ label, value, max }: { label: string; value: number; max: numb
   );
 }
 
-function AnalyticsScreen({ data }: { data: AnalyticsResponse }) {
+function AnalyticsScreen({ data, history }: { data: AnalyticsResponse; history: HistoryBet[] }) {
   const [mode, setMode] = useState<"Sport" | "Category" | "Type">("Sport");
+  const [period, setPeriod] = useState<"Day" | "Week" | "Month" | "Year" | "All">("Month");
+  const now = new Date();
+  const cutoff = new Date(now);
+  if (period === "Day") cutoff.setDate(now.getDate() - 1);
+  if (period === "Week") cutoff.setDate(now.getDate() - 7);
+  if (period === "Month") cutoff.setDate(now.getDate() - 30);
+  if (period === "Year") cutoff.setDate(now.getDate() - 365);
+  const periodBets = history.filter((bet) => {
+    if (period === "All") return true;
+    if (!bet.trade_date) return false;
+    const d = new Date(`${bet.trade_date}T12:00:00`);
+    return !Number.isNaN(d.getTime()) && d >= cutoff && d <= now;
+  });
+  const periodProfit = periodBets.reduce((sum, bet) => sum + Number(bet.net_pl ?? 0), 0);
+  const periodRisked = periodBets.reduce((sum, bet) => sum + Number(bet.entry_cost ?? 0), 0);
+  const periodWins = periodBets.filter((bet) => Number(bet.net_pl ?? 0) > 0).length;
+  const periodLosses = periodBets.filter((bet) => Number(bet.net_pl ?? 0) < 0).length;
+  const periodRoi = periodRisked > 0 ? (periodProfit / periodRisked) * 100 : null;
   const rows = mode === "Sport" ? data.by_sport : mode === "Category" ? data.by_lane : data.by_market_type;
   const max = Math.max(1, ...rows.map((r) => Math.abs(Number(r.net_pl ?? 0))));
   return (
     <ScrollView contentContainerStyle={styles.screen}>
-      <Header title="Analytics" subtitle="See what is actually making money" />
+      <Header title="Analytics" subtitle="Track P/L by time period" />
+      <PillTabs values={["Day", "Week", "Month", "Year", "All"]} selected={period} onSelect={(value) => setPeriod(value as typeof period)} />
       <View style={styles.metricsGrid}>
-        <Metric label="Total Profit" value={fmtMoney(data.actual.net_pl, true)} positive={data.actual.net_pl >= 0} />
-        <Metric label="ROI" value={fmtPct(data.actual.roi)} positive={(data.actual.roi ?? 0) >= 0} />
-        <Metric label="Record" value={data.actual.record} />
-        <Metric label="Total Bets" value={String(data.actual.settled)} />
+        <Metric label={`${period} Profit`} value={fmtMoney(periodProfit, true)} positive={periodProfit >= 0} />
+        <Metric label="ROI" value={fmtPct(periodRoi)} positive={(periodRoi ?? 0) >= 0} />
+        <Metric label="Record" value={`${periodWins}-${periodLosses}`} />
+        <Metric label="Amount Risked" value={fmtMoney(periodRisked)} />
+      </View>
+      <View style={styles.card}>
+        <View style={styles.rowBetween}>
+          <Text style={styles.sectionTitle}>{period} Bets</Text>
+          <Text style={styles.mutedSmall}>{periodBets.length} bets</Text>
+        </View>
+        {periodBets.length
+          ? periodBets.slice(0, 20).map((bet, index) => <HistoryRow key={`${bet.ticker}-${bet.trade_date}-${index}`} bet={bet} />)
+          : <Text style={styles.muted}>No settled bets in this period.</Text>}
       </View>
       <PillTabs values={["Sport", "Category", "Type"]} selected={mode} onSelect={setMode} />
       <View style={styles.card}>
@@ -915,7 +943,7 @@ export default function App() {
     }} />;
     if (tab === "Bets") return <BetsScreen items={bets} positions={positions} unfilled={unfilled} refresh={refresh} refreshing={refreshing} onReview={setSelected} />;
     if (tab === "Live") return <LiveScreen items={openBets} refresh={refresh} refreshing={refreshing} />;
-    if (tab === "Analytics" && analytics) return <AnalyticsScreen data={analytics} />;
+    if (tab === "Analytics" && analytics) return <AnalyticsScreen data={analytics} history={history} />;
 
     if (moreView === "History") return <HistoryScreen items={history} back={() => setMoreView("Menu")} />;
     if (moreView === "Pending") return <PendingScreen items={unfilled} back={() => setMoreView("Menu")} />;
