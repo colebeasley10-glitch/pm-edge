@@ -244,3 +244,121 @@ Material supersessions:
 3. "250 >60c qualified -> 1 settled" same-cohort framing — **SUPERSEDED**.
 
 All other core ledger-derived figures enumerated above reconcile to the pinned snapshots within reported rounding.
+
+# E. Exhaustive threshold-table reconciliation
+
+The earlier immediate-follow-up report included several alternative-devig cells beyond the headline 103 -> 339 error. They are explicitly reconciled here so none remain ambiguous.
+
+## Corrected overall pairwise table
+
+- Power qualified 1,006 — **EXACT**
+- Proportional qualified 669 — **EXACT**
+- Shin qualified 842 — **EXACT**
+- Power-not-Proportional 339 — **EXACT**
+- Proportional-not-Power 2 — **EXACT**
+- Power-not-Shin 164 — **EXACT**
+- Shin-not-Power 0 — **EXACT**
+- Shin-not-Proportional 204 — **EXACT**
+- Proportional-not-Shin 33 — **EXACT**
+
+Corrected unique ticker/side/lane identities exhibiting flips:
+- Power-not-Proportional 32 — **EXACT**
+- Proportional-not-Power 2 — **EXACT**
+- Power-not-Shin 22 — **EXACT**
+- Shin-not-Power 0 — **EXACT**
+- Shin-not-Proportional 19 — **EXACT**
+- Proportional-not-Shin 5 — **EXACT**
+
+The old unique flip counts 15 / 2 / 7 / 0 / 9 / 2 are **SUPERSEDED** except where the value happens to remain 2 or 0.
+
+## Corrected favorite table
+
+- favorite rows 1,679 — **EXACT**
+- Power qualified 760 — **EXACT**
+- Proportional qualified 437 — **EXACT**; old 657 **SUPERSEDED**
+- Shin qualified 597 — **EXACT**; old 723 **SUPERSEDED**
+- Power-not-Proportional 323 — **EXACT**; old 103 **SUPERSEDED**
+- Proportional-not-Power 0 — **EXACT**
+- Power-not-Shin 163 — **EXACT**; old 37 **SUPERSEDED**
+- Shin-not-Power 0 — **EXACT**
+- Shin-not-Proportional 191 — **EXACT**; old 66 **SUPERSEDED**
+- Proportional-not-Shin 31 — **EXACT**; old value omitted/incorrect under prior floor
+
+## Corrected underdog table
+
+- underdog rows 1,281 — **EXACT**
+- Power qualified 246 — **EXACT**
+- Proportional qualified 232 — **EXACT**; old 248 **SUPERSEDED**
+- Shin qualified 245 — **EXACT**; old 246 **SUPERSEDED**
+- Power-not-Proportional 16 — **EXACT**; old 0 **SUPERSEDED**
+- Proportional-not-Power 2 — **EXACT**
+- Power-not-Shin 1 — **EXACT**; old 0 **SUPERSEDED**
+- Shin-not-Power 0 — **EXACT**
+- Shin-not-Proportional 15 — **EXACT**; old 0 **SUPERSEDED**
+- Proportional-not-Shin 2 — **EXACT**
+
+## Corrected price-bucket threshold table
+
+### <=30c
+- n150; Power/Prop/Shin qualified 150/150/150; all pairwise flips 0 — **EXACT**
+
+### 31–45c
+- n322 — **EXACT**
+- Power/Prop/Shin qualified 321/296/311 — **EXACT**
+- Power-not-Prop 25 — **EXACT**; old 9 **SUPERSEDED**
+- Power-not-Shin 10 — **EXACT**; old 9 **SUPERSEDED**
+- Shin-not-Prop 15 — **EXACT**
+
+### 46–60c
+- n288 — **EXACT**
+- Power/Prop/Shin qualified 285/208/239 — **EXACT**
+- Power-not-Prop 77 — **EXACT**; old 14 **SUPERSEDED**
+- Power-not-Shin 46 — **EXACT**; old 13 **SUPERSEDED**
+- Shin-not-Prop 50 — **EXACT**
+- Proportional-not-Shin 19 — **EXACT**
+
+### >60c
+- n250 — **EXACT**
+- Power/Prop/Shin qualified 250/13/142 — **EXACT**
+- Power-not-Prop 237 — **EXACT**; old 80 **SUPERSEDED**
+- Power-not-Shin 108 — **EXACT**; old 15 **SUPERSEDED**
+- Shin-not-Prop 141 — **EXACT**; old 65 **SUPERSEDED**
+- Proportional-not-Shin 12 — **EXACT**
+- Power-only share 237/250 = 94.8% — **EXACT**
+
+# F. Statistical approximations and join-derived figures
+
+These are not raw ledger fields and therefore should not be labeled as direct ledger counts:
+- strict ROI 95% CI -60.2% to +1.2% — **REPRODUCIBLE APPROXIMATION** under the stated independence-style delta method;
+- realized ROI 95% CI -44.5% to +15.7% — **REPRODUCIBLE APPROXIMATION** under the same method;
+- alert-to-order joins based on ticker + side + price — **EXACT UNDER STATED JOIN**, not an immutable historical relation;
+- pre-alert flip-vs-fill joins — **EXACT UNDER STATED PRE-ALERT JOIN**, with 5 classifiable and 12 historically unclassifiable attempts.
+
+# G. Addendum 4 taker-premise reconciliation
+
+- historical strict taker record n24, 4W-20L, risk $88.49, P/L -$52.83, ROI -59.7% — **EXACT**;
+- actual average taker fill price 41.08c — **EXACT**;
+- old proposed ~46c average entry — **SUPERSEDED**;
+- naive entry-price-implied expected wins 9.86 and SD 2.33 — **EXACT calculation**;
+- observed 4 wins = -2.52 SD under that naive benchmark — **EXACT calculation**;
+- proposed -2.9 SD — **SUPERSEDED**;
+- taker entry fees total $3.3439 = 3.78% of taker risk — **EXACT**;
+- claimed 5–9 percentage points of spread-plus-fee drag — **NOT AVAILABLE HISTORICALLY** because spread at submission is not fully logged.
+
+# H. Addendum 4 unfilled representativeness reconciliation
+
+Adjudicated 9:
+- 9/9 same-day horizon — **EXACT from logged ticker date code/trade date**;
+- sports NCAAF1/NFL1/NPB3/WNBA4 — **EXACT from signal/ticker classification**;
+- mean/median attempted price 33.7c/32c — **EXACT**;
+- price buckets <=30c:4, 31–45c:5 — **EXACT**;
+- execution MAKE8, legacy type unavailable1 — **EXACT / NOT AVAILABLE HISTORICALLY for legacy type**.
+
+Unadjudicated 7:
+- horizons same-day2/+1day4/+3days1 — **EXACT from logged ticker date code/trade date**;
+- sports NFL1/NPB3/MMA2/WNBA1 — **EXACT**;
+- mean/median attempted price 42.1c/42c — **EXACT**;
+- price buckets <=30c:1, 31–45c:5, >60c:1 — **EXACT**;
+- execution MAKE7 — **EXACT**.
+
+Conclusion: the adjudicated subset is not representative by horizon, price, and sport mix. Therefore the -8.6% counterfactual remains exact for those nine but its prior generalization to all 16 is **SUPERSEDED**.
