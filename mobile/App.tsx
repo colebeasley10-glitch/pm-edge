@@ -693,9 +693,10 @@ function AnalyticsScreen({ data, history }: { data: AnalyticsResponse; history: 
   };
   const movePeriod = (amount: number) => {
     if (period === "All") return;
+    setSelectedDay(null);
     setAnchor((current) => {
       const next = new Date(current);
-      setSelectedDay(null);\n      if (period === "Day") next.setDate(next.getDate() + amount);
+      if (period === "Day") next.setDate(next.getDate() + amount);
       else if (period === "Week") next.setDate(next.getDate() + amount * 7);
       else if (period === "Month") next.setMonth(next.getMonth() + amount);
       else next.setFullYear(next.getFullYear() + amount);
