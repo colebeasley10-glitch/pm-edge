@@ -41,6 +41,7 @@ export const api = {
   dashboard: () => request<DashboardResponse>("/v1/dashboard"),
   newBets: () => request<BetListResponse<Signal>>("/v1/bets?status=new"),
   openBets: () => request<BetListResponse<OpenBet>>("/v1/live"),
+  positions: () => request<BetListResponse<OpenBet>>("/v1/positions"),
   history: () => request<BetListResponse<HistoryBet>>("/v1/bets?status=history"),
   unfilled: () => request<BetListResponse<HistoryBet>>("/v1/bets?status=unfilled"),
   analytics: () => request<AnalyticsResponse>("/v1/analytics"),
