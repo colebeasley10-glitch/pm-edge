@@ -242,10 +242,20 @@ Date: **2026-09-22**
 - Keep maker and taker paths unchanged at current production size.
 - Evaluate when cumulative strict TAKER settlements reach **n=60**.
 - Primary metric: `ROI_TAKER - ROI_MAKER`, dollar-weighted, through the same cutoff.
-- Trigger: if that value remains **< 0** at the 60th taker settlement, record the trigger as met; any production restriction still requires explicit approval.
-- Do not move the decision point, metric or sign threshold after seeing intermediate results.
+- Frozen planning per-bet ROI SD: **117.1 percentage points**.
+- With MAKER n=25-40, the planned SE of the difference is **23.9-27.9pp**.
+- A 60pp gap is therefore about **2.15-2.51 SE**.
+- The two-sided 95% 1.96-SE resolution is **46.8-54.6pp**.
+- The conventional alpha=0.05, 80%-power MDE is **67.0-78.1pp** across that maker-count range.
+- At the cutoff, recompute the SE with the actual strict MAKER n through the same cutoff and set `MDE_80 = (1.96 + 0.8416) * SE(Delta_ROI)`.
+- Any observed absolute ROI difference smaller than the applicable `MDE_80` is **INCONCLUSIVE** for claims that taker execution is acceptable.
+- Trigger: if `ROI_TAKER - ROI_MAKER < 0` at the 60th taker settlement, record the taker-deficit trigger as met; any production restriction still requires explicit approval.
+- A nonnegative result inside the MDE guardrail is not affirmative evidence that taker execution is acceptable.
+- Do not move the decision point, metric, planning SD, sign trigger or MDE rule after seeing intermediate results.
 
 The 24 existing taker settlements count toward the 60, leaving **36 additional strict taker settlements** before the registered decision point.
+
+The prior approximately **26,900-settlement** figure targeted a **2pp** ROI effect at alpha=0.05 and 80% power; it is not inconsistent with the much larger detectable-effect scale of this n=60 test.
 
 ## 2. The >60c funnel hole
 
