@@ -101,7 +101,7 @@ def enrich_orders(orders: pd.DataFrame, signals: pd.DataFrame) -> pd.DataFrame:
     by_id, by_pair = _best_signal_lookup(signals)
     enrich_cols = [
         "signal_id","market_title","sport_title","sport_key","market_type",
-        "event_id","commence_time","fair_fetched_at","dispersion",
+        "event_id","commence_time","fair_fetched_at","dispersion","alerted_at","submitted_at",
     ]
     for col in enrich_cols:
         if col not in out.columns:
