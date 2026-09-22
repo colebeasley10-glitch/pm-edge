@@ -137,6 +137,17 @@ Log:
 - result
 - realized P/L
 
+
+### Addendum 4 forward-logging requirements
+
+In addition to the fields above, freeze the following at the moment they become knowable:
+- maker/taker execution tag **at order submission**, not reconstructed only from fills;
+- Kalshi best bid/ask depth **at order submission** plus intended size and executable average price for that size;
+- quote-age components at submission: provider/feed timestamp, PM Edge fetch timestamp, and submission timestamp;
+- Proportional, Power and Shin fair values **at alert time**, linked by immutable signal id to the eventual order. Never substitute a later rescan for the alert-time values.
+
+These are logging/audit fields only and do not alter qualification, pricing, sizing or execution decisions.
+
 ## Promotion sample requirement
 
 Do not promote a Pinnacle/sharp benchmark to production because it looks favorable after a few dozen bets.
