@@ -482,6 +482,12 @@ function LiveCard({ bet, scores = [] }: { bet: OpenBet; scores?: ScoreEvent[] })
         <Ionicons name="time-outline" size={14} color={colors.muted} />
         <Text style={styles.timeText}>Order placed {fmtTime(bet.submitted_at ?? bet.created_at)}</Text>
       </View>
+      {!eventIsLive && !eventIsFinal ? (
+        <View style={styles.timeRow}>
+          <Ionicons name="calendar-outline" size={14} color={colors.blue2} />
+          <Text style={[styles.timeText, { color: colors.blue2 }]}>Game starts {startLabel}</Text>
+        </View>
+      ) : null}
       <View style={styles.pickBanner}>
         <View>
           <Text style={styles.pickBannerLabel}>YOUR BET</Text>
