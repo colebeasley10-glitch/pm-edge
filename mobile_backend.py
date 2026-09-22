@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 import pandas as pd
+import requests
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -413,6 +414,60 @@ def _kalshi_position_items() -> list[dict]:
         })
         items.append(item)
     return items
+
+
+def _score_sport_key(value: str) -> str | None:
+    raw = str(value or "").lower()
+    aliases = {
+        "nfl": "americanfootball_nfl", "ncaaf": "americanfootball_ncaaf",
+        "mlb": "baseball_mlb", "kbo": "baseball_kbo", "npb": "baseball_npb",
+        "wnba": "basketball_wnba", "nba": "basketball_nba",
+    }
+    if raw in aliases:
+        return aliases[raw]
+    if raw.startswith(("americanfootball_", "baseball_", "basketball_")):
+        return raw
+    return None
+
+
+@app.get("/v1/scores", dependencies=[Depends(_auth)])
+def scores() -> dict:
+    """Live/final scores for events represented by tracked PM Edge bets."""
+    key = os.getenv("ODDS_API_KEY", "").strip()
+    if not key:
+        return {"items": [], "available": False}
+    data = _load()
+    tracked = pd.concat([data["orders"], data["signals"]], ignore_index=True, sort=False)
+    if tracked.empty:
+        return {"items": [], "available": True}
+    sports: set[str] = set()
+    for _, row in tracked.iterrows():
+        candidate = _score_sport_key(row.get("sport_key") or row.get("sport_title"))
+        if candidate:
+            sports.add(candidate)
+    items: list[dict] = []
+    for sport in sorted(sports):
+        try:
+            response = requests.get(
+                f"https://api.the-odds-api.com/v4/sports/{sport}/scores",
+                params={"apiKey": key, "daysFrom": 3, "dateFormat": "iso"},
+                timeout=10,
+            )
+            response.raise_for_status()
+            for event in response.json():
+                items.append({
+                    "id": event.get("id"),
+                    "sport_key": event.get("sport_key") or sport,
+                    "commence_time": event.get("commence_time"),
+                    "completed": bool(event.get("completed")),
+                    "home_team": event.get("home_team"),
+                    "away_team": event.get("away_team"),
+                    "scores": event.get("scores") or [],
+                    "last_update": event.get("last_update"),
+                })
+        except Exception:
+            continue
+    return {"items": items, "available": True}
 
 
 @app.get("/v1/bets/{signal_id}/review", dependencies=[Depends(_auth)])
