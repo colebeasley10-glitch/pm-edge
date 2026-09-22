@@ -34,15 +34,15 @@ Planning per-bet ROI SD       117pp
 Planning MAKER n at cutoff    Approximately 25-40
 Planning SE of Delta_ROI      23.9-27.9pp; use 25-30pp as conservative shorthand
 Two-SE discernibility band    47.8-55.7pp
-Frozen audit MDE threshold    60pp absolute Delta_ROI
-Result with |Delta_ROI|<60pp  INCONCLUSIVE
+Formal 80%-power MDE         67.0-78.1pp for MAKER n=40 down to n=25
+Result below applicable MDE   INCONCLUSIVE
 Operational sign trigger      Delta_ROI < 0; restriction still requires explicit owner approval
 Promotion basis               CLV; ROI at n=250-300 remains descriptive only
 ```
 
-The frozen 60pp audit MDE is a conservative two-standard-error interpretation threshold. It is not a claim of 80% statistical power. Under a conventional two-sided alpha=0.05 / 80%-power normal approximation, the MDE is approximately 66.9-78.0pp for a 25-40 settlement maker arm. A true 60pp gap is about 2.15-2.51 SE and has only roughly 58%-71% power under that approximation.
+The currently observed ~60pp gap is a useful two-standard-error-scale sanity check, not the formal minimum detectable effect at 80% power. Under a conventional two-sided alpha=0.05 / 80%-power normal approximation, the MDE is **67.0-78.1pp** for a 40-to-25 settlement maker arm. At the TAKER n=60 cutoff, recompute the standard error with the actual strict MAKER count and set `MDE_80 = (1.96 + 0.8416) * SE(Delta_ROI)`.
 
-Therefore a result such as -20pp at TAKER n=60 is **INCONCLUSIVE**, not evidence that taker execution is acceptable. The same rule applies symmetrically to any absolute difference below 60pp. The earlier ~26,900-bet calculation addressed a 2pp effect and is not contradicted by this 60pp-scale test.
+Therefore a result such as -20pp at TAKER n=60 is **INCONCLUSIVE**, not evidence that taker execution is acceptable. More generally, any observed absolute difference smaller than the applicable `MDE_80` is **INCONCLUSIVE** for that claim. The earlier ~26,900-bet calculation addressed a 2pp effect and is not contradicted by this much larger detectable-effect scale.
 
 ### >60c funnel, same pinned cohort
 
@@ -192,9 +192,13 @@ At n_MAKER=40:
 - SE = **23.9pp**
 - two-SE gap = **47.8pp**
 
-The pre-registration therefore freezes a conservative **60pp absolute Delta_ROI audit MDE**. Any `|Delta_ROI| < 60pp` at TAKER n=60 is **INCONCLUSIVE**. It cannot be used as evidence that taker execution is acceptable.
+The two-standard-error scale is about **47.8-55.7pp**, so the observed ~60pp gap is roughly **2.15-2.51 SE**. For the formal pre-registration, use the conventional two-sided alpha=0.05 / 80%-power threshold:
 
-For statistical context only, a conventional alpha=0.05, 80%-power MDE under the same independent-bet approximation is roughly **66.9-78.0pp**. A 60pp true gap corresponds to about 2.15-2.51 SE and roughly 58%-71% power. This is why the n=60 test can surface a gap on the present ~60pp scale but has little resolving power for materially smaller effects.
+`MDE_80 = (1.96 + 0.8416) * SE(Delta_ROI)`
+
+That is approximately **67.0-78.1pp** for MAKER n=40 down to n=25. At the TAKER n=60 cutoff, recompute it using the actual strict MAKER count through the same cutoff. Any observed `|Delta_ROI|` smaller than the applicable `MDE_80` is **INCONCLUSIVE** and cannot be used as evidence that taker execution is acceptable.
+
+A true 60pp gap corresponds to only roughly **58%-71% power** under this approximation. Thus n=60 can surface the current ~60pp-scale gap at roughly two standard errors, but it is not an 80%-powered test for a 60pp effect.
 
 The old ~26,900-settlement figure addressed a 2pp effect. There is no contradiction.
 
