@@ -54,9 +54,28 @@ This calculation is descriptive only. Entry price is not true probability and or
 
 Use all strict maker settlements available through the same cutoff.
 
-**Threshold:**
+**Planning volatility:** per-bet realized ROI SD = **117.1 percentage points**, frozen from the 54-realized-order planning sample already validated in the audit.
+
+**Power / detectable-effect guardrail at TAKER n=60:**
+- with MAKER n=25, SE(`Delta_ROI`) = **27.9pp**;
+- with MAKER n=30, SE(`Delta_ROI`) = **26.2pp**;
+- with MAKER n=40, SE(`Delta_ROI`) = **23.9pp**;
+- therefore the expected SE range for a maker arm of roughly 25-40 is **23.9-27.9pp**;
+- a 60pp gap is about **2.15-2.51 SE**, so it is detectable only at roughly the two-SE level;
+- the corresponding two-sided 95% 1.96-SE resolution is **46.8-54.6pp**;
+- the conventional two-sided alpha=0.05, 80%-power MDE is **67.0-78.1pp** across MAKER n=40 down to n=25.
+
+At the n=60 cutoff, recompute the SE using the actual strict MAKER count available through the same cutoff and the frozen 117.1pp planning SD. Define the pre-registered 80%-power MDE as:
+`MDE_80 = (1.96 + 0.8416) * SE(Delta_ROI)`.
+
+**Interpretation rule:** any observed absolute ROI difference smaller than the applicable `MDE_80` is **INCONCLUSIVE** for claims that taker execution is acceptable. A result such as -20pp at n=60 must not be read as vindication of takers. The original sign trigger below is recorded separately from this power statement.
+
+**Trigger:**
 - if `Delta_ROI < 0` at TAKER n=60, record the pre-registered taker-deficit trigger as met and restrict taker execution only after explicit owner approval;
-- if `Delta_ROI >= 0`, the trigger is not met.
+- if `Delta_ROI >= 0`, the trigger is not met;
+- failure to meet the sign trigger is **not** affirmative evidence that taker execution is acceptable when the observed difference is inside the MDE guardrail.
+
+This does not contradict the earlier approximately 26,900-settlement calculation: that calculation targeted a **2pp** ROI effect at alpha=0.05 and 80% power, whereas this frozen n=60 test can only resolve effects on the order of many tens of percentage points.
 
 Secondary diagnostics:
 - maker/taker CLV
@@ -65,7 +84,7 @@ Secondary diagnostics:
 - sport/market/lane mix
 - calibration
 
-Do not redefine the n=60 trigger or primary metric after seeing interim results.
+Do not redefine the n=60 trigger, primary metric, planning SD, or MDE rule after seeing interim results.
 
 Persist maker/taker **at submission**, not reconstructed later from fills.
 
