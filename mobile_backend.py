@@ -78,7 +78,12 @@ def _load() -> dict[str, pd.DataFrame]:
 
 
 def _account_snapshot() -> dict:
-    client = KalshiReadOnlyClient.from_env()
+    # Use the already-configured authenticated Kalshi connection first. The
+    # mobile service has write credentials, while the legacy read-only client
+    # expects a different pair of environment variable names.
+    client = KalshiSubmitClient.from_env()
+    if client is None:
+        client = KalshiReadOnlyClient.from_env()
     if client is None:
         return {"connected": False, "balance": None}
     try:
