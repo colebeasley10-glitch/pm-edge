@@ -481,6 +481,8 @@ def review(signal_id: str) -> dict:
 
 @app.post("/v1/bets/{signal_id}/submit", dependencies=[Depends(_auth)])
 def submit(signal_id: str) -> dict:
+    if os.getenv("PM_EDGE_ORDER_SUBMISSION_ENABLED", "").strip().lower() not in {"1", "true", "yes", "on"}:
+        raise HTTPException(status_code=503, detail="Real-money order submission is disabled")
     row = _signal_row(signal_id)
     client = _submit_client()
     review_data = _review_payload(row, client)
