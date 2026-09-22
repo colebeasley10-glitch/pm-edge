@@ -953,9 +953,41 @@ function SystemScreen({ data, back }: { data: SystemResponse; back: () => void }
 }
 
 function SettingsScreen({ back }: { back: () => void }) {
+  const [notificationStatus, setNotificationStatus] = useState<string>(() => {
+    if (typeof Notification === "undefined") return "unsupported";
+    return Notification.permission;
+  });
+  const enableNotifications = useCallback(async () => {
+    if (typeof Notification === "undefined") {
+      Alert.alert("Notifications unavailable", "Open PM Edge from the Home Screen on a supported browser.");
+      return;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      setNotificationStatus(permission);
+      if (permission === "granted") {
+        Alert.alert("Notifications enabled", "PM Edge has permission to send notifications on this iPhone.");
+      } else if (permission === "denied") {
+        Alert.alert("Notifications blocked", "Notifications are blocked for PM Edge. You can change this in iPhone Settings.");
+      }
+    } catch {
+      Alert.alert("Could not enable notifications", "Make sure PM Edge is installed on your Home Screen, then try again.");
+    }
+  }, []);
   return (
     <ScrollView contentContainerStyle={styles.screen}>
       <Header title="Settings" subtitle="App preferences and safety limits" back={back} />
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Notifications</Text>
+        <Text style={styles.muted}>Allow PM Edge to show betting alerts on this iPhone.</Text>
+        <Pressable
+          style={[styles.primaryButtonStandalone, notificationStatus === "granted" && { backgroundColor: colors.green }]}
+          onPress={() => void enableNotifications()}
+          disabled={notificationStatus === "granted"}
+        >
+          <Text style={styles.primaryButtonText}>{notificationStatus === "granted" ? "Notifications Enabled" : "Enable Notifications"}</Text>
+        </Pressable>
+      </View>
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Risk Controls</Text>
         <View style={styles.rowBetween}><Text style={styles.systemLabel}>Max per order</Text><Text style={styles.statValue}>$10.00</Text></View>
