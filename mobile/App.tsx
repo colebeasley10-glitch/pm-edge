@@ -633,17 +633,49 @@ function BarRow({ label, value, max }: { label: string; value: number; max: numb
 function AnalyticsScreen({ data, history }: { data: AnalyticsResponse; history: HistoryBet[] }) {
   const [mode, setMode] = useState<"Sport" | "Category" | "Type">("Sport");
   const [period, setPeriod] = useState<"Day" | "Week" | "Month" | "Year" | "All">("Month");
-  const now = new Date();
-  const cutoff = new Date(now);
-  if (period === "Day") cutoff.setDate(now.getDate() - 1);
-  if (period === "Week") cutoff.setDate(now.getDate() - 7);
-  if (period === "Month") cutoff.setDate(now.getDate() - 30);
-  if (period === "Year") cutoff.setDate(now.getDate() - 365);
+  const [anchor, setAnchor] = useState(() => new Date());
+
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const rangeFor = (kind: typeof period, value: Date) => {
+    if (kind === "All") return { start: null as Date | null, end: null as Date | null, label: "All Time" };
+    const start = startOfDay(value);
+    let end = new Date(start);
+    let label = "";
+    if (kind === "Day") {
+      end.setHours(23, 59, 59, 999);
+      label = start.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    } else if (kind === "Week") {
+      start.setDate(start.getDate() - start.getDay());
+      end = new Date(start); end.setDate(end.getDate() + 6); end.setHours(23, 59, 59, 999);
+      label = `${start.toLocaleDateString(undefined, { month: "short", day: "numeric" })} – ${end.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`;
+    } else if (kind === "Month") {
+      start.setDate(1);
+      end = new Date(start.getFullYear(), start.getMonth() + 1, 0, 23, 59, 59, 999);
+      label = start.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    } else {
+      start.setMonth(0, 1);
+      end = new Date(start.getFullYear(), 11, 31, 23, 59, 59, 999);
+      label = String(start.getFullYear());
+    }
+    return { start, end, label };
+  };
+  const movePeriod = (amount: number) => {
+    if (period === "All") return;
+    setAnchor((current) => {
+      const next = new Date(current);
+      if (period === "Day") next.setDate(next.getDate() + amount);
+      else if (period === "Week") next.setDate(next.getDate() + amount * 7);
+      else if (period === "Month") next.setMonth(next.getMonth() + amount);
+      else next.setFullYear(next.getFullYear() + amount);
+      return next;
+    });
+  };
+  const range = rangeFor(period, anchor);
   const periodBets = history.filter((bet) => {
     if (period === "All") return true;
-    if (!bet.trade_date) return false;
+    if (!bet.trade_date || !range.start || !range.end) return false;
     const d = new Date(`${bet.trade_date}T12:00:00`);
-    return !Number.isNaN(d.getTime()) && d >= cutoff && d <= now;
+    return !Number.isNaN(d.getTime()) && d >= range.start && d <= range.end;
   });
   const periodProfit = periodBets.reduce((sum, bet) => sum + Number(bet.net_pl ?? 0), 0);
   const periodRisked = periodBets.reduce((sum, bet) => sum + Number(bet.entry_cost ?? 0), 0);
@@ -654,55 +686,37 @@ function AnalyticsScreen({ data, history }: { data: AnalyticsResponse; history: 
   const max = Math.max(1, ...rows.map((r) => Math.abs(Number(r.net_pl ?? 0))));
   return (
     <ScrollView contentContainerStyle={styles.screen}>
-      <Header title="Analytics" subtitle="Track P/L by time period" />
-      <PillTabs values={["Day", "Week", "Month", "Year", "All"]} selected={period} onSelect={(value) => setPeriod(value as typeof period)} />
+      <Header title="Analytics" subtitle="Track P/L by any day, week, month or year" />
+      <PillTabs values={["Day", "Week", "Month", "Year", "All"]} selected={period} onSelect={(value) => { setPeriod(value as typeof period); setAnchor(new Date()); }} />
+      {period !== "All" ? (
+        <View style={styles.periodNavigator}>
+          <Pressable style={styles.periodArrow} onPress={() => movePeriod(-1)}><Ionicons name="chevron-back" size={22} color={colors.text} /></Pressable>
+          <Pressable style={styles.periodLabelButton} onPress={() => setAnchor(new Date())}>
+            <Text style={styles.periodLabel}>{range.label}</Text>
+            <Text style={styles.mutedSmall}>Tap to return to current {period.toLowerCase()}</Text>
+          </Pressable>
+          <Pressable style={styles.periodArrow} onPress={() => movePeriod(1)}><Ionicons name="chevron-forward" size={22} color={colors.text} /></Pressable>
+        </View>
+      ) : <View style={styles.periodNavigator}><Text style={styles.periodLabel}>All Time</Text></View>}
       <View style={styles.metricsGrid}>
-        <Metric label={`${period} Profit`} value={fmtMoney(periodProfit, true)} positive={periodProfit >= 0} />
+        <Metric label="Profit" value={fmtMoney(periodProfit, true)} positive={periodProfit >= 0} />
         <Metric label="ROI" value={fmtPct(periodRoi)} positive={(periodRoi ?? 0) >= 0} />
         <Metric label="Record" value={`${periodWins}-${periodLosses}`} />
         <Metric label="Amount Risked" value={fmtMoney(periodRisked)} />
       </View>
       <View style={styles.card}>
-        <View style={styles.rowBetween}>
-          <Text style={styles.sectionTitle}>{period} Bets</Text>
-          <Text style={styles.mutedSmall}>{periodBets.length} bets</Text>
-        </View>
-        {periodBets.length
-          ? periodBets.slice(0, 20).map((bet, index) => <HistoryRow key={`${bet.ticker}-${bet.trade_date}-${index}`} bet={bet} />)
-          : <Text style={styles.muted}>No settled bets in this period.</Text>}
+        <View style={styles.rowBetween}><Text style={styles.sectionTitle}>{range.label} Bets</Text><Text style={styles.mutedSmall}>{periodBets.length} bets</Text></View>
+        {periodBets.length ? periodBets.map((bet, index) => <HistoryRow key={`${bet.ticker}-${bet.trade_date}-${index}`} bet={bet} />) : <Text style={styles.muted}>No settled bets in this period.</Text>}
       </View>
       <PillTabs values={["Sport", "Category", "Type"]} selected={mode} onSelect={setMode} />
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Performance by {mode}</Text>
         {rows.length ? rows.map((row, index) => {
-          const label =
-            mode === "Sport"
-              ? row.sport_title ?? "Unknown"
-              : mode === "Category"
-                ? laneLabel(row.lane)
-                : (row.market_type ?? "Unknown").replaceAll("_", " ").toUpperCase();
-          return (
-            <View key={`${label}-${index}`} style={{ gap: 10 }}>
-              <BarRow label={label} value={Number(row.net_pl ?? 0)} max={max} />
-              <View style={styles.miniStats}>
-                <Text style={styles.mutedSmall}>{row.record}</Text>
-                <Text style={styles.mutedSmall}>{fmtPct(row.roi)} ROI</Text>
-                <Text style={styles.mutedSmall}>{row.bets} bets</Text>
-              </View>
-              {index !== rows.length - 1 ? <View style={styles.divider} /> : null}
-            </View>
-          );
+          const label = mode === "Sport" ? row.sport_title ?? "Unknown" : mode === "Category" ? laneLabel(row.lane) : (row.market_type ?? "Unknown").replaceAll("_", " ").toUpperCase();
+          return <View key={`${label}-${index}`} style={{ gap: 10 }}><BarRow label={label} value={Number(row.net_pl ?? 0)} max={max} /><View style={styles.miniStats}><Text style={styles.mutedSmall}>{row.record}</Text><Text style={styles.mutedSmall}>{fmtPct(row.roi)} ROI</Text><Text style={styles.mutedSmall}>{row.bets} bets</Text></View>{index !== rows.length - 1 ? <View style={styles.divider} /> : null}</View>;
         }) : <Text style={styles.muted}>Not enough settled data yet.</Text>}
       </View>
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Model Funnel</Text>
-        <View style={styles.statRow}>
-          <View><Text style={styles.statValue}>{data.funnel.qualified}</Text><Text style={styles.mutedSmall}>Qualified</Text></View>
-          <View><Text style={styles.statValue}>{data.funnel.alerts}</Text><Text style={styles.mutedSmall}>Alerts</Text></View>
-          <View><Text style={styles.statValue}>{data.funnel.placed}</Text><Text style={styles.mutedSmall}>Placed</Text></View>
-          <View><Text style={styles.statValue}>{data.funnel.filled}</Text><Text style={styles.mutedSmall}>Filled</Text></View>
-        </View>
-      </View>
+      <View style={styles.card}><Text style={styles.sectionTitle}>Model Funnel</Text><View style={styles.statRow}><View><Text style={styles.statValue}>{data.funnel.qualified}</Text><Text style={styles.mutedSmall}>Qualified</Text></View><View><Text style={styles.statValue}>{data.funnel.alerts}</Text><Text style={styles.mutedSmall}>Alerts</Text></View><View><Text style={styles.statValue}>{data.funnel.placed}</Text><Text style={styles.mutedSmall}>Placed</Text></View><View><Text style={styles.statValue}>{data.funnel.filled}</Text><Text style={styles.mutedSmall}>Filled</Text></View></View></View>
     </ScrollView>
   );
 }
@@ -985,6 +999,10 @@ const styles = StyleSheet.create({
   screenTitle: { color: colors.text, fontSize: 29, fontWeight: "800" },
   subtitle: { color: colors.muted, fontSize: 14 },
   iconButton: { width: 30, height: 30, alignItems: "center", justifyContent: "center", marginLeft: -6 },
+  periodNavigator: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 8 },
+  periodArrow: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.md, backgroundColor: colors.cardAlt },
+  periodLabelButton: { flex: 1, alignItems: "center", paddingHorizontal: 8 },
+  periodLabel: { color: colors.text, fontSize: 16, fontWeight: "800" },
   heroProfit: { borderWidth: 1, borderRadius: radius.lg, padding: 18, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   heroProfitPositive: { backgroundColor: "#0C2F2A", borderColor: "#17614C" },
   heroProfitNegative: { backgroundColor: "#321419", borderColor: "#7A2935" },
