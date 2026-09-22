@@ -146,3 +146,16 @@ export type SubmitResponse = {
 };
 
 export type BetListResponse<T = Record<string, unknown>> = { items: T[] };
+
+export type ScoreEvent = {
+  id?: string | null;
+  sport_key?: string | null;
+  commence_time?: string | null;
+  completed: boolean;
+  home_team?: string | null;
+  away_team?: string | null;
+  scores: { name?: string | null; score?: string | number | null }[];
+  last_update?: string | null;
+};
+
+export type ScoresResponse = { items: ScoreEvent[]; available: boolean };
