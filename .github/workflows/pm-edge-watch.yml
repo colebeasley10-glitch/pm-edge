@@ -157,10 +157,10 @@ jobs:
             git commit -m "Update PM Edge audit ledgers [skip ci]"
             git push
 
-            # Keep the production mobile-backend branch on the exact same
+            # Keep the deployed mobile-backend branch on the exact same
             # ledgers without replacing its backend-specific application code.
-            git fetch origin mobile-backend-live
-            git worktree add /tmp/pm-edge-mobile origin/mobile-backend-live
+            git fetch origin railway/code-change-HB1cBE
+            git worktree add /tmp/pm-edge-mobile origin/railway/code-change-HB1cBE
             for file in pm_edge_auto_ledger.csv pm_edge_signal_ledger.csv pm_edge_candidate_ledger.csv pm_edge_clv_ledger.csv pm_edge_fill_ledger.csv pm_edge_signal_outcomes.csv .pm_edge_watch_state.json; do
               if [ -f "$file" ]; then
                 cp "$file" "/tmp/pm-edge-mobile/$file"
@@ -170,6 +170,6 @@ jobs:
             git add pm_edge_auto_ledger.csv pm_edge_signal_ledger.csv pm_edge_candidate_ledger.csv pm_edge_clv_ledger.csv pm_edge_fill_ledger.csv pm_edge_signal_outcomes.csv .pm_edge_watch_state.json
             if ! git diff --cached --quiet; then
               git commit -m "Sync PM Edge ledgers to mobile backend [skip ci]"
-              git push origin HEAD:mobile-backend-live
+              git push origin HEAD:railway/code-change-HB1cBE
             fi
           fi
