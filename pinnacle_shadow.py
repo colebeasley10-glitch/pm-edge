@@ -289,7 +289,21 @@ def classify_signal(
     return "PINNACLE_WEAKER"
 
 
+def _existing_shadow_ids() -> set[str]:
+    if not SHADOW_LEDGER.exists() or SHADOW_LEDGER.stat().st_size == 0:
+        return set()
+    try:
+        with SHADOW_LEDGER.open("r", encoding="utf-8", newline="") as fh:
+            return {str(r.get("shadow_id") or "") for r in csv.DictReader(fh)}
+    except OSError:
+        return set()
+
+
 def _append(rows: list[dict]) -> None:
+    if not rows:
+        return
+    existing = _existing_shadow_ids()
+    rows = [r for r in rows if str(r.get("shadow_id") or "") not in existing]
     if not rows:
         return
     write_header = not SHADOW_LEDGER.exists() or SHADOW_LEDGER.stat().st_size == 0
