@@ -43,6 +43,7 @@ export type OpenBet = {
   client_order_id?: string | null;
   submitted_at?: string | null;
   created_at?: string | null;
+  commence_time?: string | null;
 };
 
 export type HistoryBet = OpenBet & {
