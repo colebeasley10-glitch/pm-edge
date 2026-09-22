@@ -492,13 +492,21 @@ function DashboardScreen({
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.blue} />}
     >
       <Header title="Dashboard" subtitle="Today · PM Edge command center" />
-      <Pressable style={styles.heroProfit} onPress={() => navigate("Analytics")}>
+      <Pressable
+        style={[
+          styles.heroProfit,
+          data.actual.net_pl >= 0 ? styles.heroProfitPositive : styles.heroProfitNegative,
+        ]}
+        onPress={() => navigate("Analytics")}
+      >
         <View>
           <Text style={[styles.heroProfitValue, { color: data.actual.net_pl >= 0 ? colors.green : colors.red }]}>{fmtMoney(data.actual.net_pl, true)}</Text>
           <Text style={styles.heroProfitLabel}>Total tracked P/L</Text>
         </View>
         <View style={styles.heroRoi}>
-          <Text style={styles.heroRoiValue}>{fmtPct(data.actual.roi)}</Text>
+          <Text style={[styles.heroRoiValue, { color: data.actual.net_pl >= 0 ? colors.green : colors.red }]}>
+            {fmtPct(data.actual.roi)}
+          </Text>
           <Text style={styles.mutedSmall}>ROI</Text>
         </View>
       </Pressable>
@@ -949,7 +957,7 @@ const styles = StyleSheet.create({
   screenTitle: { color: colors.text, fontSize: 29, fontWeight: "800" },
   subtitle: { color: colors.muted, fontSize: 14 },
   iconButton: { width: 30, height: 30, alignItems: "center", justifyContent: "center", marginLeft: -6 },
-  heroProfit: { backgroundColor: "#0C2F2A", borderColor: "#17614C", borderWidth: 1, borderRadius: radius.lg, padding: 18, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  heroProfit: { borderWidth: 1, borderRadius: radius.lg, padding: 18, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },\n  heroProfitPositive: { backgroundColor: "#0C2F2A", borderColor: "#17614C" },\n  heroProfitNegative: { backgroundColor: "#321419", borderColor: "#7A2935" },
   heroProfitValue: { color: colors.green, fontSize: 30, fontWeight: "900" },
   heroProfitLabel: { color: colors.muted, marginTop: 3, fontSize: 12 },
   heroRoi: { alignItems: "flex-end" },
