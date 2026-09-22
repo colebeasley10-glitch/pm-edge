@@ -49,6 +49,18 @@ const fmtTime = (value?: string | null) => {
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
 };
+const fmtDateTime = (value?: string | null) => {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
+};
 const laneLabel = (value?: string | null) => {
   const lane = (value ?? "").toLowerCase();
   if (lane === "price_fish") return "FISH";
@@ -432,9 +444,12 @@ function LiveCard({ bet, scores = [] }: { bet: OpenBet; scores?: ScoreEvent[] })
   const pnl = Number(bet.unrealized_pl ?? 0);
   const event = scoreForBet(bet, scores);
   const hasFill = Number(bet.filled_shares ?? 0) > 0;
-  const eventIsLive = Boolean(event && !event.completed);
   const eventIsFinal = Boolean(event?.completed);
-  const startLabel = bet.commence_time ? fmtTime(bet.commence_time) : "Start time unavailable";
+  const startAt = bet.commence_time ? new Date(bet.commence_time) : null;
+  const hasValidStart = Boolean(startAt && !Number.isNaN(startAt.getTime()));
+  const eventHasStarted = Boolean(hasValidStart && startAt!.getTime() <= Date.now());
+  const eventIsLive = Boolean(!eventIsFinal && eventHasStarted);
+  const startLabel = bet.commence_time ? fmtDateTime(bet.commence_time) : "Start time unavailable";
   const statusLabel = eventIsFinal ? "FINAL" : eventIsLive ? "LIVE" : hasFill ? `STARTS ${startLabel}` : "ORDER PENDING";
   const statusTone = eventIsLive ? colors.red : eventIsFinal ? colors.muted : colors.blue2;
   const scoreMap = new Map((event?.scores ?? []).map((row) => [row.name ?? "", row.score ?? "—"]));
@@ -474,7 +489,7 @@ function LiveCard({ bet, scores = [] }: { bet: OpenBet; scores?: ScoreEvent[] })
         <Text style={styles.pickBannerMeta}>{shares.toFixed(0)} shares  •  {fmtCents(bet.average_fill_price)}</Text>
       </View>
 
-      {event ? (
+      {event && (eventIsLive || eventIsFinal) ? (
         <View style={styles.mockScoreBox}>
           <View style={styles.mockScoreLine}><Text style={styles.mockScoreTeam}>{event.away_team}</Text><Text style={styles.mockScoreNumber}>{String(scoreMap.get(event.away_team ?? "") ?? "—")}</Text></View>
           <View style={styles.mockScoreDivider}/>
