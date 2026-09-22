@@ -24,6 +24,7 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 
 import candidate_tracker
+import signal_tracker
 import pm_edge_runner_v22 as v22
 import pm_edge_runner_v23 as v23
 import pm_edge_runner_v27 as v27
@@ -175,11 +176,23 @@ def install_v28_patch() -> None:
 
     def record_alert_v28(state, market, fair_entry, q, tier="primary"):
         original_record_alert(state, market, fair_entry, q, tier=tier)
+        lane = _lane_name(tier, q)
+        # Pushover and the mobile app must share one durable signal source.
+        # record_alert is called only after send_push succeeds, so every alert
+        # that reaches Pushover is written to the signal ledger consumed by
+        # the mobile backend on the same watcher run.
+        signal_tracker.record_signal(
+            market,
+            fair_entry,
+            q,
+            lane=lane,
+            source_version=28,
+        )
         _record(
             market,
             fair_entry,
             q,
-            lane=_lane_name(tier, q),
+            lane=lane,
             stage="sent",
             decision="ALERT_SENT",
             reason="pushover_sent_and_recorded",
