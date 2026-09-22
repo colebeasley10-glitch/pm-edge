@@ -256,7 +256,21 @@ def dashboard() -> dict:
     data = _load()
     actual = dashboard_data.actual_summary(data["orders"])
     model = dashboard_data.opportunity_summary(data["signal_outcomes"])
-    new = dashboard_data.new_signals(data["signals"], data["orders"]).head(8)
+    new = dashboard_data.new_signals(data["signals"], data["orders"])
+    actionable = []
+    for row in new.head(40).to_dict("records"):
+        sizing = dashboard_data.size_signal(row)
+        if not sizing:
+            continue
+        try:
+            market = dashboard_data.market_snapshot(str(row.get("ticker") or ""))
+            live_ask = _market_ask(market, str(row.get("side") or "").upper())
+            max_price = float(sizing["price"])
+        except Exception:
+            continue
+        if live_ask is not None and live_ask <= max_price + 1e-9:
+            actionable.append(row)
+    new = pd.DataFrame(actionable, columns=new.columns).head(8)
     state = dashboard_data.read_state()
     last = dashboard_data.last_model_activity(data)
     history = data["orders"].copy()
@@ -357,13 +371,17 @@ def _kalshi_position_items() -> list[dict]:
     items = []
     for position in positions:
         ticker = str(position.get("ticker") or "").strip()
+        raw_position = position.get("position")
+        if raw_position in (None, ""):
+            raw_position = position.get("position_fp")
         try:
-            signed_qty = float(position.get("position") or 0)
+            signed_qty = float(raw_position or 0)
         except (TypeError, ValueError):
             signed_qty = 0.0
         if not ticker or signed_qty == 0:
             continue
-        side = "YES" if signed_qty > 0 else "NO"
+        explicit_side = str(position.get("side") or position.get("outcome_side") or "").upper()
+        side = explicit_side if explicit_side in {"YES", "NO"} else ("YES" if signed_qty > 0 else "NO")
         qty = abs(signed_qty)
         row = {}
         if not orders.empty and "ticker" in orders.columns:
