@@ -43,6 +43,12 @@ const fmtPct = (x?: number | null) =>
   x == null || Number.isNaN(x) ? "—" : `${x > 0 ? "+" : ""}${(x * 100).toFixed(1)}%`;
 const fmtCents = (x?: number | null) =>
   x == null || Number.isNaN(x) ? "—" : `${(x * 100).toFixed(0)}¢`;
+const fmtTime = (value?: string | null) => {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+};
 const laneLabel = (value?: string | null) => {
   const lane = (value ?? "").toLowerCase();
   if (lane === "price_fish") return "FISH";
@@ -191,6 +197,10 @@ function BetCard({
       </View>
       <Text style={styles.betTitle}>{signal.market_title ?? signal.ticker}</Text>
       <Text style={styles.betSide}>BUY {signal.side}</Text>
+      <View style={styles.timeRow}>
+        <Ionicons name="time-outline" size={14} color={colors.muted} />
+        <Text style={styles.timeText}>Alert received {fmtTime(signal.alerted_at)}</Text>
+      </View>
       <View style={styles.statRow}>
         <View>
           <Text style={styles.greenValue}>{fmtPct(signal.net_edge)}</Text>
@@ -443,6 +453,10 @@ function LiveCard({ bet, scores = [] }: { bet: OpenBet; scores?: ScoreEvent[] })
       </View>
 
       <Text style={styles.liveMarketTitle}>{market}</Text>
+      <View style={styles.timeRow}>
+        <Ionicons name="time-outline" size={14} color={colors.muted} />
+        <Text style={styles.timeText}>Order placed {fmtTime(bet.submitted_at ?? bet.created_at)}</Text>
+      </View>
       <View style={styles.pickBanner}>
         <View>
           <Text style={styles.pickBannerLabel}>YOUR BET</Text>
@@ -1212,6 +1226,8 @@ const styles = StyleSheet.create({
   liveStatus: { color: colors.green, fontSize: 12, fontWeight: "900" },
   finalStatus: { color: colors.muted, fontSize: 12, fontWeight: "900" },
   betSide: { color: colors.muted, fontWeight: "700" },
+  timeRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  timeText: { color: colors.muted, fontSize: 12, fontWeight: "700" },
   statRow: { flexDirection: "row", justifyContent: "space-between" },
   statValue: { color: colors.text, fontSize: 17, fontWeight: "800" },
   greenValue: { color: colors.green, fontSize: 17, fontWeight: "800" },
