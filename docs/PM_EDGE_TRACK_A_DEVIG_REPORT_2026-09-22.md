@@ -1,3 +1,5 @@
+> **RETROVALIDATION CORRECTION (Addendum 4):** the sentence below stating “126 unique qualifying ticker/side/lane identities” is **SUPERSEDED**. The pinned ledger has **124** identities with `decision=QUALIFIED`. The value **126** is the number of usable identities with a nonblank recommended limit. All other preliminary numerical figures were re-run and reconcile to reported rounding. See `PM_EDGE_TRACK_A_PRE_REG_AND_FUNNEL_GAPS_2026-09-22.md`.
+
 # PM Edge Track A — Devig Method Audit (Preliminary)
 
 **Data cutoff:** 2026-09-22 13:13 UTC  
