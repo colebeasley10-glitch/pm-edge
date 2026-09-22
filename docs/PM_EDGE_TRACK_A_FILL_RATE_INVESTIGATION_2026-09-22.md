@@ -1,3 +1,5 @@
+> **ADDENDUM 4 REPRESENTATIVENESS CORRECTION:** The 9 adjudicated unfilled orders are **not representative** of all 16 unfilled orders. All 9 adjudicated orders are same-day events, while 5 of the 7 unadjudicated orders are one to three days out. The earlier directional statement that non-fills "lean toward saving money" is therefore **SUPERSEDED as a general conclusion**. The valid conclusion is only that the resolved same-day subset went 3-6 / -8.6% hypothetical gross ROI, while the full 16-order counterfactual remains unresolved. No fill-rate remediation is authorized.
+
 # PM Edge — Fill-Rate Investigation (Addendum 3 Results)
 
 **Cutoff:** 2026-09-22  
