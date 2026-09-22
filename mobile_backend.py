@@ -416,6 +416,9 @@ def _kalshi_position_items() -> list[dict]:
             "kalshi_status": market.get("status"), "current_bid": bid,
             "current_value": current_value, "position_source": "kalshi",
         })
+        effective_start = dashboard_data.effective_commence_time(item)
+        if effective_start is not None:
+            item["commence_time"] = effective_start.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
         items.append(item)
     return items
 
