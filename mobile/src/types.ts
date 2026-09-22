@@ -41,6 +41,8 @@ export type OpenBet = {
   unrealized_pl?: number | null;
   kalshi_status?: string | null;
   client_order_id?: string | null;
+  submitted_at?: string | null;
+  created_at?: string | null;
 };
 
 export type HistoryBet = OpenBet & {
