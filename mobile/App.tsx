@@ -625,6 +625,7 @@ function LiveScreen({
   items,
   refresh,
   refreshing,
+  scores,
 }: {
   items: OpenBet[];
   refresh: () => void;
