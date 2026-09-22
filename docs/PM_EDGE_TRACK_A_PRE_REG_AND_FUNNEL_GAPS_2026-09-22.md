@@ -377,34 +377,3 @@ The small dollar scale limits the financial impact of the current learning phase
 The factual sharp-benchmark finding is narrower than “every sharp book was excluded”: the current production path lacks a designated sharp anchor and, under the default US-region configuration, does not include Pinnacle. The broader claim is not proven from the ledger.
 
 No production change is authorized by Addendum 4.
-
-
-## Addendum 5 amendment — detectable effect size and interpretation guard
-
-This amendment is pre-registered before the TAKER n=60 decision point. It supplements the existing sign trigger and prevents a small noisy difference from being read as evidence that taker execution is acceptable.
-
-Planning assumptions:
-- per-bet ROI SD: **117pp**
-- strict TAKER count at decision point: **60**
-- planning strict MAKER count at the same cutoff: approximately **25-40**
-- independent-bet normal approximation used only for power sanity-checking
-
-Computed standard error:
-
-`SE(Delta_ROI) = 117pp * sqrt(1/60 + 1/n_MAKER)`
-
-- with n_MAKER=25: **27.9pp**
-- with n_MAKER=40: **23.9pp**
-- conservative shorthand: approximately **25-30pp**
-
-Two-standard-error discernibility is therefore about **47.8-55.7pp**. Freeze the audit's minimum detectable-effect interpretation threshold at **60pp absolute Delta_ROI**.
-
-**Pre-registered interpretation rule:**
-- if `|ROI_TAKER - ROI_MAKER| < 60pp` at TAKER n=60, the result is **INCONCLUSIVE**;
-- an inconclusive result is **not evidence that taker execution is acceptable**;
-- the existing operational sign trigger `Delta_ROI < 0` remains recorded separately, and any production restriction still requires explicit owner approval;
-- do not move the 60pp threshold after seeing the n=60 result.
-
-For context, the conventional two-sided alpha=0.05 / 80%-power MDE under the same approximation is approximately **66.9-78.0pp** for n_MAKER=40 to 25. A true 60pp gap is about **2.15-2.51 SE**, corresponding to only roughly **58%-71% power**. Thus n=60 can surface the currently observed ~60pp-scale gap at roughly two standard errors, but it cannot resolve materially smaller effects reliably.
-
-This does not contradict the earlier ~26,900-settlement calculation, which was sized for a **2pp** effect rather than a ~60pp effect.
