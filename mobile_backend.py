@@ -182,7 +182,11 @@ def _review_payload(row: dict, client: KalshiSubmitClient) -> dict:
 
     try:
         market = dashboard_data.market_snapshot(ticker)
+    except requests.exceptions.Timeout as exc:
+        # Explicit timeout handling: 10s exceeded on Kalshi API call
+        raise HTTPException(status_code=502, detail=f"Kalshi market timeout: {exc}") from exc
     except Exception as exc:
+        # Other network/parsing errors
         raise HTTPException(status_code=503, detail=f"Live market check failed: {exc}") from exc
 
     live_ask = _market_ask(market, side)
@@ -477,6 +481,8 @@ def review(signal_id: str) -> dict:
 
 @app.post("/v1/bets/{signal_id}/submit", dependencies=[Depends(_auth)])
 def submit(signal_id: str) -> dict:
+    if os.getenv("PM_EDGE_ORDER_SUBMISSION_ENABLED", "").strip().lower() not in {"1", "true", "yes", "on"}:
+        raise HTTPException(status_code=503, detail="Real-money order submission is disabled")
     row = _signal_row(signal_id)
     client = _submit_client()
     review_data = _review_payload(row, client)
@@ -524,8 +530,11 @@ def submit(signal_id: str) -> dict:
         if exc.status_code == 409:
             raise HTTPException(status_code=409, detail="Kalshi reports this order already exists") from exc
         raise HTTPException(status_code=502, detail=f"Kalshi rejected the order: {exc}") from exc
+    except requests.exceptions.Timeout as exc:
+        # Order submission timed out on Kalshi side: may or may not have been placed
+        raise HTTPException(status_code=502, detail=f"Kalshi order submission timeout: {exc}") from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Order submission failed: {exc}") from exc
+        raise HTTPException(status_code=502, detail=f"Order submission failed: {exc}") from exc
 
     trade = {
         "signal_id": signal_id,
@@ -547,8 +556,12 @@ def submit(signal_id: str) -> dict:
             client_order_id=client_id,
             order_result=result,
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        # Log the failure but do not suppress: submission tracking is critical for idempotency.
+        # The order WAS placed in Kalshi; failure here means the ledger is stale.
+        import sys
+        print(f"WARNING: Failed to record submission for signal {signal_id}: {exc}", file=sys.stderr)
+        raise HTTPException(status_code=503, detail=f"Order placed but submission recording failed: {exc}") from exc
 
     return {
         "submitted": True,
