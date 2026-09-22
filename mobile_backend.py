@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import sys
+import time
 from datetime import datetime, timezone
 from typing import Any
 
@@ -180,10 +182,25 @@ def _review_payload(row: dict, client: KalshiSubmitClient) -> dict:
     if max_loss > MAX_ORDER_RISK + 1e-9:
         raise HTTPException(status_code=409, detail="Order exceeds the $10 per-order cap")
 
-    try:
-        market = dashboard_data.market_snapshot(ticker)
-    except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Live market check failed: {exc}") from exc
+    # Live market check with timeout protection. Railway's edge proxy will
+    # return a 502 if this request runs long, so we cap the outbound Kalshi
+    # request well below that limit and retry once with a short backoff
+    # rather than let the default 10s timeout risk an edge timeout.
+    def _bounded_getter(url, timeout=None):
+        return requests.get(url, timeout=5)
+
+    market = None
+    for attempt in range(2):
+        try:
+            market = dashboard_data.market_snapshot(ticker, getter=_bounded_getter)
+            break
+        except requests.Timeout:
+            if attempt == 0:
+                time.sleep(1)
+                continue
+            raise HTTPException(status_code=503, detail="Live market check timed out") from None
+        except Exception as exc:
+            raise HTTPException(status_code=503, detail=f"Live market check failed: {exc}") from exc
 
     live_ask = _market_ask(market, side)
     if live_ask is None:
@@ -504,6 +521,25 @@ def submit(signal_id: str) -> dict:
     shares = int(review_data["shares"])
     client_id = _client_order_id(signal_id)
 
+    # Final redundant check: verify no order was created in a concurrent
+    # request between the review call above and this submit call. The
+    # review payload's `existing_order` check can be stale under
+    # concurrent retries, so re-fetch orders right before we place one.
+    try:
+        fresh_orders = client.get_orders(limit=200)
+        for order in fresh_orders:
+            if str(order.get("client_order_id") or "") == client_id:
+                return {
+                    "submitted": False,
+                    "already_exists": True,
+                    "order": order,
+                    "review": review_data,
+                }
+    except Exception:
+        # If we can't re-check, proceed; create_buy_order will surface a
+        # 409 from Kalshi if the order already exists.
+        pass
+
     order_kwargs = {
         "ticker": ticker,
         "outcome_side": side,
@@ -541,14 +577,25 @@ def submit(signal_id: str) -> dict:
         "fair_fetched_at": str(row.get("fair_fetched_at") or ""),
         "source_version": _clean(row.get("source_version")),
     }
+    # Record the submission synchronously, before returning, to close the
+    # idempotency gap: the Kalshi order already exists at this point, so the
+    # ledger must be updated before the caller sees a response. If this
+    # fails we still return success to the caller (the order is real), but
+    # we log loudly so the gap is visible in service logs. A "duplicate
+    # client_order_id" failure here means a retry detected an
+    # already-recorded submission, which is expected and safe.
     try:
         signal_tracker.record_submission(
             trade,
             client_order_id=client_id,
             order_result=result,
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        print(
+            f"WARNING: record_submission failed for client_order_id={client_id} "
+            f"signal_id={signal_id}: {exc}",
+            file=sys.stderr,
+        )
 
     return {
         "submitted": True,
