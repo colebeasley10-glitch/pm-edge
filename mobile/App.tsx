@@ -431,6 +431,12 @@ function LiveCard({ bet, scores = [] }: { bet: OpenBet; scores?: ScoreEvent[] })
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   const pnl = Number(bet.unrealized_pl ?? 0);
   const event = scoreForBet(bet, scores);
+  const hasFill = Number(bet.filled_shares ?? 0) > 0;
+  const eventIsLive = Boolean(event && !event.completed);
+  const eventIsFinal = Boolean(event?.completed);
+  const startLabel = bet.commence_time ? fmtTime(bet.commence_time) : "Start time unavailable";
+  const statusLabel = eventIsFinal ? "FINAL" : eventIsLive ? "LIVE" : hasFill ? `STARTS ${startLabel}` : "ORDER PENDING";
+  const statusTone = eventIsLive ? colors.red : eventIsFinal ? colors.muted : colors.blue2;
   const scoreMap = new Map((event?.scores ?? []).map((row) => [row.name ?? "", row.score ?? "—"]));
   const side = String(bet.side ?? "—").toUpperCase();
   const shares = Number(bet.filled_shares ?? 0);
@@ -447,7 +453,10 @@ function LiveCard({ bet, scores = [] }: { bet: OpenBet; scores?: ScoreEvent[] })
       <View style={styles.liveCardTop}>
         <View style={styles.rowGap}>
           <View style={styles.liveSportBadge}><Text style={styles.liveSportText}>{(bet.sport_title ?? "SPORT").toUpperCase()}</Text></View>
-          <View style={styles.liveBadge}><View style={styles.liveDot}/><Text style={styles.liveBadgeText}>{event?.completed ? "FINAL" : "LIVE"}</Text></View>
+          <View style={styles.liveBadge}>
+            <View style={[styles.liveDot, { backgroundColor: statusTone }]}/>
+            <Text style={[styles.liveBadgeText, { color: statusTone }]}>{statusLabel}</Text>
+          </View>
         </View>
         <Text style={pnl >= 0 ? styles.livePnlGreen : styles.livePnlRed}>{fmtMoney(pnl, true)}</Text>
       </View>
