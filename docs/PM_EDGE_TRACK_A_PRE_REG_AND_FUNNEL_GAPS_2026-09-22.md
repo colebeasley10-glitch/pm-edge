@@ -242,10 +242,20 @@ Date: **2026-09-22**
 - Keep maker and taker paths unchanged at current production size.
 - Evaluate when cumulative strict TAKER settlements reach **n=60**.
 - Primary metric: `ROI_TAKER - ROI_MAKER`, dollar-weighted, through the same cutoff.
-- Trigger: if that value remains **< 0** at the 60th taker settlement, record the trigger as met; any production restriction still requires explicit approval.
-- Do not move the decision point, metric or sign threshold after seeing intermediate results.
+- Frozen planning per-bet ROI SD: **117.1 percentage points**.
+- With MAKER n=25-40, the planned SE of the difference is **23.9-27.9pp**.
+- A 60pp gap is therefore about **2.15-2.51 SE**.
+- The two-sided 95% 1.96-SE resolution is **46.8-54.6pp**.
+- The conventional alpha=0.05, 80%-power MDE is **67.0-78.1pp** across that maker-count range.
+- At the cutoff, recompute the SE with the actual strict MAKER n through the same cutoff and set `MDE_80 = (1.96 + 0.8416) * SE(Delta_ROI)`.
+- Any observed absolute ROI difference smaller than the applicable `MDE_80` is **INCONCLUSIVE** for claims that taker execution is acceptable.
+- Trigger: if `ROI_TAKER - ROI_MAKER < 0` at the 60th taker settlement, record the taker-deficit trigger as met; any production restriction still requires explicit approval.
+- A nonnegative result inside the MDE guardrail is not affirmative evidence that taker execution is acceptable.
+- Do not move the decision point, metric, planning SD, sign trigger or MDE rule after seeing intermediate results.
 
 The 24 existing taker settlements count toward the 60, leaving **36 additional strict taker settlements** before the registered decision point.
+
+The prior approximately **26,900-settlement** figure targeted a **2pp** ROI effect at alpha=0.05 and 80% power; it is not inconsistent with the much larger detectable-effect scale of this n=60 test.
 
 ## 2. The >60c funnel hole
 
@@ -367,34 +377,3 @@ The small dollar scale limits the financial impact of the current learning phase
 The factual sharp-benchmark finding is narrower than “every sharp book was excluded”: the current production path lacks a designated sharp anchor and, under the default US-region configuration, does not include Pinnacle. The broader claim is not proven from the ledger.
 
 No production change is authorized by Addendum 4.
-
-
-## Addendum 5 amendment — detectable effect size and interpretation guard
-
-This amendment is pre-registered before the TAKER n=60 decision point. It supplements the existing sign trigger and prevents a small noisy difference from being read as evidence that taker execution is acceptable.
-
-Planning assumptions:
-- per-bet ROI SD: **117pp**
-- strict TAKER count at decision point: **60**
-- planning strict MAKER count at the same cutoff: approximately **25-40**
-- independent-bet normal approximation used only for power sanity-checking
-
-Computed standard error:
-
-`SE(Delta_ROI) = 117pp * sqrt(1/60 + 1/n_MAKER)`
-
-- with n_MAKER=25: **27.9pp**
-- with n_MAKER=40: **23.9pp**
-- conservative shorthand: approximately **25-30pp**
-
-Two-standard-error discernibility is therefore about **47.8-55.7pp**. Freeze the audit's minimum detectable-effect interpretation threshold at **60pp absolute Delta_ROI**.
-
-**Pre-registered interpretation rule:**
-- if `|ROI_TAKER - ROI_MAKER| < 60pp` at TAKER n=60, the result is **INCONCLUSIVE**;
-- an inconclusive result is **not evidence that taker execution is acceptable**;
-- the existing operational sign trigger `Delta_ROI < 0` remains recorded separately, and any production restriction still requires explicit owner approval;
-- do not move the 60pp threshold after seeing the n=60 result.
-
-For context, the conventional two-sided alpha=0.05 / 80%-power MDE under the same approximation is approximately **66.9-78.0pp** for n_MAKER=40 to 25. A true 60pp gap is about **2.15-2.51 SE**, corresponding to only roughly **58%-71% power**. Thus n=60 can surface the currently observed ~60pp-scale gap at roughly two standard errors, but it cannot resolve materially smaller effects reliably.
-
-This does not contradict the earlier ~26,900-settlement calculation, which was sized for a **2pp** effect rather than a ~60pp effect.
