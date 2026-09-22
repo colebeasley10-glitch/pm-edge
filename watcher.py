@@ -189,7 +189,7 @@ MAX_AUTO_EDGE = float(os.getenv("PM_EDGE_MAX_AUTO_EDGE", "0.15"))
 # after kickoff/first pitch for position-management decisions.
 HELD_POSITION_TICKERS: set[str] = set()
 HELD_EVENT_LOOKBACK_HOURS = float(os.getenv("PM_EDGE_HELD_EVENT_LOOKBACK_HOURS", "6"))
-WATCHER_VERSION = 15
+WATCHER_VERSION = 16
 
 PRIMARY_MARKET = {
     "h2h": "h2h",
@@ -1089,6 +1089,13 @@ def self_test():
     assert s["daily_usage"]["date"] == now_utc().date().isoformat()
     assert cents(0.57) == "57.0¢"
     assert pct(0.061) == "6.1%"
+    ticker_dt = kalshi_ticker_game_time({"ticker": "KXNPBGAME-26SEP230500TOHHOK-HOK"})
+    assert ticker_dt is not None and ticker_dt.isoformat() == "2026-09-23T09:00:00+00:00"
+    ok, delta = low_score_time_confirmed(
+        {"ticker": "KXNPBGAME-26SEP230500TOHHOK-HOK"},
+        {"commence_time": "2026-09-22T09:00:00Z"},
+    )
+    assert not ok and delta == 24.0
     print("PM Edge watcher v15 self-test: PASS")
     return 0
 
