@@ -4,7 +4,8 @@ import json
 import math
 import os
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from types import SimpleNamespace
 from urllib.parse import quote
@@ -28,6 +29,14 @@ KALSHI_PUBLIC_BASE = os.getenv(
 ).rstrip("/")
 
 _SIGNAL_ID_RE = re.compile(r"^pmedge-([0-9a-f]{20})-[A-Za-z0-9]+$")
+_TICKER_START_RE = re.compile(
+    r"-(?P<year>\d{2})(?P<month>JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)"
+    r"(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})"
+)
+_MONTHS = {m: i for i, m in enumerate(
+    ("JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"), start=1
+)}
+_KALSHI_TICKER_TZ = ZoneInfo("America/New_York")
 
 
 def _read_csv(path: Path) -> pd.DataFrame:
@@ -283,9 +292,43 @@ def _parse_time(value) -> datetime | None:
         return None
 
 
+def _ticker_start_time(ticker: str | None) -> datetime | None:
+    """Parse Kalshi sports tickers that encode YYMONDDHHMM in Eastern time."""
+    match = _TICKER_START_RE.search(str(ticker or "").upper())
+    if not match:
+        return None
+    try:
+        local = datetime(
+            2000 + int(match.group("year")),
+            _MONTHS[match.group("month")],
+            int(match.group("day")),
+            int(match.group("hour")),
+            int(match.group("minute")),
+            tzinfo=_KALSHI_TICKER_TZ,
+        )
+        return local.astimezone(timezone.utc)
+    except (KeyError, ValueError):
+        return None
+
+
+def effective_commence_time(row: dict) -> datetime | None:
+    """Return the safest known start time for live/upcoming classification.
+
+    Sportsbook matching can occasionally attach the same matchup from the
+    previous calendar day. When a Kalshi ticker contains an explicit game
+    date/time and the stored sportsbook time is >12h earlier, trust the
+    contract's own schedule instead of declaring the position live early.
+    """
+    commence = _parse_time(row.get("commence_time"))
+    ticker_start = _ticker_start_time(row.get("ticker"))
+    if ticker_start and (commence is None or commence < ticker_start - timedelta(hours=12)):
+        return ticker_start
+    return commence or ticker_start
+
+
 def signal_state(row: dict, *, now: datetime | None = None) -> str:
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
-    commence = _parse_time(row.get("commence_time"))
+    commence = effective_commence_time(row)
     if commence and commence <= now:
         return "LIVE / STARTED"
     if commence:
