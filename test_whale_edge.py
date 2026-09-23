@@ -10,6 +10,9 @@ def main() -> None:
     assert whale_edge._is_btc("KXBTC-26SEP23-TEST", "")
     assert whale_edge._is_btc("ABC", "Will Bitcoin be above $70,000?")
     assert not whale_edge._is_btc("KXNFLGAME-TEST", "Team A vs Team B")
+    assert whale_edge._is_fast_financial_market("KXGOLD-TEST", "Gold price up in next 15 mins?")
+    assert whale_edge._is_fast_financial_market("KXSILVER-TEST", "Silver price up in next 30 minutes?")
+    assert not whale_edge._is_fast_financial_market("KXNFLGAME-TEST", "Team A vs Team B")
 
     trade = {
         "trade_id": "t1",
