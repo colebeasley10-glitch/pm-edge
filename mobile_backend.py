@@ -174,8 +174,13 @@ def _live_kalshi_submitted_pairs() -> set[tuple[str, str]]:
 
     pairs: set[tuple[str, str]] = set()
     for row in orders or []:
-        status = str(row.get("status") or row.get("order_status") or "").strip().lower()
-        if status in {"canceled", "cancelled", "expired", "rejected", "failed"}:
+        # Availability is about whether PM Edge has already attempted this
+        # exposure, not whether the order is still resting. Review treats an
+        # existing client_order_id as terminal for that signal because reusing
+        # the same id is not a fresh submission. Mirror that behavior here so
+        # canceled/unfilled attempts cannot resurrect on Dashboard.
+        client_id = str(row.get("client_order_id") or "").strip()
+        if not client_id.startswith("pmedge-"):
             continue
         ticker = str(row.get("ticker") or row.get("market_ticker") or "").strip().upper()
         side = _kalshi_order_side(row)
@@ -252,8 +257,6 @@ def _actionable_new_signals(df: pd.DataFrame, *, scan_limit: int) -> pd.DataFram
                 for order in orders or []
                 if expected_client_id
                 and str(order.get("client_order_id") or "").strip() == expected_client_id
-                and str(order.get("status") or order.get("order_status") or "").strip().lower()
-                    not in {"canceled", "cancelled", "expired", "rejected", "failed"}
             ),
             None,
         )
