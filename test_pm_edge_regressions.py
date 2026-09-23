@@ -216,6 +216,44 @@ def test_new_alerts_are_not_starved_by_higher_edge_reminders():
 
 
 # ---------------------------------------------------------------------------
+# Repeat alerts: never resend the same side at a worse price
+# ---------------------------------------------------------------------------
+
+def test_repeat_alert_suppresses_worse_price_but_allows_better_price():
+    state = {"alerts": {
+        "TEST-REPEAT|YES": {
+            "active": True,
+            "sent_at": (watcher.now_utc() - watcher.timedelta(hours=7)).isoformat(),
+            "entry_price": 0.46,
+            "hard_max": 0.46,
+            "net_edge": 0.08,
+            "title": "Repeat market",
+        }
+    }}
+    market = {"ticker": "TEST-REPEAT", "title": "Repeat market"}
+    fair_entry = {"fair_yes_prob": 0.60, "sport_title": "NFL", "n_books": 5}
+
+    class Q:
+        side = "YES"
+        hard_max = 0.80
+        net_edge = 0.12
+        best_ask = 0.76
+        execution = "TAKE"
+        recommended_limit = 0.76
+
+    ok, reason = watcher.should_alert(state, market, fair_entry, Q())
+    assert not ok
+    assert reason == "worse_price_than_last_alert"
+
+    Q.recommended_limit = 0.44
+    Q.best_ask = 0.44
+    Q.hard_max = 0.46
+    ok, reason = watcher.should_alert(state, market, fair_entry, Q())
+    assert ok
+    assert reason == "PRICE"
+
+
+# ---------------------------------------------------------------------------
 # Speculative tier: lower edge bar, same correctness safeguards
 # ---------------------------------------------------------------------------
 
