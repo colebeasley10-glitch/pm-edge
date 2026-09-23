@@ -28,7 +28,7 @@ import watcher
 
 PUBLIC_BASE = os.getenv("PM_EDGE_KALSHI_PUBLIC_BASE_URL","https://external-api.kalshi.com/trade-api/v2").rstrip("/")
 STATE_PATH = Path(os.getenv("PM_EDGE_WHALE_STATE_PATH", ".pm_edge_whale_state.json"))
-LEDGER_PATH = Path(os.getenv("PM_EDGE_WHALE_LEDGER_PATH", "pm_edge_whale_ledger.csv"))
+LEDGER_PATH = Path(os.getenv("PM_EDGE_WHALE_LEDGER_PATH", "pm_edge_whale_flow_ledger.csv"))
 POLL_MINUTES = max(10, int(os.getenv("PM_EDGE_WHALE_POLL_MINUTES", "30")))
 LOOKBACK_MINUTES = max(10, int(os.getenv("PM_EDGE_WHALE_LOOKBACK_MINUTES", "45")))
 SINGLE_MIN_CONTRACTS = max(1, int(os.getenv("PM_EDGE_WHALE_SINGLE_MIN_CONTRACTS", "250")))
