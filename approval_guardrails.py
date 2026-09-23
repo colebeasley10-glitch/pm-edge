@@ -47,7 +47,30 @@ def _position_side(row: dict) -> str:
 
 def _order_side(row: dict) -> str:
     side = str(row.get("outcome_side") or row.get("side") or "").upper()
-    return side if side in {"YES", "NO"} else ""
+    if side in {"YES", "NO"}:
+        return side
+    # Kalshi's event-order endpoint represents PM Edge BUY YES as a bid and
+    # BUY NO as an ask on the YES book. Map those wire-level sides back to the
+    # exposure side so resting maker orders participate in duplicate guards.
+    if side == "BID":
+        return "YES"
+    if side == "ASK":
+        return "NO"
+    return ""
+
+
+def _order_is_live_exposure(row: dict) -> bool:
+    """True for an order that should prevent a duplicate PM Edge submission."""
+    status = str(row.get("status") or row.get("order_status") or "").strip().lower()
+    if status in {"canceled", "cancelled", "expired", "rejected", "failed"}:
+        return False
+    # If Kalshi omits status in a response, a concrete order id/client id is
+    # still enough evidence that the exposure was already submitted.
+    return bool(
+        status
+        or str(row.get("order_id") or row.get("kalshi_order_id") or "").strip()
+        or str(row.get("client_order_id") or "").strip()
+    )
 
 
 def _created_today(row: dict, now: datetime) -> bool:
@@ -100,6 +123,19 @@ def evaluate_position_guard(
             open_pairs.add((pos_ticker, pos_side))
 
     same_pair_open = (ticker, side) in open_pairs
+    if same_pair_open:
+        return {"blocked": True, "reason": "same_position_exists"}
+
+    active_order_pairs: set[tuple[str, str]] = set()
+    for row in orders or []:
+        if not _order_is_live_exposure(row):
+            continue
+        ot = str(row.get("ticker") or row.get("market_ticker") or "").strip().upper()
+        oside = _order_side(row)
+        if ot and oside:
+            active_order_pairs.add((ot, oside))
+    if (ticker, side) in active_order_pairs:
+        return {"blocked": True, "reason": "same_order_exists"}
 
     for pos_ticker, pos_side in open_pairs:
         if event_key(pos_ticker) != candidate_event:
