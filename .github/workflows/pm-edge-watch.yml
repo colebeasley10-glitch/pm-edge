@@ -242,7 +242,7 @@ jobs:
               [ -f "$file" ] && git add "$file"
             done
             if ! git diff --cached --quiet; then
-              git commit -m "Sync PM Edge ledgers to mobile backend [skip ci]"
+              git commit -m "Sync PM Edge ledgers to mobile backend"
               git push origin HEAD:railway/code-change-HB1cBE
             fi
           fi
