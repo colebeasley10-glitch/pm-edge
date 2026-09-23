@@ -157,7 +157,7 @@ def verify_approval_token(token: str, *, now: int | None = None) -> dict:
     execution = "TAKE" if payload.get("a") == "T" else "MAKE" if payload.get("a") == "M" else None
     if execution is None:
         raise ValueError("Invalid execution mode")
-    lane = {"p": "primary", "v": "value", "f": "price_fish"}.get(payload.get("l"), "primary")
+    lane = {"p": "primary", "v": "value", "f": "price_fish", "w": "whale"}.get(payload.get("l"), "primary")
 
     legacy_signal_id = not bool(payload.get("u"))
     signal_id = str(payload.get("u") or "").strip().lower()
