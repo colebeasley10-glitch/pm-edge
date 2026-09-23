@@ -81,9 +81,12 @@ def create_approval_token(
     if int(shares) < 1:
         raise ValueError("shares must be positive")
 
-    lane_code = {"primary": "p", "value": "v", "price_fish": "f"}.get(
-        str(lane or "").lower(), "p"
-    )
+    lane_code = {
+        "primary": "p",
+        "value": "v",
+        "price_fish": "f",
+        "whale": "w",
+    }.get(str(lane or "").lower(), "p")
     if signal_id is None:
         seed = f"{now}|{ticker}|{side}|{lane_code}|{limit_price}|{time.time_ns()}".encode("utf-8")
         signal_id = hashlib.sha256(seed).hexdigest()[:20]
