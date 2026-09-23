@@ -178,6 +178,17 @@ def _cooldown_active(state,ticker,side,now):
     ts=_parse_iso(row.get("sent_at")) if isinstance(row,dict) else None
     return bool(ts and (now-ts).total_seconds()<SIGNAL_COOLDOWN_HOURS*3600)
 
+def _repeat_price_suppressed(state,ticker,side,ev):
+    """Suppress repeat Whale alerts when the new actionable price is worse."""
+    row=(state.get("sent") or {}).get(f"{ticker}|{side}")
+    if not isinstance(row,dict):
+        return False
+    prev=_safe_float(row.get("target_price"))
+    current=_safe_float(ev.get("target"))
+    if prev is None or current is None:
+        return False
+    return current > prev + 1e-9
+
 def _record_signal(flow,snapshot,ev,model_fair_side):
     side=flow["side"]; ticker=flow["ticker"]; question=str(snapshot.get("title") or ticker)
     football=_is_football(ticker,question)
@@ -239,6 +250,8 @@ def run_once(*,now=None):
         if not ev.get("eligible"):
             row.update({"decision":"WAIT" if ev.get("reason") in {"wait_for_better_price","pm_edge_model_disagrees"} else "SKIP",
                         "reason":ev.get("reason")}); _append_ledger(row); continue
+        if _repeat_price_suppressed(state,flow["ticker"],side,ev):
+            row.update({"decision":"SKIP","reason":"worse_price_than_last_whale_alert"}); _append_ledger(row); continue
         sig=_record_signal(flow,snap,ev,model_fair_side)
         if not sig.get("recorded") and sig.get("reason")!="duplicate":
             row.update({"decision":"ERROR","reason":sig.get("reason")}); _append_ledger(row); continue
@@ -246,7 +259,8 @@ def run_once(*,now=None):
         row.update({"decision":"SIGNAL","reason":"whale_flow_price_guard_passed","signal_id":signal_id}); _append_ledger(row)
         watcher.send_push("🐋 PM EDGE WHALE FLOW — FOOTBALL" if football else "🐋 PM EDGE WHALE FLOW",
                           _message(flow,snap,ev,model_fair_side),priority=0)
-        state["sent"][f"{flow['ticker']}|{side}"]={"sent_at":_iso(now),"signal_id":signal_id}
+        state["sent"][f"{flow['ticker']}|{side}"]={"sent_at":_iso(now),"signal_id":signal_id,
+            "target_price":ev.get("target"),"hard_max":ev.get("hard_max"),"current_ask_cents":ev.get("current_ask_cents")}
         sent+=1
         if not football: nonfootball+=1
     for t in trades:
