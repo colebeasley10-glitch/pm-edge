@@ -423,7 +423,7 @@ def _review_payload(row: dict, client: KalshiSubmitClient) -> dict:
 
 @app.get("/health")
 def health() -> dict:
-    return {"ok": True, "service": "pm-edge-mobile-api", "version": "1.0.0"}
+    return {"ok": True, "service": "pm-edge-mobile-api", "version": "1.0.1"}
 
 
 @app.get("/v1/dashboard", dependencies=[Depends(_auth)])
