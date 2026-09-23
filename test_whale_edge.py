@@ -7,6 +7,9 @@ def main() -> None:
     assert whale_edge._is_football("KXNFLGAME-TEST", "Team A vs Team B")
     assert whale_edge._is_football("ABC", "College football championship")
     assert not whale_edge._is_football("KXMLBGAME-TEST", "Baseball game")
+    assert whale_edge._is_btc("KXBTC-26SEP23-TEST", "")
+    assert whale_edge._is_btc("ABC", "Will Bitcoin be above $70,000?")
+    assert not whale_edge._is_btc("KXNFLGAME-TEST", "Team A vs Team B")
 
     trade = {
         "trade_id": "t1",
