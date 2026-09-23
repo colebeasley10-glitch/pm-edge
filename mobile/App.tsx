@@ -255,7 +255,7 @@ function ReviewModal({
   visible: boolean;
   onClose: () => void;
   onSubmitted: () => void;
-  onUnavailable: () => void;
+  onUnavailable: (signal: Signal) => void;
 }) {
   const [review, setReview] = useState<ReviewResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -272,7 +272,7 @@ function ReviewModal({
     try {
       const nextReview = await api.review(signal.signal_id);
       setReview(nextReview);
-      if (!nextReview.can_submit) onUnavailable();
+      if (!nextReview.can_submit) onUnavailable(signal);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not review this bet");
     } finally {
@@ -1077,6 +1077,24 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [passcode, setPasscode] = useState("");
 
+  const removeSignalFromLists = useCallback((signal: Signal) => {
+    const sameOpportunity = (item: Signal) =>
+      item.signal_id === signal.signal_id ||
+      (
+        String(item.ticker || "").toUpperCase() === String(signal.ticker || "").toUpperCase() &&
+        String(item.side || "").toUpperCase() === String(signal.side || "").toUpperCase()
+      );
+
+    setBets((prev) => prev.filter((item) => !sameOpportunity(item)));
+    setDashboard((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        new_bets: (prev.new_bets ?? []).filter((item) => !sameOpportunity(item)),
+      };
+    });
+  }, []);
+
   const refresh = useCallback(async () => {
     setRefreshing(true);
     setError(null);
@@ -1191,8 +1209,14 @@ export default function App() {
         signal={selected}
         visible={selected != null}
         onClose={() => setSelected(null)}
-        onSubmitted={() => void refresh()}
-        onUnavailable={() => void refresh()}
+        onSubmitted={() => {
+          if (selected) removeSignalFromLists(selected);
+          void refresh();
+        }}
+        onUnavailable={(signal) => {
+          removeSignalFromLists(signal);
+          void refresh();
+        }}
       />
     </SafeAreaView>
   );
