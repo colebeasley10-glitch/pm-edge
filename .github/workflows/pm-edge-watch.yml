@@ -38,6 +38,7 @@ jobs:
             .pm_edge_performance_history.json
             .pm_edge_pushover_status.json
             .pm_edge_position_signal_state.json
+            .pm_edge_whale_state.json
           key: pm-edge-watch-${{ github.run_id }}
           restore-keys: |
             pm-edge-watch-
@@ -134,6 +135,27 @@ jobs:
           PM_EDGE_OVERNIGHT_MISSED_RETENTION_DAYS: "14"
         run: python pm_edge_runner_v28.py
 
+      - name: Run Whale Edge follower
+        if: always()
+        timeout-minutes: 3
+        continue-on-error: true
+        env:
+          KALSHISPY_API_KEY: ${{ secrets.KALSHISPY_API_KEY }}
+          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
+          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
+          STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
+          PM_EDGE_WHALE_POLL_MINUTES: "60"
+          PM_EDGE_WHALE_TRADERS: "norrisfan,autofade,aggressive.doberman7942,attemptmost,lost.buck"
+          PM_EDGE_WHALE_MIN_TRADE_CONTRACTS: "100"
+          PM_EDGE_WHALE_MIN_REFERENCE_CENTS: "15"
+          PM_EDGE_WHALE_MAX_REFERENCE_CENTS: "85"
+          PM_EDGE_WHALE_MAX_REFERENCE_AGE_MINUTES: "360"
+          PM_EDGE_WHALE_MAX_REST_GAP_CENTS: "5"
+          PM_EDGE_WHALE_BETTER_BY_CENTS: "1"
+          PM_EDGE_WHALE_MODEL_DISAGREE_TOLERANCE: "0.03"
+          PM_EDGE_WHALE_MAX_NON_FOOTBALL_ALERTS_PER_RUN: "2"
+        run: python whale_edge.py
+
       - name: Reconcile PM Edge fills and settlements
         if: always()
         timeout-minutes: 2
@@ -195,6 +217,8 @@ jobs:
           [ -f .pm_edge_watch_state.json ] && git add .pm_edge_watch_state.json
           [ -f pm_edge_pinnacle_shadow.csv ] && git add pm_edge_pinnacle_shadow.csv
           [ -f .pm_edge_pinnacle_shadow_state.json ] && git add .pm_edge_pinnacle_shadow_state.json
+          [ -f pm_edge_whale_ledger.csv ] && git add pm_edge_whale_ledger.csv
+          [ -f .pm_edge_whale_state.json ] && git add .pm_edge_whale_state.json
           if ! git diff --cached --quiet; then
             git commit -m "Update PM Edge audit ledgers [skip ci]"
             git push
@@ -203,13 +227,13 @@ jobs:
             # ledgers without replacing its backend-specific application code.
             git fetch origin railway/code-change-HB1cBE
             git worktree add /tmp/pm-edge-mobile origin/railway/code-change-HB1cBE
-            for file in pm_edge_auto_ledger.csv pm_edge_signal_ledger.csv pm_edge_candidate_ledger.csv pm_edge_clv_ledger.csv pm_edge_fill_ledger.csv pm_edge_signal_outcomes.csv .pm_edge_watch_state.json; do
+            for file in pm_edge_auto_ledger.csv pm_edge_signal_ledger.csv pm_edge_candidate_ledger.csv pm_edge_clv_ledger.csv pm_edge_fill_ledger.csv pm_edge_signal_outcomes.csv pm_edge_whale_ledger.csv .pm_edge_watch_state.json .pm_edge_whale_state.json; do
               if [ -f "$file" ]; then
                 cp "$file" "/tmp/pm-edge-mobile/$file"
               fi
             done
             cd /tmp/pm-edge-mobile
-            git add pm_edge_auto_ledger.csv pm_edge_signal_ledger.csv pm_edge_candidate_ledger.csv pm_edge_clv_ledger.csv pm_edge_fill_ledger.csv pm_edge_signal_outcomes.csv .pm_edge_watch_state.json
+            git add pm_edge_auto_ledger.csv pm_edge_signal_ledger.csv pm_edge_candidate_ledger.csv pm_edge_clv_ledger.csv pm_edge_fill_ledger.csv pm_edge_signal_outcomes.csv pm_edge_whale_ledger.csv .pm_edge_watch_state.json .pm_edge_whale_state.json
             if ! git diff --cached --quiet; then
               git commit -m "Sync PM Edge ledgers to mobile backend [skip ci]"
               git push origin HEAD:railway/code-change-HB1cBE
