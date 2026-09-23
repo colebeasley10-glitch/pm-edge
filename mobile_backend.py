@@ -193,19 +193,41 @@ def _review_payload(row: dict, client: KalshiSubmitClient) -> dict:
     if live_ask is None:
         raise HTTPException(status_code=503, detail="Could not read the live Kalshi ask")
 
-    # Never allow stale signals to become resting orders after the market has moved
-    # beyond the approved price. This protects both review and submit paths.
-    price_ok = live_ask <= limit_price + 1e-9
-    if price_ok:
-        price_message = (
-            f"Live ask {live_ask * 100:.1f}¢ is within the "
-            f"{limit_price * 100:.1f}¢ maximum."
-        )
+    market_status = str(market.get("status") or "").lower()
+    market_open = market_status in {"active", "open"}
+
+    # TAKE must still be executable at or below the approved maximum.
+    # MAKE is intentionally a patient post-only resting limit: it is valid when
+    # the live ask is ABOVE our limit, because our order will rest rather than
+    # chase the market. This is the normal Price Fish path.
+    if execution == "MAKE":
+        price_ok = bool(market_open and live_ask > limit_price + 1e-9)
+        if price_ok:
+            price_message = (
+                f"Resting limit {limit_price * 100:.1f}¢ is below the "
+                f"{live_ask * 100:.1f}¢ live ask. Order will wait for a fill."
+            )
+        elif market_open:
+            price_message = (
+                f"Live ask {live_ask * 100:.1f}¢ is at or below the "
+                f"{limit_price * 100:.1f}¢ maker limit, so post-only submission is paused."
+            )
+        else:
+            price_message = "Market is no longer open for a resting order."
     else:
-        price_message = (
-            f"Expired: live ask {live_ask * 100:.1f}¢ is above the "
-            f"{limit_price * 100:.1f}¢ maximum. This bet can no longer be submitted."
-        )
+        price_ok = bool(market_open and live_ask <= limit_price + 1e-9)
+        if price_ok:
+            price_message = (
+                f"Live ask {live_ask * 100:.1f}¢ is within the "
+                f"{limit_price * 100:.1f}¢ maximum."
+            )
+        elif market_open:
+            price_message = (
+                f"Expired: live ask {live_ask * 100:.1f}¢ is above the "
+                f"{limit_price * 100:.1f}¢ maximum. This bet can no longer be submitted."
+            )
+        else:
+            price_message = "Market is no longer open for immediate execution."
 
     try:
         orders = client.get_orders(limit=200)
@@ -278,7 +300,18 @@ def dashboard() -> dict:
             max_price = float(sizing["price"])
         except Exception:
             continue
-        if live_ask is not None and live_ask <= max_price + 1e-9:
+        execution = str(row.get("execution") or "MAKE").upper()
+        market_status = str(market.get("status") or "").lower()
+        market_open = market_status in {"active", "open"}
+        price_actionable = (
+            live_ask is not None
+            and market_open
+            and (
+                (execution == "MAKE" and live_ask > max_price + 1e-9)
+                or (execution != "MAKE" and live_ask <= max_price + 1e-9)
+            )
+        )
+        if price_actionable:
             actionable.append(row)
     new = pd.DataFrame(actionable, columns=new.columns).head(8)
     state = dashboard_data.read_state()
@@ -330,7 +363,18 @@ def bets(
                 # Fail closed: if the current market cannot be verified, do not
                 # advertise the signal as actionable.
                 continue
-            if live_ask is not None and live_ask <= max_price + 1e-9:
+            execution = str(row.get("execution") or "MAKE").upper()
+            market_status = str(market.get("status") or "").lower()
+            market_open = market_status in {"active", "open"}
+            price_actionable = (
+                live_ask is not None
+                and market_open
+                and (
+                    (execution == "MAKE" and live_ask > max_price + 1e-9)
+                    or (execution != "MAKE" and live_ask <= max_price + 1e-9)
+                )
+            )
+            if price_actionable:
                 actionable_rows.append(row)
         df = pd.DataFrame(actionable_rows, columns=df.columns)
     elif status == "open":
