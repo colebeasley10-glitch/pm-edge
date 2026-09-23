@@ -503,11 +503,12 @@ def _load_signal_metadata(path: Path = SIGNAL_LEDGER_PATH) -> dict[str, dict]:
 
 
 def _discover_filled_pm_edge_orders_from_fills(client, queue: dict, signal_ledger_path: Path = SIGNAL_LEDGER_PATH) -> int:
-    """Recover PM Edge fills that have fallen out of Kalshi's recent-orders page.
+    """Recover PM Edge fills that are missing from the local order queue.
 
-    Kalshi's fills feed is an independent source of truth. This closes the gap
-    where a real fill exists but get_orders(limit=200) no longer returns the
-    originating order, which otherwise leaves the dashboard showing UNFILLED.
+    Kalshi's fills feed is an independent source of truth. In addition to
+    normal pmedge-* client IDs, this recovers a fill placed from a stale/manual
+    approval path when it can be joined unambiguously to one existing PM Edge
+    intent by ticker, side, shares, price, and a 48-hour time window.
     """
     try:
         fills = client.get_fills(limit=200)
@@ -528,30 +529,15 @@ def _discover_filled_pm_edge_orders_from_fills(client, queue: dict, signal_ledge
     for order_id, rows in grouped.items():
         if order_id in known_order_ids:
             continue
-        client_id = str(rows[0].get("client_order_id") or "")
-        signal_id = _signal_id_from_client_order_id(client_id) if client_id else None
-        signal = signal_metadata.get(signal_id or "", {})
 
-        # Older Kalshi fill payloads may omit client_order_id. In that case
-        # join only when ticker+side has exactly one same-day PM Edge signal.
         side = _fill_side(rows[0])
         ticker = str(rows[0].get("ticker") or rows[0].get("market_ticker") or "")
+        if not ticker or side not in {"YES", "NO"}:
+            continue
+
         filled_at = str(rows[0].get("created_time") or rows[0].get("created_at") or rows[0].get("ts") or "")
+        fill_dt = _parse_timestamp(filled_at)
         trade_date = filled_at[:10] if len(filled_at) >= 10 else ""
-        if not signal and ticker and side in {"YES", "NO"}:
-            candidates = [
-                meta for meta in signal_metadata.values()
-                if str(meta.get("ticker") or "") == ticker
-                and str(meta.get("side") or "").upper() == side
-                and (not trade_date or str(meta.get("trade_date") or "") == trade_date)
-            ]
-            if len(candidates) == 1:
-                signal = candidates[0]
-                signal_id = str(signal.get("signal_id") or "") or None
-        if not signal:
-            continue
-        if client_id and client_id in known_client_ids:
-            continue
 
         total_shares = 0.0
         total_cost = 0.0
@@ -566,6 +552,90 @@ def _discover_filled_pm_edge_orders_from_fills(client, queue: dict, signal_ledge
         if total_shares <= 0:
             continue
         avg_price = total_cost / total_shares
+
+        client_id = str(rows[0].get("client_order_id") or "")
+        signal_id = _signal_id_from_client_order_id(client_id) if client_id else None
+        signal = signal_metadata.get(signal_id or "", {})
+
+        # Strong recovery path for a real fill whose order/client ID was not
+        # persisted by the app. Rebind only when one unresolved PM Edge intent
+        # matches all of ticker, side, share count, executable price, and time.
+        # This avoids silently claiming unrelated manual Kalshi trades.
+        rebound = None
+        if not signal:
+            candidates = []
+            for intent in intents:
+                if str(intent.get("ticker") or "") != ticker:
+                    continue
+                if str(intent.get("side") or "").upper() != side:
+                    continue
+                if _count(intent.get("filled_shares")) > 0:
+                    continue
+                if not intent.get("signal_id"):
+                    continue
+                requested = _count(intent.get("shares") if intent.get("shares") is not None else intent.get("requested_shares"))
+                if requested > 0 and abs(requested - total_shares) > 0.01:
+                    continue
+                limit_price = _safe_float(intent.get("limit_price"))
+                if limit_price is not None:
+                    # A BUY may fill below its limit; allow a modest improvement
+                    # but reject materially worse/different manual entries.
+                    if avg_price > limit_price + 0.02 or avg_price < max(0.01, limit_price - 0.10):
+                        continue
+                intent_dt = _parse_timestamp(intent.get("created_at") or intent.get("submitted_at"))
+                if fill_dt is not None and intent_dt is not None:
+                    delta = (fill_dt - intent_dt).total_seconds()
+                    if delta < -300 or delta > 48 * 3600:
+                        continue
+                candidates.append(intent)
+            if len(candidates) == 1:
+                rebound = candidates[0]
+                signal_id = str(rebound.get("signal_id") or "") or None
+                signal = signal_metadata.get(signal_id or "", {})
+
+        # Metadata-only fallback. Permit a signal from the prior calendar day
+        # because overnight markets are commonly alerted before the event day.
+        if not signal:
+            candidates = []
+            for meta in signal_metadata.values():
+                if str(meta.get("ticker") or "") != ticker or str(meta.get("side") or "").upper() != side:
+                    continue
+                alerted = _parse_timestamp(meta.get("alerted_at"))
+                if fill_dt is not None and alerted is not None:
+                    delta = (fill_dt - alerted).total_seconds()
+                    if delta < -300 or delta > 48 * 3600:
+                        continue
+                candidates.append(meta)
+            if len(candidates) == 1:
+                signal = candidates[0]
+                signal_id = str(signal.get("signal_id") or "") or None
+
+        if not signal:
+            continue
+        if client_id and client_id in known_client_ids:
+            continue
+
+        # If a unique unresolved queue intent matched, repair that intent in
+        # place. This lets the existing UNFILLED history row be replaced rather
+        # than creating a duplicate settled bet.
+        if rebound is not None:
+            previous_order_id = rebound.get("kalshi_order_id")
+            rebound["superseded_kalshi_order_id"] = previous_order_id
+            rebound["kalshi_order_id"] = order_id
+            rebound["status"] = "filled"
+            rebound["kalshi_order_status"] = "recovered_from_fills"
+            rebound["filled_shares"] = round(total_shares, 6)
+            rebound["average_fill_price"] = round(avg_price, 6)
+            rebound["remaining_shares"] = 0.0
+            if trade_date:
+                rebound["trade_date"] = trade_date
+            if filled_at:
+                rebound["created_at"] = filled_at
+            rebound["reconciliation_note"] = "rebound_to_kalshi_fill_by_ticker_side_shares_price_time"
+            known_order_ids.add(order_id)
+            added += 1
+            continue
+
         intent = {
             "intent_id": f"kalshi-fill:{order_id}",
             "client_order_id": client_id or f"recovered:{order_id}",
@@ -773,6 +843,7 @@ def update_performance(
                 "filled_shares", "average_fill_price", "limit_price",
                 "recommended_limit", "shares", "requested_shares", "side",
                 "ticker", "kalshi_order_id", "client_order_id", "signal_id",
+                "trade_date", "created_at", "lane",
             ):
                 value = live_intent.get(key)
                 if value not in (None, ""):
