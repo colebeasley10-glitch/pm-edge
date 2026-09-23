@@ -121,13 +121,57 @@ def _trade_price(t,side):
 def _trade_count(t):
     return max(0.0,_safe_float(t.get("count_fp")) or _safe_float(t.get("count")) or 0.0)
 
-def _market_fair_side(ticker,side):
-    try: fair=(watcher.load_state().get("fair_cache") or {}).get(str(ticker))
-    except Exception: return None
-    if not isinstance(fair,dict): return None
+def _market_fair_context(ticker,side):
+    try:
+        fair=(watcher.load_state().get("fair_cache") or {}).get(str(ticker))
+    except Exception:
+        return None, None
+    if not isinstance(fair,dict):
+        return None, None
     yes=_safe_float(fair.get("fair_yes_prob"))
-    if yes is None: return None
-    return yes if side=="YES" else 1.0-yes
+    fair_side=None if yes is None else (yes if side=="YES" else 1.0-yes)
+    commence=_parse_iso(fair.get("commence_time"))
+    return fair_side, commence
+
+def _market_fair_side(ticker,side):
+    fair_side,_=_market_fair_context(ticker,side)
+    return fair_side
+
+_TICKER_DATE_RE=re.compile(
+    r"-(?P<year>\d{2})(?P<month>JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(?P<day>\d{2})"
+)
+_MONTHS={m:i for i,m in enumerate(("JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"),start=1)}
+
+def _ticker_event_date(ticker):
+    m=_TICKER_DATE_RE.search(str(ticker or "").upper())
+    if not m:
+        return None
+    try:
+        return datetime(2000+int(m.group("year")),_MONTHS[m.group("month")],int(m.group("day")),
+                        tzinfo=watcher._KALSHI_TICKER_TZ).date()
+    except Exception:
+        return None
+
+def _trusted_start(ticker,side):
+    _,fair_start=_market_fair_context(ticker,side)
+    if fair_start is not None:
+        return fair_start
+    return watcher.kalshi_ticker_game_time({"ticker":ticker})
+
+def _late_entry_reason(ticker,side,now):
+    """Whale Flow is pregame-only until we have score-aware live fair value."""
+    start=_trusted_start(ticker,side)
+    if start is not None:
+        if now >= start-timedelta(minutes=5):
+            return "live_or_within_5m_of_start"
+        return None
+    event_date=_ticker_event_date(ticker)
+    if event_date is not None:
+        local_date=now.astimezone(watcher._KALSHI_TICKER_TZ).date()
+        if event_date <= local_date:
+            return "same_day_start_time_unverified"
+    return None
+
 
 def _aggregate(trades):
     groups=defaultdict(list)
@@ -236,7 +280,22 @@ def run_once(*,now=None):
         if not football and nonfootball>=MAX_NON_FOOTBALL_ALERTS_PER_RUN: continue
         if _cooldown_active(state,flow["ticker"],flow["side"],now): continue
         if str(snap.get("status") or "").lower() not in {"open","active"}: continue
-        side=flow["side"]; ask=snap.get("yes_ask") if side=="YES" else snap.get("no_ask")
+        side=flow["side"]
+        late_reason=_late_entry_reason(flow["ticker"],side,now)
+        if late_reason:
+            _append_ledger({"observed_at":_iso(now),"decision":"SKIP","reason":late_reason,
+                "trade_id":flow.get("trade_id"),"ticker":flow["ticker"],"side":side,
+                "question":str(snap.get("title") or ""),"football":football,
+                "reference_price_cents":flow.get("reference_price_cents"),
+                "current_ask_cents":None,"target_price_cents":None,"price_improvement_cents":None,
+                "execution":None,"flow_contracts":flow.get("flow_contracts"),
+                "flow_notional_usd":flow.get("flow_notional_usd"),
+                "flow_trade_count":flow.get("flow_trade_count"),
+                "largest_trade_contracts":flow.get("largest_trade_contracts"),
+                "block_trade":flow.get("block_trade"),"model_fair_side":None,
+                "model_edge":None,"signal_id":""})
+            continue
+        ask=snap.get("yes_ask") if side=="YES" else snap.get("no_ask")
         model_fair_side=_market_fair_side(flow["ticker"],side)
         ev=_evaluate_price(reference_cents=flow["reference_price_cents"],current_ask=_safe_float(ask),model_fair_side=model_fair_side)
         evaluated+=1
