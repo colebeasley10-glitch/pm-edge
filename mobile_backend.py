@@ -183,8 +183,26 @@ def _review_payload(row: dict, client: KalshiSubmitClient) -> dict:
     if live_ask is None:
         raise HTTPException(status_code=503, detail="Could not read the live Kalshi ask")
 
-    price_ok = execution == "MAKE" or live_ask <= limit_price + 1e-9
-    if execution == "MAKE" and live_ask > limit_price + 1e-9:
+    market_status = str(market.get("status") or "").lower()
+    market_open = market_status in {"active", "open"}
+    is_whale_flow = (
+        str(row.get("lane") or "").casefold() == "whale"
+        and str(row.get("market_type") or "").casefold() == "whale_flow"
+    )
+    whale_close_epoch = _event_start_epoch(row) if is_whale_flow else None
+    whale_expired = bool(
+        whale_close_epoch is not None
+        and whale_close_epoch <= int(datetime.now(timezone.utc).timestamp())
+    )
+
+    price_ok = bool(
+        not whale_expired
+        and market_open
+        and (execution == "MAKE" or live_ask <= limit_price + 1e-9)
+    )
+    if whale_expired:
+        price_message = "Expired: this Whale Flow market's close time has passed."
+    elif execution == "MAKE" and live_ask > limit_price + 1e-9:
         price_message = (
             f"Limit order will rest at {limit_price * 100:.1f}¢ and will not chase "
             f"the {live_ask * 100:.1f}¢ ask."
