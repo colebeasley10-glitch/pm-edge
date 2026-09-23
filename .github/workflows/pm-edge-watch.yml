@@ -233,7 +233,9 @@ jobs:
               fi
             done
             cd /tmp/pm-edge-mobile
-            git add pm_edge_auto_ledger.csv pm_edge_signal_ledger.csv pm_edge_candidate_ledger.csv pm_edge_clv_ledger.csv pm_edge_fill_ledger.csv pm_edge_signal_outcomes.csv pm_edge_whale_ledger.csv .pm_edge_watch_state.json .pm_edge_whale_state.json
+            for file in pm_edge_auto_ledger.csv pm_edge_signal_ledger.csv pm_edge_candidate_ledger.csv pm_edge_clv_ledger.csv pm_edge_fill_ledger.csv pm_edge_signal_outcomes.csv pm_edge_whale_ledger.csv .pm_edge_watch_state.json .pm_edge_whale_state.json; do
+              [ -f "$file" ] && git add "$file"
+            done
             if ! git diff --cached --quiet; then
               git commit -m "Sync PM Edge ledgers to mobile backend [skip ci]"
               git push origin HEAD:railway/code-change-HB1cBE
