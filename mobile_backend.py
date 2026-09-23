@@ -197,6 +197,68 @@ def _exclude_submitted_pairs(df: pd.DataFrame, pairs: set[tuple[str, str]]) -> p
     return df[pd.Series(keep, index=df.index)]
 
 
+def _actionable_new_signals(df: pd.DataFrame, *, scan_limit: int) -> pd.DataFrame:
+    """Return only signals that can actually be submitted right now.
+
+    Price eligibility and position/risk guards must both pass. This prevents a
+    card from appearing under Available only to be rejected after Review opens.
+    """
+    if df.empty:
+        return df.copy()
+    try:
+        client = _submit_client()
+        orders = client.get_orders(limit=200)
+        positions = client.get_positions(limit=200)
+    except Exception:
+        # Fail closed: if account risk cannot be verified, do not advertise a
+        # real-money order as actionable.
+        return pd.DataFrame(columns=df.columns)
+
+    now = datetime.now(timezone.utc)
+    actionable: list[dict] = []
+    for row in df.head(scan_limit).to_dict("records"):
+        ticker = str(row.get("ticker") or "").strip()
+        side = str(row.get("side") or "").strip().upper()
+        sizing = dashboard_data.size_signal(row)
+        if not ticker or side not in {"YES", "NO"} or not sizing:
+            continue
+        try:
+            market = dashboard_data.market_snapshot(ticker)
+            live_ask = _market_ask(market, side)
+            max_price = float(sizing["price"])
+            max_loss = float(sizing["max_loss"])
+        except Exception:
+            continue
+
+        execution = str(row.get("execution") or "MAKE").upper()
+        market_status = str(market.get("status") or "").lower()
+        market_open = market_status in {"active", "open"}
+        price_actionable = (
+            live_ask is not None
+            and market_open
+            and (
+                (execution == "MAKE" and live_ask > max_price + 1e-9)
+                or (execution != "MAKE" and live_ask <= max_price + 1e-9)
+            )
+        )
+        if not price_actionable:
+            continue
+
+        guard = approval_guardrails.evaluate_position_guard(
+            ticker=ticker,
+            side=side,
+            candidate_risk=max_loss,
+            positions=positions,
+            orders=orders,
+            now=now,
+        )
+        if guard.get("blocked"):
+            continue
+        actionable.append(row)
+
+    return pd.DataFrame(actionable, columns=df.columns)
+
+
 def _event_start_epoch(row: dict) -> int | None:
     raw = str(row.get("commence_time") or "").strip()
     if not raw:
@@ -337,31 +399,7 @@ def dashboard() -> dict:
     model = dashboard_data.opportunity_summary(data["signal_outcomes"])
     new = dashboard_data.new_signals(data["signals"], data["orders"])
     new = _exclude_submitted_pairs(new, _live_kalshi_submitted_pairs())
-    actionable = []
-    for row in new.head(40).to_dict("records"):
-        sizing = dashboard_data.size_signal(row)
-        if not sizing:
-            continue
-        try:
-            market = dashboard_data.market_snapshot(str(row.get("ticker") or ""))
-            live_ask = _market_ask(market, str(row.get("side") or "").upper())
-            max_price = float(sizing["price"])
-        except Exception:
-            continue
-        execution = str(row.get("execution") or "MAKE").upper()
-        market_status = str(market.get("status") or "").lower()
-        market_open = market_status in {"active", "open"}
-        price_actionable = (
-            live_ask is not None
-            and market_open
-            and (
-                (execution == "MAKE" and live_ask > max_price + 1e-9)
-                or (execution != "MAKE" and live_ask <= max_price + 1e-9)
-            )
-        )
-        if price_actionable:
-            actionable.append(row)
-    new = pd.DataFrame(actionable, columns=new.columns).head(8)
+    new = _actionable_new_signals(new, scan_limit=40).head(8)
     state = dashboard_data.read_state()
     last = dashboard_data.last_model_activity(data)
     history = data["orders"].copy()
@@ -394,38 +432,9 @@ def bets(
         df = dashboard_data.new_signals(data["signals"], data["orders"])
         df = _exclude_submitted_pairs(df, _live_kalshi_submitted_pairs())
 
-        # Bet Center must contain actionable signals only. Re-check the live
-        # Kalshi ask before returning each signal so stale/expired bets leave
-        # the list automatically instead of merely becoming disabled in Review.
-        actionable_rows = []
-        for row in df.head(80).to_dict("records"):
-            ticker = str(row.get("ticker") or "")
-            side = str(row.get("side") or "").upper()
-            sizing = dashboard_data.size_signal(row)
-            if not ticker or side not in {"YES", "NO"} or not sizing:
-                continue
-            try:
-                market = dashboard_data.market_snapshot(ticker)
-                live_ask = _market_ask(market, side)
-                max_price = float(sizing["price"])
-            except Exception:
-                # Fail closed: if the current market cannot be verified, do not
-                # advertise the signal as actionable.
-                continue
-            execution = str(row.get("execution") or "MAKE").upper()
-            market_status = str(market.get("status") or "").lower()
-            market_open = market_status in {"active", "open"}
-            price_actionable = (
-                live_ask is not None
-                and market_open
-                and (
-                    (execution == "MAKE" and live_ask > max_price + 1e-9)
-                    or (execution != "MAKE" and live_ask <= max_price + 1e-9)
-                )
-            )
-            if price_actionable:
-                actionable_rows.append(row)
-        df = pd.DataFrame(actionable_rows, columns=df.columns)
+        # Bet Center contains only genuinely actionable signals: live price
+        # eligibility AND account/position guardrails must pass.
+        df = _actionable_new_signals(df, scan_limit=80)
     elif status == "open":
         df = dashboard_data.open_order_rows(data["orders"])
     elif status == "unfilled":
