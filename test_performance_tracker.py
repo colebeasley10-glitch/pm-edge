@@ -370,6 +370,96 @@ def main() -> None:
         assert row["filled_shares"] == 5.0
         assert abs(row["net_pl"] + 2.0) < 1e-9
 
+
+    # A PM Edge signal can be alerted the prior calendar day and actually
+    # filled the next morning through a stale/manual approval path. Recover the
+    # real fill without leaving a duplicate UNFILLED history row.
+    with TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        queue_path = root / "queue.json"
+        history_path = root / "history.json"
+        signal_path = root / "signals.csv"
+        signal_id = "abcdef1234567890abcd"
+        original_intent = {
+            "intent_id": "crossday-1",
+            "client_order_id": f"pmedge-{signal_id}-12345678",
+            "signal_id": signal_id,
+            "created_at": "2026-09-22T00:20:00Z",
+            "trade_date": "2026-09-22",
+            "ticker": "TEST-CROSSDAY",
+            "market_title": "Cross-day recovery",
+            "side": "NO",
+            "lane": "primary",
+            "limit_price": 0.40,
+            "shares": 9,
+            "max_loss": 3.60,
+            "status": "canceled",
+            "kalshi_order_id": "old-unfilled-order",
+            "filled_shares": 0.0,
+        }
+        write_queue(queue_path, [original_intent])
+        history_path.write_text(json.dumps({
+            "version": 1,
+            "records": [{
+                "intent_id": "crossday-1",
+                "client_order_id": f"pmedge-{signal_id}-12345678",
+                "signal_id": signal_id,
+                "trade_date": "2026-09-22",
+                "ticker": "TEST-CROSSDAY",
+                "market_title": "Cross-day recovery",
+                "side": "NO",
+                "lane": "primary",
+                "limit_price": 0.40,
+                "requested_shares": 9,
+                "kalshi_order_id": "old-unfilled-order",
+                "filled_shares": 0.0,
+                "entry_cost": 0.0,
+                "entry_fees": 0.0,
+                "status": "unfilled",
+                "outcome": "UNFILLED",
+                "net_pl": 0.0,
+            }],
+        }), encoding="utf-8")
+        signal_path.write_text(
+            "record_type,signal_id,alerted_at,trade_date,ticker,event_id,market_title,sport_key,sport_title,market_type,side,lane,execution,recommended_limit,hard_max,fair_probability,net_edge,books,dispersion,fair_fetched_at,commence_time,risk_multiplier,audit_bucket,source_version,client_order_id,submitted_at,kalshi_order_id\n"
+            f"signal,{signal_id},2026-09-22T00:17:00Z,2026-09-22,TEST-CROSSDAY,event-1,Cross-day recovery,baseball_npb,NPB,h2h,NO,primary,MAKE,0.40,0.40,0.55,0.10,9,0.01,2026-09-22T00:16:00Z,2026-09-23T08:00:00Z,1.0,,28,,,\n",
+            encoding="utf-8",
+        )
+        client = FakeClient([{
+            "fill_id": "crossday-fill",
+            "order_id": "actual-filled-order",
+            "ticker": "TEST-CROSSDAY",
+            "outcome_side": "no",
+            "count_fp": "9.00",
+            "yes_price_dollars": "0.61",
+            "no_price_dollars": "0.39",
+            "fee_cost": "0.00",
+            "created_time": "2026-09-23T07:00:00Z",
+        }])
+        result = performance_tracker.update_performance(
+            client,
+            queue_path=queue_path,
+            history_path=history_path,
+            signal_ledger_path=signal_path,
+            market_loader=lambda _ticker: {
+                "market_result": "yes",
+                "settlement_value_yes": 1.0,
+                "settled_time": "2026-09-23T10:00:00Z",
+            },
+        )
+        assert result["discovered_orders"] == 1
+        assert result["retro_unfilled_corrections"] == 1
+        history = json.loads(history_path.read_text(encoding="utf-8"))
+        assert len(history["records"]) == 1
+        row = history["records"][0]
+        assert row["trade_date"] == "2026-09-23"
+        assert row["kalshi_order_id"] == "actual-filled-order"
+        assert row["status"] == "settled_loss"
+        assert row["outcome"] == "LOSS"
+        assert row["filled_shares"] == 9.0
+        assert abs(row["average_fill_price"] - 0.39) < 1e-9
+        assert abs(row["net_pl"] + 3.51) < 1e-9
+
     print("PM Edge performance tracker tests: PASS")
 
 
