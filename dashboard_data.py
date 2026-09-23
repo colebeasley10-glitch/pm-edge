@@ -380,7 +380,7 @@ def size_signal(row: dict) -> dict | None:
     except (TypeError, ValueError):
         return None
     lane = str(row.get("lane") or "primary").lower()
-    if lane == "value":
+    if lane in {"value", "whale"}:
         return calculate_share_order(price, target_profit=2.50, max_risk=5.00)
     return calculate_share_order(price, target_profit=5.00, max_risk=10.00)
 
