@@ -12,7 +12,8 @@ import inspect
 import json
 import math
 import os
-from datetime import datetime, timezone
+import re
+from datetime import datetime, timezone, timedelta
 from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
@@ -56,6 +57,51 @@ st.title("PM Edge — Review & Submit")
 st.caption("PM Edge re-checks the live price. Nothing is sent to Kalshi until you press Submit.")
 if math.isinf(_effective_daily_risk_limit()):
     st.caption("The PM Edge daily aggregate cap is disabled. The $10 per-order cap still applies.")
+
+
+_SPORT_TICKER_START_RE = re.compile(
+    r"-(?P<year>\d{2})(?P<month>JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)"
+    r"(?P<day>\d{2})(?P<hour>\d{2})(?P<minute>\d{2})"
+)
+_SPORT_TICKER_DATE_RE = re.compile(
+    r"-(?P<year>\d{2})(?P<month>JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(?P<day>\d{2})"
+)
+_MONTHS = {m:i for i,m in enumerate(("JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"),start=1)}
+
+def _ticker_start_utc(ticker: str):
+    m=_SPORT_TICKER_START_RE.search(str(ticker or "").upper())
+    if not m:
+        return None
+    try:
+        local=datetime(2000+int(m.group("year")),_MONTHS[m.group("month")],int(m.group("day")),
+                       int(m.group("hour")),int(m.group("minute")),tzinfo=EASTERN)
+        return local.astimezone(timezone.utc)
+    except Exception:
+        return None
+
+def _ticker_event_date(ticker: str):
+    m=_SPORT_TICKER_DATE_RE.search(str(ticker or "").upper())
+    if not m:
+        return None
+    try:
+        return datetime(2000+int(m.group("year")),_MONTHS[m.group("month")],int(m.group("day")),
+                        tzinfo=EASTERN).date()
+    except Exception:
+        return None
+
+def _whale_late_guard(trade: dict):
+    if str(trade.get("lane") or "").lower() != "whale":
+        return None
+    now=datetime.now(timezone.utc)
+    start=_ticker_start_utc(trade.get("ticker"))
+    if start is not None and now >= start-timedelta(minutes=5):
+        return "Whale Flow live entries are disabled once an event is within 5 minutes of starting."
+    event_date=_ticker_event_date(trade.get("ticker"))
+    if start is None and event_date is not None and event_date <= now.astimezone(EASTERN).date():
+        return "Whale Flow is blocked for same-day markets when the exact start time cannot be verified."
+    if trade.get("is_live"):
+        return "Whale Flow live entries are disabled."
+    return None
 
 
 def _as_price(market: dict, side: str) -> float | None:
@@ -282,7 +328,11 @@ if trade.get("legacy_signal_id"):
     )
 
 submit_price_ok = quote_error is None and current_ask is not None
-if quote_error:
+late_guard = _whale_late_guard(trade)
+if late_guard:
+    st.error(f"PASS / TOO LATE — {late_guard}")
+    submit_price_ok = False
+elif quote_error:
     st.error("LIVE CHECK FAILED — one-tap Submit is disabled until the Kalshi quote refresh succeeds.")
 elif trade["execution"] == "TAKE" and current_ask is not None and current_ask > max_price + 1e-9:
     st.error(
