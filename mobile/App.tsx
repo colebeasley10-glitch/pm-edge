@@ -67,12 +67,14 @@ const laneLabel = (value?: string | null) => {
   if (lane === "price_fish") return "FISH";
   if (lane === "primary") return "PRIMARY";
   if (lane === "value") return "VALUE";
+  if (lane === "whale") return "WHALE FLOW";
   return lane.replaceAll("_", " ").toUpperCase() || "PM EDGE";
 };
 const toneForLane = (value?: string | null) => {
   const lane = (value ?? "").toLowerCase();
   if (lane === "price_fish") return "orange" as const;
   if (lane === "primary") return "green" as const;
+  if (lane === "whale") return "blue" as const;
   return "blue" as const;
 };
 
