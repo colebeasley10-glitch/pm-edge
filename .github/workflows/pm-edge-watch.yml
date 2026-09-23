@@ -15,7 +15,7 @@ permissions:
 jobs:
   watch:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
 
     steps:
       - name: Check out PM Edge
@@ -43,6 +43,8 @@ jobs:
             pm-edge-watch-
 
       - name: Run PM Edge watcher
+        timeout-minutes: 9
+        continue-on-error: true
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
@@ -132,6 +134,28 @@ jobs:
           PM_EDGE_OVERNIGHT_MISSED_RETENTION_DAYS: "14"
         run: python pm_edge_runner_v28.py
 
+      - name: Reconcile PM Edge fills and settlements
+        if: always()
+        timeout-minutes: 2
+        continue-on-error: true
+        env:
+          KALSHI_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
+          KALSHI_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
+          PM_EDGE_KALSHI_READONLY_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
+        run: |
+          python - <<'PY'
+          import json
+          from kalshi_readonly import KalshiReadOnlyClient
+          import performance_tracker
+
+          client = KalshiReadOnlyClient.from_env()
+          if client is None:
+              raise SystemExit("Kalshi read-only client is not configured")
+          result = performance_tracker.update_performance(client)
+          performance_tracker.export_auto_ledger()
+          print("PM_EDGE_INDEPENDENT_RECONCILE " + json.dumps(result, sort_keys=True))
+          PY
+
       - name: Collect Pinnacle shadow diagnostics
         continue-on-error: true
         env:
@@ -144,16 +168,21 @@ jobs:
         run: python pinnacle_shadow.py
 
       - name: Capture PM Edge closing-line value
+        if: always()
+        continue-on-error: true
         env:
           PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
         run: python clv_tracker.py
 
       - name: Track all PM Edge signal outcomes
+        if: always()
+        continue-on-error: true
         env:
           PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
         run: python signal_outcome_tracker.py
 
       - name: Persist PM Edge audit ledgers
+        if: always()
         run: |
           git config user.name "pm-edge-bot"
           git config user.email "pm-edge-bot@users.noreply.github.com"
