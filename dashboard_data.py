@@ -250,26 +250,54 @@ def new_signals(signals: pd.DataFrame, orders: pd.DataFrame, *, now: datetime | 
     submitted = submitted_signal_ids(signals, orders)
     sigs = sigs[~sigs["signal_id"].fillna("").astype(str).isin(submitted)]
 
-    # Historical pre-provenance orders cannot expose signal_id. For the Bet
-    # Center only, suppress an alert when the account ledger already contains
-    # the exact ticker + side + trade date. Settlement reconciliation remains
-    # signal_id-only for the new provenance path.
-    if not orders.empty and {"ticker", "side", "trade_date"}.issubset(orders.columns):
-        placed_keys = {
+    # A single underlying opportunity can be emitted more than once with
+    # different signal_ids (for example, duplicate Price Fish rows created in
+    # the same watcher pass). Once ANY twin is submitted, suppress every signal
+    # for the same ticker + side so the dashboard cannot offer the same bet
+    # again under another signal_id.
+    submitted_pairs: set[tuple[str, str]] = set()
+    if not signals.empty and {"record_type", "ticker", "side"}.issubset(signals.columns):
+        submitted_rows = signals[
+            signals["record_type"].fillna("signal").astype(str).eq("submission")
+        ]
+        submitted_pairs.update(
             (
-                str(r.get("ticker") or ""),
-                str(r.get("side") or "").upper(),
-                str(r.get("trade_date") or ""),
+                str(r.get("ticker") or "").strip().upper(),
+                str(r.get("side") or "").strip().upper(),
             )
-            for r in orders.to_dict("records")
-            if str(r.get("client_order_id") or "").startswith("pmedge-")
-        }
+            for r in submitted_rows.to_dict("records")
+            if str(r.get("ticker") or "").strip()
+            and str(r.get("side") or "").strip().upper() in {"YES", "NO"}
+        )
+
+    # Also use concrete order provenance as a second source of truth. Tickers
+    # identify a specific contract, so an already-submitted PM Edge order for
+    # ticker + side should not reappear as a fresh opportunity even if the
+    # signal-ledger submission row has not synced yet.
+    if not orders.empty and {"ticker", "side"}.issubset(orders.columns):
+        for r in orders.to_dict("records"):
+            ticker = str(r.get("ticker") or "").strip().upper()
+            side = str(r.get("side") or "").strip().upper()
+            status = str(r.get("status") or "").strip().lower()
+            has_order_provenance = bool(
+                str(r.get("kalshi_order_id") or "").strip()
+                or str(r.get("client_order_id") or "").strip().startswith("pmedge-")
+                or float(pd.to_numeric(r.get("filled_shares"), errors="coerce") or 0) > 0
+            )
+            if (
+                ticker
+                and side in {"YES", "NO"}
+                and has_order_provenance
+                and status not in {"awaiting_approval", "expired_stale_edge"}
+            ):
+                submitted_pairs.add((ticker, side))
+
+    if submitted_pairs:
         keep = [
             (
-                str(r.get("ticker") or ""),
-                str(r.get("side") or "").upper(),
-                str(r.get("trade_date") or ""),
-            ) not in placed_keys
+                str(r.get("ticker") or "").strip().upper(),
+                str(r.get("side") or "").strip().upper(),
+            ) not in submitted_pairs
             for r in sigs.to_dict("records")
         ]
         sigs = sigs[pd.Series(keep, index=sigs.index)]
@@ -279,6 +307,14 @@ def new_signals(signals: pd.DataFrame, orders: pd.DataFrame, *, now: datetime | 
     recent = alerted.ge(now - pd.Timedelta(hours=24))
     still_relevant = commence.ge(now - pd.Timedelta(hours=2))
     sigs = sigs[recent | still_relevant]
+
+    # Never surface duplicate cards for the same underlying exposure. Keep the
+    # newest signal metadata, but one ticker + side gets one dashboard card.
+    if {"ticker", "side"}.issubset(sigs.columns):
+        sigs = (
+            sigs.sort_values("alerted_at", ascending=False)
+            .drop_duplicates(subset=["ticker", "side"], keep="first")
+        )
     return sigs.sort_values("alerted_at", ascending=False)
 
 
