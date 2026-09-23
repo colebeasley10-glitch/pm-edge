@@ -74,6 +74,16 @@ def cents(value) -> str:
         return "—"
 
 
+def whole_number(value, default: int = 0) -> int:
+    try:
+        x = float(value)
+        if pd.isna(x):
+            return default
+        return int(x)
+    except (TypeError, ValueError, OverflowError):
+        return default
+
+
 def age_text(value) -> str:
     try:
         dt = pd.to_datetime(value, utc=True).to_pydatetime()
@@ -217,7 +227,7 @@ if page == "Dashboard":
                         )
                         st.caption(
                             f"{dashboard_data.signal_state(row)} · Fair {pct(row.get('fair_probability'))} · "
-                            f"Edge +{pct(row.get('net_edge'))} · {int(row.get('books') or 0)} books · "
+                            f"Edge +{pct(row.get('net_edge'))} · {whole_number(row.get('books'))} books · "
                             f"fair age {age_text(row.get('fair_fetched_at'))}"
                         )
                     with b:
