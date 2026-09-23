@@ -15,7 +15,8 @@ import signal_tracker
 from kalshi_readonly import KalshiReadOnlyClient
 from kalshi_submit import KalshiSubmitClient, KalshiSubmitError
 
-# mobile-backend-deploy-v2\napp = FastAPI(title="PM Edge Mobile API", version="1.0.0")
+# mobile-backend-deploy-v2
+app = FastAPI(title="PM Edge Mobile API", version="1.0.0")
 MAX_ORDER_RISK = 10.0
 
 _allowed = [
