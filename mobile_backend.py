@@ -150,6 +150,53 @@ def _client_order_id(signal_id: str) -> str:
     return approval_links.client_order_id(signal_id, f"native-v1:{signal_id}")
 
 
+def _kalshi_order_side(row: dict) -> str:
+    side = str(row.get("outcome_side") or row.get("side") or "").strip().upper()
+    if side in {"YES", "NO"}:
+        return side
+    if side == "BID":
+        return "YES"
+    if side == "ASK":
+        return "NO"
+    return ""
+
+
+def _live_kalshi_submitted_pairs() -> set[tuple[str, str]]:
+    """Ticker/side exposures already submitted to Kalshi.
+
+    This survives Railway restarts, unlike the local CSV submission append.
+    Canceled/rejected orders do not suppress a future legitimate opportunity.
+    """
+    try:
+        orders = _submit_client().get_orders(limit=200)
+    except Exception:
+        return set()
+
+    pairs: set[tuple[str, str]] = set()
+    for row in orders or []:
+        status = str(row.get("status") or row.get("order_status") or "").strip().lower()
+        if status in {"canceled", "cancelled", "expired", "rejected", "failed"}:
+            continue
+        ticker = str(row.get("ticker") or row.get("market_ticker") or "").strip().upper()
+        side = _kalshi_order_side(row)
+        if ticker and side in {"YES", "NO"}:
+            pairs.add((ticker, side))
+    return pairs
+
+
+def _exclude_submitted_pairs(df: pd.DataFrame, pairs: set[tuple[str, str]]) -> pd.DataFrame:
+    if df.empty or not pairs or not {"ticker", "side"}.issubset(df.columns):
+        return df
+    keep = [
+        (
+            str(row.get("ticker") or "").strip().upper(),
+            str(row.get("side") or "").strip().upper(),
+        ) not in pairs
+        for row in df.to_dict("records")
+    ]
+    return df[pd.Series(keep, index=df.index)]
+
+
 def _event_start_epoch(row: dict) -> int | None:
     raw = str(row.get("commence_time") or "").strip()
     if not raw:
@@ -289,6 +336,7 @@ def dashboard() -> dict:
     actual = dashboard_data.actual_summary(data["orders"])
     model = dashboard_data.opportunity_summary(data["signal_outcomes"])
     new = dashboard_data.new_signals(data["signals"], data["orders"])
+    new = _exclude_submitted_pairs(new, _live_kalshi_submitted_pairs())
     actionable = []
     for row in new.head(40).to_dict("records"):
         sizing = dashboard_data.size_signal(row)
@@ -344,6 +392,7 @@ def bets(
     data = _load()
     if status == "new":
         df = dashboard_data.new_signals(data["signals"], data["orders"])
+        df = _exclude_submitted_pairs(df, _live_kalshi_submitted_pairs())
 
         # Bet Center must contain actionable signals only. Re-check the live
         # Kalshi ask before returning each signal so stale/expired bets leave
