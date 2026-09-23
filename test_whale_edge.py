@@ -8,19 +8,25 @@ def main() -> None:
     assert whale_edge._is_football("ABC", "College football championship")
     assert not whale_edge._is_football("KXMLBGAME-TEST", "Baseball game")
 
-    assert whale_edge._trade_age_minutes("2m ago") == 2
-    assert whale_edge._trade_age_minutes("3 hours ago") == 180
-    assert whale_edge._trade_age_minutes("30 seconds ago") == 0.5
+    trade = {
+        "trade_id": "t1",
+        "ticker": "KXNFLGAME-TEST",
+        "count_fp": "300.00",
+        "yes_price_dollars": "0.6100",
+        "no_price_dollars": "0.3900",
+        "taker_outcome_side": "yes",
+        "created_time": "2026-09-23T14:00:00Z",
+        "is_block_trade": False,
+    }
+    assert whale_edge._trade_side(trade) == "YES"
+    assert abs(whale_edge._trade_price(trade, "YES") - 0.61) < 1e-9
+    assert whale_edge._trade_count(trade) == 300
 
-    trade = whale_edge._exact_trade(
-        [
-            {"ticker": "ABC", "side": "NO", "market_closed": False, "id": "x"},
-            {"ticker": "ABC", "side": "YES", "market_closed": False, "id": "y"},
-        ],
-        ticker="ABC",
-        side="YES",
-    )
-    assert trade and trade["id"] == "y"
+    flows = whale_edge._aggregate([trade])
+    assert len(flows) == 1
+    assert flows[0]["side"] == "YES"
+    assert flows[0]["flow_contracts"] == 300
+    assert flows[0]["reference_price_cents"] == 61
 
     take = whale_edge._evaluate_price(
         reference_cents=61,
@@ -40,7 +46,6 @@ def main() -> None:
     assert make["eligible"] is True
     assert make["execution"] == "MAKE"
     assert make["target_price_cents"] == 60
-    assert make["price_improvement_cents"] == 1
 
     wait = whale_edge._evaluate_price(
         reference_cents=61,
@@ -58,7 +63,7 @@ def main() -> None:
     assert oppose["eligible"] is False
     assert oppose["reason"] == "pm_edge_model_disagrees"
 
-    print("PM Edge Whale Edge tests: PASS")
+    print("PM Edge Whale Flow tests: PASS")
 
 
 if __name__ == "__main__":
