@@ -110,6 +110,18 @@ def _is_btc(ticker,question=""):
         re.search(r"(^|[^A-Z])(BTC|BITCOIN)([^A-Z]|$)",text)
     )
 
+def _is_fast_financial_market(ticker,question=""):
+    """Markets too fast for a human Whale Flow copy are disabled."""
+    ticker_text=str(ticker or "").upper()
+    text=f"{ticker_text} {question}".upper()
+    if _is_btc(ticker,question):
+        return True
+    # Intraday precious-metal/commodity direction markets (for example
+    # "Gold price up in next 15 mins?") routinely move before Review & Place.
+    fast_window=bool(re.search(r"\b(5|10|15|30)\s*(MIN|MINS|MINUTE|MINUTES)\b",text))
+    commodity=bool(re.search(r"\b(GOLD|SILVER|XAU|XAG|COMMODITY|OIL|WTI|BRENT)\b",text))
+    return fast_window and commodity
+
 def _public_trades(*,min_ts,limit=1000):
     r=requests.get(f"{PUBLIC_BASE}/markets/trades",params={"limit":max(1,min(int(limit),1000)),"min_ts":int(min_ts)},timeout=20)
     r.raise_for_status()
@@ -278,12 +290,12 @@ def run_once(*,now=None):
     for flow in flows:
         # BTC/Bitcoin moves too quickly for Whale Flow's observed-entry price
         # to remain reproducible by the time an alert reaches the user.
-        if _is_btc(flow["ticker"]):
+        if _is_fast_financial_market(flow["ticker"]):
             continue
         try: snap=dashboard_data.market_snapshot(flow["ticker"])
         except Exception: continue
         question=str(snap.get("title") or flow["ticker"])
-        if _is_btc(flow["ticker"],question):
+        if _is_fast_financial_market(flow["ticker"],question):
             continue
         enriched.append((not _is_football(flow["ticker"],question),-flow["flow_notional_usd"],flow,snap))
     enriched.sort(key=lambda x:(x[0],x[1]))
