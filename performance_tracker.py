@@ -502,6 +502,110 @@ def _load_signal_metadata(path: Path = SIGNAL_LEDGER_PATH) -> dict[str, dict]:
     return out
 
 
+def _discover_filled_pm_edge_orders_from_fills(client, queue: dict, signal_ledger_path: Path = SIGNAL_LEDGER_PATH) -> int:
+    """Recover PM Edge fills that have fallen out of Kalshi's recent-orders page.
+
+    Kalshi's fills feed is an independent source of truth. This closes the gap
+    where a real fill exists but get_orders(limit=200) no longer returns the
+    originating order, which otherwise leaves the dashboard showing UNFILLED.
+    """
+    try:
+        fills = client.get_fills(limit=200)
+    except Exception:
+        return 0
+
+    intents = queue.setdefault("intents", [])
+    signal_metadata = _load_signal_metadata(signal_ledger_path)
+    known_order_ids = {str(x.get("kalshi_order_id") or "") for x in intents if x.get("kalshi_order_id")}
+    known_client_ids = {str(x.get("client_order_id") or "") for x in intents if x.get("client_order_id")}
+    grouped: dict[str, list[dict]] = {}
+    for fill in fills:
+        oid = str(fill.get("order_id") or "")
+        if oid:
+            grouped.setdefault(oid, []).append(fill)
+
+    added = 0
+    for order_id, rows in grouped.items():
+        if order_id in known_order_ids:
+            continue
+        client_id = str(rows[0].get("client_order_id") or "")
+        signal_id = _signal_id_from_client_order_id(client_id) if client_id else None
+        signal = signal_metadata.get(signal_id or "", {})
+
+        # Older Kalshi fill payloads may omit client_order_id. In that case
+        # join only when ticker+side has exactly one same-day PM Edge signal.
+        side = execution_guard._fill_side(rows[0]) if hasattr(execution_guard, "_fill_side") else str(rows[0].get("side") or "").upper()
+        ticker = str(rows[0].get("ticker") or rows[0].get("market_ticker") or "")
+        filled_at = str(rows[0].get("created_time") or rows[0].get("created_at") or rows[0].get("ts") or "")
+        trade_date = filled_at[:10] if len(filled_at) >= 10 else ""
+        if not signal and ticker and side in {"YES", "NO"}:
+            candidates = [
+                meta for meta in signal_metadata.values()
+                if str(meta.get("ticker") or "") == ticker
+                and str(meta.get("side") or "").upper() == side
+                and (not trade_date or str(meta.get("trade_date") or "") == trade_date)
+            ]
+            if len(candidates) == 1:
+                signal = candidates[0]
+                signal_id = str(signal.get("signal_id") or "") or None
+        if not signal:
+            continue
+        if client_id and client_id in known_client_ids:
+            continue
+
+        total_shares = 0.0
+        total_cost = 0.0
+        for fill in rows:
+            qty = _count(fill.get("count_fp") if fill.get("count_fp") is not None else fill.get("count"))
+            if qty <= 0:
+                qty = _count(fill.get("shares"))
+            price = execution_guard._fill_price(fill, side) if hasattr(execution_guard, "_fill_price") else _safe_float(fill.get("price"))
+            if qty > 0 and price is not None:
+                total_shares += qty
+                total_cost += qty * float(price)
+        if total_shares <= 0:
+            continue
+        avg_price = total_cost / total_shares
+        intent = {
+            "intent_id": f"kalshi-fill:{order_id}",
+            "client_order_id": client_id or f"recovered:{order_id}",
+            "signal_id": signal_id,
+            "created_at": filled_at or None,
+            "trade_date": trade_date or signal.get("trade_date") or None,
+            "ticker": ticker or signal.get("ticker"),
+            "market_title": signal.get("market_title") or ticker,
+            "sport_key": signal.get("sport_key") or None,
+            "sport_title": signal.get("sport_title") or None,
+            "market_type": signal.get("market_type") or None,
+            "event_id": signal.get("event_id") or None,
+            "commence_time": signal.get("commence_time") or None,
+            "side": side,
+            "lane": signal.get("lane") or "approval_link",
+            "limit_price": round(avg_price, 6),
+            "shares": int(round(total_shares)),
+            "max_loss": round(avg_price * total_shares, 6),
+            "fair_probability": _safe_float(signal.get("fair_probability")),
+            "net_edge": _safe_float(signal.get("net_edge")),
+            "books": int(signal["books"]) if str(signal.get("books") or "").isdigit() else None,
+            "dispersion": _safe_float(signal.get("dispersion")),
+            "fair_fetched_at": signal.get("fair_fetched_at") or None,
+            "source_version": int(signal["source_version"]) if str(signal.get("source_version") or "").isdigit() else None,
+            "status": "filled",
+            "kalshi_order_id": order_id,
+            "kalshi_order_status": "recovered_from_fills",
+            "filled_shares": round(total_shares, 6),
+            "average_fill_price": round(avg_price, 6),
+            "remaining_shares": 0.0,
+            "reconciliation_note": "recovered_from_kalshi_fills",
+        }
+        intents.append(intent)
+        known_order_ids.add(order_id)
+        if client_id:
+            known_client_ids.add(client_id)
+        added += 1
+    return added
+
+
 def _discover_submitted_pm_edge_orders(client, queue: dict, signal_ledger_path: Path = SIGNAL_LEDGER_PATH) -> int:
     """Backfill real PM Edge submissions directly from Kalshi.
 
@@ -604,6 +708,8 @@ def update_performance(
     """Finalize fills at settlement or at a verified full early exit."""
     queue = execution_guard._load_queue(queue_path)
     discovered = _discover_submitted_pm_edge_orders(client, queue, signal_ledger_path)
+    discovered_from_fills = _discover_filled_pm_edge_orders_from_fills(client, queue, signal_ledger_path)
+    discovered += discovered_from_fills
     if discovered:
         execution_guard._save_queue(queue, queue_path)
 
