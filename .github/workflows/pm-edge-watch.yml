@@ -2,6 +2,11 @@ name: PM Edge Watch
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "performance_tracker.py"
+      - ".github/workflows/pm-edge-watch.yml"
   schedule:
     - cron: "*/30 * * * *"
 
