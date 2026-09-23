@@ -1133,6 +1133,20 @@ export default function App() {
     }
   }, []);
 
+  const handleReviewUnavailable = useCallback((signal: Signal) => {
+    removeSignalFromLists(signal);
+    setSelected(null);
+    void refresh();
+  }, [refresh, removeSignalFromLists]);
+
+  const handleReviewSubmitted = useCallback(() => {
+    setSelected((current) => {
+      if (current) removeSignalFromLists(current);
+      return null;
+    });
+    void refresh();
+  }, [refresh, removeSignalFromLists]);
+
   useEffect(() => { void refresh(); }, [refresh]);
 
   const content = useMemo(() => {
@@ -1209,14 +1223,8 @@ export default function App() {
         signal={selected}
         visible={selected != null}
         onClose={() => setSelected(null)}
-        onSubmitted={() => {
-          if (selected) removeSignalFromLists(selected);
-          void refresh();
-        }}
-        onUnavailable={(signal) => {
-          removeSignalFromLists(signal);
-          void refresh();
-        }}
+        onSubmitted={handleReviewSubmitted}
+        onUnavailable={handleReviewUnavailable}
       />
     </SafeAreaView>
   );
