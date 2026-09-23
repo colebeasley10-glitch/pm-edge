@@ -60,6 +60,14 @@ def main() -> None:
     assert whale_edge._repeat_price_suppressed(state, "TEST", "YES", {"target": 0.46}) is False
     assert whale_edge._repeat_price_suppressed(state, "TEST", "YES", {"target": 0.44}) is False
 
+    now = whale_edge.datetime(2026, 9, 23, 18, 46, tzinfo=whale_edge.timezone.utc)
+    # MLB ticker embeds 13:10 Eastern; by 14:46 Eastern it is live and blocked.
+    assert whale_edge._late_entry_reason("KXMLBGAME-26SEP231310WSHDET-DET", "NO", now) == "live_or_within_5m_of_start"
+    # Tennis ticker has only the date; a same-day unverified start is blocked.
+    assert whale_edge._late_entry_reason("KXITFMATCH-26SEP23THONOV-THO", "YES", now) == "same_day_start_time_unverified"
+    # A future date-only event is still eligible for normal Whale evaluation.
+    assert whale_edge._late_entry_reason("KXITFMATCH-26SEP24ABCDEF-ABC", "YES", now) is None
+
     oppose = whale_edge._evaluate_price(
         reference_cents=61,
         current_ask=0.60,
