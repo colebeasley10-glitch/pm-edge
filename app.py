@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import math
 import os
 from datetime import datetime, timezone
+from urllib.parse import urlsplit
 
 import pandas as pd
 import streamlit as st
@@ -15,6 +17,7 @@ st.set_page_config(page_title="PM Edge Hub", page_icon="📊", layout="wide")
 def _seed_env_from_secrets() -> None:
     names = (
         "PM_EDGE_APPROVAL_SECRET",
+        "ODDS_API_KEY",
         "STREAMLIT_APP_URL",
         "KALSHI_API_KEY_ID",
         "KALSHI_PRIVATE_KEY",
@@ -62,16 +65,37 @@ def money(value) -> str:
 
 def pct(value) -> str:
     try:
-        return f"{float(value) * 100:.1f}%"
+        x = float(value)
+        if not math.isfinite(x):
+            return "—"
+        return f"{x * 100:.1f}%"
     except (TypeError, ValueError):
         return "—"
 
 
 def cents(value) -> str:
     try:
-        return f"{float(value) * 100:.1f}¢"
+        x = float(value)
+        if not math.isfinite(x):
+            return "—"
+        return f"{x * 100:.1f}¢"
     except (TypeError, ValueError):
         return "—"
+
+
+def _current_app_root() -> str | None:
+    """Return the live Streamlit origin so dashboard approval links work even
+    when STREAMLIT_APP_URL was never added to Streamlit Secrets."""
+    try:
+        current = str(st.context.url or "").strip()
+        if current:
+            parsed = urlsplit(current)
+            if parsed.scheme and parsed.netloc:
+                return f"{parsed.scheme}://{parsed.netloc}"
+    except Exception:
+        pass
+    configured = os.getenv("STREAMLIT_APP_URL", "").strip()
+    return configured or None
 
 
 def whole_number(value, default: int = 0) -> int:
@@ -237,7 +261,7 @@ if page == "Dashboard":
                             st.caption(
                                 f"{order['shares']} shares · {money(order['max_loss'])} max"
                             )
-                    url = dashboard_data.approval_url_for_signal(row)
+                    url = dashboard_data.approval_url_for_signal(row, base_url=_current_app_root())
                     if url:
                         st.link_button(
                             "REVIEW & PLACE BET",
@@ -342,7 +366,7 @@ elif page == "Bet Center":
                         f"max cost {money(order['max_loss'])} · "
                         f"gross win profit {money(order['gross_profit_if_correct'])}"
                     )
-                url = dashboard_data.approval_url_for_signal(row)
+                url = dashboard_data.approval_url_for_signal(row, base_url=_current_app_root())
                 if url:
                     st.link_button(
                         "REVIEW & PLACE BET",
