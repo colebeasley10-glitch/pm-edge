@@ -249,11 +249,13 @@ function ReviewModal({
   visible,
   onClose,
   onSubmitted,
+  onUnavailable,
 }: {
   signal: Signal | null;
   visible: boolean;
   onClose: () => void;
   onSubmitted: () => void;
+  onUnavailable: () => void;
 }) {
   const [review, setReview] = useState<ReviewResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -268,13 +270,15 @@ function ReviewModal({
     setError(null);
     setResult(null);
     try {
-      setReview(await api.review(signal.signal_id));
+      const nextReview = await api.review(signal.signal_id);
+      setReview(nextReview);
+      if (!nextReview.can_submit) onUnavailable();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not review this bet");
     } finally {
       setLoading(false);
     }
-  }, [signal]);
+  }, [onUnavailable, signal]);
 
   useEffect(() => {
     if (visible && signal) void load();
@@ -1188,6 +1192,7 @@ export default function App() {
         visible={selected != null}
         onClose={() => setSelected(null)}
         onSubmitted={() => void refresh()}
+        onUnavailable={() => void refresh()}
       />
     </SafeAreaView>
   );
