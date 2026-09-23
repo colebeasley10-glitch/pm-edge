@@ -271,6 +271,105 @@ def main() -> None:
         assert abs(row["net_pl"] - 1.21) < 1e-9
         assert row["market_settled_at"] == "2026-09-19T18:00:00Z"
 
+    # A fill reported by the orders endpoint must not be lost just because
+    # Kalshi's fills endpoint is temporarily behind. The limit price is a
+    # conservative fallback until exact fill rows arrive.
+    with TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        queue_path = root / "queue.json"
+        history_path = root / "history.json"
+        lagged_intent = {
+            "intent_id": "lagged-1",
+            "created_at": "2026-09-23T08:00:00Z",
+            "trade_date": "2026-09-23",
+            "ticker": "TEST-LAGGED",
+            "market_title": "Lagged fill",
+            "side": "NO",
+            "lane": "primary",
+            "limit_price": 0.40,
+            "shares": 5,
+            "status": "filled",
+            "kalshi_order_id": "order-lagged",
+            "filled_shares": 5.0,
+            "average_fill_price": None,
+        }
+        write_queue(queue_path, [lagged_intent])
+        client = FakeClient([])
+        settlement = {
+            "market_result": "yes",
+            "settlement_value_yes": 1.0,
+            "settled_time": "2026-09-23T09:00:00Z",
+        }
+        result = performance_tracker.update_performance(
+            client,
+            queue_path=queue_path,
+            history_path=history_path,
+            market_loader=lambda _ticker: settlement,
+        )
+        history = json.loads(history_path.read_text(encoding="utf-8"))
+        row = history["records"][0]
+        assert row["status"] == "settled_loss"
+        assert row["filled_shares"] == 5.0
+        assert row["average_fill_price"] == 0.40
+        assert abs(row["net_pl"] + 2.0) < 1e-9
+
+    # If an order was prematurely finalized as unfilled, later fill evidence
+    # in the reconciled queue repairs the historical record exactly once.
+    with TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        queue_path = root / "queue.json"
+        history_path = root / "history.json"
+        repaired_intent = {
+            "intent_id": "repair-1",
+            "created_at": "2026-09-23T08:00:00Z",
+            "trade_date": "2026-09-23",
+            "ticker": "TEST-REPAIR",
+            "market_title": "Repair fill",
+            "side": "NO",
+            "lane": "primary",
+            "limit_price": 0.40,
+            "shares": 5,
+            "status": "filled",
+            "kalshi_order_id": "order-repair",
+            "filled_shares": 5.0,
+            "average_fill_price": None,
+        }
+        write_queue(queue_path, [repaired_intent])
+        history_path.write_text(json.dumps({
+            "version": 1,
+            "records": [{
+                "intent_id": "repair-1",
+                "trade_date": "2026-09-23",
+                "ticker": "TEST-REPAIR",
+                "market_title": "Repair fill",
+                "side": "NO",
+                "lane": "primary",
+                "limit_price": 0.40,
+                "requested_shares": 5,
+                "kalshi_order_id": "order-repair",
+                "filled_shares": 0.0,
+                "average_fill_price": None,
+                "entry_cost": 0.0,
+                "entry_fees": 0.0,
+                "status": "unfilled",
+                "outcome": "UNFILLED",
+                "net_pl": 0.0,
+                "settled_at": "2026-09-23T09:00:00Z",
+            }],
+        }), encoding="utf-8")
+        result = performance_tracker.update_performance(
+            FakeClient([]),
+            queue_path=queue_path,
+            history_path=history_path,
+            market_loader=lambda _ticker: settlement,
+        )
+        assert result["retro_unfilled_corrections"] == 1
+        history = json.loads(history_path.read_text(encoding="utf-8"))
+        row = history["records"][0]
+        assert row["status"] == "settled_loss"
+        assert row["filled_shares"] == 5.0
+        assert abs(row["net_pl"] + 2.0) < 1e-9
+
     print("PM Edge performance tracker tests: PASS")
 
 
