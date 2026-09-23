@@ -1,0 +1,55 @@
+name: Whale Flow Resend
+
+on:
+  push:
+    paths:
+      - ".github/workflows/whale-resend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out PM Edge
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Wait for refreshed mobile API
+        run: |
+          python - <<'PY'
+          import time, requests
+          url = "https://pm-edge-mobile-api-live-production.up.railway.app/health"
+          deadline = time.time() + 540
+          while time.time() < deadline:
+              try:
+                  r = requests.get(url, timeout=10)
+                  data = r.json() if r.ok else {}
+                  print("health", r.status_code, data)
+                  if data.get("version") == "1.0.1":
+                      raise SystemExit(0)
+              except Exception as exc:
+                  print("health wait", type(exc).__name__, exc)
+              time.sleep(15)
+          raise SystemExit("Timed out waiting for PM Edge mobile API v1.0.1")
+          PY
+
+      - name: Recheck and resend actionable Whale Flow alerts
+        env:
+          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
+          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
+          STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
+          KALSHI_WRITE_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
+          KALSHI_WRITE_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
+        run: python resend_whale_signals.py
