@@ -534,7 +534,7 @@ def _discover_filled_pm_edge_orders_from_fills(client, queue: dict, signal_ledge
 
         # Older Kalshi fill payloads may omit client_order_id. In that case
         # join only when ticker+side has exactly one same-day PM Edge signal.
-        side = execution_guard._fill_side(rows[0]) if hasattr(execution_guard, "_fill_side") else str(rows[0].get("side") or "").upper()
+        side = _fill_side(rows[0])
         ticker = str(rows[0].get("ticker") or rows[0].get("market_ticker") or "")
         filled_at = str(rows[0].get("created_time") or rows[0].get("created_at") or rows[0].get("ts") or "")
         trade_date = filled_at[:10] if len(filled_at) >= 10 else ""
@@ -559,7 +559,7 @@ def _discover_filled_pm_edge_orders_from_fills(client, queue: dict, signal_ledge
             qty = _count(fill.get("count_fp") if fill.get("count_fp") is not None else fill.get("count"))
             if qty <= 0:
                 qty = _count(fill.get("shares"))
-            price = execution_guard._fill_price(fill, side) if hasattr(execution_guard, "_fill_price") else _safe_float(fill.get("price"))
+            price = _fill_price(fill, side)
             if qty > 0 and price is not None:
                 total_shares += qty
                 total_cost += qty * float(price)
