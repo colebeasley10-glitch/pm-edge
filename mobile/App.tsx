@@ -690,7 +690,7 @@ function BetsScreen({
   const [filter, setFilter] = useState<BetFilter>("Available");
   const data = filter === "Available" ? items : filter === "Filled" ? positions : unfilled;
   return (
-    <FlatList
+    <FlatList<Signal | OpenBet | HistoryBet>
       style={{ flex: 1 }}
       contentContainerStyle={styles.screen}
       data={data}
@@ -1241,7 +1241,7 @@ const styles = StyleSheet.create({
   screenTitle: { color: colors.text, fontSize: 29, fontWeight: "800" },
   subtitle: { color: colors.muted, fontSize: 14 },
   iconButton: { width: 30, height: 30, alignItems: "center", justifyContent: "center", marginLeft: -6 },
-  calendarCard: { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: radius.lg, padding: 10, gap: 8 },
+  calendarCard: { backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, borderRadius: radius.lg, padding: 10, gap: 8 },
   calendarWeek: { flexDirection: "row" },
   calendarDow: { width: "14.285%", textAlign: "center", color: colors.muted, fontWeight: "700" },
   calendarGrid: { flexDirection: "row", flexWrap: "wrap" },
@@ -1252,8 +1252,8 @@ const styles = StyleSheet.create({
   calendarDate: { color: colors.text, fontSize: 14, fontWeight: "700" },
   calendarProfit: { color: colors.green, fontSize: 10, fontWeight: "800" },
   calendarNegative: { color: colors.red, fontSize: 10, fontWeight: "800" },
-  periodNavigator: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 8 },
-  periodArrow: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.md, backgroundColor: colors.cardAlt },
+  periodNavigator: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: colors.panel, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 8 },
+  periodArrow: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.md, backgroundColor: colors.panel2 },
   periodLabelButton: { flex: 1, alignItems: "center", paddingHorizontal: 8 },
   periodLabel: { color: colors.text, fontSize: 16, fontWeight: "800" },
   heroProfit: { borderWidth: 1, borderRadius: radius.lg, padding: 18, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
@@ -1315,7 +1315,7 @@ const styles = StyleSheet.create({
   liveStatLabel: { color: colors.muted, fontSize: 10, fontWeight: "700" },
   mockDetailsButton: { minHeight: 46, borderWidth: 1, borderColor: "#2D4770", borderRadius: 11, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
   mockDetailsText: { color: colors.blue2, fontSize: 15, fontWeight: "900" },
-  livePickBox: { marginTop: 14, padding: 14, borderRadius: 14, backgroundColor: colors.surface2, gap: 5 },
+  livePickBox: { marginTop: 14, padding: 14, borderRadius: 14, backgroundColor: colors.panel2, gap: 5 },
   livePickSide: { fontSize: 14, fontWeight: "900", letterSpacing: 0.4 },
   livePickTitle: { color: colors.text, fontSize: 20, fontWeight: "800", lineHeight: 27 },
   liveOutlook: { marginTop: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10 },
@@ -1325,7 +1325,7 @@ const styles = StyleSheet.create({
   statValueLarge: { color: colors.text, fontSize: 30, fontWeight: "900" },
   detailsButton: { marginTop: 14, minHeight: 46, borderWidth: 1, borderColor: colors.border, borderRadius: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
   detailsButtonText: { color: colors.blue, fontSize: 15, fontWeight: "800" },
-  gameTracker: { marginTop: 10, padding: 14, borderRadius: 12, backgroundColor: colors.surface2, gap: 7 },
+  gameTracker: { marginTop: 10, padding: 14, borderRadius: 12, backgroundColor: colors.panel2, gap: 7 },
   gameTrackerTitle: { color: colors.text, fontSize: 17, fontWeight: "900" },
   gameTrackerText: { color: colors.text, fontSize: 14, lineHeight: 20 },
   scoreboard: { backgroundColor: colors.panel2, borderRadius: radius.md, padding: 12, gap: 8 },

@@ -45,10 +45,11 @@ def main() -> None:
     assert ".pm_edge_watch_state.json" not in cache_block
     assert "[ -f .pm_edge_watch_state.json ] && git add .pm_edge_watch_state.json" in workflow
 
-    # PR A must not smuggle PR B calibration/tiering changes.
+    # Preserve the currently deployed v28 calibration. These assertions were
+    # originally written before Standard Edge was tightened to 3.5% / 4.0%.
     assert 'PM_EDGE_MIN_NET_EDGE: "0.04"' in workflow
-    assert 'PM_EDGE_STANDARD_MIN_NET_EDGE: "0.030"' in workflow
-    assert 'PM_EDGE_STANDARD_THREE_BOOK_EDGE: "0.035"' in workflow
+    assert 'PM_EDGE_STANDARD_MIN_NET_EDGE: "0.035"' in workflow
+    assert 'PM_EDGE_STANDARD_THREE_BOOK_EDGE: "0.040"' in workflow
     assert 'PM_EDGE_MAX_BOOK_DISPERSION: "0.055"' in workflow
     assert 'PM_EDGE_MIN_MATCH_CONFIDENCE: "0.82"' in workflow
     assert 'PM_EDGE_AUDIT_MLB_MIN_NET_EDGE: "0.075"' in workflow
