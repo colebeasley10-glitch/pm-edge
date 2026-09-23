@@ -1,13 +1,11 @@
-"""PM Edge Whale Edge: follow verified Kalshi traders without blindly chasing.
+"""Free Whale Flow lane using Kalshi's public trade tape.
 
-This lane is intentionally separate from the sportsbook-derived PM Edge model.
-It watches a curated roster of profitable public traders through KalshiSpy,
-recovers the trader's recent entry price, re-checks the live Kalshi market, and
-only creates a Whale Edge signal when our order can be entered at the trader's
-price or better (or as a patient maker order below it).
+This replaces the paid named-trader dependency with exchange-native public
+trades. It detects unusually large directional taker flow, prioritizes
+football, re-checks the live market, and records signals under lane="whale"
+so performance remains separate from Primary/Standard/Fish.
 
-No autonomous real-money order is placed here. Signals flow into the existing
-mobile review/submit path and are tracked under lane="whale".
+No autonomous real-money order is placed here.
 """
 from __future__ import annotations
 
@@ -16,576 +14,251 @@ import json
 import math
 import os
 import re
-from datetime import datetime, timezone
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
+import requests
+
 import dashboard_data
 import signal_tracker
 import watcher
-from kalshispy_client import KalshiSpyClient, KalshiSpyError
 
+PUBLIC_BASE = os.getenv("PM_EDGE_KALSHI_PUBLIC_BASE_URL","https://external-api.kalshi.com/trade-api/v2").rstrip("/")
 STATE_PATH = Path(os.getenv("PM_EDGE_WHALE_STATE_PATH", ".pm_edge_whale_state.json"))
-LEDGER_PATH = Path(os.getenv("PM_EDGE_WHALE_LEDGER_PATH", "pm_edge_whale_ledger.csv"))
-
-DEFAULT_WATCHLIST = (
-    "norrisfan,autofade,aggressive.doberman7942,attemptmost,lost.buck"
-)
-WATCHLIST = [
-    x.strip()
-    for x in os.getenv("PM_EDGE_WHALE_TRADERS", DEFAULT_WATCHLIST).split(",")
-    if x.strip()
-]
-WATCHSET = {x.casefold() for x in WATCHLIST}
-POLL_MINUTES = max(15, int(os.getenv("PM_EDGE_WHALE_POLL_MINUTES", "60")))
-MIN_TRADE_CONTRACTS = max(0, int(os.getenv("PM_EDGE_WHALE_MIN_TRADE_CONTRACTS", "100")))
+LEDGER_PATH = Path(os.getenv("PM_EDGE_WHALE_LEDGER_PATH", "pm_edge_whale_flow_ledger.csv"))
+POLL_MINUTES = max(10, int(os.getenv("PM_EDGE_WHALE_POLL_MINUTES", "30")))
+LOOKBACK_MINUTES = max(10, int(os.getenv("PM_EDGE_WHALE_LOOKBACK_MINUTES", "45")))
+SINGLE_MIN_CONTRACTS = max(1, int(os.getenv("PM_EDGE_WHALE_SINGLE_MIN_CONTRACTS", "250")))
+SINGLE_MIN_NOTIONAL = max(1.0, float(os.getenv("PM_EDGE_WHALE_SINGLE_MIN_NOTIONAL", "100")))
+AGG_MIN_CONTRACTS = max(1, int(os.getenv("PM_EDGE_WHALE_AGG_MIN_CONTRACTS", "600")))
+AGG_MIN_NOTIONAL = max(1.0, float(os.getenv("PM_EDGE_WHALE_AGG_MIN_NOTIONAL", "250")))
+AGG_MIN_TRADES = max(2, int(os.getenv("PM_EDGE_WHALE_AGG_MIN_TRADES", "2")))
 MIN_REFERENCE_CENTS = max(1, int(os.getenv("PM_EDGE_WHALE_MIN_REFERENCE_CENTS", "15")))
 MAX_REFERENCE_CENTS = min(99, int(os.getenv("PM_EDGE_WHALE_MAX_REFERENCE_CENTS", "85")))
-MAX_REFERENCE_AGE_MINUTES = max(
-    30, int(os.getenv("PM_EDGE_WHALE_MAX_REFERENCE_AGE_MINUTES", "360"))
-)
-MAX_REST_GAP_CENTS = max(0, int(os.getenv("PM_EDGE_WHALE_MAX_REST_GAP_CENTS", "5")))
+MAX_REST_GAP_CENTS = max(0, int(os.getenv("PM_EDGE_WHALE_MAX_REST_GAP_CENTS", "4")))
 BETTER_BY_CENTS = max(0, int(os.getenv("PM_EDGE_WHALE_BETTER_BY_CENTS", "1")))
-MODEL_DISAGREE_TOLERANCE = max(
-    0.0, float(os.getenv("PM_EDGE_WHALE_MODEL_DISAGREE_TOLERANCE", "0.03"))
-)
-FOOTBALL_ONLY = os.getenv("PM_EDGE_WHALE_FOOTBALL_ONLY", "0").strip().lower() in {
-    "1", "true", "yes", "on"
-}
-MAX_NON_FOOTBALL_ALERTS_PER_RUN = max(
-    0, int(os.getenv("PM_EDGE_WHALE_MAX_NON_FOOTBALL_ALERTS_PER_RUN", "2"))
-)
-SOURCE_VERSION = 29
+MODEL_DISAGREE_TOLERANCE = max(0.0, float(os.getenv("PM_EDGE_WHALE_MODEL_DISAGREE_TOLERANCE", "0.03")))
+SIGNAL_COOLDOWN_HOURS = max(1.0, float(os.getenv("PM_EDGE_WHALE_SIGNAL_COOLDOWN_HOURS", "6")))
+MAX_ALERTS_PER_RUN = max(1, int(os.getenv("PM_EDGE_WHALE_MAX_ALERTS_PER_RUN", "5")))
+MAX_NON_FOOTBALL_ALERTS_PER_RUN = max(0, int(os.getenv("PM_EDGE_WHALE_MAX_NON_FOOTBALL_ALERTS_PER_RUN", "2")))
+SOURCE_VERSION = 30
 
 LEDGER_FIELDS = [
-    "observed_at",
-    "decision",
-    "reason",
-    "nickname",
-    "trade_id",
-    "ticker",
-    "side",
-    "question",
-    "football",
-    "reference_price_cents",
-    "current_ask_cents",
-    "target_price_cents",
-    "price_improvement_cents",
-    "execution",
-    "contracts",
-    "notional_usd",
-    "trader_lifetime_pnl_usd",
-    "model_fair_side",
-    "model_edge",
-    "signal_id",
+    "observed_at","decision","reason","trade_id","ticker","side","question","football",
+    "reference_price_cents","current_ask_cents","target_price_cents","price_improvement_cents",
+    "execution","flow_contracts","flow_notional_usd","flow_trade_count","largest_trade_contracts",
+    "block_trade","model_fair_side","model_edge","signal_id",
 ]
 
-
-def _now() -> datetime:
+def _now():
     return datetime.now(timezone.utc)
 
+def _iso(dt=None):
+    return (dt or _now()).astimezone(timezone.utc).isoformat().replace("+00:00","Z")
 
-def _iso(dt: datetime | None = None) -> str:
-    return (dt or _now()).astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
-def _safe_float(value: Any) -> float | None:
-    try:
-        x = float(value)
-    except (TypeError, ValueError):
-        return None
+def _safe_float(v):
+    try: x=float(v)
+    except (TypeError,ValueError): return None
     return x if math.isfinite(x) else None
 
-
-def _safe_int(value: Any) -> int | None:
-    try:
-        return int(float(value))
-    except (TypeError, ValueError):
-        return None
-
-
-def _load_state(path: Path = STATE_PATH) -> dict:
-    if not path.exists():
-        return {"version": 1, "references": {}, "sent": {}, "ignored": {}}
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        payload = {}
-    if not isinstance(payload, dict):
-        payload = {}
-    payload.setdefault("version", 1)
-    payload.setdefault("references", {})
-    payload.setdefault("sent", {})
-    payload.setdefault("ignored", {})
-    return payload
-
-
-def _save_state(state: dict, path: Path = STATE_PATH) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
-    tmp.replace(path)
-
-
-def _append_ledger(row: dict, path: Path = LEDGER_PATH) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    write_header = not path.exists() or path.stat().st_size == 0
-    with path.open("a", encoding="utf-8", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=LEDGER_FIELDS)
-        if write_header:
-            writer.writeheader()
-        writer.writerow({field: row.get(field, "") for field in LEDGER_FIELDS})
-
-
-def _parse_iso(value: Any) -> datetime | None:
-    try:
-        dt = datetime.fromisoformat(str(value or "").replace("Z", "+00:00"))
-    except ValueError:
-        return None
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+def _parse_iso(v):
+    try: dt=datetime.fromisoformat(str(v or "").replace("Z","+00:00"))
+    except ValueError: return None
+    if dt.tzinfo is None: dt=dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc)
 
+def _load_state(path=STATE_PATH):
+    if not path.exists(): return {"version":2,"seen_trade_ids":[],"sent":{}}
+    try: data=json.loads(path.read_text(encoding="utf-8"))
+    except Exception: data={}
+    if not isinstance(data,dict): data={}
+    data["version"]=2; data.setdefault("seen_trade_ids",[]); data.setdefault("sent",{})
+    return data
 
-def _poll_due(state: dict, *, now: datetime | None = None) -> bool:
-    last = _parse_iso(state.get("last_poll_at"))
-    if last is None:
-        return True
-    now = (now or _now()).astimezone(timezone.utc)
-    return (now - last).total_seconds() >= POLL_MINUTES * 60
+def _save_state(state,path=STATE_PATH):
+    state["seen_trade_ids"]=list(dict.fromkeys(state.get("seen_trade_ids") or []))[-5000:]
+    path.parent.mkdir(parents=True,exist_ok=True)
+    tmp=path.with_suffix(path.suffix+".tmp")
+    tmp.write_text(json.dumps(state,indent=2,sort_keys=True),encoding="utf-8")
+    tmp.replace(path)
 
+def _append_ledger(row,path=LEDGER_PATH):
+    path.parent.mkdir(parents=True,exist_ok=True)
+    header=not path.exists() or path.stat().st_size==0
+    with path.open("a",encoding="utf-8",newline="") as fh:
+        w=csv.DictWriter(fh,fieldnames=LEDGER_FIELDS)
+        if header: w.writeheader()
+        w.writerow({k:row.get(k,"") for k in LEDGER_FIELDS})
 
-def _position_key(nickname: str, ticker: str, side: str) -> str:
-    return f"{nickname.casefold()}|{ticker.upper()}|{side.upper()}"
+def _poll_due(state,now):
+    last=_parse_iso(state.get("last_poll_at"))
+    return last is None or (now-last).total_seconds()>=POLL_MINUTES*60
 
+def _is_football(ticker,question=""):
+    text=f"{ticker} {question}".upper()
+    return bool(re.search(r"(^|[^A-Z])(NFL|NCAAF|CFB|COLLEGE FOOTBALL|FOOTBALL)([^A-Z]|$)",text)
+                or str(ticker).upper().startswith(("KXNFL","KXNCAAF","KXCFB")))
 
-def _is_football(ticker: str, question: str = "") -> bool:
-    text = f"{ticker} {question}".upper()
-    return bool(
-        re.search(
-            r"(^|[^A-Z])(NFL|NCAAF|CFB|COLLEGE FOOTBALL|FOOTBALL)([^A-Z]|$)",
-            text,
-        )
-        or str(ticker).upper().startswith(("KXNFL", "KXNCAAF", "KXCFB"))
-    )
+def _public_trades(*,min_ts,limit=1000):
+    r=requests.get(f"{PUBLIC_BASE}/markets/trades",params={"limit":max(1,min(int(limit),1000)),"min_ts":int(min_ts)},timeout=20)
+    r.raise_for_status()
+    payload=r.json()
+    rows=payload.get("trades",[]) if isinstance(payload,dict) else []
+    return rows if isinstance(rows,list) else []
 
+def _trade_side(t):
+    side=str(t.get("taker_outcome_side") or t.get("taker_side") or "").upper()
+    return side if side in {"YES","NO"} else None
 
-def _trade_age_minutes(value: Any) -> float | None:
-    text = str(value or "").strip().lower()
-    if not text:
-        return None
-    m = re.search(r"(\d+(?:\.\d+)?)\s*(s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days)\b", text)
-    if not m:
-        return None
-    amount = float(m.group(1))
-    unit = m.group(2)
-    if unit.startswith("s"):
-        return amount / 60.0
-    if unit.startswith("m"):
-        return amount
-    if unit.startswith("h"):
-        return amount * 60.0
-    return amount * 1440.0
+def _trade_price(t,side):
+    key="yes_price_dollars" if side=="YES" else "no_price_dollars"
+    p=_safe_float(t.get(key))
+    return p if p is not None and 0<p<1 else None
 
+def _trade_count(t):
+    return max(0.0,_safe_float(t.get("count_fp")) or _safe_float(t.get("count")) or 0.0)
 
-def _exact_trade(trades: list[dict], *, ticker: str, side: str) -> dict | None:
-    ticker = str(ticker or "").upper()
-    side = str(side or "").upper()
-    candidates = [
-        t for t in trades
-        if str(t.get("ticker") or "").upper() == ticker
-        and str(t.get("side") or "").upper() == side
-        and not bool(t.get("market_closed"))
-    ]
-    if not candidates:
-        return None
-    return candidates[0]
+def _market_fair_side(ticker,side):
+    try: fair=(watcher.load_state().get("fair_cache") or {}).get(str(ticker))
+    except Exception: return None
+    if not isinstance(fair,dict): return None
+    yes=_safe_float(fair.get("fair_yes_prob"))
+    if yes is None: return None
+    return yes if side=="YES" else 1.0-yes
 
+def _aggregate(trades):
+    groups=defaultdict(list)
+    for t in trades:
+        ticker=str(t.get("ticker") or "").strip(); side=_trade_side(t)
+        price=_trade_price(t,side or ""); count=_trade_count(t)
+        if ticker and side and price is not None and count>0: groups[(ticker,side)].append(t)
+    out=[]
+    for (ticker,side),rows in groups.items():
+        total=notional=weighted=largest=0.0; block=False; latest=None; latest_id=""
+        for t in rows:
+            count=_trade_count(t); price=_trade_price(t,side) or 0.0
+            total+=count; notional+=count*price; weighted+=count*price; largest=max(largest,count)
+            block=block or bool(t.get("is_block_trade")); ts=_parse_iso(t.get("created_time"))
+            if ts and (latest is None or ts>latest): latest=ts; latest_id=str(t.get("trade_id") or "")
+        ref=weighted/total if total else 0.0
+        single=largest>=SINGLE_MIN_CONTRACTS and notional>=SINGLE_MIN_NOTIONAL
+        agg=len(rows)>=AGG_MIN_TRADES and total>=AGG_MIN_CONTRACTS and notional>=AGG_MIN_NOTIONAL
+        if single or agg or block:
+            out.append({"ticker":ticker,"side":side,"reference_price":ref,"reference_price_cents":int(round(ref*100)),
+                        "flow_contracts":int(round(total)),"flow_notional_usd":round(notional,2),
+                        "flow_trade_count":len(rows),"largest_trade_contracts":int(round(largest)),
+                        "block_trade":block,"trade_id":latest_id,"latest_time":latest})
+    return out
 
-def _market_fair_side(ticker: str, side: str) -> float | None:
-    try:
-        state = watcher.load_state()
-    except Exception:
-        return None
-    fair = (state.get("fair_cache") or {}).get(str(ticker))
-    if not isinstance(fair, dict):
-        return None
-    yes = _safe_float(fair.get("fair_yes_prob"))
-    if yes is None:
-        return None
-    return yes if str(side).upper() == "YES" else 1.0 - yes
-
-
-def _evaluate_price(
-    *,
-    reference_cents: int,
-    current_ask: float | None,
-    model_fair_side: float | None = None,
-) -> dict:
-    if reference_cents < MIN_REFERENCE_CENTS or reference_cents > MAX_REFERENCE_CENTS:
-        return {"eligible": False, "reason": "reference_price_outside_band"}
-    if current_ask is None or not (0.0 < current_ask < 1.0):
-        return {"eligible": False, "reason": "missing_live_ask"}
-
-    ref = reference_cents / 100.0
-    ask_cents = int(round(current_ask * 100))
-
-    if current_ask <= ref + 1e-9:
-        target = current_ask
-        execution = "TAKE"
+def _evaluate_price(*,reference_cents,current_ask,model_fair_side):
+    if reference_cents<MIN_REFERENCE_CENTS or reference_cents>MAX_REFERENCE_CENTS:
+        return {"eligible":False,"reason":"reference_price_outside_band"}
+    if current_ask is None or not (0<current_ask<1):
+        return {"eligible":False,"reason":"missing_live_ask"}
+    ref=reference_cents/100; ask_cents=int(round(current_ask*100))
+    if current_ask<=ref+1e-9:
+        target=current_ask; execution="TAKE"
     else:
-        gap_cents = ask_cents - reference_cents
-        if gap_cents > MAX_REST_GAP_CENTS:
-            return {
-                "eligible": False,
-                "reason": "wait_for_better_price",
-                "current_ask_cents": ask_cents,
-            }
-        target_cents = max(MIN_REFERENCE_CENTS, reference_cents - BETTER_BY_CENTS)
-        target = target_cents / 100.0
-        execution = "MAKE"
+        if ask_cents-reference_cents>MAX_REST_GAP_CENTS:
+            return {"eligible":False,"reason":"wait_for_better_price","current_ask_cents":ask_cents}
+        target=max(MIN_REFERENCE_CENTS,reference_cents-BETTER_BY_CENTS)/100; execution="MAKE"
+    if model_fair_side is not None and model_fair_side+MODEL_DISAGREE_TOLERANCE<target:
+        return {"eligible":False,"reason":"pm_edge_model_disagrees","current_ask_cents":ask_cents,
+                "target_price_cents":int(round(target*100))}
+    return {"eligible":True,"reason":"flow_price_guard_passed","execution":execution,"target":round(target,4),
+            "hard_max":round(ref,4),"current_ask_cents":ask_cents,"target_price_cents":int(round(target*100)),
+            "price_improvement_cents":reference_cents-int(round(target*100)),
+            "model_edge":None if model_fair_side is None else model_fair_side-target}
 
-    if model_fair_side is not None and model_fair_side + MODEL_DISAGREE_TOLERANCE < target:
-        return {
-            "eligible": False,
-            "reason": "pm_edge_model_disagrees",
-            "current_ask_cents": ask_cents,
-            "target_price_cents": int(round(target * 100)),
-        }
+def _cooldown_active(state,ticker,side,now):
+    row=(state.get("sent") or {}).get(f"{ticker}|{side}")
+    ts=_parse_iso(row.get("sent_at")) if isinstance(row,dict) else None
+    return bool(ts and (now-ts).total_seconds()<SIGNAL_COOLDOWN_HOURS*3600)
 
-    improvement = reference_cents - int(round(target * 100))
-    model_edge = None if model_fair_side is None else model_fair_side - target
-    return {
-        "eligible": True,
-        "reason": "price_ok",
-        "execution": execution,
-        "target": round(target, 4),
-        "hard_max": round(ref, 4),
-        "current_ask_cents": ask_cents,
-        "target_price_cents": int(round(target * 100)),
-        "price_improvement_cents": improvement,
-        "model_edge": model_edge,
-    }
+def _record_signal(flow,snapshot,ev,model_fair_side):
+    side=flow["side"]; ticker=flow["ticker"]; question=str(snapshot.get("title") or ticker)
+    football=_is_football(ticker,question)
+    fair_yes=None if model_fair_side is None else (model_fair_side if side=="YES" else 1-model_fair_side)
+    fair_entry={"event_id":str(flow.get("trade_id") or f"whale-flow-{ticker}"),
+                "sport_key":"whale_flow_football" if football else "whale_flow_sports",
+                "sport_title":"Football" if football else "Sports","market_type":"whale_flow",
+                "fair_yes_prob":fair_yes,"n_books":None,"dispersion":None,"fetched_at":_iso(),
+                "commence_time":str(snapshot.get("close_time") or "")}
+    q=SimpleNamespace(side=side,execution=ev["execution"],recommended_limit=ev["target"],hard_max=ev["hard_max"],
+                      net_edge=ev.get("model_edge"),pmedge_risk_multiplier=0.5,pmedge_audit_bucket="whale_flow")
+    return signal_tracker.record_signal({"ticker":ticker,"title":question},fair_entry,q,lane="whale",source_version=SOURCE_VERSION)
 
-
-def _ledger_base(
-    *,
-    nickname: str,
-    position: dict,
-    reference: dict | None = None,
-) -> dict:
-    return {
-        "observed_at": _iso(),
-        "nickname": nickname,
-        "trade_id": str((reference or {}).get("id") or ""),
-        "ticker": str(position.get("ticker") or ""),
-        "side": str(position.get("side") or "").upper(),
-        "question": str(position.get("question") or ""),
-        "football": _is_football(position.get("ticker"), position.get("question")),
-        "reference_price_cents": (reference or {}).get("price_cents"),
-        "contracts": (reference or {}).get("contracts"),
-        "notional_usd": (reference or {}).get("notional_usd"),
-        "trader_lifetime_pnl_usd": (reference or {}).get("trader_lifetime_pnl_usd"),
-    }
-
-
-def _signal(
-    *,
-    nickname: str,
-    position: dict,
-    reference: dict,
-    snapshot: dict,
-    evaluation: dict,
-) -> dict:
-    ticker = str(position.get("ticker") or "")
-    side = str(position.get("side") or "").upper()
-    question = str(position.get("question") or snapshot.get("title") or ticker)
-    football = _is_football(ticker, question)
-    model_fair_side = _market_fair_side(ticker, side)
-
-    fair_yes = None
-    if model_fair_side is not None:
-        fair_yes = model_fair_side if side == "YES" else 1.0 - model_fair_side
-
-    fair_entry = {
-        "event_id": str(reference.get("id") or f"whale-{ticker}"),
-        "sport_key": "whale_football" if football else "whale_sports",
-        "sport_title": "Football" if football else "Sports",
-        "market_type": "whale_copy",
-        "fair_yes_prob": fair_yes,
-        "n_books": None,
-        "dispersion": None,
-        "fetched_at": _iso(),
-        "commence_time": str(position.get("closes_at") or snapshot.get("close_time") or ""),
-    }
-    q = SimpleNamespace(
-        side=side,
-        execution=evaluation["execution"],
-        recommended_limit=evaluation["target"],
-        hard_max=evaluation["hard_max"],
-        net_edge=evaluation.get("model_edge"),
-        pmedge_risk_multiplier=0.5,
-        pmedge_audit_bucket="whale_follow",
-    )
-    market = {"ticker": ticker, "title": question}
-    result = signal_tracker.record_signal(
-        market,
-        fair_entry,
-        q,
-        lane="whale",
-        source_version=SOURCE_VERSION,
-    )
-    return {**result, "model_fair_side": model_fair_side}
-
-
-def _alert_message(
-    *,
-    nickname: str,
-    position: dict,
-    reference: dict,
-    evaluation: dict,
-    model_fair_side: float | None,
-) -> str:
-    side = str(position.get("side") or "").upper()
-    question = str(position.get("question") or position.get("ticker") or "")
-    ref = int(reference.get("price_cents") or 0)
-    target = int(evaluation.get("target_price_cents") or 0)
-    live = int(evaluation.get("current_ask_cents") or 0)
-    lines = [
-        f"@{nickname} bought {side} @ {ref}¢",
-        f"{question[:180]}",
-    ]
-    if evaluation["execution"] == "TAKE":
-        delta = ref - live
-        price_text = f"Our ask: {live}¢"
-        if delta > 0:
-            price_text += f" — {delta}¢ BETTER"
-        elif delta == 0:
-            price_text += " — same price"
-        lines.extend([
-            price_text,
-            f"BUY {side} @ {target}¢ OR LOWER",
-        ])
-    else:
-        lines.extend([
-            f"Current ask: {live}¢",
-            f"REST BUY {side} @ {target}¢ — {ref - target}¢ better than whale",
-            f"DO NOT CHASE ABOVE {ref}¢",
-        ])
-    if model_fair_side is not None:
-        lines.append(f"PM Edge fair check: {model_fair_side * 100:.1f}%")
-    else:
-        lines.append("PM Edge fair check: unavailable; Whale lane tracked separately")
-    contracts = _safe_int(reference.get("contracts"))
-    if contracts:
-        lines.append(f"Observed whale trade: {contracts:,} contracts")
+def _message(flow,snapshot,ev,model_fair_side):
+    side=flow["side"]; ref=flow["reference_price_cents"]; target=ev["target_price_cents"]; live=ev["current_ask_cents"]
+    lines=[f"{flow['flow_contracts']:,} contracts of aggressive {side} flow",
+           f"{flow['flow_trade_count']} trade(s) · ~${flow['flow_notional_usd']:,.0f} at risk",
+           str(snapshot.get("title") or flow["ticker"])[:180],f"Flow VWAP: {ref}¢ · Current ask: {live}¢"]
+    if ev["execution"]=="TAKE": lines.append(f"BUY {side} @ {target}¢ OR LOWER")
+    else: lines.append(f"REST BUY {side} @ {target}¢ · DO NOT CHASE ABOVE {ref}¢")
+    if flow.get("block_trade"): lines.append("Includes reported block trade")
+    if model_fair_side is not None: lines.append(f"PM Edge fair check: {model_fair_side*100:.1f}%")
+    else: lines.append("PM Edge fair check unavailable — flow tracked separately at 0.5×")
     return "\n".join(lines)
 
+def run_once(*,now=None):
+    now=(now or _now()).astimezone(timezone.utc); state=_load_state()
+    if not _poll_due(state,now): return {"enabled":True,"polled":False,"signals":0,"reason":"poll_interval"}
+    try: trades=_public_trades(min_ts=int((now-timedelta(minutes=LOOKBACK_MINUTES)).timestamp()))
+    except Exception as exc:
+        print("WHALE_FLOW_API_ERROR",type(exc).__name__,str(exc)[:240])
+        return {"enabled":True,"polled":False,"signals":0,"reason":"public_api_error"}
+    seen=set(state.get("seen_trade_ids") or []); fresh=[t for t in trades if str(t.get("trade_id") or "") not in seen]
+    flows=_aggregate(fresh); enriched=[]
+    for flow in flows:
+        try: snap=dashboard_data.market_snapshot(flow["ticker"])
+        except Exception: continue
+        question=str(snap.get("title") or flow["ticker"])
+        enriched.append((not _is_football(flow["ticker"],question),-flow["flow_notional_usd"],flow,snap))
+    enriched.sort(key=lambda x:(x[0],x[1]))
+    sent=nonfootball=evaluated=0
+    for _,__,flow,snap in enriched:
+        if sent>=MAX_ALERTS_PER_RUN: break
+        football=_is_football(flow["ticker"],str(snap.get("title") or ""))
+        if not football and nonfootball>=MAX_NON_FOOTBALL_ALERTS_PER_RUN: continue
+        if _cooldown_active(state,flow["ticker"],flow["side"],now): continue
+        if str(snap.get("status") or "").lower() not in {"open","active"}: continue
+        side=flow["side"]; ask=snap.get("yes_ask") if side=="YES" else snap.get("no_ask")
+        model_fair_side=_market_fair_side(flow["ticker"],side)
+        ev=_evaluate_price(reference_cents=flow["reference_price_cents"],current_ask=_safe_float(ask),model_fair_side=model_fair_side)
+        evaluated+=1
+        row={"observed_at":_iso(now),"trade_id":flow.get("trade_id"),"ticker":flow["ticker"],"side":side,
+             "question":str(snap.get("title") or ""),"football":football,"reference_price_cents":flow["reference_price_cents"],
+             "current_ask_cents":ev.get("current_ask_cents"),"target_price_cents":ev.get("target_price_cents"),
+             "price_improvement_cents":ev.get("price_improvement_cents"),"execution":ev.get("execution"),
+             "flow_contracts":flow["flow_contracts"],"flow_notional_usd":flow["flow_notional_usd"],
+             "flow_trade_count":flow["flow_trade_count"],"largest_trade_contracts":flow["largest_trade_contracts"],
+             "block_trade":flow["block_trade"],"model_fair_side":model_fair_side,"model_edge":ev.get("model_edge")}
+        if not ev.get("eligible"):
+            row.update({"decision":"WAIT" if ev.get("reason") in {"wait_for_better_price","pm_edge_model_disagrees"} else "SKIP",
+                        "reason":ev.get("reason")}); _append_ledger(row); continue
+        sig=_record_signal(flow,snap,ev,model_fair_side)
+        if not sig.get("recorded") and sig.get("reason")!="duplicate":
+            row.update({"decision":"ERROR","reason":sig.get("reason")}); _append_ledger(row); continue
+        signal_id=str(sig.get("signal_id") or "")
+        row.update({"decision":"SIGNAL","reason":"whale_flow_price_guard_passed","signal_id":signal_id}); _append_ledger(row)
+        watcher.send_push("🐋 PM EDGE WHALE FLOW — FOOTBALL" if football else "🐋 PM EDGE WHALE FLOW",
+                          _message(flow,snap,ev,model_fair_side),priority=0)
+        state["sent"][f"{flow['ticker']}|{side}"]={"sent_at":_iso(now),"signal_id":signal_id}
+        sent+=1
+        if not football: nonfootball+=1
+    for t in trades:
+        tid=str(t.get("trade_id") or "")
+        if tid: state["seen_trade_ids"].append(tid)
+    state["last_poll_at"]=_iso(now); _save_state(state)
+    result={"enabled":True,"polled":True,"public_trades":len(trades),"fresh_trades":len(fresh),
+            "qualified_flows":len(flows),"evaluated":evaluated,"signals":sent}
+    print("PM_EDGE_WHALE_FLOW "+json.dumps(result,sort_keys=True)); return result
 
-def run_once(*, client: KalshiSpyClient | None = None, now: datetime | None = None) -> dict:
-    now = (now or _now()).astimezone(timezone.utc)
-    state = _load_state()
-    if not _poll_due(state, now=now):
-        return {"enabled": True, "polled": False, "signals": 0, "reason": "poll_interval"}
+def main():
+    run_once(); return 0
 
-    client = client or KalshiSpyClient.from_env()
-    if client is None:
-        return {"enabled": False, "polled": False, "signals": 0, "reason": "missing_api_key"}
-
-    try:
-        whales = client.get_whales(limit=40, sort="lifetime_pnl")
-    except KalshiSpyError as exc:
-        print("WHALE_EDGE_API_ERROR", exc.status_code, str(exc)[:240])
-        return {"enabled": True, "polled": False, "signals": 0, "reason": "api_error"}
-
-    watched: list[tuple[str, dict]] = []
-    for whale in whales:
-        nickname = str(whale.get("nickname") or "")
-        if nickname.casefold() not in WATCHSET:
-            continue
-        for position in whale.get("positions") or []:
-            if not isinstance(position, dict):
-                continue
-            if str(position.get("status") or "open").lower() != "open":
-                continue
-            side = str(position.get("side") or "").upper()
-            ticker = str(position.get("ticker") or "")
-            if side not in {"YES", "NO"} or not ticker:
-                continue
-            watched.append((nickname, position))
-
-    watched.sort(
-        key=lambda x: (
-            not _is_football(x[1].get("ticker"), x[1].get("question")),
-            -(_safe_float(x[1].get("position_value_usd")) or 0.0),
-        )
-    )
-
-    trades_by_trader: dict[str, list[dict]] = {}
-    sent = 0
-    nonfootball_sent = 0
-    evaluated = 0
-    open_keys = set()
-
-    for nickname, position in watched:
-        ticker = str(position.get("ticker") or "")
-        side = str(position.get("side") or "").upper()
-        key = _position_key(nickname, ticker, side)
-        open_keys.add(key)
-        football = _is_football(ticker, position.get("question"))
-
-        if key in state["sent"] or key in state["ignored"]:
-            continue
-        if FOOTBALL_ONLY and not football:
-            state["ignored"][key] = {"reason": "football_only", "at": _iso(now)}
-            continue
-        if not football and nonfootball_sent >= MAX_NON_FOOTBALL_ALERTS_PER_RUN:
-            continue
-
-        reference = state["references"].get(key)
-        if not isinstance(reference, dict):
-            if nickname not in trades_by_trader:
-                try:
-                    trades_by_trader[nickname] = client.search_trader_trades(
-                        nickname,
-                        min_amount=MIN_TRADE_CONTRACTS,
-                    )
-                except KalshiSpyError as exc:
-                    print("WHALE_EDGE_TRADE_SEARCH_ERROR", nickname, exc.status_code, str(exc)[:200])
-                    continue
-            reference = _exact_trade(
-                trades_by_trader[nickname],
-                ticker=ticker,
-                side=side,
-            )
-            if reference is None:
-                row = _ledger_base(nickname=nickname, position=position)
-                row.update({"decision": "SKIP", "reason": "no_matching_recent_trade"})
-                _append_ledger(row)
-                continue
-            age = _trade_age_minutes(reference.get("placed_ago"))
-            if age is not None and age > MAX_REFERENCE_AGE_MINUTES:
-                row = _ledger_base(nickname=nickname, position=position, reference=reference)
-                row.update({"decision": "SKIP", "reason": "reference_trade_too_old"})
-                _append_ledger(row)
-                state["ignored"][key] = {"reason": "reference_trade_too_old", "at": _iso(now)}
-                continue
-            state["references"][key] = reference
-
-        ref_cents = _safe_int(reference.get("price_cents"))
-        if ref_cents is None:
-            continue
-
-        try:
-            snapshot = dashboard_data.market_snapshot(ticker)
-        except Exception as exc:
-            print("WHALE_EDGE_MARKET_ERROR", ticker, type(exc).__name__, str(exc)[:180])
-            continue
-
-        if str(snapshot.get("status") or "").lower() not in {"open", "active"}:
-            state["ignored"][key] = {"reason": "market_not_open", "at": _iso(now)}
-            continue
-
-        ask = snapshot.get("yes_ask") if side == "YES" else snapshot.get("no_ask")
-        model_fair_side = _market_fair_side(ticker, side)
-        evaluation = _evaluate_price(
-            reference_cents=ref_cents,
-            current_ask=_safe_float(ask),
-            model_fair_side=model_fair_side,
-        )
-        evaluated += 1
-
-        row = _ledger_base(nickname=nickname, position=position, reference=reference)
-        row.update({
-            "current_ask_cents": evaluation.get("current_ask_cents"),
-            "target_price_cents": evaluation.get("target_price_cents"),
-            "price_improvement_cents": evaluation.get("price_improvement_cents"),
-            "execution": evaluation.get("execution"),
-            "model_fair_side": model_fair_side,
-            "model_edge": evaluation.get("model_edge"),
-        })
-
-        if not evaluation.get("eligible"):
-            reason = evaluation.get("reason")
-            wait_reasons = {"wait_for_better_price", "pm_edge_model_disagrees"}
-            row.update({
-                "decision": "WAIT" if reason in wait_reasons else "SKIP",
-                "reason": reason,
-            })
-            _append_ledger(row)
-            # A temporary PM Edge disagreement is re-evaluated later. Only
-            # structural reference-price failures are permanently ignored.
-            if reason == "reference_price_outside_band":
-                state["ignored"][key] = {"reason": reason, "at": _iso(now)}
-            continue
-
-        signal = _signal(
-            nickname=nickname,
-            position=position,
-            reference=reference,
-            snapshot=snapshot,
-            evaluation=evaluation,
-        )
-        if not signal.get("recorded") and signal.get("reason") != "duplicate":
-            row.update({"decision": "ERROR", "reason": signal.get("reason")})
-            _append_ledger(row)
-            continue
-
-        signal_id = str(signal.get("signal_id") or "")
-        row.update({
-            "decision": "SIGNAL",
-            "reason": "whale_price_guard_passed",
-            "signal_id": signal_id,
-        })
-        _append_ledger(row)
-
-        title = "🐋 PM EDGE WHALE — FOOTBALL" if football else "🐋 PM EDGE WHALE — SPORTS"
-        message = _alert_message(
-            nickname=nickname,
-            position=position,
-            reference=reference,
-            evaluation=evaluation,
-            model_fair_side=signal.get("model_fair_side"),
-        )
-        watcher.send_push(title, message, priority=0)
-        state["sent"][key] = {
-            "signal_id": signal_id,
-            "sent_at": _iso(now),
-            "reference_price_cents": ref_cents,
-            "target_price_cents": evaluation.get("target_price_cents"),
-        }
-        sent += 1
-        if not football:
-            nonfootball_sent += 1
-
-    state["last_poll_at"] = _iso(now)
-    # Keep state compact: only references for positions still open or already sent.
-    state["references"] = {
-        key: value for key, value in state["references"].items()
-        if key in open_keys or key in state["sent"]
-    }
-    _save_state(state)
-    result = {
-        "enabled": True,
-        "polled": True,
-        "watched_positions": len(watched),
-        "evaluated": evaluated,
-        "signals": sent,
-    }
-    print("PM_EDGE_WHALE " + json.dumps(result, sort_keys=True))
-    return result
-
-
-def main() -> int:
-    result = run_once()
-    if not result.get("enabled"):
-        print(
-            "PM_EDGE_WHALE_DISABLED missing KALSHISPY_API_KEY; "
-            "Whale Edge remains dormant and makes no signals."
-        )
-    return 0
-
-
-if __name__ == "__main__":
+if __name__=="__main__":
     raise SystemExit(main())
