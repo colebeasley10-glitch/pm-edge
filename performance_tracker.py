@@ -197,6 +197,17 @@ def _fill_summary(client, intent: dict, *, fill_ledger_path: Path = FILL_LEDGER_
     if count <= 0:
         fallback_count = _count(intent.get("filled_shares"))
         fallback_price = _safe_float(intent.get("average_fill_price"))
+        # Kalshi's order endpoint can report fill_count before the fills
+        # endpoint returns the corresponding rows. In that case preserve the
+        # known fill instead of permanently classifying the order as unfilled.
+        # A buy limit is a conservative cost fallback: an executed buy cannot
+        # fill above its limit price.
+        if fallback_count > 0 and fallback_price is None:
+            fallback_price = _safe_float(
+                intent.get("limit_price")
+                if intent.get("limit_price") is not None
+                else intent.get("recommended_limit")
+            )
         if fallback_count > 0 and fallback_price is not None:
             count = fallback_count
             cost = fallback_count * fallback_price
@@ -619,8 +630,19 @@ def update_performance(
 
     market_cache: dict[str, dict | None] = {}
     consumed_exit_qty: dict[str, float] = {}
-    checked = finalized = errors = retro_corrected = 0
+    checked = finalized = errors = retro_corrected = retro_unfilled_corrected = 0
     queue_changed = history_changed = False
+
+    queue_by_intent = {
+        str(x.get("intent_id") or ""): x
+        for x in queue.get("intents", [])
+        if x.get("intent_id")
+    }
+    queue_by_order = {
+        str(x.get("kalshi_order_id") or ""): x
+        for x in queue.get("intents", [])
+        if x.get("kalshi_order_id")
+    }
 
     def _sort_key(row: dict):
         return (
@@ -628,6 +650,55 @@ def update_performance(
             str(row.get("ticker") or ""),
             str(row.get("recorded_at") or ""),
         )
+
+    # Revisit records previously finalized as unfilled. A short-lived lag
+    # between Kalshi's order and fills endpoints can otherwise make an actual
+    # fill permanently disappear from P/L because finalized intents are skipped
+    # on later runs.
+    for existing in sorted(records, key=_sort_key):
+        if str(existing.get("status") or "") != "unfilled":
+            continue
+        order_id = str(existing.get("kalshi_order_id") or "")
+        intent_id = str(existing.get("intent_id") or "")
+        live_intent = queue_by_order.get(order_id) or queue_by_intent.get(intent_id)
+        probe = dict(existing)
+        if live_intent:
+            for key in (
+                "filled_shares", "average_fill_price", "limit_price",
+                "recommended_limit", "shares", "requested_shares", "side",
+                "ticker", "kalshi_order_id", "client_order_id", "signal_id",
+            ):
+                value = live_intent.get(key)
+                if value not in (None, ""):
+                    probe[key] = value
+        try:
+            fill_summary = _fill_summary(client, probe, fill_ledger_path=fill_ledger_path)
+        except Exception:
+            continue
+        if _count(fill_summary.get("filled_shares")) <= 0:
+            continue
+        ticker = str(probe.get("ticker") or "")
+        try:
+            if ticker not in market_cache:
+                market_cache[ticker] = market_loader(ticker)
+            settlement = market_cache[ticker]
+        except Exception:
+            continue
+        if settlement is None:
+            continue
+        replacement = _settled_record(probe, fill_summary, settlement)
+        existing.clear()
+        existing.update(replacement)
+        if live_intent is not None:
+            live_intent["status"] = replacement.get("status")
+            live_intent["filled_shares"] = replacement.get("filled_shares")
+            live_intent["average_fill_price"] = replacement.get("average_fill_price")
+            live_intent["performance_recorded"] = True
+            live_intent["performance_status"] = replacement.get("status")
+            live_intent["performance_recorded_at"] = replacement.get("recorded_at")
+            queue_changed = True
+        retro_unfilled_corrected += 1
+        history_changed = True
 
     for existing in sorted(records, key=_sort_key):
         if str(existing.get("pnl_method") or "") not in {
@@ -746,6 +817,7 @@ def update_performance(
         "checked": checked,
         "finalized": finalized,
         "retro_early_exit_corrections": retro_corrected,
+        "retro_unfilled_corrections": retro_unfilled_corrected,
         "errors": errors,
         "summary": summary,
     }
