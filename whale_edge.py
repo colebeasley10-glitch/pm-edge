@@ -507,14 +507,17 @@ def run_once(*, client: KalshiSpyClient | None = None, now: datetime | None = No
         })
 
         if not evaluation.get("eligible"):
-            row.update({"decision": "WAIT" if evaluation.get("reason") == "wait_for_better_price" else "SKIP",
-                        "reason": evaluation.get("reason")})
+            reason = evaluation.get("reason")
+            wait_reasons = {"wait_for_better_price", "pm_edge_model_disagrees"}
+            row.update({
+                "decision": "WAIT" if reason in wait_reasons else "SKIP",
+                "reason": reason,
+            })
             _append_ledger(row)
-            if evaluation.get("reason") in {
-                "reference_price_outside_band",
-                "pm_edge_model_disagrees",
-            }:
-                state["ignored"][key] = {"reason": evaluation.get("reason"), "at": _iso(now)}
+            # A temporary PM Edge disagreement is re-evaluated later. Only
+            # structural reference-price failures are permanently ignored.
+            if reason == "reference_price_outside_band":
+                state["ignored"][key] = {"reason": reason, "at": _iso(now)}
             continue
 
         signal = _signal(
