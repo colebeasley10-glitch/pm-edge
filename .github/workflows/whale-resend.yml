@@ -1,18 +1,15 @@
-name: Whale Flow Correction
+name: Whale Flow Recheck
 
 on:
-  push:
-    paths:
-      - ".github/workflows/whale-resend.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  correction:
+  recheck:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 8
     steps:
       - name: Check out PM Edge
         uses: actions/checkout@v4
@@ -26,9 +23,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Send Whale Flow correction
+      - name: Recheck and resend only currently actionable Whale Flow alerts
         env:
           PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
           PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
           STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
-        run: python send_whale_correction.py
+          KALSHI_WRITE_API_KEY_ID: ${{ secrets.KALSHI_API_KEY_ID }}
+          KALSHI_WRITE_PRIVATE_KEY: ${{ secrets.KALSHI_PRIVATE_KEY }}
+        run: python resend_whale_signals.py
