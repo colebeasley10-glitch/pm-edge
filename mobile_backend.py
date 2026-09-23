@@ -253,6 +253,13 @@ def _actionable_new_signals(df: pd.DataFrame, *, scan_limit: int) -> pd.DataFram
             now=now,
         )
         if guard.get("blocked"):
+            print(
+                "AVAILABLE_FILTER_BLOCK",
+                ticker,
+                side,
+                guard.get("reason"),
+                flush=True,
+            )
             continue
         actionable.append(row)
 
