@@ -244,6 +244,30 @@ def _actionable_new_signals(df: pd.DataFrame, *, scan_limit: int) -> pd.DataFram
         if not price_actionable:
             continue
 
+        signal_id = str(row.get("signal_id") or "").strip()
+        expected_client_id = _client_order_id(signal_id) if signal_id else ""
+        existing_order = next(
+            (
+                order
+                for order in orders or []
+                if expected_client_id
+                and str(order.get("client_order_id") or "").strip() == expected_client_id
+                and str(order.get("status") or order.get("order_status") or "").strip().lower()
+                    not in {"canceled", "cancelled", "expired", "rejected", "failed"}
+            ),
+            None,
+        )
+        if existing_order is not None:
+            print(
+                "AVAILABLE_FILTER_BLOCK",
+                ticker,
+                side,
+                "existing_order",
+                expected_client_id,
+                flush=True,
+            )
+            continue
+
         guard = approval_guardrails.evaluate_position_guard(
             ticker=ticker,
             side=side,
