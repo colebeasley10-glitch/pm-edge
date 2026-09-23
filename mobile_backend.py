@@ -238,6 +238,18 @@ def _actionable_new_signals(df: pd.DataFrame, *, scan_limit: int) -> pd.DataFram
         execution = str(row.get("execution") or "MAKE").upper()
         market_status = str(market.get("status") or "").lower()
         market_open = market_status in {"active", "open"}
+
+        # Whale Flow stores the Kalshi market close time in commence_time.
+        # Never advertise a whale card after that close time, even if Kalshi
+        # still briefly reports the market as active/open while settling.
+        is_whale_flow = (
+            str(row.get("lane") or "").casefold() == "whale"
+            and str(row.get("market_type") or "").casefold() == "whale_flow"
+        )
+        whale_close_epoch = _event_start_epoch(row) if is_whale_flow else None
+        if whale_close_epoch is not None and whale_close_epoch <= int(now.timestamp()):
+            continue
+
         price_actionable = (
             live_ask is not None
             and market_open
@@ -339,11 +351,24 @@ def _review_payload(row: dict, client: KalshiSubmitClient) -> dict:
     market_status = str(market.get("status") or "").lower()
     market_open = market_status in {"active", "open"}
 
+    is_whale_flow = (
+        str(row.get("lane") or "").casefold() == "whale"
+        and str(row.get("market_type") or "").casefold() == "whale_flow"
+    )
+    whale_close_epoch = _event_start_epoch(row) if is_whale_flow else None
+    whale_expired = bool(
+        whale_close_epoch is not None
+        and whale_close_epoch <= int(datetime.now(timezone.utc).timestamp())
+    )
+
     # TAKE must still be executable at or below the approved maximum.
     # MAKE is intentionally a patient post-only resting limit: it is valid when
     # the live ask is ABOVE our limit, because our order will rest rather than
     # chase the market. This is the normal Price Fish path.
-    if execution == "MAKE":
+    if whale_expired:
+        price_ok = False
+        price_message = "Expired: this Whale Flow market's close time has passed."
+    elif execution == "MAKE":
         price_ok = bool(market_open and live_ask > limit_price + 1e-9)
         if price_ok:
             price_message = (
