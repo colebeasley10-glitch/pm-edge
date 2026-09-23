@@ -102,6 +102,14 @@ def _is_football(ticker,question=""):
     return bool(re.search(r"(^|[^A-Z])(NFL|NCAAF|CFB|COLLEGE FOOTBALL|FOOTBALL)([^A-Z]|$)",text)
                 or str(ticker).upper().startswith(("KXNFL","KXNCAAF","KXCFB")))
 
+def _is_btc(ticker,question=""):
+    """BTC/Bitcoin markets are disabled for Whale Flow alerts."""
+    ticker_text=str(ticker or "").upper()
+    text=f"{ticker_text} {question}".upper()
+    return ticker_text.startswith(("KXBTC","KXBITCOIN")) or bool(
+        re.search(r"(^|[^A-Z])(BTC|BITCOIN)([^A-Z]|$)",text)
+    )
+
 def _public_trades(*,min_ts,limit=1000):
     r=requests.get(f"{PUBLIC_BASE}/markets/trades",params={"limit":max(1,min(int(limit),1000)),"min_ts":int(min_ts)},timeout=20)
     r.raise_for_status()
@@ -268,9 +276,15 @@ def run_once(*,now=None):
     seen=set(state.get("seen_trade_ids") or []); fresh=[t for t in trades if str(t.get("trade_id") or "") not in seen]
     flows=_aggregate(fresh); enriched=[]
     for flow in flows:
+        # BTC/Bitcoin moves too quickly for Whale Flow's observed-entry price
+        # to remain reproducible by the time an alert reaches the user.
+        if _is_btc(flow["ticker"]):
+            continue
         try: snap=dashboard_data.market_snapshot(flow["ticker"])
         except Exception: continue
         question=str(snap.get("title") or flow["ticker"])
+        if _is_btc(flow["ticker"],question):
+            continue
         enriched.append((not _is_football(flow["ticker"],question),-flow["flow_notional_usd"],flow,snap))
     enriched.sort(key=lambda x:(x[0],x[1]))
     sent=nonfootball=evaluated=0
