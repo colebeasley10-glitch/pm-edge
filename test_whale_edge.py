@@ -55,6 +55,11 @@ def main() -> None:
     assert wait["eligible"] is False
     assert wait["reason"] == "wait_for_better_price"
 
+    state = {"sent": {"TEST|YES": {"target_price": 0.46}}}
+    assert whale_edge._repeat_price_suppressed(state, "TEST", "YES", {"target": 0.76}) is True
+    assert whale_edge._repeat_price_suppressed(state, "TEST", "YES", {"target": 0.46}) is False
+    assert whale_edge._repeat_price_suppressed(state, "TEST", "YES", {"target": 0.44}) is False
+
     oppose = whale_edge._evaluate_price(
         reference_cents=61,
         current_ask=0.60,
