@@ -278,19 +278,40 @@ def approval_url_for_signal(row: dict, *, base_url: str | None = None) -> str | 
     if not order:
         return None
     try:
+        # Whale-flow signals intentionally may not have sportsbook fair-value
+        # metadata. Approval tokens still need concrete numeric provenance
+        # fields, so use neutral audit-safe defaults for that lane rather than
+        # dropping the placement link entirely.
+        lane = str(row.get("lane") or "primary").lower()
+        fair_probability = _as_float(row.get("fair_probability"))
+        net_edge = _as_float(row.get("net_edge"))
+        books = _as_int(row.get("books"))
+        dispersion = _as_float(row.get("dispersion"))
+        source_version = _as_int(row.get("source_version"))
+        if lane == "whale":
+            if fair_probability is None:
+                fair_probability = float(order["price"])
+            if net_edge is None:
+                net_edge = 0.0
+            if books is None:
+                books = 0
+            if dispersion is None:
+                dispersion = 0.0
+            if source_version is None:
+                source_version = 1
         token = approval_links.create_approval_token(
             ticker=str(row.get("ticker") or ""),
             side=str(row.get("side") or "").upper(),
-            lane=str(row.get("lane") or "primary"),
+            lane=lane,
             execution=str(row.get("execution") or "MAKE").upper(),
             limit_price=float(order["price"]),
             shares=int(order["shares"]),
             max_loss=float(order["max_loss"]),
-            fair_probability=_as_float(row.get("fair_probability")),
-            net_edge=_as_float(row.get("net_edge")),
-            books=_as_int(row.get("books")),
-            dispersion=_as_float(row.get("dispersion")),
-            source_version=_as_int(row.get("source_version")),
+            fair_probability=fair_probability,
+            net_edge=net_edge,
+            books=books,
+            dispersion=dispersion,
+            source_version=source_version,
             fair_fetched_at=str(row.get("fair_fetched_at") or "") or None,
             signal_id=signal_id,
             ttl_seconds=1800,
