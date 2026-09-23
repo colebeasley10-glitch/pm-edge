@@ -1017,8 +1017,30 @@ def should_alert(state, market, fair_entry, q, tier="primary"):
         return True, "BACK"
     old_entry = float(prev.get("entry_price") or 0)
     old_edge = float(prev.get("net_edge") or 0)
-    if q.recommended_limit is not None and abs(float(q.recommended_limit) - old_entry) >= 0.02:
+    new_entry = float(q.recommended_limit) if q.recommended_limit is not None else None
+
+    # Never re-alert the same ticker/side because the price moved against us.
+    # A worse price is not new actionable information; it only creates a stale
+    # notification that the approval page will reject as DO NOT CHASE.
+    if new_entry is not None and old_entry > 0 and new_entry > old_entry + 1e-9:
+        return False, "worse_price_than_last_alert"
+
+    # Price-change re-alerts are one-way: only meaningfully BETTER prices.
+    if new_entry is not None and old_entry > 0 and old_entry - new_entry >= 0.02:
         return True, "PRICE"
+
+    # For TAKE orders, also suppress reminders when the current executable ask
+    # is above the last alert's hard maximum.
+    old_hard_max = float(prev.get("hard_max") or 0)
+    current_ask = getattr(q, "best_ask", None)
+    if (
+        str(getattr(q, "execution", "") or "").upper() == "TAKE"
+        and current_ask is not None
+        and old_hard_max > 0
+        and float(current_ask) > old_hard_max + 1e-9
+    ):
+        return False, "live_price_above_last_max"
+
     if q.net_edge is not None and float(q.net_edge) - old_edge >= 0.02:
         return True, "EDGE"
     if age_hours(prev.get("sent_at")) >= ALERT_COOLDOWN_HOURS:
