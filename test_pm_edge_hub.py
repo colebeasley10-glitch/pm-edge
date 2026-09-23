@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -42,6 +43,35 @@ def main() -> None:
     assert len(fresh) == 1
     sized = dashboard_data.size_signal(signals.iloc[0].to_dict())
     assert sized and sized["max_loss"] <= 10.0
+
+    # Whale signals may intentionally omit sportsbook fair-value metadata, but
+    # the dashboard must still create a signed Review & Place link.
+    previous_secret = os.environ.get("PM_EDGE_APPROVAL_SECRET")
+    os.environ["PM_EDGE_APPROVAL_SECRET"] = "hub-test-secret"
+    try:
+        whale = {
+            "signal_id": "8b33884ce96641c7cf27",
+            "ticker": "KXUCLWTOTAL-26SEP23SEROL-8",
+            "side": "YES",
+            "lane": "whale",
+            "execution": "TAKE",
+            "recommended_limit": 0.79,
+            "fair_probability": float("nan"),
+            "net_edge": float("nan"),
+            "books": float("nan"),
+            "dispersion": float("nan"),
+            "source_version": 30,
+            "commence_time": "2026-09-25T16:45:00Z",
+        }
+        url = dashboard_data.approval_url_for_signal(
+            whale, base_url="https://example.streamlit.app"
+        )
+        assert url and url.startswith("https://example.streamlit.app/Approve?trade=")
+    finally:
+        if previous_secret is None:
+            os.environ.pop("PM_EDGE_APPROVAL_SECRET", None)
+        else:
+            os.environ["PM_EDGE_APPROVAL_SECRET"] = previous_secret
 
     with TemporaryDirectory() as td:
         root = Path(td)
