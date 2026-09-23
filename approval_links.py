@@ -40,9 +40,22 @@ def signing_secret() -> bytes:
         material = dedicated.encode("utf-8")
     else:
         fallback = os.getenv("ODDS_API_KEY", "").strip()
-        if not fallback:
-            raise RuntimeError("Missing PM_EDGE_APPROVAL_SECRET (or ODDS_API_KEY fallback)")
-        material = b"pmedge-approval-v1\x00" + fallback.encode("utf-8")
+        if fallback:
+            material = b"pmedge-approval-v1\x00" + fallback.encode("utf-8")
+        else:
+            # Streamlit placement can operate without the odds API secret.
+            # When the write-enabled Kalshi key is present, derive a
+            # context-specific HMAC key from that private material so the
+            # dashboard and Approve page still mint/verify the same token.
+            kalshi_private = (
+                os.getenv("KALSHI_WRITE_PRIVATE_KEY", "").strip()
+                or os.getenv("KALSHI_PRIVATE_KEY", "").strip()
+            )
+            if not kalshi_private:
+                raise RuntimeError(
+                    "Missing PM_EDGE_APPROVAL_SECRET, ODDS_API_KEY, or Kalshi private-key fallback"
+                )
+            material = b"pmedge-approval-kalshi-v1\x00" + kalshi_private.encode("utf-8")
     return hashlib.sha256(material).digest()
 
 
