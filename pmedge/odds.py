@@ -57,7 +57,7 @@ class OddsAPIClient:
                     parts = [x for x in path.split("/") if x]
                     if len(parts) >= 2 and parts[0] == "sports":
                         sport = parts[1]
-                    record_odds_response(
+                    capture = record_odds_response(
                         db_path=recorder_db,
                         endpoint=path,
                         sport=sport,
@@ -70,6 +70,8 @@ class OddsAPIClient:
                         http_status=status,
                         error=error,
                     )
+                    if capture.get("fetch_id"):
+                        usage["recorder_fetch_id"] = capture["fetch_id"]
                 except Exception:
                     pass
 
