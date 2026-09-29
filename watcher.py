@@ -963,7 +963,7 @@ def sport_rule_matches(event: dict, rule) -> bool:
         return key.startswith(value)
     return True
 
-def fair_to_dict(fair, event, spec, usage=None, devig_diag=None):
+def fair_to_dict(fair, event, spec, usage=None, devig_diag=None, ticker=None):
     fetched_at = iso_now()
     v2 = compute_fair_v2_metrics(
         (devig_diag or {}).get("book_inputs") or [],
@@ -971,7 +971,7 @@ def fair_to_dict(fair, event, spec, usage=None, devig_diag=None):
         event_start=event.get("commence_time"),
         processed_at=fetched_at,
     )
-    return {
+    entry = {
         "fetched_at": fetched_at,
         "fair_yes_prob": float(fair.fair_yes_prob),
         "source": fair.source,
@@ -1011,7 +1011,21 @@ def fair_to_dict(fair, event, spec, usage=None, devig_diag=None):
         "source_age_s": v2.source_age_s,
         "system_age_s": v2.system_age_s,
         "delivery_lag_s": v2.delivery_lag_s,
+        "book_inputs": (devig_diag or {}).get("book_inputs") or [],
+        "input_fetch_ids": [
+            str((usage or {}).get("recorder_fetch_id"))
+        ] if (usage or {}).get("recorder_fetch_id") else [],
     }
+    recorder_db = os.getenv("AUTOTRADER_RECORDER_DB", "").strip()
+    if recorder_db and ticker and entry.get("sigma") is not None:
+        try:
+            from autotrader.recorder_store import RecorderStore
+            entry["fair_snapshot_id"] = RecorderStore(recorder_db).record_fair_snapshot(
+                str(ticker), entry, input_fetch_ids=entry.get("input_fetch_ids")
+            )
+        except Exception as exc:
+            entry["fair_snapshot_record_error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
+    return entry
 
 def score_market(market, fair_entry, settings, base_min_edge=None):
     tick = tick_size_for_price(market, market.get("yes_bid") or market.get("yes_ask") or 0.50)
@@ -1546,7 +1560,7 @@ def main():
                 fair_successes += 1
                 bulk_fair_successes += 1
                 state["fair_cache"][market["ticker"]] = fair_to_dict(
-                    fair, em.event, spec, usage, devig_diag
+                    fair, em.event, spec, usage, devig_diag, ticker=market["ticker"]
                 )
 
     # Event-specific fallback for alternate spreads/totals, team totals and
@@ -1628,7 +1642,9 @@ def main():
         fair = blend_fair_value(market["ticker"], consensus, overlay)
         if fair:
             fair_successes += 1
-            state["fair_cache"][market["ticker"]] = fair_to_dict(fair, em.event, spec, usage, devig_diag)
+            state["fair_cache"][market["ticker"]] = fair_to_dict(
+                fair, em.event, spec, usage, devig_diag, ticker=market["ticker"]
+            )
 
     # Manual fair values override any cache.
     for ticker, x in manual.items():
