@@ -26,6 +26,7 @@ def main() -> None:
         "/health",
         "/v1/dashboard",
         "/v1/bets",
+        "/v1/fair-values",
         "/v1/live",
         "/v1/bets/{signal_id}/review",
         "/v1/bets/{signal_id}/submit",
