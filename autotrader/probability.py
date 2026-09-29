@@ -92,17 +92,16 @@ def load_pm_edge_ledger(path="pm_edge_candidate_ledger.csv", *, now=None, max_ag
 
 
 def load_pm_edge_api(base_url, token, *, now=None, max_age_seconds=5400, timeout=10):
-    """Load fresh PM Edge alert fair values through the existing authenticated GET API.
+    """Load fresh scored PM Edge fair values through the authenticated read-only API.
 
-    This endpoint is read-only. It reuses probabilities already produced by PM Edge;
-    it does not spend additional sportsbook-odds API credits.
+    It reuses probabilities already produced by PM Edge before alert/execution
+    gating and does not spend additional sportsbook-odds API credits.
     """
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     if not base_url or not token:
         return ProbabilitySnapshot({}, {}, {}, now)
     response = requests.get(
-        base_url.rstrip("/") + "/v1/bets",
-        params={"status": "new"},
+        base_url.rstrip("/") + "/v1/fair-values",
         headers={"Authorization": f"Bearer {token}"},
         timeout=timeout,
     )
