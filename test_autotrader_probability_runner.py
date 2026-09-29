@@ -147,6 +147,7 @@ class ProbabilityRunnerTests(unittest.TestCase):
                     refresh_interval_seconds=1800,
                 )
             self.assertTrue(first["attempted"])
+            self.assertEqual(first["status"], "missing_status")
             self.assertEqual(second["reason"], "refresh_cooldown")
             self.assertEqual(run.call_count, 1)
             child_env = run.call_args.kwargs["env"]
