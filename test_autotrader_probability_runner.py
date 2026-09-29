@@ -11,7 +11,7 @@ from autotrader.paper_runner import _refresh_local_fair_values, run_once
 from autotrader.probability import load_pm_edge_api, load_pm_edge_ledger
 from autotrader.storage import load_portfolio
 
-FIELDS = ["evaluated_at", "stage", "ticker", "side", "fair_probability", "devig_method"]
+FIELDS = ["evaluated_at", "fair_fetched_at", "commence_time", "market_type", "point", "stage", "ticker", "side", "fair_probability", "devig_method"]
 
 
 class FakeClient:
@@ -37,12 +37,17 @@ class FakeClient:
         return {"ticker": ticker, "status": "open", "result": ""}
 
 
-def write_ledger(path, when, probability="0.70", side="YES"):
+def write_ledger(path, when, probability="0.70", side="YES", *, commence=None,
+                 market_type="h2h", point=""):
     with Path(path).open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=FIELDS)
         writer.writeheader()
         writer.writerow({
             "evaluated_at": when.isoformat().replace("+00:00", "Z"),
+            "fair_fetched_at": when.isoformat().replace("+00:00", "Z"),
+            "commence_time": (commence or (when + timedelta(hours=4))).isoformat().replace("+00:00", "Z"),
+            "market_type": market_type,
+            "point": point,
             "stage": "score",
             "ticker": "KXTEST",
             "side": side,
@@ -95,7 +100,11 @@ class ProbabilityRunnerTests(unittest.TestCase):
             "ticker": "KXTEST",
             "side": "YES",
             "fair_probability": 0.66,
-            "alerted_at": (now - timedelta(seconds=45)).isoformat().replace("+00:00", "Z"),
+            "evaluated_at": (now - timedelta(seconds=45)).isoformat().replace("+00:00", "Z"),
+            "fair_fetched_at": (now - timedelta(seconds=45)).isoformat().replace("+00:00", "Z"),
+            "commence_time": (now + timedelta(hours=4)).isoformat().replace("+00:00", "Z"),
+            "market_type": "h2h",
+            "point": None,
             "source_version": "27",
         }]}
         with patch("autotrader.probability.requests.get", return_value=FakeResponse(payload)) as get:
@@ -134,6 +143,41 @@ class ProbabilityRunnerTests(unittest.TestCase):
             self.assertEqual(child_env["PM_EDGE_MODE"], "paper")
             self.assertEqual(child_env["PM_EDGE_ORDER_SUBMISSION_ENABLED"], "0")
             self.assertEqual(child_env["PUSHOVER_USER_KEY"], "")
+
+    def test_whole_number_spread_is_rejected(self):
+        now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = Path(directory) / "ledger.csv"
+            write_ledger(
+                ledger, now - timedelta(seconds=30), "0.70",
+                market_type="spread", point="-3",
+                commence=now + timedelta(hours=4),
+            )
+            snap = load_pm_edge_ledger(ledger, now=now, max_age_seconds=300)
+            self.assertEqual(snap.probabilities, {})
+
+    def test_half_point_spread_is_allowed(self):
+        now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = Path(directory) / "ledger.csv"
+            write_ledger(
+                ledger, now - timedelta(seconds=30), "0.70",
+                market_type="spread", point="-3.5",
+                commence=now + timedelta(hours=4),
+            )
+            snap = load_pm_edge_ledger(ledger, now=now, max_age_seconds=300)
+            self.assertIn(("KXTEST", "YES"), snap.probabilities)
+
+    def test_started_event_is_rejected(self):
+        now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = Path(directory) / "ledger.csv"
+            write_ledger(
+                ledger, now - timedelta(seconds=30), "0.70",
+                commence=now - timedelta(minutes=1),
+            )
+            snap = load_pm_edge_ledger(ledger, now=now, max_age_seconds=300)
+            self.assertEqual(snap.probabilities, {})
 
     def test_paper_runner_fills_only_from_fresh_independent_value(self):
         now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
