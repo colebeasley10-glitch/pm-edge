@@ -1,4 +1,6 @@
 from __future__ import annotations
+from datetime import datetime, timezone
+import os
 import requests
 
 class OddsAPIError(RuntimeError):
@@ -22,18 +24,54 @@ class OddsAPIClient:
     def _get(self, path: str, params: dict | None = None):
         p = dict(params or {})
         p["apiKey"] = self.api_key
+        sent_at = datetime.now(timezone.utc)
+        payload = None
+        usage = {}
+        status = None
+        error = None
         try:
             r = self.session.get(self.BASE + path, params=p, timeout=self.timeout)
+            status = r.status_code
             r.raise_for_status()
-            return r.json(), {
+            payload = r.json()
+            usage = {
                 "requests_remaining": r.headers.get("x-requests-remaining"),
                 "requests_used": r.headers.get("x-requests-used"),
                 "requests_last": r.headers.get("x-requests-last"),
             }
+            return payload, usage
         except (requests.RequestException, ValueError) as exc:
             response = getattr(exc, "response", None)
+            if response is not None:
+                status = getattr(response, "status_code", status)
             body = getattr(response, "text", "") if response is not None else ""
+            error = f"{type(exc).__name__}: {str(exc)[:300]}"
             raise OddsAPIError(f"Odds API request failed: {exc}; {body[:500]}") from exc
+        finally:
+            recorder_db = os.getenv("AUTOTRADER_RECORDER_DB", "").strip()
+            if recorder_db:
+                try:
+                    from autotrader.odds_capture import record_odds_response
+                    clean = dict(params or {})
+                    sport = None
+                    parts = [x for x in path.split("/") if x]
+                    if len(parts) >= 2 and parts[0] == "sports":
+                        sport = parts[1]
+                    record_odds_response(
+                        db_path=recorder_db,
+                        endpoint=path,
+                        sport=sport,
+                        regions=clean.get("regions") or self.regions,
+                        markets=clean.get("markets"),
+                        sent_at=sent_at,
+                        received_at=datetime.now(timezone.utc),
+                        payload=payload,
+                        usage=usage,
+                        http_status=status,
+                        error=error,
+                    )
+                except Exception:
+                    pass
 
     def active_sports(self):
         if self._sports_cache is not None:
