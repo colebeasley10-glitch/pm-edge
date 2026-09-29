@@ -101,9 +101,11 @@ def _settle_finished_positions(portfolio, client):
             continue
         result = str(market.get("result") or "").upper()
         status = str(market.get("status") or "").lower()
-        if result in ("YES", "NO") and status not in ("active", "open"):
+        # "closed" only means trading ended. Wait for Kalshi's final settlement
+        # state before realizing paper P/L.
+        if result in ("YES", "NO") and status in ("finalized", "settled"):
             if portfolio.settle(ticker, result):
-                settled.append({"ticker": ticker, "winner": result})
+                settled.append({"ticker": ticker, "winner": result, "status": status})
     return settled
 
 
