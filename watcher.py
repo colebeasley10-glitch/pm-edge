@@ -23,6 +23,7 @@ from pmedge.market_parse import parse_market
 from pmedge.matcher import load_aliases, match_event
 from pmedge.odds import OddsAPIClient, OddsAPIError
 from pmedge.fair_value import fair_from_event, blend_fair_value, load_model_overlay, load_manual_values
+from pmedge.fair_v2 import compute_fair_v2_metrics
 
 from pmedge.pricing import best_binary_trade
 import pmedge.matcher as _matcher_mod
@@ -961,8 +962,15 @@ def sport_rule_matches(event: dict, rule) -> bool:
     return True
 
 def fair_to_dict(fair, event, spec, usage=None, devig_diag=None):
+    fetched_at = iso_now()
+    v2 = compute_fair_v2_metrics(
+        (devig_diag or {}).get("book_inputs") or [],
+        market_type=getattr(spec, "market_type", None),
+        event_start=event.get("commence_time"),
+        processed_at=fetched_at,
+    )
     return {
-        "fetched_at": iso_now(),
+        "fetched_at": fetched_at,
         "fair_yes_prob": float(fair.fair_yes_prob),
         "source": fair.source,
         "confidence": float(fair.confidence),
@@ -986,6 +994,21 @@ def fair_to_dict(fair, event, spec, usage=None, devig_diag=None):
         "books_available": (devig_diag or {}).get("books_available"),
         "books_matched": (devig_diag or {}).get("books_matched"),
         "book_drop_reasons": (devig_diag or {}).get("book_drop_reasons") or [],
+        # Fair Value v2 shadow diagnostics. These fields do not alter the
+        # existing Value Edge decision path until separately calibrated/promoted.
+        "fair_v2_method_version": v2.method_version,
+        "fair_v2_weighted_yes_prob": v2.weighted_fair,
+        "sigma": v2.sigma,
+        "sigma_base": v2.sigma_base,
+        "sigma_disagree": v2.sigma_disagree,
+        "sigma_age": v2.sigma_age,
+        "n_sharp": v2.n_sharp,
+        "n_eff": v2.n_eff,
+        "disagreement": v2.disagreement,
+        "info_ts": v2.info_ts,
+        "source_age_s": v2.source_age_s,
+        "system_age_s": v2.system_age_s,
+        "delivery_lag_s": v2.delivery_lag_s,
     }
 
 def score_market(market, fair_entry, settings, base_min_edge=None):
