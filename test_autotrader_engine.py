@@ -25,6 +25,22 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(e.portfolio.positions["DEMO"].side, "YES")
         self.assertLessEqual(Decimal("500")-e.portfolio.cash, Decimal("10"))
 
+    def test_dynamic_fee_used_for_both_gate_and_cash_debit(self):
+        e = PaperEngine()
+        start_cash = e.portfolio.cash
+        result = e.on_snapshot(
+            [MARKET],
+            probabilities={("DEMO", "YES"): Decimal(".65")},
+            quote_ages={"DEMO": 0},
+            event_data_ages={"DEMO": 0},
+        )
+        self.assertEqual(result["paper_fills"], 1)
+        decision = e.decisions[-1]
+        contracts = Decimal(str(decision["contracts"]))
+        fill = Decimal(str(decision["simulated_fill"]))
+        fee_total = Decimal(str(decision["fee_total"]))
+        self.assertEqual(start_cash - e.portfolio.cash, contracts * fill + fee_total)
+
     def test_stale_data_no_trade(self):
         e = PaperEngine()
         result = e.on_snapshot([MARKET], probabilities={("DEMO","YES"):Decimal(".90")},
