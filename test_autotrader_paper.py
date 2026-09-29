@@ -28,6 +28,13 @@ class PaperPortfolioTests(unittest.TestCase):
         self.assertEqual(p.cash, Decimal("494.90"))
         self.assertEqual(len(p.positions), 1)
 
+    def test_unrealized_entry_fee_counted_once(self):
+        p = PaperPortfolio()
+        self.assertTrue(p.buy("FEE", "YES", 10, ".50", ".50", 10, ".01"))
+        snap = p.snapshot(bids={"FEE": ".60"})
+        self.assertEqual(snap["equity"], "500.90")
+        self.assertEqual(snap["unrealized_pnl"], ".90")
+
     def test_price_guard_and_settlement(self):
         p = PaperPortfolio()
         self.assertFalse(p.buy("A", "YES", 5, ".40", ".41", 5))
