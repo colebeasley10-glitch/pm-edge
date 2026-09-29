@@ -162,3 +162,58 @@ export type ScoreEvent = {
 };
 
 export type ScoresResponse = { items: ScoreEvent[]; available: boolean };
+
+
+export type AutoTraderPosition = {
+  ticker: string;
+  side: "YES" | "NO" | string;
+  contracts: number;
+  entry: string;
+  entry_fee: string;
+  exposure_key?: string | null;
+  fair_snapshot_id?: string | null;
+};
+
+export type AutoTraderRun = {
+  observed_at?: string | null;
+  provider?: string | null;
+  fair_refresh?: Record<string, any> | null;
+  candidate_count?: number;
+  fresh_probability_count?: number;
+  matched_candidate_count?: number;
+  paper_fills?: number;
+  funnel?: Record<string, number>;
+  portfolio?: {
+    cash?: string;
+    equity?: string;
+    realized_pnl?: string;
+    unrealized_pnl?: string;
+    open_positions?: number;
+  };
+  decisions?: Array<Record<string, any>>;
+};
+
+export type AutoTraderStatus = {
+  mode: "paper";
+  worker_online: boolean;
+  scan_interval_seconds: number;
+  starting_bankroll: string;
+  portfolio: {
+    cash: string;
+    equity: string;
+    realized_pnl: string;
+    unrealized_pnl: string;
+    open_positions: number;
+  };
+  positions: AutoTraderPosition[];
+  record: string;
+  settled_count: number;
+  blotter: Array<Record<string, any>>;
+  last_run?: AutoTraderRun | null;
+  recent_runs: AutoTraderRun[];
+};
+
+export type AutoTraderScanResponse = {
+  accepted: boolean;
+  mode: "paper";
+};
