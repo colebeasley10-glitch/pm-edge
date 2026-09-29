@@ -290,6 +290,14 @@ def _region_count(regions) -> int:
 def estimated_featured_odds_cost(settings, markets) -> int:
     return max(0, len(list(markets or []))) * _region_count(getattr(settings, "odds_regions", "us"))
 
+def _odds_error_is_hard(exc) -> bool:
+    text = str(exc or "").lower()
+    return any(token in text for token in (
+        " 401", " 403", " 429", "status code: 401", "status code: 403",
+        "status code: 429", "unauthorized", "forbidden", "quota",
+        "out_of_usage_credits", "usage limit", "rate limit",
+    ))
+
 def fetch_featured_sport_odds(settings, sport_key: str, markets):
     """Fetch featured h2h/spreads/totals for every listed event in one sport."""
     markets = [m for m in dict.fromkeys(markets or []) if m in {"h2h", "spreads", "totals"}]
@@ -1383,6 +1391,9 @@ def main():
     fair_attempts = 0
     fair_successes = 0
     odds_errors = 0
+    odds_error_samples = []
+    refresh_attempts = 0
+    hard_odds_failure = False
 
     featured_key_for_type = BULK_FEATURED_KEY_FOR_TYPE
 
@@ -1425,7 +1436,12 @@ def main():
             sport_rows, usage = fetch_featured_sport_odds(settings, sport_key, markets_to_fetch)
         except Exception as exc:
             odds_errors += 1
+            if len(odds_error_samples) < 5:
+                odds_error_samples.append(f"bulk:{sport_key}:{type(exc).__name__}:{str(exc)[:240]}")
             print("Bulk odds refresh failed:", sport_key, markets_to_fetch, exc)
+            if _odds_error_is_hard(exc):
+                hard_odds_failure = True
+                break
             continue
 
         cost = usage_cost(usage)
@@ -1485,6 +1501,8 @@ def main():
     # Event-specific fallback for alternate spreads/totals, team totals and
     # any featured market not covered by the bulk pass.
     for _, market, spec, em in candidates:
+        if hard_odds_failure:
+            break
         cached = state["fair_cache"].get(market["ticker"])
         ttl = fair_ttl_hours(em.event)
         if cached and age_hours(cached.get("fetched_at")) <= ttl:
@@ -1505,7 +1523,7 @@ def main():
         group = (sport_key, em.event.get("id"), requested_markets)
 
         if group not in run_event_odds_cache:
-            if refreshed_groups >= MAX_REFRESH_GROUPS or credits_remaining_today <= 0:
+            if refresh_attempts >= MAX_REFRESH_GROUPS or credits_remaining_today <= 0:
                 continue
 
             # The event endpoint can charge more than one credit when requesting
@@ -1515,11 +1533,17 @@ def main():
             if estimated_cost > credits_remaining_today:
                 continue
 
+            refresh_attempts += 1
             try:
                 event_odds, usage = odds.event_odds(group[0], group[1], group[2])
             except OddsAPIError as exc:
                 odds_errors += 1
+                if len(odds_error_samples) < 5:
+                    odds_error_samples.append(f"event:{group}:{type(exc).__name__}:{str(exc)[:240]}")
                 print("Odds refresh failed:", group, exc)
+                if _odds_error_is_hard(exc):
+                    hard_odds_failure = True
+                    break
                 continue
 
             cost = usage_cost(usage)
@@ -1827,6 +1851,9 @@ def main():
         "fair_attempts": fair_attempts,
         "fair_successes": fair_successes,
         "odds_errors": odds_errors,
+        "odds_error_samples": odds_error_samples,
+        "odds_hard_failure": hard_odds_failure,
+        "odds_refresh_attempts": refresh_attempts,
         "fair_cache": len(state["fair_cache"]),
         "actionable": len(actionable),
         "alerts_sent": sent,
