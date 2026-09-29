@@ -1,7 +1,8 @@
 """Fresh independent fair-value adapters for the paper simulator."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import csv
+import hashlib
 from pathlib import Path
 from decimal import Decimal, InvalidOperation
 
@@ -14,6 +15,7 @@ class ProbabilitySnapshot:
     ages: dict
     sources: dict
     observed_at: datetime
+    contexts: dict = field(default_factory=dict)
 
 
 def _parse_ts(value):
@@ -80,6 +82,21 @@ def _build_snapshot(rows, *, now, max_age_seconds, source_default,
         if age is None or age > max_age_seconds:
             continue
         key = (ticker, side)
+        snapshot_id = str(row.get("fair_snapshot_id") or "").strip()
+        if not snapshot_id:
+            snapshot_raw = "|".join([
+                ticker, side, str(ts.isoformat()), str(prob),
+                str(row.get("event_id") or ""),
+            ])
+            snapshot_id = hashlib.sha256(snapshot_raw.encode("utf-8")).hexdigest()[:20]
+        context = {
+            "event_id": str(row.get("event_id") or "").strip(),
+            "fair_snapshot_id": snapshot_id,
+            "commence_time": str(row.get("commence_time") or "").strip(),
+            "market_type": market_type,
+            "selection": str(row.get("selection") or "").strip(),
+            "point": row.get("point"),
+        }
         old = latest.get(key)
         if old is None or ts > old[0]:
             latest[key] = (
@@ -87,6 +104,7 @@ def _build_snapshot(rows, *, now, max_age_seconds, source_default,
                 prob,
                 age,
                 str(row.get("devig_method") or row.get("source_version") or source_default),
+                context,
             )
 
     probabilities = {key: value[1] for key, value in latest.items()}
@@ -95,7 +113,8 @@ def _build_snapshot(rows, *, now, max_age_seconds, source_default,
         ticker, _side = key
         ages[ticker] = max(ages.get(ticker, 0.0), value[2])
     sources = {key: value[3] for key, value in latest.items()}
-    return ProbabilitySnapshot(probabilities, ages, sources, now)
+    contexts = {key: value[4] for key, value in latest.items()}
+    return ProbabilitySnapshot(probabilities, ages, sources, now, contexts)
 
 
 def load_pm_edge_ledger(path="pm_edge_candidate_ledger.csv", *, now=None, max_age_seconds=300):
