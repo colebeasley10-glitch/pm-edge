@@ -430,7 +430,10 @@ class RecorderStore:
         if not ticker or not fetched_at:
             return None
         sigma = _float(fair_entry.get("sigma"))
-        p_fair = _float(fair_entry.get("fair_yes_prob"))
+        # This table stores the v2 shadow estimate, not the still-live legacy
+        # Value Edge fair. Keeping the two distinct prevents a shadow model from
+        # silently becoming the production decision input.
+        p_fair = _float(fair_entry.get("fair_v2_weighted_yes_prob"))
         if sigma is None or p_fair is None or not (0 < p_fair < 1):
             return None
         fetch_ids = [str(x) for x in (input_fetch_ids or []) if str(x or "").strip()]
