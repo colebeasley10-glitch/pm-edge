@@ -12,6 +12,8 @@ class Position:
     contracts: int
     entry: Decimal
     entry_fee: Decimal
+    exposure_key: str | None = None
+    fair_snapshot_id: str | None = None
 
 @dataclass
 class PaperPortfolio:
@@ -25,7 +27,8 @@ class PaperPortfolio:
     def exposure(self):
         return sum((p.contracts * (p.entry + p.entry_fee) for p in self.positions.values()), D("0"))
 
-    def buy(self, ticker, side, contracts, limit, executable_ask, available, fee_per_contract=D("0")):
+    def buy(self, ticker, side, contracts, limit, executable_ask, available,
+            fee_per_contract=D("0"), exposure_key=None, fair_snapshot_id=None):
         """Conservative simulated taker fill at executable ask, not stale limit."""
         price, ask, fee = D(limit), D(executable_ask), D(fee_per_contract)
         if side not in ("YES", "NO") or not ticker or not isinstance(contracts, int) or contracts < 1:
@@ -34,14 +37,29 @@ class PaperPortfolio:
             return False
         if ticker in self.positions:  # no duplicate or opposing side exposure
             return False
+        exposure_key = str(exposure_key or "").strip() or None
+        fair_snapshot_id = str(fair_snapshot_id or "").strip() or None
+        if exposure_key and any(p.exposure_key == exposure_key for p in self.positions.values()):
+            return False
+        if fair_snapshot_id and any(
+            str(row.get("fair_snapshot_id") or "") == fair_snapshot_id
+            for row in self.ledger
+            if row.get("action") == "BUY"
+        ):
+            return False
         cost = contracts * (ask + fee)
         if (cost > self.cash or cost > DEFAULT_CONFIG.starting_bankroll * self.max_position_fraction
                 or self.exposure() + cost > DEFAULT_CONFIG.starting_bankroll * self.max_total_fraction):
             return False
         self.cash -= cost
-        self.positions[ticker] = Position(ticker, side, contracts, ask, fee)
-        self.ledger.append({"action": "BUY", "ticker": ticker, "side": side, "contracts": contracts,
-                            "price": str(ask), "fee": str(fee * contracts)})
+        self.positions[ticker] = Position(
+            ticker, side, contracts, ask, fee, exposure_key, fair_snapshot_id
+        )
+        self.ledger.append({
+            "action": "BUY", "ticker": ticker, "side": side, "contracts": contracts,
+            "price": str(ask), "fee": str(fee * contracts),
+            "exposure_key": exposure_key, "fair_snapshot_id": fair_snapshot_id,
+        })
         return True
 
     def sell(self, ticker, executable_bid, available, fee_per_contract=D("0")):
