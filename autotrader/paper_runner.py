@@ -159,12 +159,13 @@ def _refresh_local_fair_values(*, ledger_path, refresh_state_path, now,
     AUTOTRADER_ODDS_DAILY_BUDGET.
     """
     state = _refresh_state(refresh_state_path)
-    odds_api_key = (
-        os.environ.get("AUTOTRADER_ODDS_API_KEY", "").strip()
-        or os.environ.get("ODDS_API_KEY", "").strip()
-    )
+    dedicated_key = os.environ.get("AUTOTRADER_ODDS_API_KEY", "").strip()
+    shared_key = os.environ.get("ODDS_API_KEY", "").strip()
+    odds_api_key = dedicated_key or shared_key
     if not odds_api_key:
         return {"attempted": False, "reason": "odds_api_key_unavailable"}
+    key_source = "dedicated" if dedicated_key else "shared"
+    dedicated_matches_shared = bool(dedicated_key and shared_key and dedicated_key == shared_key)
     key_fingerprint = hashlib.sha256(odds_api_key.encode("utf-8")).hexdigest()[:12]
 
     previous = state.get("last_attempt")
@@ -180,7 +181,13 @@ def _refresh_local_fair_values(*, ledger_path, refresh_state_path, now,
     if previous_dt is not None and same_key:
         age = (now - previous_dt.astimezone(timezone.utc)).total_seconds()
         if age < refresh_interval_seconds:
-            return {"attempted": False, "reason": "refresh_cooldown", "age_seconds": max(0, age)}
+            return {
+                "attempted": False,
+                "reason": "refresh_cooldown",
+                "age_seconds": max(0, age),
+                "odds_key_source": key_source,
+                "dedicated_matches_shared": dedicated_matches_shared,
+            }
 
     attempt = now.isoformat()
     ledger_before = _file_stats(ledger_path)
@@ -249,6 +256,8 @@ def _refresh_local_fair_values(*, ledger_path, refresh_state_path, now,
             "attempted": True,
             "status": status,
             "returncode": completed.returncode,
+            "odds_key_source": key_source,
+            "dedicated_matches_shared": dedicated_matches_shared,
             "watcher_summary": summary,
             "ledger_before": ledger_before,
             "ledger_after": _file_stats(ledger_path),
