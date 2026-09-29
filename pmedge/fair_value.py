@@ -206,6 +206,8 @@ def fair_from_event(
     return_diagnostics: bool = False,
 ):
     method_probs = {"proportional": [], "power": [], "shin": []}
+    method = active_devig_method()
+    book_inputs = []
     bookmakers = list(event.get("bookmakers", []) or [])
     books_available = len(bookmakers)
     books_matched = 0
@@ -227,10 +229,21 @@ def fair_from_event(
 
             if bundle:
                 books_matched += 1
-                for method in method_probs:
-                    p = bundle.get(method)
+                for devig_name in method_probs:
+                    p = bundle.get(devig_name)
                     if p is not None:
-                        method_probs[method].append(float(p))
+                        method_probs[devig_name].append(float(p))
+                active_p = bundle.get(method)
+                if active_p is not None:
+                    book_inputs.append({
+                        "book_key": str(book.get("key") or ""),
+                        "book_title": str(book.get("title") or ""),
+                        "source_ts": book.get("last_update"),
+                        "probability": float(active_p),
+                        "probability_proportional": bundle.get("proportional"),
+                        "probability_power": bundle.get("power"),
+                        "probability_shin": bundle.get("shin"),
+                    })
             else:
                 book_drop_reasons.append(f"{book_name}:{_book_failure_reason(spec, book, aliases)}")
         except (ValueError, TypeError, ZeroDivisionError) as exc:
@@ -241,7 +254,6 @@ def fair_from_event(
         method: robust_consensus(probs, min_books=min_books, max_dispersion=max_dispersion)
         for method, probs in method_probs.items()
     }
-    method = active_devig_method()
     consensus = consensuses.get(method)
     diagnostics = {
         "devig_method": method,
@@ -251,6 +263,7 @@ def fair_from_event(
         "books_available": books_available,
         "books_matched": books_matched,
         "book_drop_reasons": book_drop_reasons,
+        "book_inputs": book_inputs,
     }
     if return_diagnostics:
         return consensus, diagnostics
