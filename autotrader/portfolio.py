@@ -79,17 +79,37 @@ class PaperPortfolio:
         del self.positions[ticker]
         return True
 
-    def settle(self, ticker, winning_side):
+    def settle_value(self, ticker, yes_settlement_value):
+        """Settle from Kalshi's finalized YES contract value (normally 0 or 1).
+
+        Non-binary values are supported for rule-defined special settlements.
+        There is no settlement fee.
+        """
         p = self.positions.get(ticker)
-        if p is None or winning_side not in ("YES", "NO"):
+        try:
+            yes_value = D(yes_settlement_value)
+        except Exception:
             return False
-        proceeds = D(p.contracts) if p.side == winning_side else D("0")
+        if p is None or not (D("0") <= yes_value <= D("1")):
+            return False
+        per_contract = yes_value if p.side == "YES" else D("1") - yes_value
+        proceeds = D(p.contracts) * per_contract
         pnl = proceeds - p.contracts * (p.entry + p.entry_fee)
         self.cash += proceeds
         self.realized_pnl += pnl
-        self.ledger.append({"action": "SETTLE", "ticker": ticker, "winner": winning_side, "pnl": str(pnl)})
+        self.ledger.append({
+            "action": "SETTLE", "ticker": ticker,
+            "yes_settlement_value": str(yes_value),
+            "payout_per_contract": str(per_contract),
+            "pnl": str(pnl),
+        })
         del self.positions[ticker]
         return True
+
+    def settle(self, ticker, winning_side):
+        if winning_side not in ("YES", "NO"):
+            return False
+        return self.settle_value(ticker, D("1") if winning_side == "YES" else D("0"))
 
     def snapshot(self, bids=None):
         """Unrealized values are bid-marked; absent bids are conservatively zero."""
