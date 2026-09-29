@@ -224,6 +224,12 @@ def _refresh_local_fair_values(*, ledger_path, refresh_state_path, now,
             # A successful process exit without the structured watcher summary is
             # not proof that discovery/pricing actually ran.
             status = "missing_status"
+        elif summary.get("odds_hard_failure") and any(
+            "OUT_OF_USAGE_CREDITS" in str(item).upper()
+            or "USAGE QUOTA HAS BEEN REACHED" in str(item).upper()
+            for item in (summary.get("odds_error_samples") or [])
+        ):
+            status = "odds_quota_exhausted"
         else:
             status = str(summary.get("status") or "missing_status")
         result = {
