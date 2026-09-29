@@ -4,6 +4,7 @@ from decimal import Decimal
 from .portfolio import PaperPortfolio
 from .scanner import discover
 from .evaluator import evaluate
+from .fees import prediction_fee
 
 D = lambda value: Decimal(str(value))
 
@@ -15,7 +16,7 @@ class PaperEngine:
     min_net_edge: Decimal = D("0.05")
 
     def on_snapshot(self, markets, *, probabilities, quote_ages, event_data_ages,
-                    fee_per_contract="0", slippage_per_contract="0",
+                    fee_per_contract=None, slippage_per_contract="0",
                     max_quote_age_seconds=2, max_event_data_age_seconds=300):
         return self.on_candidates(
             discover(markets), probabilities=probabilities,
@@ -27,22 +28,27 @@ class PaperEngine:
         )
 
     def on_candidates(self, candidates, *, probabilities, quote_ages, event_data_ages,
-                      fee_per_contract="0", slippage_per_contract="0",
+                      fee_per_contract=None, slippage_per_contract="0",
                       max_quote_age_seconds=2, max_event_data_age_seconds=300):
         """Evaluate executable candidates against independent fair probabilities."""
         candidates = list(candidates)
         accepted = 0
         start_decisions = len(self.decisions)
-        fee = D(fee_per_contract)
+        fee_override = None if fee_per_contract in (None, "") else D(fee_per_contract)
         slippage = D(slippage_per_contract)
         for c in candidates:
             key = (c.ticker, c.side)
             quote_age = quote_ages.get(key, quote_ages.get(c.ticker))
             event_age = event_data_ages.get(key, event_data_ages.get(c.ticker))
+            qualification_fee = (
+                fee_override
+                if fee_override is not None
+                else prediction_fee(1, c.executable_ask)
+            )
             decision = evaluate(
                 c,
                 fair_probability=probabilities.get(key),
-                fee_per_contract=fee,
+                fee_per_contract=qualification_fee,
                 slippage_per_contract=slippage,
                 min_net_edge=self.min_net_edge,
                 quote_age_seconds=quote_age,
@@ -69,7 +75,12 @@ class PaperEngine:
                 continue
 
             simulated_fill = c.executable_ask + slippage
-            cost_per_contract = simulated_fill + fee
+            sizing_fee = (
+                fee_override
+                if fee_override is not None
+                else prediction_fee(1, simulated_fill)
+            )
+            cost_per_contract = simulated_fill + sizing_fee
             if not (D("0") < simulated_fill < D("1")) or cost_per_contract <= 0:
                 entry["decision"] = "invalid_simulated_fill"
                 self.decisions.append(entry)
@@ -83,17 +94,24 @@ class PaperEngine:
             if contracts < 1:
                 entry["decision"] = "insufficient_paper_risk_budget"
             else:
+                total_fee = (
+                    fee_override * contracts
+                    if fee_override is not None
+                    else prediction_fee(contracts, simulated_fill)
+                )
+                effective_fee = total_fee / D(contracts)
                 filled = self.portfolio.buy(
                     c.ticker, c.side, contracts,
                     simulated_fill, simulated_fill,
-                    int(c.available), fee,
+                    int(c.available), effective_fee,
                 )
                 entry["decision"] = "paper_filled" if filled else "paper_risk_rejected"
                 if filled:
                     accepted += 1
                     entry["contracts"] = contracts
                     entry["simulated_fill"] = str(simulated_fill)
-                    entry["fee_per_contract"] = str(fee)
+                    entry["fee_total"] = str(total_fee)
+                    entry["fee_per_contract_effective"] = str(effective_fee)
                     entry["slippage_per_contract"] = str(slippage)
             self.decisions.append(entry)
 
