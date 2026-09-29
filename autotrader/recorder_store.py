@@ -415,6 +415,64 @@ class RecorderStore:
                     continue
         return inserted
 
+    def record_fair_snapshot(self, ticker: str, fair_entry: dict, *, input_fetch_ids=None):
+        """Append one derived fair snapshot with both source/system age metadata."""
+        ticker = str(ticker or "").strip()
+        fetched_at = str(fair_entry.get("fetched_at") or "").strip()
+        if not ticker or not fetched_at:
+            return None
+        sigma = _float(fair_entry.get("sigma"))
+        p_fair = _float(fair_entry.get("fair_yes_prob"))
+        if sigma is None or p_fair is None or not (0 < p_fair < 1):
+            return None
+        fetch_ids = [str(x) for x in (input_fetch_ids or []) if str(x or "").strip()]
+        raw = "|".join([
+            ticker,
+            fetched_at,
+            str(p_fair),
+            str(fair_entry.get("fair_v2_method_version") or ""),
+            ",".join(fetch_ids),
+        ])
+        fair_id = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
+        input_received_max = fetched_at
+        with self.connect() as con:
+            con.execute(
+                """INSERT OR IGNORE INTO fair_snapshots(
+                    fair_id,market_ticker,map_id,method_version,input_fetch_ids,
+                    input_received_at_max,info_ts,processed_at,p_fair,sigma,
+                    sigma_base,sigma_disagree,sigma_age,n_books,n_sharp,n_eff,
+                    disagreement,devig_method,inputs_json,valid,invalid_reason,
+                    source_age_s,system_age_s,delivery_lag_s
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    fair_id,
+                    ticker,
+                    fair_entry.get("map_id"),
+                    str(fair_entry.get("fair_v2_method_version") or "fair_v2_shadow_1"),
+                    json.dumps(fetch_ids, separators=(",", ":")),
+                    input_received_max,
+                    fair_entry.get("info_ts"),
+                    fetched_at,
+                    p_fair,
+                    sigma,
+                    _float(fair_entry.get("sigma_base")) or 0.0,
+                    _float(fair_entry.get("sigma_disagree")) or 0.0,
+                    _float(fair_entry.get("sigma_age")) or 0.0,
+                    int(fair_entry.get("n_books") or 0),
+                    int(fair_entry.get("n_sharp") or 0),
+                    _float(fair_entry.get("n_eff")) or 0.0,
+                    _float(fair_entry.get("disagreement")),
+                    fair_entry.get("devig_method"),
+                    json.dumps(fair_entry.get("book_inputs") or [], separators=(",", ":"), default=str),
+                    1,
+                    None,
+                    _float(fair_entry.get("source_age_s")),
+                    _float(fair_entry.get("system_age_s")) or 0.0,
+                    _float(fair_entry.get("delivery_lag_s")),
+                ),
+            )
+        return fair_id
+
     def record_api_call(self, *, service, endpoint, sent_at, received_at,
                         latency_ms=None, status=None, rate_limit_remaining=None, error=None):
         with self.connect() as con:
