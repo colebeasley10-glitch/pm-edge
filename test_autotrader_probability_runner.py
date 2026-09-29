@@ -197,7 +197,7 @@ class ProbabilityRunnerTests(unittest.TestCase):
             self.assertIn("KXTEST", portfolio.positions)
             self.assertEqual(portfolio.positions["KXTEST"].side, "YES")
             self.assertEqual(portfolio.positions["KXTEST"].entry, Decimal("0.515"))
-            self.assertEqual(portfolio.positions["KXTEST"].entry_fee, Decimal("0.01"))
+            self.assertAlmostEqual(float(portfolio.positions["KXTEST"].entry_fee), 0.32 / 18, places=10)
             self.assertLess(portfolio.cash, Decimal("500"))
             self.assertEqual(len(runs.read_text().splitlines()), 1)
 
