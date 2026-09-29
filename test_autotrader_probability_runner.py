@@ -7,7 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from autotrader.paper_runner import _refresh_local_fair_values, run_once
+from autotrader.paper_runner import _refresh_local_fair_values, _settle_finished_positions, run_once
 from autotrader.probability import load_pm_edge_api, load_pm_edge_ledger
 from autotrader.storage import load_portfolio
 
@@ -198,6 +198,39 @@ class ProbabilityRunnerTests(unittest.TestCase):
             )
             snap = load_pm_edge_ledger(ledger, now=now, max_age_seconds=300)
             self.assertEqual(snap.probabilities, {})
+
+    def test_closed_market_without_final_settlement_does_not_settle(self):
+        class ClosedClient:
+            def get_market(self, ticker):
+                return {
+                    "ticker": ticker,
+                    "status": "closed",
+                    "result": "YES",
+                    "settlement_value_dollars": "1.0000",
+                }
+
+        portfolio = load_portfolio("/definitely/missing/paper-state.json")
+        self.assertTrue(portfolio.buy("KXTEST", "YES", 5, ".50", ".50", 5, ".01"))
+        settled = _settle_finished_positions(portfolio, ClosedClient())
+        self.assertEqual(settled, [])
+        self.assertIn("KXTEST", portfolio.positions)
+
+    def test_finalized_partial_settlement_uses_exchange_value(self):
+        class SettledClient:
+            def get_market(self, ticker):
+                return {
+                    "ticker": ticker,
+                    "status": "settled",
+                    "result": "",
+                    "settlement_value_dollars": "0.7000",
+                }
+
+        portfolio = load_portfolio("/definitely/missing/paper-state.json")
+        self.assertTrue(portfolio.buy("KXTEST", "YES", 5, ".50", ".50", 5, ".01"))
+        settled = _settle_finished_positions(portfolio, SettledClient())
+        self.assertEqual(len(settled), 1)
+        self.assertNotIn("KXTEST", portfolio.positions)
+        self.assertEqual(portfolio.realized_pnl, Decimal("0.95"))
 
     def test_paper_runner_fills_only_from_fresh_independent_value(self):
         now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
