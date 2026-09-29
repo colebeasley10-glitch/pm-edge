@@ -155,6 +155,31 @@ class ProbabilityRunnerTests(unittest.TestCase):
             self.assertEqual(child_env["PM_EDGE_ORDER_SUBMISSION_ENABLED"], "0")
             self.assertEqual(child_env["PUSHOVER_USER_KEY"], "")
 
+    def test_dedicated_autotrader_odds_key_overrides_shared_key(self):
+        now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            completed = SimpleNamespace(
+                returncode=0,
+                stdout='PM_EDGE_RUN_SUMMARY {"status":"no_fair"}',
+                stderr="",
+            )
+            with patch.dict(
+                "os.environ",
+                {
+                    "ODDS_API_KEY": "shared-key",
+                    "AUTOTRADER_ODDS_API_KEY": "dedicated-key",
+                },
+                clear=False,
+            ), patch("autotrader.paper_runner.subprocess.run", return_value=completed) as run:
+                _refresh_local_fair_values(
+                    ledger_path=root / "ledger.csv",
+                    refresh_state_path=root / "refresh.json",
+                    now=now,
+                    refresh_interval_seconds=1800,
+                )
+            self.assertEqual(run.call_args.kwargs["env"]["ODDS_API_KEY"], "dedicated-key")
+
     def test_naive_fair_timestamp_is_rejected(self):
         now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
         with tempfile.TemporaryDirectory() as directory:
