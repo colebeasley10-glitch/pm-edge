@@ -155,6 +155,36 @@ class ProbabilityRunnerTests(unittest.TestCase):
             self.assertEqual(child_env["PM_EDGE_ORDER_SUBMISSION_ENABLED"], "0")
             self.assertEqual(child_env["PUSHOVER_USER_KEY"], "")
 
+    def test_changed_odds_key_bypasses_refresh_cooldown(self):
+        now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            ledger = root / "ledger.csv"
+            refresh_state = root / "refresh.json"
+            completed = SimpleNamespace(
+                returncode=0,
+                stdout='PM_EDGE_RUN_SUMMARY {"status":"no_fair"}',
+                stderr="",
+            )
+            with patch("autotrader.paper_runner.subprocess.run", return_value=completed) as run:
+                with patch.dict("os.environ", {"AUTOTRADER_ODDS_API_KEY": "key-one"}, clear=False):
+                    first = _refresh_local_fair_values(
+                        ledger_path=ledger,
+                        refresh_state_path=refresh_state,
+                        now=now,
+                        refresh_interval_seconds=1800,
+                    )
+                with patch.dict("os.environ", {"AUTOTRADER_ODDS_API_KEY": "key-two"}, clear=False):
+                    second = _refresh_local_fair_values(
+                        ledger_path=ledger,
+                        refresh_state_path=refresh_state,
+                        now=now + timedelta(minutes=5),
+                        refresh_interval_seconds=1800,
+                    )
+            self.assertTrue(first["attempted"])
+            self.assertTrue(second["attempted"])
+            self.assertEqual(run.call_count, 2)
+
     def test_dedicated_autotrader_odds_key_overrides_shared_key(self):
         now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
         with tempfile.TemporaryDirectory() as directory:
