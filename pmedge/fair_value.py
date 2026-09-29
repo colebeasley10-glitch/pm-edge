@@ -146,6 +146,56 @@ def _book_prob_team_total(bookmaker, selection, point, aliases, market_keys=("te
     return None
 
 
+def _book_failure_reason(spec, bookmaker, aliases) -> str:
+    """Return a stable reason code when an exact sportsbook comparison fails."""
+    if spec.market_type == "h2h":
+        groups = list(_group_market_outcomes(bookmaker, "h2h"))
+        if not groups:
+            return "market_missing"
+        names = [str(o.get("name", "")) for outcomes in groups for o in outcomes]
+        return "selection_mismatch" if spec.selection and not _pick_name(spec.selection, names, aliases) else "market_unmatched"
+
+    key_map = {
+        "total": ("totals", "alternate_totals"),
+        "spread": ("spreads", "alternate_spreads"),
+        "team_total": ("team_totals", "alternate_team_totals"),
+    }
+    keys = key_map.get(spec.market_type, ())
+    groups = [outcomes for key in keys for outcomes in _group_market_outcomes(bookmaker, key)]
+    if not groups:
+        return "market_missing"
+    if spec.point is None:
+        return "missing_line"
+
+    exact = []
+    for outcomes in groups:
+        for outcome in outcomes:
+            try:
+                point = float(outcome.get("point"))
+            except (TypeError, ValueError):
+                continue
+            if abs(point - float(spec.point)) <= 1e-6:
+                exact.append(outcome)
+    if not exact:
+        return "line_mismatch"
+
+    if spec.market_type in {"spread", "team_total"} and spec.selection:
+        if spec.market_type == "spread":
+            if not any(team_similarity(spec.selection, str(o.get("name", "")), aliases) >= 0.70 for o in exact):
+                return "selection_mismatch"
+        else:
+            if not any(
+                team_similarity(
+                    spec.selection,
+                    str(o.get("description") or o.get("team") or ""),
+                    aliases,
+                ) >= 0.70
+                for o in exact
+            ):
+                return "selection_mismatch"
+    return "market_unmatched"
+
+
 def fair_from_event(
     spec,
     event: dict,
@@ -182,7 +232,7 @@ def fair_from_event(
                     if p is not None:
                         method_probs[method].append(float(p))
             else:
-                book_drop_reasons.append(f"{book_name}:market_or_selection_unmatched")
+                book_drop_reasons.append(f"{book_name}:{_book_failure_reason(spec, book, aliases)}")
         except (ValueError, TypeError, ZeroDivisionError) as exc:
             book_drop_reasons.append(f"{book_name}:{type(exc).__name__}")
             continue
