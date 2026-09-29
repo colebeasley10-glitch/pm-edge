@@ -1,5 +1,7 @@
 import type {
   AnalyticsResponse,
+  AutoTraderScanResponse,
+  AutoTraderStatus,
   BetListResponse,
   DashboardResponse,
   HistoryBet,
@@ -12,6 +14,7 @@ import type {
 } from "./types";
 
 const API_BASE = process.env.EXPO_PUBLIC_PM_EDGE_API_BASE_URL?.replace(/\/$/, "") ?? "";
+const AUTO_BASE = process.env.EXPO_PUBLIC_AUTOTRADER_API_BASE_URL?.replace(/\/$/, "") ?? "";
 
 function headers() {
   return {
@@ -37,6 +40,23 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return payload as T;
 }
 
+async function autoRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${AUTO_BASE}/autotrader-api${path}`, {
+    ...init,
+    headers: { ...headers(), ...(init?.headers ?? {}) },
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const detail = payload?.detail;
+    const message =
+      typeof detail === "string"
+        ? detail
+        : detail?.message ?? `AutoTrader API error ${response.status}`;
+    throw new Error(message);
+  }
+  return payload as T;
+}
+
 export const api = {
   dashboard: () => request<DashboardResponse>("/v1/dashboard"),
   newBets: () => request<BetListResponse<Signal>>("/v1/bets?status=new"),
@@ -47,6 +67,9 @@ export const api = {
   analytics: () => request<AnalyticsResponse>("/v1/analytics"),
   scores: () => request<ScoresResponse>("/v1/scores"),
   system: () => request<SystemResponse>("/v1/system"),
+  autoTraderStatus: () => autoRequest<AutoTraderStatus>("/v1/status"),
+  runAutoTraderScan: () =>
+    autoRequest<AutoTraderScanResponse>("/v1/run-scan", { method: "POST" }),
   review: (signalId: string) =>
     request<ReviewResponse>(`/v1/bets/${encodeURIComponent(signalId)}/review`),
   submit: (signalId: string) =>
