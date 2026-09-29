@@ -25,6 +25,7 @@ from .engine import PaperEngine
 from .probability import load_pm_edge_api, load_pm_edge_ledger
 from .scanner import scan_public
 from .storage import load_portfolio, save_portfolio
+from .recorder import start_recorder_thread
 
 
 def _utcnow():
@@ -590,6 +591,43 @@ def main():
     client = KalshiPublicClient(PUBLIC_BASE)
     trigger_event = threading.Event()
     run_lock = threading.Lock()
+
+    recorder = None
+    recorder_thread = None
+    recorder_enabled = (
+        not args.once
+        and os.environ.get("AUTOTRADER_RECORDER_ENABLED", "1").strip().lower()
+        not in {"0", "false", "no", "off"}
+    )
+    if recorder_enabled:
+        try:
+            recorder, recorder_thread = start_recorder_thread()
+            print(
+                json.dumps(
+                    {
+                        "autotrader_recorder": "thread_started",
+                        "db_path": recorder.store.path,
+                        "mode": "paper",
+                    }
+                ),
+                flush=True,
+            )
+        except Exception as exc:
+            print(
+                json.dumps(
+                    {
+                        "autotrader_recorder": "startup_error",
+                        "error": type(exc).__name__,
+                        "message": str(exc)[:500],
+                    }
+                ),
+                flush=True,
+            )
+            if os.environ.get("AUTOTRADER_RECORDER_REQUIRED", "0").strip().lower() in {
+                "1", "true", "yes", "on"
+            }:
+                raise
+
     if not args.once and os.environ.get("AUTOTRADER_HTTP_ENABLED", "1").strip().lower() not in {"0", "false", "no", "off"}:
         http_port = int(os.environ.get("PORT", os.environ.get("AUTOTRADER_HTTP_PORT", "8080")))
         _start_status_server(
