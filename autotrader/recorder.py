@@ -68,6 +68,7 @@ class RestRecorder:
         self._last_metadata_at = None
         self._last_snapshot_at = None
         self._last_trade_poll_at = None
+        self._last_audit_at = None
         self._stop = threading.Event()
         self._last_result = {}
 
@@ -222,6 +223,20 @@ class RestRecorder:
                 detail={"error": f"{type(exc).__name__}: {exc}"},
             )
 
+        audit = None
+        if (
+            self._last_audit_at is None
+            or (cycle_started - self._last_audit_at).total_seconds() >= 3600
+        ):
+            try:
+                audit = self.store.audit_point_in_time()
+            except Exception as exc:
+                audit = {
+                    "ok": False,
+                    "error": f"{type(exc).__name__}: {str(exc)[:300]}",
+                }
+            self._last_audit_at = cycle_started
+
         result = {
             "recorder": "rest_v1",
             "observed_at": utc_iso(self.clock().astimezone(timezone.utc)),
@@ -231,6 +246,7 @@ class RestRecorder:
             "metadata_changes": meta_changes,
             "full_snapshots": snapshots,
             "trades_inserted": trades_inserted,
+            "point_in_time_audit": audit,
             "db_path": self.store.path,
         }
         self._last_result = result
