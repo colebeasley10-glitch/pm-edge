@@ -1031,6 +1031,242 @@ function SettingsScreen({ back }: { back: () => void }) {
   );
 }
 
+
+function AutoTraderScreen({
+  data,
+  loading,
+  error,
+  refresh,
+  runScan,
+}: {
+  data: AutoTraderStatus | null;
+  loading: boolean;
+  error: string | null;
+  refresh: () => void;
+  runScan: () => void;
+}) {
+  const [view, setView] = useState<AutoTraderView>("Book");
+  const p = data?.portfolio;
+  const start = Number(data?.starting_bankroll ?? 500);
+  const cash = Number(p?.cash ?? start);
+  const realized = Number(p?.realized_pnl ?? 0);
+  const unrealized = Number(p?.unrealized_pnl ?? 0);
+  const totalPnl = realized + unrealized;
+  const equity = start + totalPnl;
+  const roi = start > 0 ? totalPnl / start : 0;
+  const last = data?.last_run;
+  const decisions = (last?.decisions ?? []) as Array<Record<string, any>>;
+  const lastFunnel = last?.funnel ?? {};
+  const refreshStatus = String((last?.fair_refresh as any)?.status ?? (last?.fair_refresh as any)?.reason ?? "—");
+
+  return (
+    <ScrollView
+      contentContainerStyle={styles.screen}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.blue} />}
+    >
+      <View style={styles.autoHeaderRow}>
+        <View style={{ gap: 4 }}>
+          <View style={styles.rowGap}>
+            <Text style={styles.screenTitle}>AutoTrader</Text>
+            <Chip label="PAPER ONLY" tone="blue" />
+          </View>
+          <Text style={styles.subtitle}>Always-on cloud paper trading · no real-money orders</Text>
+        </View>
+        <View style={[styles.autoOnlineDot, { backgroundColor: data?.worker_online ? colors.green : colors.red }]} />
+      </View>
+
+      <View style={[styles.statusBanner, !data?.worker_online && styles.noticeRed]}>
+        <Ionicons
+          name={data?.worker_online ? "cloud-done-outline" : "cloud-offline-outline"}
+          size={21}
+          color={data?.worker_online ? colors.green : colors.red}
+        />
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.statusBannerText, !data?.worker_online && { color: colors.red }]}>
+            {data?.worker_online ? "AutoTrader running in the cloud" : "AutoTrader worker unavailable"}
+          </Text>
+          <Text style={styles.mutedSmall}>
+            Scans continue about every {Math.round(Number(data?.scan_interval_seconds ?? 300) / 60)} minutes even when this app is closed.
+          </Text>
+        </View>
+      </View>
+
+      {error ? (
+        <View style={[styles.notice, styles.noticeRed]}>
+          <Ionicons name="warning-outline" size={21} color={colors.red} />
+          <Text style={styles.noticeText}>{error}</Text>
+        </View>
+      ) : null}
+
+      <View style={styles.autoHero}>
+        <Text style={styles.autoEyebrow}>PAPER NET ASSET VALUE</Text>
+        <View style={styles.autoHeroValueRow}>
+          <Text style={styles.autoHeroValue}>{fmtMoney(equity)}</Text>
+          <Text style={[styles.autoHeroPnl, { color: totalPnl >= 0 ? colors.green : colors.red }]}>
+            {fmtMoney(totalPnl, true)} ({fmtPct(roi)})
+          </Text>
+        </View>
+        <View style={styles.autoHeroRule} />
+        <View style={styles.autoFunnelRow}>
+          <Text style={styles.mutedSmall}>Fresh fair: {last?.fresh_probability_count ?? 0}</Text>
+          <Text style={styles.mutedSmall}>Matched: {last?.matched_candidate_count ?? 0}</Text>
+          <Text style={styles.mutedSmall}>Fills: {last?.paper_fills ?? 0}</Text>
+        </View>
+      </View>
+
+      <View style={styles.metricsGrid}>
+        <Metric label="Cash" value={fmtMoney(cash)} />
+        <Metric label="Open P/L" value={fmtMoney(unrealized, true)} positive={unrealized >= 0} />
+        <Metric label="Realized" value={fmtMoney(realized, true)} positive={realized >= 0} />
+        <Metric label="Win / Closed" value={data?.record ?? "0-0"} />
+        <Metric label="Risk" value="Controlled" />
+        <Metric label="Last Scan" value={fmtAgo(last?.observed_at)} />
+      </View>
+
+      <View style={styles.autoActions}>
+        <View style={{ flex: 1, gap: 3 }}>
+          <Text style={styles.autoActionTitle}>Autopilot</Text>
+          <Text style={styles.mutedSmall}>Server-side · always on</Text>
+        </View>
+        <Pressable style={styles.autoRunButton} onPress={runScan} disabled={loading}>
+          {loading ? <ActivityIndicator color={colors.bg} /> : <Text style={styles.autoRunButtonText}>Run scan</Text>}
+        </Pressable>
+      </View>
+
+      <PillTabs values={["Book", "Markets", "Blotter", "Log"]} selected={view} onSelect={setView} />
+
+      {view === "Book" ? (
+        data?.positions?.length ? (
+          data.positions.map((position) => (
+            <View key={position.ticker} style={styles.card}>
+              <View style={styles.rowBetween}>
+                <Chip label={String(position.side).toUpperCase()} tone="blue" />
+                <Text style={styles.statValue}>{position.contracts} contracts</Text>
+              </View>
+              <Text style={styles.betTitle}>{position.ticker}</Text>
+              <View style={styles.rowBetween}>
+                <Text style={styles.muted}>Entry</Text>
+                <Text style={styles.statValue}>{fmtCents(Number(position.entry))}</Text>
+              </View>
+              <View style={styles.rowBetween}>
+                <Text style={styles.muted}>Entry fee</Text>
+                <Text style={styles.statValue}>{fmtMoney(Number(position.entry_fee) * Number(position.contracts))}</Text>
+              </View>
+            </View>
+          ))
+        ) : (
+          <View style={styles.autoEmpty}>
+            <Ionicons name="book-outline" size={34} color={colors.muted} />
+            <Text style={styles.autoEmptyTitle}>The paper book is empty</Text>
+            <Text style={[styles.muted, { textAlign: "center" }]}>
+              AutoTrader will add positions only when a fresh independent fair value clears every safety and edge gate.
+            </Text>
+          </View>
+        )
+      ) : null}
+
+      {view === "Markets" ? (
+        decisions.length ? (
+          decisions.slice(-30).reverse().map((row, index) => (
+            <View key={`${String(row.ticker ?? "market")}-${index}`} style={styles.card}>
+              <View style={styles.rowBetween}>
+                <Text style={styles.betTitle}>{String(row.ticker ?? "Unknown market")}</Text>
+                <Chip
+                  label={String(row.decision ?? "CHECKED").replaceAll("_", " ").toUpperCase()}
+                  tone={row.decision === "paper_filled" ? "green" : row.qualified ? "blue" : "default"}
+                />
+              </View>
+              <View style={styles.rowBetween}>
+                <Text style={styles.muted}>Side</Text>
+                <Text style={styles.statValue}>{String(row.side ?? "—")}</Text>
+              </View>
+              <View style={styles.rowBetween}>
+                <Text style={styles.muted}>Fair</Text>
+                <Text style={styles.statValue}>{row.fair_probability != null ? fmtPct(Number(row.fair_probability)) : "—"}</Text>
+              </View>
+              <View style={styles.rowBetween}>
+                <Text style={styles.muted}>Net edge</Text>
+                <Text style={Number(row.net_edge ?? 0) >= 0.05 ? styles.greenValue : styles.statValue}>
+                  {row.net_edge != null ? fmtPct(Number(row.net_edge)) : "—"}
+                </Text>
+              </View>
+            </View>
+          ))
+        ) : (
+          <View style={styles.autoEmpty}>
+            <Text style={styles.autoEmptyTitle}>No scored markets yet</Text>
+            <Text style={[styles.muted, { textAlign: "center" }]}>
+              Latest funnel: {Number(lastFunnel.market_matched ?? 0)} matched · {Number(lastFunnel.books_ok ?? 0)} with enough books · {Number(lastFunnel.scored ?? 0)} scored.
+            </Text>
+          </View>
+        )
+      ) : null}
+
+      {view === "Blotter" ? (
+        data?.blotter?.length ? (
+          [...data.blotter].reverse().map((row, index) => {
+            const pnl = row.pnl != null ? Number(row.pnl) : null;
+            return (
+              <View key={`${String(row.ticker ?? "row")}-${index}`} style={styles.historyRow}>
+                <View style={styles.historyMain}>
+                  <View style={styles.rowGap}>
+                    <Chip label={String(row.action ?? "EVENT").toUpperCase()} tone={String(row.action).toUpperCase() === "BUY" ? "blue" : "default"} />
+                    {row.side ? <Chip label={String(row.side).toUpperCase()} /> : null}
+                  </View>
+                  <Text style={styles.historyTitle}>{String(row.ticker ?? "—")}</Text>
+                  <Text style={styles.mutedSmall}>
+                    {row.contracts ? `${row.contracts} contracts` : ""}{row.price ? ` · ${fmtCents(Number(row.price))}` : ""}
+                  </Text>
+                </View>
+                <View style={styles.historyPnl}>
+                  {pnl != null ? <Text style={pnl >= 0 ? styles.greenValue : styles.redValue}>{fmtMoney(pnl, true)}</Text> : <Text style={styles.muted}>Paper</Text>}
+                  {row.fee ? <Text style={styles.mutedSmall}>fee {fmtMoney(Number(row.fee))}</Text> : null}
+                </View>
+              </View>
+            );
+          })
+        ) : (
+          <View style={styles.autoEmpty}>
+            <Text style={styles.autoEmptyTitle}>No paper fills yet</Text>
+            <Text style={styles.muted}>Fills and settlements will appear here automatically.</Text>
+          </View>
+        )
+      ) : null}
+
+      {view === "Log" ? (
+        <View style={{ gap: 10 }}>
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Latest scan</Text>
+            <View style={styles.rowBetween}><Text style={styles.muted}>Fair source</Text><Text style={styles.statValue}>{last?.provider ?? "—"}</Text></View>
+            <View style={styles.divider} />
+            <View style={styles.rowBetween}><Text style={styles.muted}>Fallback</Text><Text style={styles.statValue}>{refreshStatus}</Text></View>
+            <View style={styles.divider} />
+            <View style={styles.rowBetween}><Text style={styles.muted}>Kalshi open</Text><Text style={styles.statValue}>{Number(lastFunnel.kalshi_open ?? 0)}</Text></View>
+            <View style={styles.rowBetween}><Text style={styles.muted}>Parseable</Text><Text style={styles.statValue}>{Number(lastFunnel.parseable ?? 0)}</Text></View>
+            <View style={styles.rowBetween}><Text style={styles.muted}>Event matched</Text><Text style={styles.statValue}>{Number(lastFunnel.event_matched ?? 0)}</Text></View>
+            <View style={styles.rowBetween}><Text style={styles.muted}>Market matched</Text><Text style={styles.statValue}>{Number(lastFunnel.market_matched ?? 0)}</Text></View>
+            <View style={styles.rowBetween}><Text style={styles.muted}>Books OK</Text><Text style={styles.statValue}>{Number(lastFunnel.books_ok ?? 0)}</Text></View>
+            <View style={styles.rowBetween}><Text style={styles.muted}>Scored</Text><Text style={styles.statValue}>{Number(lastFunnel.scored ?? 0)}</Text></View>
+          </View>
+          {(data?.recent_runs ?? []).slice(-8).reverse().map((run, index) => (
+            <View key={`${run.observed_at ?? "run"}-${index}`} style={styles.autoLogRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.systemLabel}>{fmtDateTime(run.observed_at)}</Text>
+                <Text style={styles.mutedSmall}>{run.provider ?? "unknown source"}</Text>
+              </View>
+              <Text style={styles.mutedSmall}>{run.paper_fills ?? 0} fills</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      <Text style={[styles.mutedSmall, { textAlign: "center", lineHeight: 17 }]}>
+        Paper simulation only. The cloud worker keeps scanning when this app is closed. The 5% net-edge gate and safety filters are not loosened to force trades.
+      </Text>
+    </ScrollView>
+  );
+}
+
 function MoreMenu({ select }: { select: (view: MoreView) => void }) {
   const items: Array<[MoreView, string, keyof typeof Ionicons.glyphMap]> = [
     ["History", "Bet History", "time-outline"],
