@@ -30,6 +30,10 @@ import pm_edge_runner_v23 as v23
 import pm_edge_runner_v27 as v27
 import watcher
 
+if str(os.getenv("PM_EDGE_MODE", "")).strip().lower() == "paper":
+    from autotrader.paper_guard import install_paper_order_stub
+    install_paper_order_stub()
+
 STANDARD_MIN_EDGE = float(os.getenv("PM_EDGE_STANDARD_MIN_NET_EDGE", "0.035"))
 STANDARD_THREE_BOOK_EDGE = float(
     os.getenv("PM_EDGE_STANDARD_THREE_BOOK_EDGE", "0.040")
