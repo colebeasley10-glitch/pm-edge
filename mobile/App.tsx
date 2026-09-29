@@ -1269,6 +1269,7 @@ function AutoTraderScreen({
 
 function MoreMenu({ select }: { select: (view: MoreView) => void }) {
   const items: Array<[MoreView, string, keyof typeof Ionicons.glyphMap]> = [
+    ["Analytics", "Analytics", "bar-chart-outline"],
     ["History", "Bet History", "time-outline"],
     ["System", "System Status", "pulse-outline"],
     ["Settings", "Settings", "settings-outline"],
@@ -1292,7 +1293,7 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (tab: Tab) => void }) {
     ["Dashboard", "home-outline"],
     ["Bets", "receipt-outline"],
     ["Live", "pulse-outline"],
-    ["Analytics", "bar-chart-outline"],
+    ["AutoTrader", "flash-outline"],
     ["More", "menu-outline"],
   ];
   return (
@@ -1321,6 +1322,9 @@ export default function App() {
   const [unfilled, setUnfilled] = useState<HistoryBet[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsResponse | null>(null);
   const [system, setSystem] = useState<SystemResponse | null>(null);
+  const [autoTrader, setAutoTrader] = useState<AutoTraderStatus | null>(null);
+  const [autoTraderLoading, setAutoTraderLoading] = useState(false);
+  const [autoTraderError, setAutoTraderError] = useState<string | null>(null);
   const [scores, setScores] = useState<ScoreEvent[]>([]);
   const [selected, setSelected] = useState<Signal | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -1344,6 +1348,30 @@ export default function App() {
       };
     });
   }, []);
+
+  const refreshAutoTrader = useCallback(async () => {
+    setAutoTraderLoading(true);
+    setAutoTraderError(null);
+    try {
+      setAutoTrader(await api.autoTraderStatus());
+    } catch (e) {
+      setAutoTraderError(e instanceof Error ? e.message : "Unable to load AutoTrader");
+    } finally {
+      setAutoTraderLoading(false);
+    }
+  }, []);
+
+  const runAutoTraderScan = useCallback(async () => {
+    setAutoTraderLoading(true);
+    setAutoTraderError(null);
+    try {
+      await api.runAutoTraderScan();
+      setTimeout(() => { void refreshAutoTrader(); }, 1800);
+    } catch (e) {
+      setAutoTraderError(e instanceof Error ? e.message : "Unable to trigger paper scan");
+      setAutoTraderLoading(false);
+    }
+  }, [refreshAutoTrader]);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -1376,12 +1404,13 @@ export default function App() {
       setAnalytics(a);
       setSystem(s);
       api.scores().then((x) => setScores(x.items ?? [])).catch(() => setScores([]));
+      void refreshAutoTrader();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load PM Edge");
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [refreshAutoTrader]);
 
   const handleReviewUnavailable = useCallback((signal: Signal) => {
     removeSignalFromLists(signal);
@@ -1398,6 +1427,12 @@ export default function App() {
   }, [refresh, removeSignalFromLists]);
 
   useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    if (tab !== "AutoTrader") return;
+    void refreshAutoTrader();
+    const timer = setInterval(() => { void refreshAutoTrader(); }, 15000);
+    return () => clearInterval(timer);
+  }, [refreshAutoTrader, tab]);
 
   const content = useMemo(() => {
     if (!dashboard && refreshing) {
@@ -1443,20 +1478,21 @@ export default function App() {
     }
 
     if (tab === "Dashboard") return <DashboardScreen data={dashboard} refresh={refresh} refreshing={refreshing} onReview={setSelected} navigate={(target) => {
-      if (target === "Analytics" || target === "Live" || target === "Bets") { setTab(target); setMoreView("Menu"); return; }
+      if (target === "Live" || target === "Bets") { setTab(target); setMoreView("Menu"); return; }
       setTab("More"); setMoreView(target);
     }} />;
     if (tab === "Bets") return <BetsScreen items={bets} positions={positions} unfilled={unfilled} refresh={refresh} refreshing={refreshing} onReview={setSelected} />;
     if (tab === "Live") return <LiveScreen items={openBets} scores={scores} refresh={refresh} refreshing={refreshing} />;
-    if (tab === "Analytics" && analytics) return <AnalyticsScreen data={analytics} history={history} />;
+    if (tab === "AutoTrader") return <AutoTraderScreen data={autoTrader} loading={autoTraderLoading} error={autoTraderError} refresh={refreshAutoTrader} runScan={runAutoTraderScan} />;
 
+    if (moreView === "Analytics" && analytics) return <AnalyticsScreen data={analytics} history={history} />;
     if (moreView === "History") return <HistoryScreen items={history} back={() => setMoreView("Menu")} />;
     if (moreView === "Pending") return <PendingScreen items={unfilled} back={() => setMoreView("Menu")} />;
     if (moreView === "Account") return <AccountScreen data={dashboard} back={() => setMoreView("Menu")} />;
     if (moreView === "System" && system) return <SystemScreen data={system} back={() => setMoreView("Menu")} />;
     if (moreView === "Settings") return <SettingsScreen back={() => setMoreView("Menu")} />;
     return <MoreMenu select={setMoreView} />;
-  }, [analytics, bets, dashboard, error, history, moreView, openBets, positions, passcode, refresh, refreshing, scores, system, tab, unfilled]);
+  }, [analytics, autoTrader, autoTraderError, autoTraderLoading, bets, dashboard, error, history, moreView, openBets, positions, passcode, refresh, refreshAutoTrader, refreshing, runAutoTraderScan, scores, system, tab, unfilled]);
 
   return (
     <SafeAreaView style={styles.root}>
