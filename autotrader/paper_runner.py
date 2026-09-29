@@ -4,12 +4,16 @@ Reads public Kalshi orderbooks plus independent PM Edge fair values. This module
 has no authenticated Kalshi client and cannot submit real-money orders.
 """
 import argparse
+import csv
 import json
 import os
 import re
 import subprocess
+import threading
 import sys
 import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlparse
 from datetime import datetime, timezone
 from pathlib import Path
 from decimal import Decimal
@@ -387,6 +391,139 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
     return run
 
 
+
+def _tail_jsonl(path, limit=50):
+    p = Path(path)
+    if not p.exists() or p.stat().st_size == 0:
+        return []
+    rows = []
+    try:
+        with p.open("r", encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                try:
+                    value = json.loads(line)
+                except Exception:
+                    continue
+                if isinstance(value, dict):
+                    rows.append(value)
+    except OSError:
+        return []
+    return rows[-max(1, int(limit)):]
+
+
+def _fair_value_rows(path, limit=1000):
+    p = Path(path)
+    if not p.exists() or p.stat().st_size == 0:
+        return []
+    try:
+        with p.open("r", encoding="utf-8", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+    except OSError:
+        return []
+    rows = [r for r in rows if str(r.get("stage") or "").lower() == "score"]
+    rows.sort(key=lambda r: str(r.get("fair_fetched_at") or r.get("evaluated_at") or ""), reverse=True)
+    seen = set()
+    out = []
+    for row in rows:
+        key = (str(row.get("ticker") or ""), str(row.get("side") or "").upper())
+        if not key[0] or key[1] not in {"YES", "NO"} or key in seen:
+            continue
+        seen.add(key)
+        out.append(row)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _paper_status(state_path, runs_path):
+    portfolio = load_portfolio(state_path)
+    runs = _tail_jsonl(runs_path, 50)
+    last_run = runs[-1] if runs else None
+    positions = []
+    for ticker, pos in portfolio.positions.items():
+        positions.append({
+            "ticker": ticker,
+            "side": pos.side,
+            "contracts": pos.contracts,
+            "entry": str(pos.entry),
+            "entry_fee": str(pos.entry_fee),
+            "exposure_key": getattr(pos, "exposure_key", None),
+            "fair_snapshot_id": getattr(pos, "fair_snapshot_id", None),
+        })
+    settled = [x for x in portfolio.ledger if str(x.get("action") or "").upper() == "SETTLE"]
+    wins = sum(1 for x in settled if Decimal(str(x.get("pnl") or "0")) > 0)
+    losses = sum(1 for x in settled if Decimal(str(x.get("pnl") or "0")) < 0)
+    return {
+        "mode": "paper",
+        "worker_online": True,
+        "scan_interval_seconds": int(os.environ.get("AUTOTRADER_SCAN_INTERVAL_SECONDS", "300")),
+        "starting_bankroll": "500.00",
+        "portfolio": portfolio.snapshot(),
+        "positions": positions,
+        "record": f"{wins}-{losses}",
+        "settled_count": len(settled),
+        "blotter": portfolio.ledger[-100:],
+        "last_run": last_run,
+        "recent_runs": runs[-20:],
+    }
+
+
+def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, port):
+    token = str(os.environ.get("AUTOTRADER_API_TOKEN", "") or "").strip()
+
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, fmt, *args):
+            return
+
+        def _authorized(self):
+            if not token:
+                return True
+            return self.headers.get("Authorization", "") == f"Bearer {token}"
+
+        def _send(self, status, payload):
+            body = json.dumps(payload, separators=(",", ":"), default=str).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def do_GET(self):
+            parsed = urlparse(self.path)
+            if parsed.path == "/health":
+                return self._send(200, {"ok": True, "mode": "paper"})
+            if not self._authorized():
+                return self._send(401, {"detail": "AutoTrader authentication required"})
+            if parsed.path == "/v1/status":
+                return self._send(200, _paper_status(state_path, runs_path))
+            if parsed.path == "/v1/runs":
+                try:
+                    limit = min(100, max(1, int(parse_qs(parsed.query).get("limit", ["20"])[0])))
+                except Exception:
+                    limit = 20
+                return self._send(200, {"items": _tail_jsonl(runs_path, limit)})
+            if parsed.path == "/v1/fair-values":
+                return self._send(200, {
+                    "generated_at": _utcnow().isoformat().replace("+00:00", "Z"),
+                    "items": _fair_value_rows(ledger_path),
+                })
+            return self._send(404, {"detail": "Not found"})
+
+        def do_POST(self):
+            parsed = urlparse(self.path)
+            if not self._authorized():
+                return self._send(401, {"detail": "AutoTrader authentication required"})
+            if parsed.path == "/v1/run-scan":
+                trigger_event.set()
+                return self._send(202, {"accepted": True, "mode": "paper"})
+            return self._send(404, {"detail": "Not found"})
+
+    server = ThreadingHTTPServer(("0.0.0.0", int(port)), Handler)
+    thread = threading.Thread(target=server.serve_forever, name="autotrader-status-http", daemon=True)
+    thread.start()
+    return server
+
+
 def main():
     _assert_no_kalshi_write_credentials()
     parser = argparse.ArgumentParser(description="Isolated paper-only AutoTrader")
@@ -412,26 +549,40 @@ def main():
         parser.error("interval must be >= 30 seconds; market limits must be >= 1")
 
     client = KalshiPublicClient(PUBLIC_BASE)
+    trigger_event = threading.Event()
+    run_lock = threading.Lock()
+    if not args.once and os.environ.get("AUTOTRADER_HTTP_ENABLED", "1").strip().lower() not in {"0", "false", "no", "off"}:
+        http_port = int(os.environ.get("PORT", os.environ.get("AUTOTRADER_HTTP_PORT", "8080")))
+        _start_status_server(
+            state_path=args.state,
+            runs_path=args.runs,
+            ledger_path=args.ledger,
+            trigger_event=trigger_event,
+            port=http_port,
+        )
+        print(json.dumps({"autotrader_http": "listening", "port": http_port, "mode": "paper"}), flush=True)
+
     while True:
         try:
-            result = run_once(
-                client=client,
-                state_path=args.state,
-                runs_path=args.runs,
-                ledger_path=args.ledger,
-                max_markets=args.max_markets,
-                max_orderbooks=args.max_orderbooks,
-                probability_max_age_seconds=args.probability_max_age,
-                fee_per_contract=args.fee,
-                slippage_per_contract=args.slippage,
-                max_quote_age_seconds=args.max_quote_age,
-                min_net_edge=args.min_edge,
-                fair_api_base=args.fair_api_base,
-                fair_api_token=args.fair_api_token,
-                refresh_state_path=args.refresh_state,
-                allow_fair_refresh=args.allow_fair_refresh,
-                refresh_interval_seconds=args.refresh_interval,
-            )
+            with run_lock:
+                result = run_once(
+                    client=client,
+                    state_path=args.state,
+                    runs_path=args.runs,
+                    ledger_path=args.ledger,
+                    max_markets=args.max_markets,
+                    max_orderbooks=args.max_orderbooks,
+                    probability_max_age_seconds=args.probability_max_age,
+                    fee_per_contract=args.fee,
+                    slippage_per_contract=args.slippage,
+                    max_quote_age_seconds=args.max_quote_age,
+                    min_net_edge=args.min_edge,
+                    fair_api_base=args.fair_api_base,
+                    fair_api_token=args.fair_api_token,
+                    refresh_state_path=args.refresh_state,
+                    allow_fair_refresh=args.allow_fair_refresh,
+                    refresh_interval_seconds=args.refresh_interval,
+                )
             print(json.dumps({k: v for k, v in result.items() if k != "decisions"}), flush=True)
         except Exception as exc:
             print(json.dumps({"error": type(exc).__name__, "message": str(exc)}), flush=True)
@@ -439,7 +590,8 @@ def main():
                 raise
         if args.once:
             return
-        time.sleep(args.interval)
+        trigger_event.wait(args.interval)
+        trigger_event.clear()
 
 
 if __name__ == "__main__":
