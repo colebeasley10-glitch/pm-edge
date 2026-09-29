@@ -829,11 +829,13 @@ def _is_pushable_spec(spec) -> bool:
 
 def _pregame_safety_ok(market: dict, event: dict) -> bool:
     now = now_utc()
-    kd = kalshi_ticker_game_time(market) or parse_dt(
+    # Prefer Kalshi's real sports milestone/occurrence start. Never substitute
+    # close_time/expiration fields, which may be hours after kickoff.
+    kd = parse_dt(
         market.get("_kalshi_game_time")
         or market.get("_match_datetime")
         or market.get("occurrence_datetime")
-    )
+    ) or kalshi_ticker_game_time(market)
     sd = parse_dt((event or {}).get("commence_time"))
     if kd is None or sd is None:
         return False
@@ -1261,7 +1263,8 @@ def main():
 
         if REJECT_PUSHABLE_LINES and _is_pushable_spec(spec):
             pushable_line_filtered += 1
-            sample_rejection("pushable_or_missing_line", market.get("ticker"))
+            reason = "missing_line" if getattr(spec, "point", None) is None else "whole_number_line"
+            sample_rejection(reason, market.get("ticker"))
             continue
 
         sport_rule = inferred_sport_rule(market)
