@@ -78,6 +78,16 @@ class ProbabilityRunnerTests(unittest.TestCase):
             self.assertEqual(snap.ages[("KXTEST", "YES")], 60)
             self.assertEqual(snap.ages["KXTEST"], 60)
 
+    def test_probability_rejection_diagnostics(self):
+        now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = Path(directory) / "ledger.csv"
+            write_ledger(ledger, now - timedelta(minutes=10))
+            snap = load_pm_edge_ledger(ledger, now=now, max_age_seconds=300)
+            self.assertEqual(snap.diagnostics["items_received"], 1)
+            self.assertEqual(snap.diagnostics["rejected_stale"], 1)
+            self.assertEqual(snap.diagnostics["accepted"], 0)
+
     def test_stale_probability_fails_closed(self):
         now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
         with tempfile.TemporaryDirectory() as directory:
