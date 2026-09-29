@@ -16,11 +16,12 @@ class PaperEngine:
     min_net_edge: Decimal = D("0.05")
 
     def on_snapshot(self, markets, *, probabilities, quote_ages, event_data_ages,
-                    fee_per_contract=None, slippage_per_contract="0",
+                    contexts=None, fee_per_contract=None, slippage_per_contract="0",
                     max_quote_age_seconds=2, max_event_data_age_seconds=300):
         return self.on_candidates(
             discover(markets), probabilities=probabilities,
             quote_ages=quote_ages, event_data_ages=event_data_ages,
+            contexts=contexts,
             fee_per_contract=fee_per_contract,
             slippage_per_contract=slippage_per_contract,
             max_quote_age_seconds=max_quote_age_seconds,
@@ -28,16 +29,18 @@ class PaperEngine:
         )
 
     def on_candidates(self, candidates, *, probabilities, quote_ages, event_data_ages,
-                      fee_per_contract=None, slippage_per_contract="0",
+                      contexts=None, fee_per_contract=None, slippage_per_contract="0",
                       max_quote_age_seconds=2, max_event_data_age_seconds=300):
         """Evaluate executable candidates against independent fair probabilities."""
         candidates = list(candidates)
+        contexts = contexts or {}
         accepted = 0
         start_decisions = len(self.decisions)
         fee_override = None if fee_per_contract in (None, "") else D(fee_per_contract)
         slippage = D(slippage_per_contract)
         for c in candidates:
             key = (c.ticker, c.side)
+            context = contexts.get(key) or {}
             quote_age = quote_ages.get(key, quote_ages.get(c.ticker))
             event_age = event_data_ages.get(key, event_data_ages.get(c.ticker))
             qualification_fee = (
@@ -100,10 +103,14 @@ class PaperEngine:
                     else prediction_fee(contracts, simulated_fill)
                 )
                 effective_fee = total_fee / D(contracts)
+                exposure_key = str(context.get("event_id") or c.ticker)
+                snapshot_id = str(context.get("fair_snapshot_id") or "") or None
                 filled = self.portfolio.buy(
                     c.ticker, c.side, contracts,
                     simulated_fill, simulated_fill,
                     int(c.available), effective_fee,
+                    exposure_key=exposure_key,
+                    fair_snapshot_id=snapshot_id,
                 )
                 entry["decision"] = "paper_filled" if filled else "paper_risk_rejected"
                 if filled:
@@ -113,6 +120,8 @@ class PaperEngine:
                     entry["fee_total"] = str(total_fee)
                     entry["fee_per_contract_effective"] = str(effective_fee)
                     entry["slippage_per_contract"] = str(slippage)
+                    entry["exposure_key"] = exposure_key
+                    entry["fair_snapshot_id"] = snapshot_id
             self.decisions.append(entry)
 
         return {
