@@ -259,14 +259,16 @@ def _load_fair_values(*, api_base, api_token, ledger_path, now, max_age_seconds,
                       refresh_state_path=None, allow_refresh=False,
                       refresh_interval_seconds=1800):
     api_error = None
+    api_diagnostics = {}
     if api_base and api_token:
         try:
             snap = load_pm_edge_api(
                 api_base, api_token, now=now,
                 max_age_seconds=max_age_seconds,
             )
+            api_diagnostics = getattr(snap, "diagnostics", {}) or {}
             if snap.probabilities:
-                return snap, "pm_edge_mobile_api", {"attempted": False, "reason": "upstream_fresh"}
+                return snap, "pm_edge_mobile_api", {"attempted": False, "reason": "upstream_fresh", "api_diagnostics": api_diagnostics}
         except Exception as exc:
             api_error = f"{type(exc).__name__}: {exc}"
 
@@ -292,6 +294,8 @@ def _load_fair_values(*, api_base, api_token, ledger_path, now, max_age_seconds,
 
     if api_error:
         refresh["api_error"] = api_error
+    if api_diagnostics:
+        refresh["api_diagnostics"] = api_diagnostics
     return local, "pm_edge_no_fresh_fair_values", refresh
 
 
@@ -369,7 +373,10 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         "kalshi_schema_probe": schema_probe,
         "candidate_count": len(candidates),
         "fresh_probability_count": len(fair.probabilities),
-        "fair_diagnostics": getattr(fair, "diagnostics", {}) or {},
+        "fair_diagnostics": (
+            getattr(fair, "diagnostics", {}) or {}
+            or (fair_refresh or {}).get("api_diagnostics") or {}
+        ),
         "matched_candidate_count": matched,
         "paper_fills": result["paper_fills"],
         "funnel": {
