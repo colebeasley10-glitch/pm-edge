@@ -149,6 +149,8 @@ def normalize_market(m: dict) -> dict:
         "occurrence_datetime": m.get("occurrence_datetime"),
         "status": m.get("status"),
         "result": m.get("result"),
+        "settlement_value": to_float(m.get("settlement_value_dollars")),
+        "settlement_ts": m.get("settlement_ts"),
         "yes_bid": yes_bid,
         "yes_ask": yes_ask,
         "no_bid": no_bid,
