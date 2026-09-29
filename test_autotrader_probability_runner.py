@@ -144,6 +144,16 @@ class ProbabilityRunnerTests(unittest.TestCase):
             self.assertEqual(child_env["PM_EDGE_ORDER_SUBMISSION_ENABLED"], "0")
             self.assertEqual(child_env["PUSHOVER_USER_KEY"], "")
 
+    def test_naive_fair_timestamp_is_rejected(self):
+        now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = Path(directory) / "ledger.csv"
+            write_ledger(ledger, now - timedelta(seconds=30))
+            text = ledger.read_text(encoding="utf-8").replace("+00:00", "")
+            ledger.write_text(text, encoding="utf-8")
+            snap = load_pm_edge_ledger(ledger, now=now, max_age_seconds=300)
+            self.assertEqual(snap.probabilities, {})
+
     def test_whole_number_spread_is_rejected(self):
         now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
         with tempfile.TemporaryDirectory() as directory:
