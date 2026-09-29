@@ -107,7 +107,8 @@ def _normalized_market(raw, normalize_market):
 
 def scan_public(client, *, max_markets=3000, max_orderbooks=250,
                 max_spread=Decimal("0.08"), min_volume=Decimal("100"),
-                min_depth=Decimal("1"), clock: Callable[[], datetime] | None = None):
+                min_depth=Decimal("1"), clock: Callable[[], datetime] | None = None,
+                ticker_filter=None):
     """Discover executable public quotes with real top-of-book depth.
 
     Market-list prices are only a cheap prefilter. Executable asks and sizes are
@@ -117,10 +118,13 @@ def scan_public(client, *, max_markets=3000, max_orderbooks=250,
     from pmedge.kalshi import normalize_market
 
     clock = clock or (lambda: datetime.now(timezone.utc))
+    wanted = set(ticker_filter or [])
     normalized = [_normalized_market(m, normalize_market)
                   for m in client.list_open_markets(max_markets=max_markets)]
     prefiltered = []
     for m in normalized:
+        if wanted and m.get("ticker") not in wanted:
+            continue
         if str(m.get("status", "")).lower() not in ("active", "open"):
             continue
         try:
