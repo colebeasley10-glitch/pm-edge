@@ -4,9 +4,10 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
-from autotrader.paper_runner import run_once
+from autotrader.paper_runner import _refresh_local_fair_values, run_once
 from autotrader.probability import load_pm_edge_api, load_pm_edge_ledger
 from autotrader.storage import load_portfolio
 
@@ -104,6 +105,35 @@ class ProbabilityRunnerTests(unittest.TestCase):
         args, kwargs = get.call_args
         self.assertEqual(args[0], "https://example.invalid/v1/fair-values")
         self.assertEqual(kwargs["headers"]["Authorization"], "Bearer token")
+
+    def test_local_refresh_is_quota_guarded_by_cooldown(self):
+        now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            ledger = root / "ledger.csv"
+            refresh_state = root / "refresh.json"
+            completed = SimpleNamespace(returncode=0, stdout="ok", stderr="")
+            with patch.dict("os.environ", {"ODDS_API_KEY": "test-key"}, clear=False), \
+                    patch("autotrader.paper_runner.subprocess.run", return_value=completed) as run:
+                first = _refresh_local_fair_values(
+                    ledger_path=ledger,
+                    refresh_state_path=refresh_state,
+                    now=now,
+                    refresh_interval_seconds=1800,
+                )
+                second = _refresh_local_fair_values(
+                    ledger_path=ledger,
+                    refresh_state_path=refresh_state,
+                    now=now + timedelta(minutes=5),
+                    refresh_interval_seconds=1800,
+                )
+            self.assertTrue(first["attempted"])
+            self.assertEqual(second["reason"], "refresh_cooldown")
+            self.assertEqual(run.call_count, 1)
+            child_env = run.call_args.kwargs["env"]
+            self.assertEqual(child_env["PM_EDGE_MODE"], "paper")
+            self.assertEqual(child_env["PM_EDGE_ORDER_SUBMISSION_ENABLED"], "0")
+            self.assertEqual(child_env["PUSHOVER_USER_KEY"], "")
 
     def test_paper_runner_fills_only_from_fresh_independent_value(self):
         now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
