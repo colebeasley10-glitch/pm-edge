@@ -8,7 +8,8 @@ class PaperConfig:
     starting_bankroll: Decimal = Decimal("500.00")
     currency: str = "USD"
     mode: str = "paper"
-    sports_only: bool = True
+    sports_only: bool = False
+    market_scope: str = "all_eligible"
     live_order_submission_enabled: bool = False
 
     def __post_init__(self):
