@@ -81,6 +81,5 @@ class PaperPortfolio:
         equity = self.cash + liquidation
         return {"cash": str(self.cash), "equity": str(equity),
                 "realized_pnl": str(self.realized_pnl),
-                "unrealized_pnl": str(liquidation - self.exposure()
-                                      - sum((p.contracts * p.entry_fee for p in self.positions.values()), D("0"))),
+                "unrealized_pnl": str(liquidation - self.exposure()),
                 "open_positions": len(self.positions)}
