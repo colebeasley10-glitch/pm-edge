@@ -43,5 +43,12 @@ class PaperPortfolioTests(unittest.TestCase):
         self.assertEqual(p.realized_pnl, Decimal("-2.00"))
         self.assertEqual(p.cash, Decimal("498.00"))
 
+    def test_nonbinary_settlement_value(self):
+        p = PaperPortfolio()
+        self.assertTrue(p.buy("VOID", "YES", 10, ".50", ".50", 10, ".01"))
+        self.assertTrue(p.settle_value("VOID", ".70"))
+        self.assertEqual(p.realized_pnl, Decimal("1.90"))
+        self.assertEqual(p.cash, Decimal("501.90"))
+
 if __name__ == "__main__":
     unittest.main()
