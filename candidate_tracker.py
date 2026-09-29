@@ -24,9 +24,12 @@ _SEEN_BY_PATH: dict[str, set[str]] = {}
 FIELDS = [
     "decision_id",
     "evaluated_at",
+    "fair_fetched_at",
+    "fair_snapshot_id",
     "run_bucket_utc",
     "ticker",
     "event_id",
+    "commence_time",
     "market_title",
     "sport_key",
     "sport_title",
@@ -191,12 +194,25 @@ def record_candidate(
     except (TypeError, ValueError):
         books = None
 
+    fair_fetched_at = str(fair_entry.get("fetched_at") or "")
+    snapshot_raw = "|".join([
+        ticker,
+        fair_fetched_at,
+        str(fair_entry.get("fair_yes_prob") or ""),
+        str(fair_entry.get("n_books") or ""),
+        str(fair_entry.get("devig_method") or ""),
+    ])
+    fair_snapshot_id = hashlib.sha256(snapshot_raw.encode("utf-8")).hexdigest()[:20]
+
     row = {
         "decision_id": decision_id,
         "evaluated_at": evaluated_at,
+        "fair_fetched_at": fair_fetched_at,
+        "fair_snapshot_id": fair_snapshot_id,
         "run_bucket_utc": run_bucket,
         "ticker": ticker,
         "event_id": str(fair_entry.get("event_id") or ""),
+        "commence_time": str(fair_entry.get("commence_time") or ""),
         "market_title": str(market.get("title") or ""),
         "sport_key": str(fair_entry.get("sport_key") or ""),
         "sport_title": str(fair_entry.get("sport_title") or ""),
