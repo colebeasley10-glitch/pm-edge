@@ -102,8 +102,7 @@ class ProbabilityRunnerTests(unittest.TestCase):
         self.assertEqual(snap.probabilities[("KXTEST", "YES")], Decimal("0.66"))
         self.assertEqual(snap.ages[("KXTEST", "YES")], 45)
         args, kwargs = get.call_args
-        self.assertEqual(args[0], "https://example.invalid/v1/bets")
-        self.assertEqual(kwargs["params"], {"status": "new"})
+        self.assertEqual(args[0], "https://example.invalid/v1/fair-values")
         self.assertEqual(kwargs["headers"]["Authorization"], "Bearer token")
 
     def test_paper_runner_fills_only_from_fresh_independent_value(self):
