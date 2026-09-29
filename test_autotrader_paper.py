@@ -23,7 +23,7 @@ class PaperPortfolioTests(unittest.TestCase):
         p = PaperPortfolio()
         self.assertTrue(p.buy("A", "YES", 10, ".50", ".50", 10, ".01"))
         self.assertEqual(p.exposure(), Decimal("5.10"))
-        self.assertEqual(p.snapshot(bids={"A": ".60"})["unrealized_pnl"], ".90")
+        self.assertEqual(p.snapshot(bids={"A": ".60"})["unrealized_pnl"], "0.90")
         self.assertFalse(p.sell("A", ".005", 10, ".01"))
         self.assertEqual(p.cash, Decimal("494.90"))
         self.assertEqual(len(p.positions), 1)
@@ -33,7 +33,7 @@ class PaperPortfolioTests(unittest.TestCase):
         self.assertTrue(p.buy("FEE", "YES", 10, ".50", ".50", 10, ".01"))
         snap = p.snapshot(bids={"FEE": ".60"})
         self.assertEqual(snap["equity"], "500.90")
-        self.assertEqual(snap["unrealized_pnl"], ".90")
+        self.assertEqual(snap["unrealized_pnl"], "0.90")
 
     def test_price_guard_and_settlement(self):
         p = PaperPortfolio()
