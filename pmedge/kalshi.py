@@ -53,6 +53,25 @@ class KalshiPublicClient:
     def get_orderbook(self, ticker: str, depth: int = 20) -> dict:
         return self._get(f"/markets/{ticker}/orderbook", {"depth": max(0, min(depth, 100))})
 
+    def get_trades(
+        self, *, ticker: str | None = None, limit: int = 1000,
+        cursor: str | None = None, min_ts: int | None = None,
+        max_ts: int | None = None, is_block_trade: bool | None = None,
+    ) -> dict:
+        """Public trade tape endpoint. No account or order access."""
+        params = {"limit": max(1, min(int(limit), 1000))}
+        if ticker:
+            params["ticker"] = ticker
+        if cursor:
+            params["cursor"] = cursor
+        if min_ts is not None:
+            params["min_ts"] = int(min_ts)
+        if max_ts is not None:
+            params["max_ts"] = int(max_ts)
+        if is_block_trade is not None:
+            params["is_block_trade"] = str(bool(is_block_trade)).lower()
+        return self._get("/markets/trades", params)
+
 
 class KalshiAuthClient(KalshiPublicClient):
     def __init__(self, base_url: str, api_key_id: str, private_key_path: str, timeout: int = 20):
