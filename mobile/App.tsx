@@ -21,6 +21,7 @@ import { api } from "./src/api";
 import { colors, radius } from "./src/theme";
 import type {
   AnalyticsResponse,
+  AutoTraderStatus,
   DashboardResponse,
   HistoryBet,
   OpenBet,
@@ -31,8 +32,9 @@ import type {
   SystemResponse,
 } from "./src/types";
 
-type Tab = "Dashboard" | "Bets" | "Live" | "Analytics" | "More";
-type MoreView = "Menu" | "History" | "Pending" | "Account" | "System" | "Settings";
+type Tab = "Dashboard" | "Bets" | "Live" | "AutoTrader" | "More";
+type MoreView = "Menu" | "Analytics" | "History" | "Pending" | "Account" | "System" | "Settings";
+type AutoTraderView = "Book" | "Markets" | "Blotter" | "Log";
 type BetFilter = "Available" | "Filled" | "Unfilled";
 
 const fmtMoney = (x?: number | null, signed = false) => {
