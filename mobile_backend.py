@@ -480,6 +480,51 @@ def dashboard() -> dict:
     }
 
 
+@app.get("/v1/fair-values", dependencies=[Depends(_auth)])
+def fair_values() -> dict:
+    """Latest sportsbook-derived fair values for paper/analytics consumers.
+
+    This endpoint is read-only and exposes scored candidate rows before alert,
+    execution, or account guardrails are applied.
+    """
+    data = _load()
+    df = data["candidates"].copy()
+    if df.empty:
+        return {
+            "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "items": [],
+        }
+
+    if "stage" in df.columns:
+        df = df[df["stage"].fillna("").astype(str).str.casefold().eq("score")]
+    required = {"ticker", "side", "fair_probability"}
+    if not required.issubset(df.columns):
+        return {
+            "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "items": [],
+        }
+
+    df = df.copy()
+    df["fair_probability"] = pd.to_numeric(df["fair_probability"], errors="coerce")
+    df = df[
+        df["ticker"].fillna("").astype(str).str.len().gt(0)
+        & df["side"].fillna("").astype(str).str.upper().isin(["YES", "NO"])
+        & df["fair_probability"].between(0, 1, inclusive="neither")
+    ]
+
+    if "evaluated_at" in df.columns:
+        df["_evaluated_sort"] = pd.to_datetime(df["evaluated_at"], errors="coerce", utc=True)
+        df = df.sort_values("_evaluated_sort", ascending=False)
+    df = df.drop_duplicates(subset=["ticker", "side"], keep="first")
+    if "_evaluated_sort" in df.columns:
+        df = df.drop(columns=["_evaluated_sort"])
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "items": _records(df, limit=1000),
+    }
+
+
 @app.get("/v1/bets", dependencies=[Depends(_auth)])
 def bets(
     status: str = Query(default="new", pattern="^(new|open|unfilled|history)$"),
