@@ -268,7 +268,7 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
              runs_path="data/autotrader-paper-runs.jsonl",
              ledger_path="pm_edge_candidate_ledger.csv", max_markets=3000,
              max_orderbooks=250, probability_max_age_seconds=300,
-             fee_per_contract="0.01", slippage_per_contract="0.005",
+             fee_per_contract=None, slippage_per_contract="0.005",
              max_quote_age_seconds=5, min_net_edge="0.05",
              fair_api_base=None, fair_api_token=None, now=None, clock=None,
              refresh_state_path="/data/autotrader-fair-refresh.json",
@@ -372,7 +372,7 @@ def main():
     parser.add_argument("--fair-api-token", default=os.environ.get("AUTOTRADER_FAIR_API_TOKEN", ""))
     parser.add_argument("--probability-max-age", type=int, default=int(os.environ.get("AUTOTRADER_FAIR_MAX_AGE_SECONDS", "300")))
     parser.add_argument("--max-quote-age", type=int, default=int(os.environ.get("AUTOTRADER_QUOTE_MAX_AGE_SECONDS", "5")))
-    parser.add_argument("--fee", default=os.environ.get("AUTOTRADER_FEE_PER_CONTRACT", "0.01"))
+    parser.add_argument("--fee", default=os.environ.get("AUTOTRADER_FEE_PER_CONTRACT", ""))
     parser.add_argument("--slippage", default=os.environ.get("AUTOTRADER_SLIPPAGE_PER_CONTRACT", "0.005"))
     parser.add_argument("--min-edge", default=os.environ.get("AUTOTRADER_MIN_NET_EDGE", "0.05"))
     parser.add_argument("--refresh-state", default=os.environ.get("AUTOTRADER_REFRESH_STATE", "/data/autotrader-fair-refresh.json"))
