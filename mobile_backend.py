@@ -334,11 +334,16 @@ def fair_values() -> dict:
 
     df = df.copy()
     df["fair_probability"] = pd.to_numeric(df["fair_probability"], errors="coerce")
-    df = df[
+    valid = (
         df["ticker"].fillna("").astype(str).str.len().gt(0)
         & df["side"].fillna("").astype(str).str.upper().isin(["YES", "NO"])
         & df["fair_probability"].between(0, 1, inclusive="neither")
-    ]
+    )
+    if "fair_fetched_at" in df.columns:
+        valid &= df["fair_fetched_at"].fillna("").astype(str).str.len().gt(0)
+    else:
+        valid &= False
+    df = df[valid]
 
     if "evaluated_at" in df.columns:
         df["_evaluated_sort"] = pd.to_datetime(df["evaluated_at"], errors="coerce", utc=True)
