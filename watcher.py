@@ -305,29 +305,55 @@ def fetch_featured_sport_odds(settings, sport_key: str, markets):
         return [], {"requests_last": 0}
 
     url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/"
-    response = requests.get(
-        url,
-        params={
-            "apiKey": settings.odds_api_key,
-            "regions": settings.odds_regions,
-            "markets": ",".join(markets),
-            "oddsFormat": "decimal",
-            "dateFormat": "iso",
-        },
-        timeout=25,
-    )
-    if response.status_code >= 400:
-        raise RuntimeError(
-            f"Odds bulk refresh failed: {sport_key} {response.status_code} {response.text[:200]}"
+    sent_at = now_utc()
+    response = None
+    payload = None
+    usage = {}
+    error = None
+    try:
+        response = requests.get(
+            url,
+            params={
+                "apiKey": settings.odds_api_key,
+                "regions": settings.odds_regions,
+                "markets": ",".join(markets),
+                "oddsFormat": "decimal",
+                "dateFormat": "iso",
+            },
+            timeout=25,
         )
-
-    usage = {
-        "requests_last": response.headers.get("x-requests-last"),
-        "requests_used": response.headers.get("x-requests-used"),
-        "requests_remaining": response.headers.get("x-requests-remaining"),
-    }
-    payload = response.json()
-    return (payload if isinstance(payload, list) else []), usage
+        usage = {
+            "requests_last": response.headers.get("x-requests-last"),
+            "requests_used": response.headers.get("x-requests-used"),
+            "requests_remaining": response.headers.get("x-requests-remaining"),
+        }
+        if response.status_code >= 400:
+            error = f"HTTP {response.status_code}: {response.text[:200]}"
+            raise RuntimeError(
+                f"Odds bulk refresh failed: {sport_key} {response.status_code} {response.text[:200]}"
+            )
+        payload = response.json()
+        return (payload if isinstance(payload, list) else []), usage
+    finally:
+        recorder_db = os.getenv("AUTOTRADER_RECORDER_DB", "").strip()
+        if recorder_db:
+            try:
+                from autotrader.odds_capture import record_odds_response
+                record_odds_response(
+                    db_path=recorder_db,
+                    endpoint=f"/sports/{sport_key}/odds/",
+                    sport=sport_key,
+                    regions=settings.odds_regions,
+                    markets=",".join(markets),
+                    sent_at=sent_at,
+                    received_at=now_utc(),
+                    payload=payload,
+                    usage=usage,
+                    http_status=(response.status_code if response is not None else None),
+                    error=error,
+                )
+            except Exception:
+                pass
 
 def cents(x):
     return f"{float(x)*100:.1f}¢"
