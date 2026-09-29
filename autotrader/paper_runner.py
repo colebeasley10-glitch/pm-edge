@@ -26,6 +26,7 @@ from .probability import load_pm_edge_api, load_pm_edge_ledger
 from .scanner import scan_public
 from .storage import load_portfolio, save_portfolio
 from .recorder import start_recorder_thread
+from .recorder_store import RecorderStore
 
 
 def _utcnow():
@@ -493,6 +494,23 @@ def _paper_status(state_path, runs_path):
     settled = [x for x in portfolio.ledger if str(x.get("action") or "").upper() == "SETTLE"]
     wins = sum(1 for x in settled if Decimal(str(x.get("pnl") or "0")) > 0)
     losses = sum(1 for x in settled if Decimal(str(x.get("pnl") or "0")) < 0)
+    recorder_status = {"enabled": False}
+    if os.environ.get("AUTOTRADER_RECORDER_ENABLED", "1").strip().lower() not in {"0", "false", "no", "off"}:
+        recorder_path = os.environ.get(
+            "AUTOTRADER_RECORDER_DB", "/data/autotrader-recorder.sqlite3"
+        )
+        try:
+            recorder_status = {
+                "enabled": True,
+                "db_path": recorder_path,
+                "counts": RecorderStore(recorder_path).counts(),
+            }
+        except Exception as exc:
+            recorder_status = {
+                "enabled": True,
+                "db_path": recorder_path,
+                "error": f"{type(exc).__name__}: {str(exc)[:240]}",
+            }
     return {
         "mode": "paper",
         "worker_online": True,
@@ -505,6 +523,7 @@ def _paper_status(state_path, runs_path):
         "blotter": portfolio.ledger[-100:],
         "last_run": last_run,
         "recent_runs": runs[-20:],
+        "recorder": recorder_status,
     }
 
 
