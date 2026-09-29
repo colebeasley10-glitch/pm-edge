@@ -184,6 +184,9 @@ MAX_SPECULATIVE_ALERTS_PER_RUN = int(os.getenv("PM_EDGE_MAX_SPECULATIVE_ALERTS_P
 MAX_MARKETS = int(os.getenv("PM_EDGE_MAX_MARKETS", "3000"))
 MAX_EVENT_HOURS = float(os.getenv("PM_EDGE_MAX_EVENT_HOURS", "96"))
 MAX_AUTO_EDGE = float(os.getenv("PM_EDGE_MAX_AUTO_EDGE", "0.15"))
+PREGAME_ONLY = os.getenv("PM_EDGE_PREGAME_ONLY", "0").strip().lower() in {"1", "true", "yes", "on"}
+REJECT_PUSHABLE_LINES = os.getenv("PM_EDGE_REJECT_PUSHABLE_LINES", "0").strip().lower() in {"1", "true", "yes", "on"}
+PREGAME_BUFFER_SECONDS = max(0, int(os.getenv("PM_EDGE_PREGAME_BUFFER_SECONDS", "300")))
 # v25 may populate this before scanning so currently held markets get first
 # priority for fresh fair-value refreshes and remain eligible slightly longer
 # after kickoff/first pitch for position-management decisions.
@@ -545,6 +548,11 @@ def fetch_open_kalshi_sports_markets(base_url: str, max_events: int = 2500):
 
     out = []
     event_count = 0
+    raw_markets_seen = 0
+    open_markets_seen = 0
+    combo_filtered = 0
+    sample_market_ticker = None
+    sample_market_keys = []
 
     for event_ticker, ev, top_level_markets in event_results:
         if not ev:
@@ -575,13 +583,19 @@ def fetch_open_kalshi_sports_markets(base_url: str, max_events: int = 2500):
         for raw_market in ev_markets:
             if not isinstance(raw_market, dict):
                 continue
+            raw_markets_seen += 1
+            if sample_market_ticker is None:
+                sample_market_ticker = str(raw_market.get("ticker") or "")
+                sample_market_keys = sorted(str(k) for k in raw_market.keys())[:80]
 
             market_status = str(raw_market.get("status") or "").lower()
             if market_status not in ("active", "open"):
                 continue
+            open_markets_seen += 1
 
             ticker = str(raw_market.get("ticker") or "")
             if ticker.startswith("KXMVE") or raw_market.get("mve_collection_ticker"):
+                combo_filtered += 1
                 continue
 
             enriched = dict(raw_market)
@@ -610,6 +624,11 @@ def fetch_open_kalshi_sports_markets(base_url: str, max_events: int = 2500):
         "game_milestones": len(game_milestones),
         "kalshi_events_seen": event_count,
         "event_tickers": len(ticker_to_milestone),
+        "raw_markets_seen": raw_markets_seen,
+        "open_markets_seen": open_markets_seen,
+        "combo_filtered": combo_filtered,
+        "sample_market_ticker": sample_market_ticker,
+        "sample_market_keys": sample_market_keys,
     }
     return out, stats
 
@@ -796,6 +815,32 @@ def kalshi_market_is_near_term(market: dict) -> bool:
     h = (kd - now_utc()).total_seconds() / 3600.0
     return -1.0 <= h <= MAX_EVENT_HOURS
 
+
+
+def _is_pushable_spec(spec) -> bool:
+    if getattr(spec, "market_type", "") not in {"spread", "total", "team_total"}:
+        return False
+    try:
+        point = float(spec.point)
+    except (TypeError, ValueError):
+        return True
+    return abs(point - round(point)) < 1e-9
+
+
+def _pregame_safety_ok(market: dict, event: dict) -> bool:
+    now = now_utc()
+    kd = kalshi_ticker_game_time(market) or parse_dt(
+        market.get("_kalshi_game_time")
+        or market.get("_match_datetime")
+        or market.get("occurrence_datetime")
+    )
+    sd = parse_dt((event or {}).get("commence_time"))
+    if kd is None or sd is None:
+        return False
+    return (
+        (kd - now).total_seconds() >= PREGAME_BUFFER_SECONDS
+        and (sd - now).total_seconds() >= PREGAME_BUFFER_SECONDS
+    )
 
 
 def event_match_team_score(em) -> float:
@@ -1160,6 +1205,20 @@ def main():
     segment_filtered = 0
     kalshi_horizon_filtered = 0
     sportsbook_horizon_filtered = 0
+    unsupported_market_filtered = 0
+    event_pool_empty = 0
+    pushable_line_filtered = 0
+    started_or_too_close_filtered = 0
+    books_ok = 0
+    scored_count = 0
+    edge_positive_count = 0
+    rejection_samples = {}
+
+    def sample_rejection(reason, ticker):
+        rows = rejection_samples.setdefault(reason, [])
+        ticker = str(ticker or "")
+        if ticker and ticker not in rows and len(rows) < 5:
+            rows.append(ticker)
 
     sport_identified = 0
     same_sport_matches = 0
@@ -1195,8 +1254,15 @@ def main():
 
         spec = parse_market(market)
         if spec.market_type not in PRIMARY_MARKET:
+            unsupported_market_filtered += 1
+            sample_rejection("unsupported_market_type", market.get("ticker"))
             continue
         supported_markets += 1
+
+        if REJECT_PUSHABLE_LINES and _is_pushable_spec(spec):
+            pushable_line_filtered += 1
+            sample_rejection("pushable_or_missing_line", market.get("ticker"))
+            continue
 
         sport_rule = inferred_sport_rule(market)
         if sport_rule:
@@ -1206,6 +1272,8 @@ def main():
             event_pool = events
 
         if not event_pool:
+            event_pool_empty += 1
+            sample_rejection("no_sportsbook_event_pool", market.get("ticker"))
             continue
 
         # Never use close_time as a surrogate for kickoff. If occurrence_datetime
@@ -1228,6 +1296,7 @@ def main():
                 top_same_sport_confidence = max(top_same_sport_confidence, float(em.confidence or 0))
 
         if not em.event:
+            sample_rejection("event_match_failed_or_ambiguous", market.get("ticker"))
             continue
 
         # Once the sport is identified, prefer direct participant-pair evidence
@@ -1273,7 +1342,13 @@ def main():
             h = event_hours(em.event)
             if not held or h < -HELD_EVENT_LOOKBACK_HOURS or h > MAX_EVENT_HOURS:
                 sportsbook_horizon_filtered += 1
+                sample_rejection("sportsbook_outside_horizon", market.get("ticker"))
                 continue
+
+        if PREGAME_ONLY and not _pregame_safety_ok(market, em.event):
+            started_or_too_close_filtered += 1
+            sample_rejection("started_or_within_pregame_buffer", market.get("ticker"))
+            continue
 
         cached = state.setdefault("fair_cache", {}).get(market["ticker"])
         prevq = state.setdefault("quotes", {}).get(market["ticker"])
@@ -1394,6 +1469,8 @@ def main():
                 max_dispersion=settings.odds_max_dispersion,
                 return_diagnostics=True,
             )
+            if int((devig_diag or {}).get("books_matched") or 0) >= min_books_required:
+                books_ok += 1
             fair = blend_fair_value(market["ticker"], consensus, overlay)
             if fair:
                 fair_successes += 1
@@ -1468,6 +1545,8 @@ def main():
             max_dispersion=settings.odds_max_dispersion,
             return_diagnostics=True,
         )
+        if int((devig_diag or {}).get("books_matched") or 0) >= min_books_required:
+            books_ok += 1
         fair = blend_fair_value(market["ticker"], consensus, overlay)
         if fair:
             fair_successes += 1
@@ -1511,7 +1590,11 @@ def main():
             continue
         try:
             q = score_market(market, fair_entry, settings)
+            scored_count += 1
+            if q.net_edge is not None and float(q.net_edge) > 0:
+                edge_positive_count += 1
         except Exception:
+            sample_rejection("score_exception", market.get("ticker"))
             continue
 
         # Same correctness safeguards apply to every tier -- only the edge
@@ -1696,7 +1779,20 @@ def main():
     }
 
     save_state(state)
-    print(json.dumps({
+
+    if len(markets) == 0:
+        run_status = "no_markets"
+    elif len(candidates) == 0:
+        run_status = "no_candidates"
+    elif scored_count == 0 and int(daily.get("credits", 0)) >= DAILY_ODDS_BUDGET:
+        run_status = "skipped_budget"
+    elif scored_count == 0:
+        run_status = "no_fair"
+    else:
+        run_status = "ran"
+
+    run_summary = {
+        "status": run_status,
         "milestones_scanned": kalshi_stats.get("milestones_scanned", 0),
         "game_milestones": kalshi_stats.get("game_milestones", 0),
         "kalshi_events_seen": kalshi_events_seen,
@@ -1736,7 +1832,35 @@ def main():
         "pass_alerts_sent": pass_sent,
         "odds_credits_today": daily.get("credits", 0),
         "daily_budget": DAILY_ODDS_BUDGET,
-    }, indent=2))
+        "raw_markets_seen": kalshi_stats.get("raw_markets_seen", 0),
+        "open_markets_seen": kalshi_stats.get("open_markets_seen", 0),
+        "combo_filtered": kalshi_stats.get("combo_filtered", 0),
+        "sample_market_ticker": kalshi_stats.get("sample_market_ticker"),
+        "sample_market_keys": kalshi_stats.get("sample_market_keys") or [],
+        "unsupported_market_filtered": unsupported_market_filtered,
+        "event_pool_empty": event_pool_empty,
+        "pushable_line_filtered": pushable_line_filtered,
+        "started_or_too_close_filtered": started_or_too_close_filtered,
+        "books_ok": books_ok,
+        "scored": scored_count,
+        "edge_positive": edge_positive_count,
+        "rejection_samples": rejection_samples,
+        "funnel": {
+            "kalshi_open": kalshi_stats.get("open_markets_seen", 0),
+            "sports": len(markets),
+            "near_term": len(markets) - kalshi_horizon_filtered,
+            "parseable": supported_markets,
+            "book_event_found": supported_markets - event_pool_empty,
+            "event_matched": event_matches_any_conf,
+            "market_matched": accepted_same_sport + accepted_unknown_sport,
+            "books_ok": books_ok,
+            "fair_ok": fair_successes,
+            "scored": scored_count,
+            "edge_pos": edge_positive_count,
+        },
+    }
+    print(json.dumps(run_summary, indent=2))
+    print("PM_EDGE_RUN_SUMMARY " + json.dumps(run_summary, separators=(",", ":")))
     return 0
 
 if __name__ == "__main__":
