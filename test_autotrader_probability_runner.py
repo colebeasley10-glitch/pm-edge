@@ -2,17 +2,15 @@ import csv
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from decimal import Decimal
+from pathlib import Path
+from unittest.mock import patch
 
 from autotrader.paper_runner import run_once
-from autotrader.probability import load_pm_edge_ledger
+from autotrader.probability import load_pm_edge_api, load_pm_edge_ledger
 from autotrader.storage import load_portfolio
 
-
-FIELDS = [
-    "evaluated_at", "stage", "ticker", "side", "fair_probability", "devig_method"
-]
+FIELDS = ["evaluated_at", "stage", "ticker", "side", "fair_probability", "devig_method"]
 
 
 class FakeClient:
@@ -29,15 +27,16 @@ class FakeClient:
         }]
 
     def get_orderbook(self, ticker, depth=20):
-        return {
-            "orderbook_fp": {
-                "yes_dollars": [["0.48", "25"]],
-                "no_dollars": [["0.49", "25"]],
-            }
-        }
+        return {"orderbook_fp": {
+            "yes_dollars": [["0.48", "25"]],
+            "no_dollars": [["0.49", "25"]],
+        }}
+
+    def get_market(self, ticker):
+        return {"ticker": ticker, "status": "open", "result": ""}
 
 
-def write_ledger(path, when, probability="0.70"):
+def write_ledger(path, when, probability="0.70", side="YES"):
     with Path(path).open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=FIELDS)
         writer.writeheader()
@@ -45,10 +44,21 @@ def write_ledger(path, when, probability="0.70"):
             "evaluated_at": when.isoformat().replace("+00:00", "Z"),
             "stage": "score",
             "ticker": "KXTEST",
-            "side": "YES",
+            "side": side,
             "fair_probability": probability,
             "devig_method": "power",
         })
+
+
+class FakeResponse:
+    def __init__(self, payload):
+        self.payload = payload
+
+    def raise_for_status(self):
+        return None
+
+    def json(self):
+        return self.payload
 
 
 class ProbabilityRunnerTests(unittest.TestCase):
@@ -59,6 +69,7 @@ class ProbabilityRunnerTests(unittest.TestCase):
             write_ledger(ledger, now - timedelta(seconds=60))
             snap = load_pm_edge_ledger(ledger, now=now, max_age_seconds=300)
             self.assertEqual(snap.probabilities[("KXTEST", "YES")], Decimal("0.70"))
+            self.assertEqual(snap.ages[("KXTEST", "YES")], 60)
             self.assertEqual(snap.ages["KXTEST"], 60)
 
     def test_stale_probability_fails_closed(self):
@@ -69,6 +80,32 @@ class ProbabilityRunnerTests(unittest.TestCase):
             snap = load_pm_edge_ledger(ledger, now=now, max_age_seconds=300)
             self.assertEqual(snap.probabilities, {})
 
+    def test_future_probability_fails_closed(self):
+        now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = Path(directory) / "ledger.csv"
+            write_ledger(ledger, now + timedelta(minutes=2))
+            snap = load_pm_edge_ledger(ledger, now=now, max_age_seconds=300)
+            self.assertEqual(snap.probabilities, {})
+
+    def test_read_only_api_adapter(self):
+        now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
+        payload = {"items": [{
+            "ticker": "KXTEST",
+            "side": "YES",
+            "fair_probability": 0.66,
+            "alerted_at": (now - timedelta(seconds=45)).isoformat().replace("+00:00", "Z"),
+            "source_version": "27",
+        }]}
+        with patch("autotrader.probability.requests.get", return_value=FakeResponse(payload)) as get:
+            snap = load_pm_edge_api("https://example.invalid", "token", now=now, max_age_seconds=300)
+        self.assertEqual(snap.probabilities[("KXTEST", "YES")], Decimal("0.66"))
+        self.assertEqual(snap.ages[("KXTEST", "YES")], 45)
+        args, kwargs = get.call_args
+        self.assertEqual(args[0], "https://example.invalid/v1/bets")
+        self.assertEqual(kwargs["params"], {"status": "new"})
+        self.assertEqual(kwargs["headers"]["Authorization"], "Bearer token")
+
     def test_paper_runner_fills_only_from_fresh_independent_value(self):
         now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
         with tempfile.TemporaryDirectory() as directory:
@@ -78,19 +115,16 @@ class ProbabilityRunnerTests(unittest.TestCase):
             runs = root / "runs.jsonl"
             write_ledger(ledger, now - timedelta(seconds=30), "0.70")
             result = run_once(
-                client=FakeClient(),
-                state_path=state,
-                runs_path=runs,
-                ledger_path=ledger,
-                max_markets=10,
-                max_orderbooks=10,
-                probability_max_age_seconds=300,
-                now=now,
+                client=FakeClient(), state_path=state, runs_path=runs,
+                ledger_path=ledger, max_markets=10, max_orderbooks=10,
+                probability_max_age_seconds=300, now=now,
             )
             self.assertEqual(result["paper_fills"], 1)
             portfolio = load_portfolio(state)
             self.assertIn("KXTEST", portfolio.positions)
             self.assertEqual(portfolio.positions["KXTEST"].side, "YES")
+            self.assertEqual(portfolio.positions["KXTEST"].entry, Decimal("0.515"))
+            self.assertEqual(portfolio.positions["KXTEST"].entry_fee, Decimal("0.01"))
             self.assertLess(portfolio.cash, Decimal("500"))
             self.assertEqual(len(runs.read_text().splitlines()), 1)
 
@@ -103,11 +137,8 @@ class ProbabilityRunnerTests(unittest.TestCase):
             runs = root / "runs.jsonl"
             write_ledger(ledger, now - timedelta(minutes=10), "0.90")
             result = run_once(
-                client=FakeClient(),
-                state_path=state,
-                runs_path=runs,
-                ledger_path=ledger,
-                now=now,
+                client=FakeClient(), state_path=state, runs_path=runs,
+                ledger_path=ledger, now=now,
             )
             self.assertEqual(result["paper_fills"], 0)
             self.assertEqual(load_portfolio(state).cash, Decimal("500.00"))
