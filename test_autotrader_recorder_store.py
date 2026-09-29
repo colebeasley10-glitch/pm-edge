@@ -99,6 +99,36 @@ class RecorderStoreTests(unittest.TestCase):
         )
         self.assertEqual(len(rows), 1)
 
+    def test_point_in_time_audit_passes_empty_store(self):
+        audit = self.store.audit_point_in_time()
+        self.assertTrue(audit["ok"])
+        self.assertEqual(audit["violations"], 0)
+        self.assertEqual(self.store.counts()["audit_runs"], 1)
+
+    def test_point_in_time_audit_catches_future_book_reference(self):
+        with self.store.connect() as con:
+            con.execute(
+                """INSERT INTO intents(
+                    intent_id,created_at,lane,lane_version,book_id,market_ticker,
+                    side,action,ob_received_at,status
+                ) VALUES(?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    "i1",
+                    self.t0.isoformat(),
+                    "value_edge",
+                    "v1",
+                    "research:value_edge",
+                    "TEST",
+                    "YES",
+                    "open",
+                    (self.t0 + timedelta(seconds=1)).isoformat(),
+                    "rejected",
+                ),
+            )
+        audit = self.store.audit_point_in_time()
+        self.assertFalse(audit["ok"])
+        self.assertEqual(audit["checks"]["intent_future_book"], 1)
+
     def test_schema_has_v11_fair_age_fields(self):
         with self.store.connect() as con:
             cols = {
