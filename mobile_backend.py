@@ -496,6 +496,28 @@ def fair_values() -> dict:
     This endpoint is read-only and exposes scored candidate rows before alert,
     execution, or account guardrails are applied.
     """
+    runtime_base = os.getenv("AUTOTRADER_FAIR_SOURCE_URL", "").strip().rstrip("/")
+    runtime_token = os.getenv("AUTOTRADER_FAIR_SOURCE_TOKEN", "").strip()
+    if runtime_base and runtime_token:
+        try:
+            response = requests.get(
+                runtime_base + "/v1/fair-values",
+                headers={"Authorization": f"Bearer {runtime_token}"},
+                timeout=5,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            items = payload.get("items") if isinstance(payload, dict) else None
+            if isinstance(items, list) and items:
+                return {
+                    "generated_at": payload.get("generated_at")
+                    or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                    "items": items,
+                    "source": "autotrader_runtime",
+                }
+        except Exception:
+            pass
+
     data = _load()
     df = data["candidates"].copy()
     if df.empty:
