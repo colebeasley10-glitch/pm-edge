@@ -5,6 +5,7 @@ has no authenticated Kalshi client and cannot submit real-money orders.
 """
 import argparse
 import csv
+import hashlib
 import json
 import os
 import re
@@ -158,6 +159,14 @@ def _refresh_local_fair_values(*, ledger_path, refresh_state_path, now,
     AUTOTRADER_ODDS_DAILY_BUDGET.
     """
     state = _refresh_state(refresh_state_path)
+    odds_api_key = (
+        os.environ.get("AUTOTRADER_ODDS_API_KEY", "").strip()
+        or os.environ.get("ODDS_API_KEY", "").strip()
+    )
+    if not odds_api_key:
+        return {"attempted": False, "reason": "odds_api_key_unavailable"}
+    key_fingerprint = hashlib.sha256(odds_api_key.encode("utf-8")).hexdigest()[:12]
+
     previous = state.get("last_attempt")
     try:
         previous_dt = datetime.fromisoformat(str(previous).replace("Z", "+00:00"))
@@ -165,21 +174,20 @@ def _refresh_local_fair_values(*, ledger_path, refresh_state_path, now,
             previous_dt = previous_dt.replace(tzinfo=timezone.utc)
     except Exception:
         previous_dt = None
-    if previous_dt is not None:
+    # A newly supplied dedicated key should be testable immediately; only the
+    # same key is subject to the normal refresh cooldown.
+    same_key = str(state.get("key_fingerprint") or "") == key_fingerprint
+    if previous_dt is not None and same_key:
         age = (now - previous_dt.astimezone(timezone.utc)).total_seconds()
         if age < refresh_interval_seconds:
             return {"attempted": False, "reason": "refresh_cooldown", "age_seconds": max(0, age)}
 
-    odds_api_key = (
-        os.environ.get("AUTOTRADER_ODDS_API_KEY", "").strip()
-        or os.environ.get("ODDS_API_KEY", "").strip()
-    )
-    if not odds_api_key:
-        return {"attempted": False, "reason": "odds_api_key_unavailable"}
-
     attempt = now.isoformat()
     ledger_before = _file_stats(ledger_path)
-    _write_refresh_state(refresh_state_path, {"last_attempt": attempt, "status": "running"})
+    _write_refresh_state(
+        refresh_state_path,
+        {"last_attempt": attempt, "status": "running", "key_fingerprint": key_fingerprint},
+    )
     env = os.environ.copy()
     root = Path(ledger_path).parent
     env.update({
@@ -261,7 +269,11 @@ def _refresh_local_fair_values(*, ledger_path, refresh_state_path, now,
 
     _write_refresh_state(
         refresh_state_path,
-        {"last_attempt": attempt, "status": result.get("status", result.get("reason", "unknown"))},
+        {
+            "last_attempt": attempt,
+            "status": result.get("status", result.get("reason", "unknown")),
+            "key_fingerprint": key_fingerprint,
+        },
     )
     return result
 
