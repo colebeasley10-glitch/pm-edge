@@ -64,6 +64,18 @@ const fmtDateTime = (value?: string | null) => {
     timeZoneName: "short",
   });
 };
+const fmtAgo = (value?: string | null) => {
+  if (!value) return "—";
+  const t = new Date(value).getTime();
+  if (!Number.isFinite(t)) return "—";
+  const seconds = Math.max(0, Math.floor((Date.now() - t) / 1000));
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ago`;
+};
+
 const laneLabel = (value?: string | null) => {
   const lane = (value ?? "").toLowerCase();
   if (lane === "price_fish") return "FISH";
