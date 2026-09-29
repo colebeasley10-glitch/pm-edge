@@ -338,6 +338,7 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         "kalshi_schema_probe": schema_probe,
         "candidate_count": len(candidates),
         "fresh_probability_count": len(fair.probabilities),
+        "fair_diagnostics": getattr(fair, "diagnostics", {}) or {},
         "matched_candidate_count": matched,
         "paper_fills": result["paper_fills"],
         "funnel": {
