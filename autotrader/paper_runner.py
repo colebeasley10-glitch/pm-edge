@@ -6,6 +6,7 @@ has no authenticated Kalshi client and cannot submit real-money orders.
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -32,14 +33,20 @@ _KALSHI_WRITE_ENV_NAMES = (
     "KALSHI_WRITE_API_KEY_ID",
     "KALSHI_WRITE_PRIVATE_KEY",
 )
+_KALSHI_SECRET_ENV_RE = re.compile(r"KALSHI.*(?:KEY|SECRET|PRIVATE|PEM)", re.IGNORECASE)
 
 
 def _assert_no_kalshi_write_credentials():
-    present = [name for name in _KALSHI_WRITE_ENV_NAMES if os.environ.get(name, "").strip()]
+    present = sorted({
+        name
+        for name, value in os.environ.items()
+        if str(value or "").strip()
+        and (name in _KALSHI_WRITE_ENV_NAMES or _KALSHI_SECRET_ENV_RE.search(name))
+    })
     if present:
         raise RuntimeError(
             "Paper AutoTrader refuses to start with Kalshi write credentials present: "
-            + ",".join(sorted(present))
+            + ",".join(present)
         )
 
 
@@ -192,7 +199,11 @@ def _refresh_local_fair_values(*, ledger_path, refresh_state_path, now,
         "KALSHI_PRIVATE_KEY": "",
         "KALSHI_WRITE_API_KEY_ID": "",
         "KALSHI_WRITE_PRIVATE_KEY": "",
+        "KALSHI_WRITE_PRIVATE_KEY_PATH": "",
     })
+    for name in list(env):
+        if _KALSHI_SECRET_ENV_RE.search(name):
+            env[name] = ""
     try:
         completed = subprocess.run(
             [sys.executable, "pm_edge_runner_v28.py"],
