@@ -74,10 +74,14 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         ledger_path=ledger_path, now=started_at,
         max_age_seconds=probability_max_age_seconds,
     )
+    fair_tickers = {ticker for ticker, _side in fair.probabilities}
     candidates = scan_public(
-        client, max_markets=max_markets, max_orderbooks=max_orderbooks,
+        client,
+        max_markets=max_markets,
+        max_orderbooks=min(max_orderbooks, len(fair_tickers)) if fair_tickers else 0,
         clock=clock,
-    )
+        ticker_filter=fair_tickers,
+    ) if fair_tickers else []
     decision_at = clock().astimezone(timezone.utc)
     quote_ages = {}
     for c in candidates:
