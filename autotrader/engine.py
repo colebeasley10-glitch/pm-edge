@@ -1,7 +1,4 @@
-"""Paper-only decision engine. Call with independently timestamped data.
-
-No network clients, API credentials, or live-order submission are imported here.
-"""
+"""Paper-only decision engine. No live-order submission capability."""
 from dataclasses import dataclass, field
 from decimal import Decimal
 from .portfolio import PaperPortfolio
@@ -18,37 +15,40 @@ class PaperEngine:
     min_net_edge: Decimal = D("0.05")
 
     def on_snapshot(self, markets, *, probabilities, quote_ages, event_data_ages,
-                    fee_per_contract="0", slippage_per_contract="0"):
-        """Evaluate a raw normalized market batch."""
+                    fee_per_contract="0", slippage_per_contract="0",
+                    max_quote_age_seconds=2, max_event_data_age_seconds=300):
         return self.on_candidates(
-            discover(markets),
-            probabilities=probabilities,
-            quote_ages=quote_ages,
-            event_data_ages=event_data_ages,
+            discover(markets), probabilities=probabilities,
+            quote_ages=quote_ages, event_data_ages=event_data_ages,
             fee_per_contract=fee_per_contract,
             slippage_per_contract=slippage_per_contract,
+            max_quote_age_seconds=max_quote_age_seconds,
+            max_event_data_age_seconds=max_event_data_age_seconds,
         )
 
     def on_candidates(self, candidates, *, probabilities, quote_ages, event_data_ages,
-                      fee_per_contract="0", slippage_per_contract="0"):
-        """Evaluate executable candidates produced by the public orderbook scanner.
-
-        probabilities keys are (ticker, side), produced by an independent
-        source. Missing or stale fair value means NO trade.
-        """
+                      fee_per_contract="0", slippage_per_contract="0",
+                      max_quote_age_seconds=2, max_event_data_age_seconds=300):
+        """Evaluate executable candidates against independent fair probabilities."""
         candidates = list(candidates)
         accepted = 0
         start_decisions = len(self.decisions)
+        fee = D(fee_per_contract)
+        slippage = D(slippage_per_contract)
         for c in candidates:
             key = (c.ticker, c.side)
+            quote_age = quote_ages.get(key, quote_ages.get(c.ticker))
+            event_age = event_data_ages.get(key, event_data_ages.get(c.ticker))
             decision = evaluate(
                 c,
                 fair_probability=probabilities.get(key),
-                fee_per_contract=fee_per_contract,
-                slippage_per_contract=slippage_per_contract,
+                fee_per_contract=fee,
+                slippage_per_contract=slippage,
                 min_net_edge=self.min_net_edge,
-                quote_age_seconds=quote_ages.get(c.ticker),
-                event_data_age_seconds=event_data_ages.get(c.ticker),
+                quote_age_seconds=quote_age,
+                max_quote_age_seconds=max_quote_age_seconds,
+                event_data_age_seconds=event_age,
+                max_event_data_age_seconds=max_event_data_age_seconds,
             )
             entry = {
                 "ticker": c.ticker,
@@ -60,11 +60,20 @@ class PaperEngine:
                 entry["net_edge"] = str(decision.net_edge)
             if decision.fair_probability is not None:
                 entry["fair_probability"] = str(decision.fair_probability)
+            if quote_age is not None:
+                entry["quote_age_seconds"] = round(float(quote_age), 3)
+            if event_age is not None:
+                entry["fair_age_seconds"] = round(float(event_age), 3)
             if not decision.qualified:
                 self.decisions.append(entry)
                 continue
 
-            cost_per_contract = c.executable_ask + D(fee_per_contract)
+            simulated_fill = c.executable_ask + slippage
+            cost_per_contract = simulated_fill + fee
+            if not (D("0") < simulated_fill < D("1")) or cost_per_contract <= 0:
+                entry["decision"] = "invalid_simulated_fill"
+                self.decisions.append(entry)
+                continue
             budget = self.portfolio.cash
             position_limit = self.portfolio.max_position_fraction * D("500")
             contracts = min(
@@ -75,18 +84,17 @@ class PaperEngine:
                 entry["decision"] = "insufficient_paper_risk_budget"
             else:
                 filled = self.portfolio.buy(
-                    c.ticker,
-                    c.side,
-                    contracts,
-                    c.executable_ask,
-                    c.executable_ask,
-                    int(c.available),
-                    D(fee_per_contract),
+                    c.ticker, c.side, contracts,
+                    simulated_fill, simulated_fill,
+                    int(c.available), fee,
                 )
                 entry["decision"] = "paper_filled" if filled else "paper_risk_rejected"
                 if filled:
                     accepted += 1
                     entry["contracts"] = contracts
+                    entry["simulated_fill"] = str(simulated_fill)
+                    entry["fee_per_contract"] = str(fee)
+                    entry["slippage_per_contract"] = str(slippage)
             self.decisions.append(entry)
 
         return {
