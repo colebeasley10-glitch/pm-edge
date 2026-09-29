@@ -101,11 +101,23 @@ def _settle_finished_positions(portfolio, client):
             continue
         result = str(market.get("result") or "").upper()
         status = str(market.get("status") or "").lower()
-        # "closed" only means trading ended. Wait for Kalshi's final settlement
-        # state before realizing paper P/L.
-        if result in ("YES", "NO") and status in ("finalized", "settled"):
-            if portfolio.settle(ticker, result):
-                settled.append({"ticker": ticker, "winner": result, "status": status})
+        settlement_value = market.get("settlement_value")
+        # "closed" only means trading ended. Wait for a finalized/settled state
+        # and use Kalshi's settlement value when present so special 0<x<1
+        # settlements are represented correctly.
+        if status in ("finalized", "settled"):
+            did_settle = False
+            if settlement_value is not None:
+                did_settle = portfolio.settle_value(ticker, settlement_value)
+            elif result in ("YES", "NO"):
+                did_settle = portfolio.settle(ticker, result)
+            if did_settle:
+                settled.append({
+                    "ticker": ticker,
+                    "winner": result or None,
+                    "yes_settlement_value": settlement_value,
+                    "status": status,
+                })
     return settled
 
 
