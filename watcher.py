@@ -340,7 +340,7 @@ def fetch_featured_sport_odds(settings, sport_key: str, markets):
         if recorder_db:
             try:
                 from autotrader.odds_capture import record_odds_response
-                record_odds_response(
+                capture = record_odds_response(
                     db_path=recorder_db,
                     endpoint=f"/sports/{sport_key}/odds/",
                     sport=sport_key,
@@ -353,6 +353,8 @@ def fetch_featured_sport_odds(settings, sport_key: str, markets):
                     http_status=(response.status_code if response is not None else None),
                     error=error,
                 )
+                if capture.get("fetch_id"):
+                    usage["recorder_fetch_id"] = capture["fetch_id"]
             except Exception:
                 pass
 
