@@ -19,6 +19,15 @@ class PaperPortfolioTests(unittest.TestCase):
         self.assertEqual(p.cash, Decimal("501.80"))
         self.assertEqual(p.realized_pnl, Decimal("1.80"))
 
+    def test_fee_inclusive_exposure_and_negative_proceeds_guard(self):
+        p = PaperPortfolio()
+        self.assertTrue(p.buy("A", "YES", 10, ".50", ".50", 10, ".01"))
+        self.assertEqual(p.exposure(), Decimal("5.10"))
+        self.assertEqual(p.snapshot(bids={"A": ".60"})["unrealized_pnl"], ".90")
+        self.assertFalse(p.sell("A", ".005", 10, ".01"))
+        self.assertEqual(p.cash, Decimal("494.90"))
+        self.assertEqual(len(p.positions), 1)
+
     def test_price_guard_and_settlement(self):
         p = PaperPortfolio()
         self.assertFalse(p.buy("A", "YES", 5, ".40", ".41", 5))
