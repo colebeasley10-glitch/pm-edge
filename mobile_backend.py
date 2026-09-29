@@ -42,6 +42,15 @@ def _auth(authorization: str | None = Header(default=None)) -> None:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 
+def _fair_auth(authorization: str | None = Header(default=None)) -> None:
+    """Separate read-only credential for AutoTrader fair-value access."""
+    expected = os.getenv("PM_EDGE_FAIR_API_TOKEN", "").strip()
+    if not expected:
+        raise HTTPException(status_code=503, detail="Fair-value API token is not configured")
+    if authorization != f"Bearer {expected}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+
 def _clean(value: Any) -> Any:
     if value is None:
         return None
@@ -299,7 +308,7 @@ def dashboard() -> dict:
     }
 
 
-@app.get("/v1/fair-values", dependencies=[Depends(_auth)])
+@app.get("/v1/fair-values", dependencies=[Depends(_fair_auth)])
 def fair_values() -> dict:
     """Latest sportsbook-derived fair values for paper/analytics consumers.
 
