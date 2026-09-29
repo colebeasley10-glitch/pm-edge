@@ -23,7 +23,7 @@ class PaperPortfolio:
     max_total_fraction: Decimal = D("0.10")
 
     def exposure(self):
-        return sum((p.contracts * p.entry for p in self.positions.values()), D("0"))
+        return sum((p.contracts * (p.entry + p.entry_fee) for p in self.positions.values()), D("0"))
 
     def buy(self, ticker, side, contracts, limit, executable_ask, available, fee_per_contract=D("0")):
         """Conservative simulated taker fill at executable ask, not stale limit."""
@@ -50,7 +50,7 @@ class PaperPortfolio:
         if p is None:
             return False
         bid, fee = D(executable_bid), D(fee_per_contract)
-        if not (D("0") <= bid <= D("1")) or fee < 0 or available < p.contracts:
+        if not (D("0") <= bid <= D("1")) or fee < 0 or fee > bid or available < p.contracts:
             return False
         proceeds = p.contracts * (bid - fee)
         pnl = proceeds - p.contracts * (p.entry + p.entry_fee)
