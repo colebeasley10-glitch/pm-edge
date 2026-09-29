@@ -45,6 +45,10 @@ V28_STATS = {
     "candidate_sent_records": 0,
     "candidate_duplicates": 0,
     "candidate_errors": 0,
+    "devig_qualified_active": 0,
+    "devig_proportional_same_side": 0,
+    "devig_shin_same_side": 0,
+    "devig_all_three_same_side": 0,
 }
 
 
@@ -84,6 +88,37 @@ def _record(market, fair_entry, q, *, lane, stage, decision, reason="") -> None:
         print("PM_EDGE_CANDIDATE_LEDGER_ERROR", type(exc).__name__, str(exc)[:240])
 
 
+def _required_edge_for_fair(fair_entry: dict, base_min_edge=None) -> float:
+    n_books = int(fair_entry.get("n_books") or 0)
+    base = watcher.MIN_EDGE if base_min_edge is None else float(base_min_edge)
+    if n_books >= 4:
+        return base
+    if n_books == 3:
+        return max(base, 0.045 if base_min_edge is None else base + 0.005)
+    return max(base, 0.06 if base_min_edge is None else base + 0.02)
+
+
+def _alternate_devig_same_side_qualifies(q, fair_entry: dict, field: str, base_min_edge=None) -> bool:
+    try:
+        active_yes = float(fair_entry["fair_yes_prob"])
+        alt_yes = float(fair_entry[field])
+        active_edge = float(q.net_edge)
+    except (KeyError, TypeError, ValueError):
+        return False
+    if not (0.0 < active_yes < 1.0 and 0.0 < alt_yes < 1.0):
+        return False
+    side = str(getattr(q, "side", "") or "").upper()
+    if side == "YES":
+        delta = alt_yes - active_yes
+    elif side == "NO":
+        delta = (1.0 - alt_yes) - (1.0 - active_yes)
+    else:
+        return False
+    alt_edge = active_edge + delta
+    required = _required_edge_for_fair(fair_entry, base_min_edge=base_min_edge)
+    return required <= alt_edge <= 0.12
+
+
 def install_v28_patch() -> None:
     watcher.WATCHER_VERSION = 28
 
@@ -121,6 +156,19 @@ def install_v28_patch() -> None:
         if qualifies:
             decision = "QUALIFIED"
             reason = "clears_lane_thresholds"
+            V28_STATS["devig_qualified_active"] += 1
+            prop_ok = _alternate_devig_same_side_qualifies(
+                q, fair_entry, "fair_proportional", base_min_edge=base_min_edge
+            )
+            shin_ok = _alternate_devig_same_side_qualifies(
+                q, fair_entry, "fair_shin", base_min_edge=base_min_edge
+            )
+            if prop_ok:
+                V28_STATS["devig_proportional_same_side"] += 1
+            if shin_ok:
+                V28_STATS["devig_shin_same_side"] += 1
+            if prop_ok and shin_ok:
+                V28_STATS["devig_all_three_same_side"] += 1
         elif guard_reason in {"implausible_edge", "degenerate_book", "wide_spread"}:
             decision = "REJECTED"
             reason = guard_reason
@@ -288,7 +336,13 @@ def main() -> int:
     finally:
         v27.install_v27_patch = original_install_v27
 
-    print("PM_EDGE_V28_BROADER_COVERAGE " + json.dumps(V28_STATS, sort_keys=True))
+    stats = dict(V28_STATS)
+    denom = int(stats.get("devig_qualified_active") or 0)
+    stats["devig_all_three_share"] = (
+        round(float(stats.get("devig_all_three_same_side") or 0) / denom, 6)
+        if denom else None
+    )
+    print("PM_EDGE_V28_BROADER_COVERAGE " + json.dumps(stats, sort_keys=True))
     return int(rc or 0)
 
 
