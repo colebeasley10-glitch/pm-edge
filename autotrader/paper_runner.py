@@ -170,7 +170,11 @@ def _refresh_local_fair_values(*, ledger_path, refresh_state_path, now,
         if age < refresh_interval_seconds:
             return {"attempted": False, "reason": "refresh_cooldown", "age_seconds": max(0, age)}
 
-    if not os.environ.get("ODDS_API_KEY", "").strip():
+    odds_api_key = (
+        os.environ.get("AUTOTRADER_ODDS_API_KEY", "").strip()
+        or os.environ.get("ODDS_API_KEY", "").strip()
+    )
+    if not odds_api_key:
         return {"attempted": False, "reason": "odds_api_key_unavailable"}
 
     attempt = now.isoformat()
@@ -179,6 +183,7 @@ def _refresh_local_fair_values(*, ledger_path, refresh_state_path, now,
     env = os.environ.copy()
     root = Path(ledger_path).parent
     env.update({
+        "ODDS_API_KEY": odds_api_key,
         "PM_EDGE_MODE": "paper",
         "PM_EDGE_EXECUTION_MODE": "preview",
         "PM_EDGE_ORDER_SUBMISSION_ENABLED": "0",
