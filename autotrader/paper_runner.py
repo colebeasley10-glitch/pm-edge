@@ -25,6 +25,73 @@ def _utcnow():
     return datetime.now(timezone.utc)
 
 
+_KALSHI_WRITE_ENV_NAMES = (
+    "KALSHI_API_KEY_ID",
+    "KALSHI_PRIVATE_KEY_PATH",
+    "KALSHI_PRIVATE_KEY",
+    "KALSHI_WRITE_API_KEY_ID",
+    "KALSHI_WRITE_PRIVATE_KEY",
+)
+
+
+def _assert_no_kalshi_write_credentials():
+    present = [name for name in _KALSHI_WRITE_ENV_NAMES if os.environ.get(name, "").strip()]
+    if present:
+        raise RuntimeError(
+            "Paper AutoTrader refuses to start with Kalshi write credentials present: "
+            + ",".join(sorted(present))
+        )
+
+
+def _file_stats(path):
+    p = Path(path)
+    if not p.exists():
+        return {"exists": False, "rows": 0, "mtime_ns": None, "size": 0}
+    try:
+        with p.open("r", encoding="utf-8", errors="replace") as handle:
+            rows = max(0, sum(1 for _ in handle) - 1)
+        st = p.stat()
+        return {"exists": True, "rows": rows, "mtime_ns": st.st_mtime_ns, "size": st.st_size}
+    except OSError as exc:
+        return {"exists": True, "rows": None, "mtime_ns": None, "size": None, "error": str(exc)}
+
+
+def _watcher_summary(stdout):
+    prefix = "PM_EDGE_RUN_SUMMARY "
+    for line in reversed((stdout or "").splitlines()):
+        if line.startswith(prefix):
+            try:
+                value = json.loads(line[len(prefix):])
+                return value if isinstance(value, dict) else {}
+            except Exception:
+                return {}
+    return {}
+
+
+def _kalshi_schema_probe(client):
+    """Public/read-only shape probe used when the fair-value funnel is empty."""
+    try:
+        markets = client.list_open_markets(max_markets=5)
+        if not markets:
+            return {"market_count": 0}
+        raw = markets[0] if isinstance(markets[0], dict) else {}
+        ticker = str(raw.get("ticker") or "")
+        probe = {
+            "market_count": len(markets),
+            "ticker": ticker,
+            "market_keys": sorted(str(k) for k in raw.keys())[:100],
+        }
+        if ticker:
+            book = client.get_orderbook(ticker, depth=1)
+            probe["orderbook_keys"] = sorted(str(k) for k in (book or {}).keys())[:50]
+            fp = (book or {}).get("orderbook_fp")
+            if isinstance(fp, dict):
+                probe["orderbook_fp_keys"] = sorted(str(k) for k in fp.keys())[:50]
+        return probe
+    except Exception as exc:
+        return {"error": f"{type(exc).__name__}: {exc}"}
+
+
 def _settle_finished_positions(portfolio, client):
     settled = []
     for ticker in list(portfolio.positions):
@@ -82,6 +149,7 @@ def _refresh_local_fair_values(*, ledger_path, refresh_state_path, now,
         return {"attempted": False, "reason": "odds_api_key_unavailable"}
 
     attempt = now.isoformat()
+    ledger_before = _file_stats(ledger_path)
     _write_refresh_state(refresh_state_path, {"last_attempt": attempt, "status": "running"})
     env = os.environ.copy()
     root = Path(ledger_path).parent
@@ -100,6 +168,16 @@ def _refresh_local_fair_values(*, ledger_path, refresh_state_path, now,
         "PM_EDGE_MAX_ODDS_REFRESH_PER_RUN": os.environ.get("AUTOTRADER_MAX_ODDS_REFRESH_PER_RUN", "2"),
         "PM_EDGE_MAX_BULK_SPORTS_PER_RUN": os.environ.get("AUTOTRADER_MAX_BULK_SPORTS_PER_RUN", "1"),
         "PM_EDGE_MAX_MARKETS": os.environ.get("AUTOTRADER_FAIR_REFRESH_MAX_MARKETS", "1500"),
+        "PM_EDGE_PREGAME_ONLY": "1",
+        "PM_EDGE_REJECT_PUSHABLE_LINES": "1",
+        "PM_EDGE_PREGAME_BUFFER_SECONDS": "300",
+        # Belt-and-suspenders: the fallback process gets no Kalshi write creds,
+        # even if somebody later adds one to a shared Railway scope.
+        "KALSHI_API_KEY_ID": "",
+        "KALSHI_PRIVATE_KEY_PATH": "",
+        "KALSHI_PRIVATE_KEY": "",
+        "KALSHI_WRITE_API_KEY_ID": "",
+        "KALSHI_WRITE_PRIVATE_KEY": "",
     })
     try:
         completed = subprocess.run(
@@ -110,18 +188,32 @@ def _refresh_local_fair_values(*, ledger_path, refresh_state_path, now,
             timeout=timeout,
             check=False,
         )
-        status = "ok" if completed.returncode == 0 else "failed"
+        summary = _watcher_summary(completed.stdout)
+        if completed.returncode != 0:
+            status = "error"
+        else:
+            status = str(summary.get("status") or "ran")
         result = {
             "attempted": True,
             "status": status,
             "returncode": completed.returncode,
-            "stdout_tail": (completed.stdout or "")[-1200:],
-            "stderr_tail": (completed.stderr or "")[-800:],
+            "watcher_summary": summary,
+            "ledger_before": ledger_before,
+            "ledger_after": _file_stats(ledger_path),
+            "stdout_tail": (completed.stdout or "")[-4000:],
+            "stderr_tail": (completed.stderr or "")[-1600:],
         }
     except subprocess.TimeoutExpired:
-        result = {"attempted": True, "status": "timeout"}
+        result = {
+            "attempted": True, "status": "timeout",
+            "ledger_before": ledger_before, "ledger_after": _file_stats(ledger_path),
+        }
     except Exception as exc:
-        result = {"attempted": True, "status": "error", "error": f"{type(exc).__name__}: {exc}"}
+        result = {
+            "attempted": True, "status": "error",
+            "error": f"{type(exc).__name__}: {exc}",
+            "ledger_before": ledger_before, "ledger_after": _file_stats(ledger_path),
+        }
 
     _write_refresh_state(
         refresh_state_path,
@@ -203,6 +295,7 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         ticker_filter=fair_tickers,
     ) if fair_tickers else []
     decision_at = clock().astimezone(timezone.utc)
+    schema_probe = _kalshi_schema_probe(client) if not fair.probabilities else {}
     quote_ages = {}
     for c in candidates:
         if c.observed_at is None:
@@ -223,15 +316,35 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
     save_portfolio(engine.portfolio, state_path)
 
     matched = sum(1 for c in candidates if (c.ticker, c.side) in fair.probabilities)
+    quote_fresh = sum(
+        1 for age in quote_ages.values()
+        if age is not None and 0 <= float(age) <= float(max_quote_age_seconds)
+    )
+    risk_ok = sum(
+        1 for d in engine.decisions
+        if d.get("qualified") and d.get("decision") not in {
+            "paper_risk_rejected", "insufficient_paper_risk_budget", "invalid_simulated_fill"
+        }
+    )
+    upstream_funnel = ((fair_refresh or {}).get("watcher_summary") or {}).get("funnel") or {}
     run = {
         "observed_at": decision_at.isoformat(),
         "provider": provider,
         "provider_scope": "fresh PM Edge sportsbook-derived fair values",
         "fair_refresh": fair_refresh,
+        "kalshi_schema_probe": schema_probe,
         "candidate_count": len(candidates),
         "fresh_probability_count": len(fair.probabilities),
         "matched_candidate_count": matched,
         "paper_fills": result["paper_fills"],
+        "funnel": {
+            **upstream_funnel,
+            "fresh_probability": len(fair.probabilities),
+            "matched_candidate": matched,
+            "quote_fresh": quote_fresh,
+            "risk_ok": risk_ok,
+            "filled": result["paper_fills"],
+        },
         "settlements": settled,
         "portfolio": result["portfolio"],
         "decisions": engine.decisions,
@@ -244,6 +357,7 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
 
 
 def main():
+    _assert_no_kalshi_write_credentials()
     parser = argparse.ArgumentParser(description="Isolated paper-only AutoTrader")
     parser.add_argument("--once", action="store_true")
     parser.add_argument("--interval", type=int, default=300)
