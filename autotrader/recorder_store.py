@@ -271,6 +271,14 @@ class RecorderStore:
             fill_model_version TEXT,
             started_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS audit_runs(
+            audit_id TEXT PRIMARY KEY,
+            started_at TEXT NOT NULL,
+            completed_at TEXT NOT NULL,
+            violations INTEGER NOT NULL,
+            detail TEXT NOT NULL
+        );
         """
         with self.connect() as con:
             con.executescript(ddl)
@@ -528,9 +536,58 @@ class RecorderStore:
             ).fetchall()
         return [dict(row) for row in rows]
 
+    def audit_point_in_time(self) -> dict:
+        """Fail-closed research audit for the received_at/processed_at invariant."""
+        started = utc_iso()
+        checks = {}
+        with self.connect() as con:
+            checks["fair_input_after_processed"] = int(con.execute(
+                """SELECT COUNT(*) FROM fair_snapshots
+                   WHERE input_received_at_max > processed_at"""
+            ).fetchone()[0])
+            checks["intent_future_fair"] = int(con.execute(
+                """SELECT COUNT(*) FROM intents i
+                   JOIN fair_snapshots f ON f.fair_id=i.fair_id
+                   WHERE i.fair_id IS NOT NULL AND f.processed_at > i.created_at"""
+            ).fetchone()[0])
+            checks["intent_future_book"] = int(con.execute(
+                """SELECT COUNT(*) FROM intents
+                   WHERE ob_received_at IS NOT NULL AND ob_received_at > created_at"""
+            ).fetchone()[0])
+            violations = sum(checks.values())
+            completed = utc_iso()
+            audit_id = hashlib.sha256(
+                f"{started}|{completed}|{json.dumps(checks, sort_keys=True)}".encode("utf-8")
+            ).hexdigest()[:24]
+            con.execute(
+                """INSERT INTO audit_runs(audit_id,started_at,completed_at,violations,detail)
+                   VALUES(?,?,?,?,?)""",
+                (audit_id, started, completed, violations, json.dumps(checks, sort_keys=True)),
+            )
+            if violations:
+                con.execute(
+                    """INSERT INTO data_quality_events(ts,type,market_ticker,detail)
+                       VALUES(?,?,?,?)""",
+                    (
+                        completed,
+                        "point_in_time_violation",
+                        None,
+                        json.dumps({"audit_id": audit_id, "checks": checks}, sort_keys=True),
+                    ),
+                )
+        return {
+            "audit_id": audit_id,
+            "started_at": started,
+            "completed_at": completed,
+            "violations": violations,
+            "checks": checks,
+            "ok": violations == 0,
+        }
+
     def counts(self) -> dict:
         names = ("markets_meta", "ob_top", "ob_snapshots", "trades", "odds_fetches",
-                 "odds_quotes", "fair_snapshots", "intents", "data_quality_events")
+                 "odds_quotes", "fair_snapshots", "intents", "data_quality_events",
+                 "audit_runs")
         out = {}
         with self.connect() as con:
             for name in names:
