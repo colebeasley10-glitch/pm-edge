@@ -16,6 +16,7 @@ class ProbabilitySnapshot:
     sources: dict
     observed_at: datetime
     contexts: dict = field(default_factory=dict)
+    diagnostics: dict = field(default_factory=dict)
 
 
 def _parse_ts(value):
@@ -43,18 +44,46 @@ def _build_snapshot(rows, *, now, max_age_seconds, source_default,
                     require_fair_timestamp=True, pregame_only=True,
                     reject_pushable_lines=True, min_seconds_to_start=300):
     latest = {}
+    diag = {
+        "items_received": 0,
+        "accepted": 0,
+        "rejected_missing_identity": 0,
+        "rejected_missing_fair_timestamp": 0,
+        "rejected_timestamp_parse": 0,
+        "rejected_future": 0,
+        "rejected_stale": 0,
+        "rejected_contract_semantics": 0,
+        "rejected_started_or_too_close": 0,
+        "rejected_probability": 0,
+    }
     for row in rows:
+        diag["items_received"] += 1
         ticker = str(row.get("ticker") or "").strip()
         side = str(row.get("side") or "").upper()
+        if not ticker or side not in ("YES", "NO"):
+            diag["rejected_missing_identity"] += 1
+            continue
+
         fair_ts_raw = row.get("fair_fetched_at")
         if require_fair_timestamp and not fair_ts_raw:
+            diag["rejected_missing_fair_timestamp"] += 1
             continue
         ts = _parse_ts(
             fair_ts_raw
             or row.get("evaluated_at")
             or row.get("alerted_at")
         )
-        if not ticker or side not in ("YES", "NO") or ts is None:
+        if ts is None:
+            diag["rejected_timestamp_parse"] += 1
+            continue
+
+        raw_age = (now - ts).total_seconds()
+        if raw_age < -5:
+            diag["rejected_future"] += 1
+            continue
+        age = max(0.0, raw_age)
+        if age > max_age_seconds:
+            diag["rejected_stale"] += 1
             continue
 
         market_type = str(row.get("market_type") or "").strip().lower()
@@ -62,25 +91,29 @@ def _build_snapshot(rows, *, now, max_age_seconds, source_default,
             try:
                 point = Decimal(str(row.get("point")))
             except (InvalidOperation, ValueError, TypeError):
+                diag["rejected_contract_semantics"] += 1
                 continue
-            # Kalshi "over N" resolves NO at exactly N while a sportsbook whole
-            # number can push. They are not semantically identical contracts.
+            # A whole-number sportsbook line can push while the corresponding
+            # binary Kalshi contract resolves one side to zero. Fail closed.
             if point == point.to_integral_value():
+                diag["rejected_contract_semantics"] += 1
                 continue
 
         if pregame_only:
             commence = _parse_ts(row.get("commence_time"))
             if commence is None or (commence - now).total_seconds() < min_seconds_to_start:
+                diag["rejected_started_or_too_close"] += 1
                 continue
+
         try:
             prob = Decimal(str(row.get("fair_probability")))
         except (InvalidOperation, ValueError, TypeError):
+            diag["rejected_probability"] += 1
             continue
         if not (Decimal("0") < prob < Decimal("1")):
+            diag["rejected_probability"] += 1
             continue
-        age = _age_seconds(now, ts)
-        if age is None or age > max_age_seconds:
-            continue
+
         key = (ticker, side)
         snapshot_id = str(row.get("fair_snapshot_id") or "").strip()
         if not snapshot_id:
@@ -114,7 +147,8 @@ def _build_snapshot(rows, *, now, max_age_seconds, source_default,
         ages[ticker] = max(ages.get(ticker, 0.0), value[2])
     sources = {key: value[3] for key, value in latest.items()}
     contexts = {key: value[4] for key, value in latest.items()}
-    return ProbabilitySnapshot(probabilities, ages, sources, now, contexts)
+    diag["accepted"] = len(probabilities)
+    return ProbabilitySnapshot(probabilities, ages, sources, now, contexts, diag)
 
 
 def load_pm_edge_ledger(path="pm_edge_candidate_ledger.csv", *, now=None, max_age_seconds=300):
