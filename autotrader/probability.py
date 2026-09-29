@@ -20,9 +20,14 @@ def _parse_ts(value):
     if not value:
         return None
     try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).astimezone(timezone.utc)
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
     except (ValueError, TypeError):
         return None
+    # Fail closed on ambiguous naive timestamps. Railway currently runs UTC, but
+    # silently assuming server-local time can make stale values appear fresh.
+    if dt.tzinfo is None:
+        return None
+    return dt.astimezone(timezone.utc)
 
 
 def _age_seconds(now, ts, *, max_future_skew_seconds=5):
@@ -32,18 +37,39 @@ def _age_seconds(now, ts, *, max_future_skew_seconds=5):
     return max(0.0, age)
 
 
-def _build_snapshot(rows, *, now, max_age_seconds, source_default):
+def _build_snapshot(rows, *, now, max_age_seconds, source_default,
+                    require_fair_timestamp=True, pregame_only=True,
+                    reject_pushable_lines=True, min_seconds_to_start=300):
     latest = {}
     for row in rows:
         ticker = str(row.get("ticker") or "").strip()
         side = str(row.get("side") or "").upper()
+        fair_ts_raw = row.get("fair_fetched_at")
+        if require_fair_timestamp and not fair_ts_raw:
+            continue
         ts = _parse_ts(
-            row.get("fair_fetched_at")
+            fair_ts_raw
             or row.get("evaluated_at")
             or row.get("alerted_at")
         )
         if not ticker or side not in ("YES", "NO") or ts is None:
             continue
+
+        market_type = str(row.get("market_type") or "").strip().lower()
+        if reject_pushable_lines and market_type in {"spread", "total", "team_total"}:
+            try:
+                point = Decimal(str(row.get("point")))
+            except (InvalidOperation, ValueError, TypeError):
+                continue
+            # Kalshi "over N" resolves NO at exactly N while a sportsbook whole
+            # number can push. They are not semantically identical contracts.
+            if point == point.to_integral_value():
+                continue
+
+        if pregame_only:
+            commence = _parse_ts(row.get("commence_time"))
+            if commence is None or (commence - now).total_seconds() < min_seconds_to_start:
+                continue
         try:
             prob = Decimal(str(row.get("fair_probability")))
         except (InvalidOperation, ValueError, TypeError):
