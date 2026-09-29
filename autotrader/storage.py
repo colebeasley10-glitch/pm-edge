@@ -15,9 +15,11 @@ def save_portfolio(portfolio: PaperPortfolio, path):
         "realized_pnl": str(portfolio.realized_pnl),
         "max_position_fraction": str(portfolio.max_position_fraction),
         "max_total_fraction": str(portfolio.max_total_fraction),
-        "positions": [dict(ticker=p.ticker, side=p.side, contracts=p.contracts,
-                           entry=str(p.entry), entry_fee=str(p.entry_fee))
-                      for p in portfolio.positions.values()],
+        "positions": [dict(
+            ticker=p.ticker, side=p.side, contracts=p.contracts,
+            entry=str(p.entry), entry_fee=str(p.entry_fee),
+            exposure_key=p.exposure_key, fair_snapshot_id=p.fair_snapshot_id,
+        ) for p in portfolio.positions.values()],
         "ledger": portfolio.ledger,
     }
     tmp = None
@@ -43,8 +45,11 @@ def load_portfolio(path):
         raise ValueError("Unsupported paper portfolio schema")
     positions = {}
     for raw in data["positions"]:
-        p = Position(raw["ticker"], raw["side"], int(raw["contracts"]),
-                     Decimal(raw["entry"]), Decimal(raw["entry_fee"]))
+        p = Position(
+            raw["ticker"], raw["side"], int(raw["contracts"]),
+            Decimal(raw["entry"]), Decimal(raw["entry_fee"]),
+            raw.get("exposure_key"), raw.get("fair_snapshot_id"),
+        )
         if p.ticker in positions or p.side not in ("YES", "NO") or p.contracts < 1:
             raise ValueError("Invalid stored paper position")
         positions[p.ticker] = p
