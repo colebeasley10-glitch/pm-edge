@@ -127,6 +127,7 @@ class RestRecorder:
             >= self.metadata_interval_seconds
         )
         meta_changes = 0
+        weather_markets = 0
         if metadata_due:
             for raw in raw_markets:
                 try:
@@ -135,6 +136,11 @@ class RestRecorder:
                             raw,
                             received_at=market_received,
                             fee_schedule_id=self.fee_schedule_id,
+                        )
+                    )
+                    weather_markets += int(
+                        self.store.record_weather_market(
+                            normalize_market(raw), received_at=market_received
                         )
                     )
                 except Exception as exc:
@@ -253,6 +259,7 @@ class RestRecorder:
             "top_rows": top_rows,
             "maker_observations": maker_observations,
             "metadata_changes": meta_changes,
+            "weather_markets_logged": weather_markets,
             "full_snapshots": snapshots,
             "trades_inserted": trades_inserted,
             "point_in_time_audit": audit,
