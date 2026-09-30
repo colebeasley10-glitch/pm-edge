@@ -832,8 +832,13 @@ def _reset_legacy_recorder_if_needed(db_path: str) -> dict:
         size = os.path.getsize(db_path)
     except OSError:
         return out
-    threshold = int(os.getenv("AUTOTRADER_RECORDER_LEGACY_RESET_MIN_MB", "100")) * 1024 * 1024
-    if size < threshold:
+    legacy_threshold = int(
+        os.getenv("AUTOTRADER_RECORDER_LEGACY_RESET_MIN_MB", "100")
+    ) * 1024 * 1024
+    oversized_threshold = int(
+        os.getenv("AUTOTRADER_RECORDER_OVERSIZE_RESET_MB", "300")
+    ) * 1024 * 1024
+    if size < min(legacy_threshold, oversized_threshold):
         return out
 
     marker_value = None
@@ -861,7 +866,9 @@ def _reset_legacy_recorder_if_needed(db_path: str) -> dict:
         marker_value = None
         legacy_plain_rows = True
 
-    if marker_value == "zlib64-v1" and not legacy_plain_rows:
+    oversize_reset = size >= oversized_threshold
+    legacy_reset = size >= legacy_threshold and legacy_plain_rows
+    if not oversize_reset and not legacy_reset:
         return out
 
     for suffix in ("", "-wal", "-shm"):
@@ -873,7 +880,10 @@ def _reset_legacy_recorder_if_needed(db_path: str) -> dict:
         except OSError:
             pass
     out["reset"] = bool(out["removed"])
-    out["reason"] = "legacy_uncompressed_recorder_db"
+    out["reason"] = (
+        "oversized_recorder_compaction"
+        if oversize_reset else "legacy_uncompressed_recorder_db"
+    )
     return out
 
 
