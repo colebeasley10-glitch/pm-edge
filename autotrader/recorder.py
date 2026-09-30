@@ -711,6 +711,14 @@ class RestRecorder:
                 "error": f"{type(exc).__name__}: {str(exc)[:240]}"
             }
 
+        maker_probe_summary = None
+        try:
+            maker_probe_summary = self.store.maker_probe_summary()
+        except Exception as exc:
+            maker_probe_summary = {
+                "error": f"{type(exc).__name__}: {str(exc)[:240]}"
+            }
+
         retention_pruned = None
         if (
             self._last_prune_at is None
@@ -776,6 +784,7 @@ class RestRecorder:
             "full_snapshots": snapshots,
             "maker_probes_created": maker_probes_created,
             "maker_probe_evaluation": maker_probe_evaluation,
+            "maker_probe_summary": maker_probe_summary,
             "trades_inserted": trades_inserted,
             "point_in_time_audit": audit,
             "retention_pruned": retention_pruned,
