@@ -1035,6 +1035,239 @@ function SettingsScreen({ back }: { back: () => void }) {
 }
 
 
+
+function WhalePaperScreen({
+  data,
+  loading,
+  error,
+  refresh,
+  runScan,
+}: {
+  data: WhalePaperStatus | null;
+  loading: boolean;
+  error: string | null;
+  refresh: () => void;
+  runScan: () => void;
+}) {
+  const [view, setView] = useState<WhalePaperView>("Book");
+  const p = data?.portfolio;
+  const start = Number(data?.starting_bankroll ?? 500);
+  const cash = Number(p?.cash ?? start);
+  const realized = Number(p?.realized_pnl ?? 0);
+  const unrealized = Number(p?.unrealized_pnl ?? 0);
+  const totalPnl = realized + unrealized;
+  const equity = Number(p?.equity ?? start + totalPnl);
+  const roi = start > 0 ? totalPnl / start : 0;
+  const last = data?.last_run;
+  const decisions = (last?.decisions ?? []) as Array<Record<string, any>>;
+
+  return (
+    <ScrollView
+      contentContainerStyle={styles.screen}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.blue} />}
+    >
+      <View style={styles.autoHeaderRow}>
+        <View style={{ gap: 4 }}>
+          <View style={styles.rowGap}>
+            <Text style={styles.screenTitle}>Whale Flow</Text>
+            <Chip label="PAPER ONLY" tone="blue" />
+          </View>
+          <Text style={styles.subtitle}>Automated Kalshi whale-flow paper trading · no real-money orders</Text>
+        </View>
+        <View style={[styles.autoOnlineDot, { backgroundColor: data?.worker_online ? colors.green : colors.red }]} />
+      </View>
+
+      <View style={[styles.statusBanner, !data?.worker_online && styles.noticeRed]}>
+        <Ionicons
+          name={data?.worker_online ? "cloud-done-outline" : "cloud-offline-outline"}
+          size={21}
+          color={data?.worker_online ? colors.green : colors.red}
+        />
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.statusBannerText, !data?.worker_online && { color: colors.red }]}>
+            {data?.worker_online ? "Whale autopilot running in the cloud" : "Whale paper worker unavailable"}
+          </Text>
+          <Text style={styles.mutedSmall}>
+            Scans about every {Math.round(Number(data?.scan_interval_seconds ?? 300) / 60)} minutes · paid odds-data credits: {data?.credit_policy?.paid_odds_api_calls ?? 0}
+          </Text>
+        </View>
+      </View>
+
+      {error ? (
+        <View style={[styles.notice, styles.noticeRed]}>
+          <Ionicons name="warning-outline" size={21} color={colors.red} />
+          <Text style={styles.noticeText}>{error}</Text>
+        </View>
+      ) : null}
+
+      <View style={styles.autoHero}>
+        <Text style={styles.autoEyebrow}>WHALE PAPER NET ASSET VALUE</Text>
+        <View style={styles.autoHeroValueRow}>
+          <Text style={styles.autoHeroValue}>{fmtMoney(equity)}</Text>
+          <Text style={[styles.autoHeroPnl, { color: totalPnl >= 0 ? colors.green : colors.red }]}>
+            {fmtMoney(totalPnl, true)} ({fmtPct(roi)})
+          </Text>
+        </View>
+        <View style={styles.autoHeroRule} />
+        <View style={styles.autoFunnelRow}>
+          <Text style={styles.mutedSmall}>Fresh tape: {last?.fresh_trades ?? 0}</Text>
+          <Text style={styles.mutedSmall}>Whale flows: {last?.qualified_flows ?? 0}</Text>
+          <Text style={styles.mutedSmall}>Fills: {last?.paper_fills ?? 0}</Text>
+        </View>
+      </View>
+
+      <View style={styles.metricsGrid}>
+        <Metric label="Cash" value={fmtMoney(cash)} />
+        <Metric label="Open P/L" value={fmtMoney(unrealized, true)} positive={unrealized >= 0} />
+        <Metric label="Realized" value={fmtMoney(realized, true)} positive={realized >= 0} />
+        <Metric label="Win / Closed" value={data?.record ?? "0-0"} />
+        <Metric label="Resting" value={String(data?.pending_orders?.length ?? 0)} />
+        <Metric label="Last Scan" value={fmtAgo(last?.observed_at)} />
+      </View>
+
+      <View style={styles.autoActions}>
+        <View style={{ flex: 1, gap: 3 }}>
+          <Text style={styles.autoActionTitle}>Autopilot</Text>
+          <Text style={styles.mutedSmall}>Public Kalshi data only · $0 paid odds credits</Text>
+        </View>
+        <Pressable style={styles.autoRunButton} onPress={runScan} disabled={loading}>
+          {loading ? <ActivityIndicator color={colors.bg} /> : <Text style={styles.autoRunButtonText}>Run scan</Text>}
+        </Pressable>
+      </View>
+
+      <PillTabs values={["Book", "Flows", "Pending", "Log"]} selected={view} onSelect={setView} />
+
+      {view === "Book" ? (
+        data?.positions?.length ? (
+          data.positions.map((position) => {
+            const entry = Number(position.entry);
+            const feeTotal = Number(position.entry_fee) * Number(position.contracts);
+            const openPnl = Number(position.open_pnl ?? 0);
+            const readableTitle =
+              position.side_label?.trim() ||
+              position.market_title?.trim() ||
+              position.ticker;
+            const flow = position.thesis;
+            return (
+              <View key={position.ticker} style={styles.card}>
+                <View style={styles.rowBetween}>
+                  <View style={styles.rowGap}>
+                    <Chip label={String(position.side).toUpperCase()} tone="blue" />
+                    <Chip label={String(flow?.execution ?? "WHALE").toUpperCase()} />
+                  </View>
+                  <Text style={openPnl >= 0 ? styles.greenValue : styles.redValue}>{fmtMoney(openPnl, true)}</Text>
+                </View>
+                <Text style={styles.betTitle}>{readableTitle}</Text>
+                <View style={styles.rowBetween}>
+                  <Text style={styles.muted}>Bought at</Text>
+                  <Text style={styles.statValue}>{fmtCents(entry)}</Text>
+                </View>
+                <View style={styles.rowBetween}>
+                  <Text style={styles.muted}>Current bid</Text>
+                  <Text style={styles.statValue}>{fmtCents(Number(position.current_bid ?? 0))}</Text>
+                </View>
+                <View style={styles.rowBetween}>
+                  <Text style={styles.muted}>Position</Text>
+                  <Text style={styles.statValue}>{position.contracts} contracts</Text>
+                </View>
+                {flow?.flow_notional_usd != null ? (
+                  <Text style={styles.mutedSmall}>
+                    Followed ~{fmtMoney(Number(flow.flow_notional_usd))} whale flow · {Number(flow.flow_contracts ?? 0).toLocaleString()} contracts
+                  </Text>
+                ) : null}
+                <Text style={styles.mutedSmall}>Fees {fmtMoney(feeTotal)} · Market ID {position.ticker}</Text>
+              </View>
+            );
+          })
+        ) : (
+          <View style={styles.autoEmpty}>
+            <Ionicons name="water-outline" size={34} color={colors.muted} />
+            <Text style={styles.autoEmptyTitle}>No whale paper positions yet</Text>
+            <Text style={[styles.muted, { textAlign: "center" }]}>
+              The worker waits for unusually large directional flow and only simulates an entry when the live price is still reproducible.
+            </Text>
+          </View>
+        )
+      ) : null}
+
+      {view === "Flows" ? (
+        decisions.length ? (
+          decisions.slice(-40).reverse().map((row, index) => (
+            <View key={`${String(row.ticker ?? "flow")}-${index}`} style={styles.card}>
+              <View style={styles.rowBetween}>
+                <Text style={[styles.betTitle, { flex: 1 }]}>{String(row.side_label ?? row.market_title ?? row.title ?? row.ticker ?? "Whale flow")}</Text>
+                <Chip
+                  label={String(row.decision ?? "CHECKED").replaceAll("_", " ").toUpperCase()}
+                  tone={row.decision === "paper_filled" ? "green" : row.decision === "paper_maker_resting" ? "blue" : "default"}
+                />
+              </View>
+              <View style={styles.rowBetween}>
+                <Text style={styles.muted}>Flow</Text>
+                <Text style={styles.statValue}>{Number(row.flow_contracts ?? 0).toLocaleString()} contracts</Text>
+              </View>
+              <View style={styles.rowBetween}>
+                <Text style={styles.muted}>Whale notional</Text>
+                <Text style={styles.statValue}>{fmtMoney(Number(row.flow_notional_usd ?? 0))}</Text>
+              </View>
+              <View style={styles.rowBetween}>
+                <Text style={styles.muted}>Observed / current</Text>
+                <Text style={styles.statValue}>{row.reference_price_cents ?? "—"}¢ / {row.current_ask_cents ?? "—"}¢</Text>
+              </View>
+              <Text style={styles.mutedSmall}>{String(row.reason ?? "")}</Text>
+            </View>
+          ))
+        ) : (
+          <View style={styles.autoEmpty}>
+            <Text style={styles.autoEmptyTitle}>No new whale flows this scan</Text>
+            <Text style={[styles.muted, { textAlign: "center" }]}>The tape remains under observation automatically.</Text>
+          </View>
+        )
+      ) : null}
+
+      {view === "Pending" ? (
+        data?.pending_orders?.length ? (
+          data.pending_orders.map((row, index) => (
+            <View key={`${String(row.ticker ?? "pending")}-${index}`} style={styles.card}>
+              <View style={styles.rowBetween}>
+                <Chip label="RESTING PAPER BUY" tone="blue" />
+                <Text style={styles.statValue}>{String(row.side ?? "—")}</Text>
+              </View>
+              <Text style={styles.betTitle}>{String(row.title ?? row.ticker ?? "Whale order")}</Text>
+              <View style={styles.rowBetween}><Text style={styles.muted}>Target</Text><Text style={styles.statValue}>{fmtCents(Number(row.target ?? 0))}</Text></View>
+              <View style={styles.rowBetween}><Text style={styles.muted}>Contracts</Text><Text style={styles.statValue}>{String(row.contracts ?? "—")}</Text></View>
+              <Text style={styles.mutedSmall}>Expires {fmtDateTime(String(row.expires_at ?? ""))}</Text>
+            </View>
+          ))
+        ) : (
+          <View style={styles.autoEmpty}>
+            <Text style={styles.autoEmptyTitle}>No resting whale orders</Text>
+            <Text style={[styles.muted, { textAlign: "center" }]}>Maker entries are only counted as fills after the market actually trades through the target.</Text>
+          </View>
+        )
+      ) : null}
+
+      {view === "Log" ? (
+        data?.recent_runs?.length ? (
+          [...data.recent_runs].reverse().map((run, index) => (
+            <View key={`${run.observed_at ?? "run"}-${index}`} style={styles.autoLogRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.statValue}>{fmtDateTime(run.observed_at)}</Text>
+                <Text style={styles.mutedSmall}>
+                  {run.fresh_trades ?? 0} fresh trades · {run.qualified_flows ?? 0} whale flows · {run.paper_fills ?? 0} fills
+                </Text>
+              </View>
+              <Chip label={(run.api_error ? "ERROR" : "OK")} tone={run.api_error ? "red" : "green"} />
+            </View>
+          ))
+        ) : (
+          <View style={styles.autoEmpty}><Text style={styles.autoEmptyTitle}>No whale runs recorded yet</Text></View>
+        )
+      ) : null}
+    </ScrollView>
+  );
+}
+
+
 function AutoTraderScreen({
   data,
   loading,
