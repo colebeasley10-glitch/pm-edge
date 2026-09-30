@@ -380,6 +380,9 @@ class RestRecorder:
             >= self.metadata_interval_seconds
         )
         meta_changes = 0
+        meta_skipped = 0
+        meta_capped = 0
+        meta_distinct_after = None
         weather_markets = 0
         weather_samples = []
         targeted_weather_raw = []
@@ -393,8 +396,14 @@ class RestRecorder:
                 raw_markets,
                 received_at=market_received,
                 fee_schedule_id=self.fee_schedule_id,
+                max_distinct_tickers=int(
+                    os.getenv("AUTOTRADER_RECORDER_METADATA_MAX_TICKERS", "7500")
+                ),
             )
             meta_changes += int(batch_meta.get("changed") or 0)
+            meta_skipped += int(batch_meta.get("skipped") or 0)
+            meta_capped += int(batch_meta.get("capped") or 0)
+            meta_distinct_after = batch_meta.get("distinct_after")
             for err in batch_meta.get("errors") or []:
                 self.store.quality_event(
                     "metadata_write_error",
@@ -768,6 +777,9 @@ class RestRecorder:
             "maker_observations": maker_observations,
             "structural_groups_logged": structural_groups,
             "metadata_changes": meta_changes,
+            "metadata_skipped": meta_skipped,
+            "metadata_capped": meta_capped,
+            "metadata_distinct_after": meta_distinct_after,
             "weather_markets_logged": weather_markets,
             "weather_series_found": len(weather_series),
             "weather_targeted_markets_found": len(targeted_weather_raw),
