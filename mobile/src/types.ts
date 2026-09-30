@@ -280,6 +280,7 @@ export type WhalePaperRun = {
   maker_orders_resting?: number;
   pending_orders?: number;
   api_error?: string | null;
+  rate_limited?: boolean;
   credit_usage?: {
     paid_odds_api_calls?: number;
     kalshi_public_trade_tape_calls?: number;
@@ -296,7 +297,7 @@ export type WhalePaperRun = {
 
 export type WhalePaperStatus = {
   mode: "paper";
-  strategy: "whale_flow";
+  strategy: "whale_flow" | "quick_whale";
   worker_online: boolean;
   scan_interval_seconds: number;
   starting_bankroll: string;
@@ -324,5 +325,5 @@ export type WhalePaperStatus = {
 export type WhalePaperScanResponse = {
   accepted: boolean;
   mode: "paper";
-  strategy: "whale_flow";
+  strategy: "whale_flow" | "quick_whale";
 };
