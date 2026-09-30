@@ -346,9 +346,39 @@ class RestRecorder:
                         })
             self._last_metadata_at = cycle_started
 
+        # Weather markets are often far outside the globally ranked top markets.
+        # Add two-sided targeted weather contracts to the maker-observation pool.
+        if targeted_weather_raw:
+            seen_maker = {str(x.get("ticker") or "") for x in maker_raw}
+            weather_maker_candidates = []
+            for raw in targeted_weather_raw:
+                ticker = str(raw.get("ticker") or "")
+                if not ticker or ticker in seen_maker:
+                    continue
+                try:
+                    m = normalize_market(raw)
+                    yb, ya = m.get("yes_bid"), m.get("yes_ask")
+                    nb, na = m.get("no_bid"), m.get("no_ask")
+                    if (
+                        yb is not None and ya is not None and nb is not None and na is not None
+                        and 0 < float(yb) <= float(ya) < 1
+                        and 0 < float(nb) <= float(na) < 1
+                    ):
+                        weather_maker_candidates.append(raw)
+                except Exception:
+                    continue
+            weather_maker_candidates.sort(key=lambda raw: -_volume(raw))
+            for raw in weather_maker_candidates:
+                if len(maker_raw) >= self.snapshot_markets:
+                    break
+                maker_raw.append(raw)
+                seen_maker.add(str(raw.get("ticker") or ""))
+
         structural_groups = 0
 
         weather_shadow_rows = 0
+        weather_shadow_edge_rows = 0
+        weather_shadow_top_edges = []
         weather_shadow_errors = []
         if (
             metadata_due
@@ -371,9 +401,26 @@ class RestRecorder:
                 for event_ticker, group in list(weather_groups.items())[:max_events]:
                     try:
                         priced = self._weather_shadow.price_group(group)
+                        shadow_received = self.clock().astimezone(timezone.utc)
                         weather_shadow_rows += self.store.record_weather_shadow_fairs(
-                            priced, received_at=self.clock().astimezone(timezone.utc)
+                            priced, received_at=shadow_received
                         )
+                        weather_shadow_edge_rows += self.store.record_weather_shadow_edges(
+                            priced, received_at=shadow_received
+                        )
+                        for row in priced:
+                            edge = row.get("best_gross_edge")
+                            if edge is None:
+                                continue
+                            weather_shadow_top_edges.append({
+                                "ticker": row.get("ticker"),
+                                "city": row.get("city"),
+                                "bucket": row.get("bucket_label"),
+                                "side": row.get("best_side"),
+                                "gross_edge": round(float(edge), 4),
+                                "p_shadow": round(float(row.get("p_shadow") or 0), 4),
+                                "source_hint": row.get("settlement_source_hint"),
+                            })
                     except Exception as exc:
                         if len(weather_shadow_errors) < 5:
                             weather_shadow_errors.append({
@@ -513,6 +560,11 @@ class RestRecorder:
                 }
             self._last_audit_at = cycle_started
 
+        weather_shadow_top_edges.sort(
+            key=lambda row: row["gross_edge"], reverse=True
+        )
+        weather_shadow_top_edges = weather_shadow_top_edges[:10]
+
         result = {
             "recorder": "rest_v1",
             "observed_at": utc_iso(self.clock().astimezone(timezone.utc)),
@@ -528,6 +580,8 @@ class RestRecorder:
             "weather_samples": weather_samples,
             "weather_discovery_errors": weather_discovery_errors,
             "weather_shadow_rows": weather_shadow_rows,
+            "weather_shadow_edge_rows": weather_shadow_edge_rows,
+            "weather_shadow_top_edges": weather_shadow_top_edges,
             "weather_shadow_errors": weather_shadow_errors,
             "full_snapshots": snapshots,
             "trades_inserted": trades_inserted,
