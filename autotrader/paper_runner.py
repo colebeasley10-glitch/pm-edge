@@ -479,7 +479,7 @@ def _refresh_local_fair_values(*, ledger_path, refresh_state_path, now,
 
 def _load_fair_values(*, api_base, api_token, ledger_path, now, max_age_seconds,
                       refresh_state_path=None, allow_refresh=False,
-                      refresh_interval_seconds=1800):
+                      refresh_interval_seconds=1800, clock=None):
     api_error = None
     api_diagnostics = {}
 
@@ -560,6 +560,7 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         refresh_state_path=refresh_state_path,
         allow_refresh=allow_fair_refresh,
         refresh_interval_seconds=refresh_interval_seconds,
+        clock=clock,
     )
     position_management = _manage_open_positions(
         portfolio,
@@ -622,6 +623,28 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
             "paper_risk_rejected", "insufficient_paper_risk_budget", "invalid_simulated_fill"
         }
     )
+    decision_summary = {}
+    for d in engine.decisions:
+        reason = str(d.get("decision") or "unknown")
+        decision_summary[reason] = decision_summary.get(reason, 0) + 1
+    top_decisions = sorted(
+        [
+            {
+                "ticker": d.get("ticker"),
+                "side": d.get("side"),
+                "decision": d.get("decision"),
+                "qualified": bool(d.get("qualified")),
+                "net_edge": d.get("net_edge"),
+                "fair_probability": d.get("fair_probability"),
+                "quote_age_seconds": d.get("quote_age_seconds"),
+                "fair_age_seconds": d.get("fair_age_seconds"),
+            }
+            for d in engine.decisions
+            if d.get("net_edge") is not None
+        ],
+        key=lambda d: Decimal(str(d.get("net_edge") or "-999")),
+        reverse=True,
+    )[:10]
     upstream_funnel = ((fair_refresh or {}).get("watcher_summary") or {}).get("funnel") or {}
     run = {
         "observed_at": decision_at.isoformat(),
@@ -638,6 +661,8 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         ),
         "matched_candidate_count": matched,
         "paper_fills": result["paper_fills"],
+        "decision_summary": decision_summary,
+        "top_decisions": top_decisions,
         "funnel": {
             **upstream_funnel,
             "fresh_probability": len(fair.probabilities),
