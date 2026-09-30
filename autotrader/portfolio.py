@@ -66,22 +66,42 @@ class PaperPortfolio:
         })
         return True
 
-    def sell(self, ticker, executable_bid, available, fee_per_contract=D("0")):
+    def sell_partial(self, ticker, contracts, executable_bid, available,
+                     fee_per_contract=D("0"), reason=None):
+        """Exit part or all of a paper position at executable bid depth."""
+        p = self.positions.get(ticker)
+        if p is None or not isinstance(contracts, int) or contracts < 1 or contracts > p.contracts:
+            return False
+        bid, fee = D(executable_bid), D(fee_per_contract)
+        if not (D("0") <= bid <= D("1")) or fee < 0 or fee > bid or available < contracts:
+            return False
+        proceeds = contracts * (bid - fee)
+        pnl = proceeds - contracts * (p.entry + p.entry_fee)
+        self.cash += proceeds
+        self.realized_pnl += pnl
+        self.ledger.append({
+            "action": "SELL", "ticker": ticker, "side": p.side,
+            "contracts": contracts, "price": str(bid),
+            "fee": str(fee * contracts), "pnl": str(pnl),
+            "reason": str(reason or ""),
+            "fair_snapshot_id": p.fair_snapshot_id,
+        })
+        if contracts == p.contracts:
+            del self.positions[ticker]
+        else:
+            p.contracts -= contracts
+        return True
+
+    def sell(self, ticker, executable_bid, available, fee_per_contract=D("0"),
+             reason=None):
         """Exit an entire position only when executable bid depth suffices."""
         p = self.positions.get(ticker)
         if p is None:
             return False
-        bid, fee = D(executable_bid), D(fee_per_contract)
-        if not (D("0") <= bid <= D("1")) or fee < 0 or fee > bid or available < p.contracts:
-            return False
-        proceeds = p.contracts * (bid - fee)
-        pnl = proceeds - p.contracts * (p.entry + p.entry_fee)
-        self.cash += proceeds
-        self.realized_pnl += pnl
-        self.ledger.append({"action": "SELL", "ticker": ticker, "contracts": p.contracts,
-                            "price": str(bid), "fee": str(fee * p.contracts), "pnl": str(pnl)})
-        del self.positions[ticker]
-        return True
+        return self.sell_partial(
+            ticker, p.contracts, executable_bid, available,
+            fee_per_contract=fee_per_contract, reason=reason,
+        )
 
     def settle_value(self, ticker, yes_settlement_value):
         """Settle from Kalshi's finalized YES contract value (normally 0 or 1).
