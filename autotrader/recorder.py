@@ -476,6 +476,7 @@ class RestRecorder:
 
         weather_shadow_rows = 0
         weather_shadow_edge_rows = 0
+        weather_shadow_intents = 0
         weather_shadow_top_edges = []
         weather_shadow_errors = []
         if (
@@ -504,6 +505,9 @@ class RestRecorder:
                             priced, received_at=shadow_received
                         )
                         weather_shadow_edge_rows += self.store.record_weather_shadow_edges(
+                            priced, received_at=shadow_received
+                        )
+                        weather_shadow_intents += self.store.record_weather_shadow_intents(
                             priced, received_at=shadow_received
                         )
                         for row in priced:
@@ -735,6 +739,7 @@ class RestRecorder:
             "weather_discovery_errors": weather_discovery_errors,
             "weather_shadow_rows": weather_shadow_rows,
             "weather_shadow_edge_rows": weather_shadow_edge_rows,
+            "weather_shadow_intents": weather_shadow_intents,
             "weather_shadow_top_edges": weather_shadow_top_edges,
             "weather_shadow_errors": weather_shadow_errors,
             "weather_settlements_logged": weather_settlements_logged,
