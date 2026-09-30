@@ -122,6 +122,25 @@ def _alternate_devig_same_side_qualifies(q, fair_entry: dict, field: str, base_m
 def install_v28_patch() -> None:
     watcher.WATCHER_VERSION = 28
 
+    # AutoTrader launches this process with an isolated paid-data budget.
+    # Re-read the env at the final patch layer so older launcher patches cannot
+    # silently leave watcher globals at stale/default values.
+    watcher.DAILY_ODDS_BUDGET = int(
+        os.getenv("PM_EDGE_ODDS_DAILY_BUDGET", str(watcher.DAILY_ODDS_BUDGET))
+    )
+    watcher.MAX_REFRESH_GROUPS = int(
+        os.getenv("PM_EDGE_MAX_ODDS_REFRESH_PER_RUN", str(watcher.MAX_REFRESH_GROUPS))
+    )
+    watcher.MAX_BULK_SPORTS_PER_RUN = max(
+        0,
+        int(
+            os.getenv(
+                "PM_EDGE_MAX_BULK_SPORTS_PER_RUN",
+                str(watcher.MAX_BULK_SPORTS_PER_RUN),
+            )
+        ),
+    )
+
     # Keep the stronger Primary lane unchanged. The half-size secondary lane
     # becomes an explicit STANDARD EDGE lane using the existing v22 machinery.
     v22.VALUE_MIN_EDGE = STANDARD_MIN_EDGE
