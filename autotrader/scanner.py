@@ -108,7 +108,7 @@ def _normalized_market(raw, normalize_market):
 def scan_public(client, *, max_markets=3000, max_orderbooks=250,
                 max_spread=Decimal("0.08"), min_volume=Decimal("100"),
                 min_depth=Decimal("1"), clock: Callable[[], datetime] | None = None,
-                ticker_filter=None):
+                ticker_filter=None, diagnostics=None):
     """Discover executable public quotes with real top-of-book depth.
 
     Market-list prices are only a cheap prefilter. Executable asks and sizes are
@@ -119,39 +119,74 @@ def scan_public(client, *, max_markets=3000, max_orderbooks=250,
 
     clock = clock or (lambda: datetime.now(timezone.utc))
     wanted = set(ticker_filter or [])
-    normalized = [_normalized_market(m, normalize_market)
-                  for m in client.list_open_markets(max_markets=max_markets)]
+    raw_markets = client.list_open_markets(max_markets=max_markets)
+    normalized = [_normalized_market(m, normalize_market) for m in raw_markets]
+    diag = diagnostics if diagnostics is not None else {}
+    diag.update({
+        "market_rows": len(normalized),
+        "wanted": len(wanted),
+        "wanted_found": 0,
+        "status_rejected": 0,
+        "volume_rejected": 0,
+        "quote_missing_or_invalid": 0,
+        "spread_rejected": 0,
+        "prefiltered": 0,
+        "orderbooks_attempted": 0,
+        "orderbooks_ok": 0,
+        "orderbooks_error": 0,
+        "candidates": 0,
+    })
     prefiltered = []
     for m in normalized:
         if wanted and m.get("ticker") not in wanted:
             continue
+        if wanted:
+            diag["wanted_found"] += 1
         if str(m.get("status", "")).lower() not in ("active", "open"):
+            diag["status_rejected"] += 1
             continue
         try:
             if not m.get("ticker") or D(m.get("volume_24h") or "0") < min_volume:
+                diag["volume_rejected"] += 1
                 continue
             viable = False
+            saw_valid_pair = False
+            saw_wide_pair = False
             for side in ("yes", "no"):
                 bid, ask = m.get(side + "_bid"), m.get(side + "_ask")
                 if bid is None or ask is None:
                     continue
                 bid, ask = D(bid), D(ask)
-                if D("0") < bid <= ask < D("1") and ask - bid <= max_spread:
-                    viable = True
-                    break
+                if D("0") < bid <= ask < D("1"):
+                    saw_valid_pair = True
+                    if ask - bid <= max_spread:
+                        viable = True
+                        break
+                    saw_wide_pair = True
             if viable:
                 prefiltered.append(m)
+            elif saw_wide_pair:
+                diag["spread_rejected"] += 1
+            elif not saw_valid_pair:
+                diag["quote_missing_or_invalid"] += 1
         except (ValueError, TypeError, InvalidOperation, ArithmeticError):
+            diag["quote_missing_or_invalid"] += 1
             continue
+    diag["prefiltered"] = len(prefiltered)
 
     prefiltered.sort(key=lambda m: D(m.get("volume_24h") or "0"), reverse=True)
     enriched = []
     for m in prefiltered[:max(0, int(max_orderbooks))]:
+        diag["orderbooks_attempted"] += 1
         try:
             book = client.get_orderbook(m["ticker"], depth=1)
             observed_at = clock().astimezone(timezone.utc)
             enriched.append(_with_orderbook_depth(m, book, observed_at=observed_at))
+            diag["orderbooks_ok"] += 1
         except Exception:
+            diag["orderbooks_error"] += 1
             continue
 
-    return discover(enriched, max_spread=max_spread, min_volume=min_volume, min_depth=min_depth)
+    found = discover(enriched, max_spread=max_spread, min_volume=min_volume, min_depth=min_depth)
+    diag["candidates"] = len(found)
+    return found
