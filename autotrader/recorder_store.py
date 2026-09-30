@@ -317,6 +317,24 @@ class RecorderStore:
         );
         CREATE INDEX IF NOT EXISTS idx_weather_obs_ticker_received
             ON weather_market_observations(market_ticker, received_at);
+
+        CREATE TABLE IF NOT EXISTS structural_group_observations(
+            observation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_ticker TEXT NOT NULL,
+            received_at TEXT NOT NULL,
+            contracts INTEGER NOT NULL,
+            complete_yes_quotes INTEGER NOT NULL,
+            sum_yes_bid REAL,
+            sum_yes_ask REAL,
+            gross_buy_all_gap REAL,
+            gross_sell_all_gap REAL,
+            title_sample TEXT,
+            tickers_json TEXT NOT NULL,
+            exhaustiveness_verified INTEGER NOT NULL DEFAULT 0,
+            mode TEXT NOT NULL DEFAULT 'research_only'
+        );
+        CREATE INDEX IF NOT EXISTS idx_structural_event_received
+            ON structural_group_observations(event_ticker, received_at);
         """
         with self.connect() as con:
             con.executescript(ddl)
@@ -568,6 +586,66 @@ class RecorderStore:
             )
         return True
 
+    def record_structural_groups(self, markets: list[dict], *, received_at) -> int:
+        """Record event-level basket consistency without claiming arbitrage.
+
+        The event group is NOT assumed exhaustive. We log the price geometry and
+        keep exhaustiveness_verified=0 until a later rules parser proves it.
+        """
+        groups = {}
+        for market in markets or []:
+            event = str(market.get("event_ticker") or "").strip()
+            ticker = str(market.get("ticker") or "").strip()
+            if not event or not ticker:
+                continue
+            groups.setdefault(event, []).append(market)
+
+        received_at = utc_iso(received_at)
+        rows = []
+        for event, items in groups.items():
+            if len(items) < 3:
+                continue
+            asks, bids = [], []
+            complete = True
+            tickers = []
+            for m in items:
+                tickers.append(str(m.get("ticker") or ""))
+                ya = _float(m.get("yes_ask"))
+                yb = _float(m.get("yes_bid"))
+                if ya is None or yb is None or not (0 < yb <= ya < 1):
+                    complete = False
+                    continue
+                asks.append(ya)
+                bids.append(yb)
+            sum_ask = sum(asks) if complete and len(asks) == len(items) else None
+            sum_bid = sum(bids) if complete and len(bids) == len(items) else None
+            rows.append((
+                event,
+                received_at,
+                len(items),
+                int(complete),
+                sum_bid,
+                sum_ask,
+                (1.0 - sum_ask) if sum_ask is not None else None,
+                (sum_bid - 1.0) if sum_bid is not None else None,
+                str(items[0].get("title") or "")[:300],
+                json.dumps(tickers, separators=(",", ":")),
+                0,
+                "research_only",
+            ))
+        if not rows:
+            return 0
+        with self.connect() as con:
+            con.executemany(
+                """INSERT INTO structural_group_observations(
+                    event_ticker,received_at,contracts,complete_yes_quotes,
+                    sum_yes_bid,sum_yes_ask,gross_buy_all_gap,gross_sell_all_gap,
+                    title_sample,tickers_json,exhaustiveness_verified,mode
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
+                rows,
+            )
+        return len(rows)
+
     def record_snapshot(self, ticker: str, orderbook: dict, *, received_at,
                         origin="rest", conn_id=None, seq=None):
         book = orderbook.get("orderbook_fp") or {}
@@ -785,7 +863,8 @@ class RecorderStore:
     def counts(self) -> dict:
         names = ("markets_meta", "ob_top", "ob_snapshots", "trades", "odds_fetches",
                  "odds_quotes", "fair_snapshots", "intents", "data_quality_events",
-                 "audit_runs", "maker_observations", "weather_market_observations")
+                 "audit_runs", "maker_observations", "weather_market_observations",
+                 "structural_group_observations")
         out = {}
         with self.connect() as con:
             for name in names:
