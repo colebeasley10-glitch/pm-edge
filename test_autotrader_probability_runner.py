@@ -34,7 +34,17 @@ class FakeClient:
         }}
 
     def get_market(self, ticker):
-        return {"ticker": ticker, "status": "open", "result": ""}
+        return {
+            "ticker": ticker,
+            "title": "Test sports market",
+            "status": "open",
+            "result": "",
+            "volume_24h_fp": "1000",
+            "yes_bid_dollars": "0.48",
+            "yes_ask_dollars": "0.51",
+            "no_bid_dollars": "0.49",
+            "no_ask_dollars": "0.52",
+        }
 
 
 def write_ledger(path, when, probability="0.70", side="YES", *, commence=None,
@@ -77,6 +87,20 @@ class ProbabilityRunnerTests(unittest.TestCase):
             self.assertEqual(snap.probabilities[("KXTEST", "YES")], Decimal("0.70"))
             self.assertEqual(snap.ages[("KXTEST", "YES")], 60)
             self.assertEqual(snap.ages["KXTEST"], 60)
+
+    def test_missing_binary_side_is_derived_from_same_fair_snapshot(self):
+        now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = Path(directory) / "ledger.csv"
+            write_ledger(ledger, now - timedelta(seconds=30), "0.70", side="YES")
+            snap = load_pm_edge_ledger(ledger, now=now, max_age_seconds=300)
+            self.assertEqual(snap.probabilities[("KXTEST", "YES")], Decimal("0.70"))
+            self.assertEqual(snap.probabilities[("KXTEST", "NO")], Decimal("0.30"))
+            self.assertEqual(snap.diagnostics["accepted"], 1)
+            self.assertEqual(snap.diagnostics["derived_complements"], 1)
+            self.assertEqual(snap.diagnostics["probabilities_emitted"], 2)
+            self.assertTrue(snap.contexts[("KXTEST", "NO")]["derived_complement"])
+            self.assertEqual(snap.contexts[("KXTEST", "NO")]["derived_from_side"], "YES")
 
     def test_probability_rejection_diagnostics(self):
         now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
