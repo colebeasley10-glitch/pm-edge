@@ -1052,9 +1052,9 @@ function WhalePaperScreen({
   quick?: boolean;
 }) {
   const [view, setView] = useState<WhalePaperView>("Book");
-  const strategyTitle = quick ? "Quick Whale" : "Whale Flow";
+  const strategyTitle = quick ? "Quick Whale v2" : "Whale Flow";
   const strategySubtitle = quick
-    ? "Fast-market whale copying · fresh tape + executable price only"
+    ? "Fast-market whale copying · post-whale confirmation + executable price only"
     : "Automated Kalshi whale-flow paper trading · no real-money orders";
   const p = data?.portfolio;
   const start = Number(data?.starting_bankroll ?? 500);
@@ -1095,7 +1095,7 @@ function WhalePaperScreen({
           </Text>
           <Text style={styles.mutedSmall}>
             {quick
-              ? `Scans every ${Number(data?.scan_interval_seconds ?? 60)} seconds · no chase · paid odds-data credits: ${data?.credit_policy?.paid_odds_api_calls ?? 0}`
+              ? `Scans every ${Number(data?.scan_interval_seconds ?? 60)} seconds · confirmation-gated · no chase · paid odds-data credits: ${data?.credit_policy?.paid_odds_api_calls ?? 0}`
               : `Scans about every ${Math.round(Number(data?.scan_interval_seconds ?? 300) / 60)} minutes · paid odds-data credits: ${data?.credit_policy?.paid_odds_api_calls ?? 0}`}
           </Text>
         </View>
@@ -1109,7 +1109,7 @@ function WhalePaperScreen({
       ) : null}
 
       <View style={styles.autoHero}>
-        <Text style={styles.autoEyebrow}>{quick ? "QUICK WHALE PAPER NET ASSET VALUE" : "WHALE PAPER NET ASSET VALUE"}</Text>
+        <Text style={styles.autoEyebrow}>{quick ? "QUICK WHALE V2 PAPER NET ASSET VALUE" : "WHALE PAPER NET ASSET VALUE"}</Text>
         <View style={styles.autoHeroValueRow}>
           <Text style={styles.autoHeroValue}>{fmtMoney(equity)}</Text>
           <Text style={[styles.autoHeroPnl, { color: totalPnl >= 0 ? colors.green : colors.red }]}>
@@ -1129,14 +1129,14 @@ function WhalePaperScreen({
         <Metric label="Open P/L" value={fmtMoney(unrealized, true)} positive={unrealized >= 0} />
         <Metric label="Realized" value={fmtMoney(realized, true)} positive={realized >= 0} />
         <Metric label="Win / Closed" value={data?.record ?? "0-0"} />
-        <Metric label={quick ? "Fast Lane" : "Resting"} value={quick ? "TAKE ONLY" : String(data?.pending_orders?.length ?? 0)} />
+        <Metric label={quick ? "Confirmation Lane" : "Resting"} value={quick ? "TAKE ONLY" : String(data?.pending_orders?.length ?? 0)} />
         <Metric label="Last Scan" value={fmtAgo(last?.observed_at)} />
       </View>
 
       <View style={styles.autoActions}>
         <View style={{ flex: 1, gap: 3 }}>
           <Text style={styles.autoActionTitle}>Autopilot</Text>
-          <Text style={styles.mutedSmall}>{quick ? "Public Kalshi data only · fresh flow ≤75s · no price chasing" : "Public Kalshi data only · $0 paid odds credits"}</Text>
+          <Text style={styles.mutedSmall}>{quick ? "Public Kalshi data only · flow age 8–55s · market confirmation required · no chase" : "Public Kalshi data only · $0 paid odds credits"}</Text>
         </View>
         <Pressable style={styles.autoRunButton} onPress={runScan} disabled={loading}>
           {loading ? <ActivityIndicator color={colors.bg} /> : <Text style={styles.autoRunButtonText}>Run scan</Text>}
@@ -1193,7 +1193,7 @@ function WhalePaperScreen({
             <Text style={styles.autoEmptyTitle}>{quick ? "No Quick Whale positions yet" : "No whale paper positions yet"}</Text>
             <Text style={[styles.muted, { textAlign: "center" }]}>
               {quick
-                ? "Quick Whale only fills fresh fast-market flow when the simulated executable price, including slippage, is no worse than the whale price."
+                ? "Quick Whale v2 only fills when fresh whale flow is followed by market confirmation, a tight spread, and an executable price inside the chase cap."
                 : "The worker waits for unusually large directional flow and only simulates an entry when the live price is still reproducible."}
             </Text>
           </View>
