@@ -738,12 +738,26 @@ def _fair_value_rows(path, limit=1000):
     return out
 
 
-def _paper_status(state_path, runs_path):
+def _paper_status(state_path, runs_path, *, market_client=None, market_cache=None):
     portfolio = load_portfolio(state_path)
     runs = _tail_jsonl(runs_path, 50)
     last_run = runs[-1] if runs else None
     positions = []
+    cache = market_cache if market_cache is not None else {}
     for ticker, pos in portfolio.positions.items():
+        market = cache.get(ticker)
+        if market is None and market_client is not None:
+            try:
+                market = normalize_market(market_client.get_market(ticker))
+            except Exception:
+                market = {}
+            cache[ticker] = market
+        market = market or {}
+        side_label = (
+            market.get("yes_sub_title")
+            if str(pos.side).upper() == "YES"
+            else market.get("no_sub_title")
+        )
         positions.append({
             "ticker": ticker,
             "side": pos.side,
@@ -752,6 +766,11 @@ def _paper_status(state_path, runs_path):
             "entry_fee": str(pos.entry_fee),
             "exposure_key": getattr(pos, "exposure_key", None),
             "fair_snapshot_id": getattr(pos, "fair_snapshot_id", None),
+            "market_title": market.get("title") or None,
+            "market_subtitle": market.get("subtitle") or None,
+            "side_label": side_label or None,
+            "event_ticker": market.get("event_ticker") or None,
+            "close_time": market.get("close_time"),
         })
     settled = [x for x in portfolio.ledger if str(x.get("action") or "").upper() == "SETTLE"]
     wins = sum(1 for x in settled if Decimal(str(x.get("pnl") or "0")) > 0)
@@ -793,8 +812,9 @@ def _paper_status(state_path, runs_path):
     }
 
 
-def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, port):
+def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, port, market_client=None):
     token = str(os.environ.get("AUTOTRADER_API_TOKEN", "") or "").strip()
+    market_cache = {}
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, fmt, *args):
@@ -820,7 +840,15 @@ def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, p
             if not self._authorized():
                 return self._send(401, {"detail": "AutoTrader authentication required"})
             if parsed.path == "/v1/status":
-                return self._send(200, _paper_status(state_path, runs_path))
+                return self._send(
+                    200,
+                    _paper_status(
+                        state_path,
+                        runs_path,
+                        market_client=market_client,
+                        market_cache=market_cache,
+                    ),
+                )
             if parsed.path == "/v1/runs":
                 try:
                     limit = min(100, max(1, int(parse_qs(parsed.query).get("limit", ["20"])[0])))
@@ -921,6 +949,7 @@ def main():
             ledger_path=args.ledger,
             trigger_event=trigger_event,
             port=http_port,
+            market_client=client,
         )
         print(json.dumps({"autotrader_http": "listening", "port": http_port, "mode": "paper"}), flush=True)
 
