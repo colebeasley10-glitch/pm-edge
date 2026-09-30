@@ -55,6 +55,8 @@ def _build_snapshot(rows, *, now, max_age_seconds, source_default,
         "rejected_contract_semantics": 0,
         "rejected_started_or_too_close": 0,
         "rejected_probability": 0,
+        "derived_complements": 0,
+        "probabilities_emitted": 0,
     }
     for row in rows:
         diag["items_received"] += 1
@@ -147,6 +149,27 @@ def _build_snapshot(rows, *, now, max_age_seconds, source_default,
                 context,
             )
 
+    # Each accepted row contains a side-specific probability for a binary
+    # YES/NO contract. If the watcher only scored one side, the opposite side is
+    # still fully determined by the same independent fair snapshot. Fill only
+    # MISSING opposite keys; never overwrite an explicit row.
+    explicit_count = len(latest)
+    derived = 0
+    for (ticker, side), value in list(latest.items()):
+        other_side = "NO" if side == "YES" else "YES"
+        other_key = (ticker, other_side)
+        if other_key in latest:
+            continue
+        ts, prob, age, source, context = value
+        other_prob = Decimal("1") - prob
+        if not (Decimal("0") < other_prob < Decimal("1")):
+            continue
+        other_context = dict(context or {})
+        other_context["derived_complement"] = True
+        other_context["derived_from_side"] = side
+        latest[other_key] = (ts, other_prob, age, source, other_context)
+        derived += 1
+
     probabilities = {key: value[1] for key, value in latest.items()}
     ages = {key: value[2] for key, value in latest.items()}
     for key, value in latest.items():
@@ -154,7 +177,9 @@ def _build_snapshot(rows, *, now, max_age_seconds, source_default,
         ages[ticker] = max(ages.get(ticker, 0.0), value[2])
     sources = {key: value[3] for key, value in latest.items()}
     contexts = {key: value[4] for key, value in latest.items()}
-    diag["accepted"] = len(probabilities)
+    diag["accepted"] = explicit_count
+    diag["derived_complements"] = derived
+    diag["probabilities_emitted"] = len(probabilities)
     return ProbabilitySnapshot(probabilities, ages, sources, now, contexts, diag)
 
 
