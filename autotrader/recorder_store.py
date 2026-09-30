@@ -12,6 +12,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import math
 import sqlite3
 import zlib
 from contextlib import contextmanager
@@ -405,6 +406,20 @@ class RecorderStore:
         );
         CREATE INDEX IF NOT EXISTS idx_weather_edge_ticker_received
             ON weather_shadow_edges(ticker, received_at);
+
+        CREATE TABLE IF NOT EXISTS weather_settlements(
+            ticker TEXT PRIMARY KEY,
+            event_ticker TEXT,
+            observed_at TEXT NOT NULL,
+            status TEXT,
+            result TEXT,
+            yes_settlement_value REAL,
+            source_hint TEXT,
+            target_date TEXT,
+            bucket_label TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_weather_settlement_event
+            ON weather_settlements(event_ticker, observed_at);
         """
         with self.connect() as con:
             con.executescript(ddl)
@@ -659,6 +674,84 @@ class RecorderStore:
                 ),
             )
         return True
+
+    def record_weather_settlements(self, rows: list[dict], *, observed_at) -> int:
+        """Persist finalized weather outcomes for calibration of shadow forecasts."""
+        if not rows:
+            return 0
+        observed_at = utc_iso(observed_at)
+        values = []
+        for row in rows:
+            ticker = str(row.get("ticker") or "").strip()
+            if not ticker:
+                continue
+            result = str(row.get("result") or "").upper().strip()
+            settlement = _float(row.get("yes_settlement_value"))
+            if settlement is None:
+                if result == "YES":
+                    settlement = 1.0
+                elif result == "NO":
+                    settlement = 0.0
+            if settlement is None or not (0 <= settlement <= 1):
+                continue
+            values.append((
+                ticker,
+                str(row.get("event_ticker") or ""),
+                observed_at,
+                str(row.get("status") or ""),
+                result,
+                settlement,
+                row.get("source_hint"),
+                row.get("target_date"),
+                row.get("bucket_label"),
+            ))
+        if not values:
+            return 0
+        with self.connect() as con:
+            con.executemany(
+                """INSERT OR REPLACE INTO weather_settlements(
+                    ticker,event_ticker,observed_at,status,result,
+                    yes_settlement_value,source_hint,target_date,bucket_label
+                ) VALUES(?,?,?,?,?,?,?,?,?)""",
+                values,
+            )
+        return len(values)
+
+    def weather_calibration_summary(self) -> dict:
+        """Evaluate the latest pre-settlement shadow fair for each settled ticker."""
+        with self.connect() as con:
+            rows = con.execute(
+                """
+                SELECT s.ticker, s.yes_settlement_value AS y,
+                       f.p_shadow AS p, f.received_at AS fair_at,
+                       s.observed_at AS settled_at
+                FROM weather_settlements s
+                JOIN weather_shadow_fairs f
+                  ON f.ticker=s.ticker
+                WHERE f.received_at=(
+                    SELECT MAX(f2.received_at)
+                    FROM weather_shadow_fairs f2
+                    WHERE f2.ticker=s.ticker
+                      AND f2.received_at<=s.observed_at
+                )
+                """
+            ).fetchall()
+        if not rows:
+            return {"n": 0, "brier": None, "log_loss": None}
+        brier = 0.0
+        log_loss = 0.0
+        eps = 1e-6
+        for row in rows:
+            y = float(row["y"])
+            p = min(1.0 - eps, max(eps, float(row["p"])))
+            brier += (p - y) ** 2
+            log_loss += -(y * math.log(p) + (1.0 - y) * math.log(1.0 - p))
+        n = len(rows)
+        return {
+            "n": n,
+            "brier": brier / n,
+            "log_loss": log_loss / n,
+        }
 
     def record_weather_shadow_edges(self, rows: list[dict], *, received_at) -> int:
         if not rows:
@@ -1040,6 +1133,7 @@ class RecorderStore:
             "weather_market_observations": ("received_at", 14),
             "weather_shadow_fairs": ("received_at", 14),
             "weather_shadow_edges": ("received_at", 14),
+            "weather_settlements": ("observed_at", 90),
             "odds_fetches": ("received_at", 14),
             "odds_quotes": ("received_at", 14),
             "fair_snapshots": ("processed_at", 14),
@@ -1081,6 +1175,7 @@ class RecorderStore:
             "weather_market_observations": ("received_at", 30),
             "weather_shadow_fairs": ("received_at", 30),
             "weather_shadow_edges": ("received_at", 30),
+            "weather_settlements": ("observed_at", 90),
             "odds_fetches": ("received_at", 30),
             "odds_quotes": ("received_at", 30),
             "fair_snapshots": ("processed_at", 30),
