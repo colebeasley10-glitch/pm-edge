@@ -119,11 +119,26 @@ def scan_public(client, *, max_markets=3000, max_orderbooks=250,
 
     clock = clock or (lambda: datetime.now(timezone.utc))
     wanted = set(ticker_filter or [])
-    raw_markets = client.list_open_markets(max_markets=max_markets)
-    normalized = [_normalized_market(m, normalize_market) for m in raw_markets]
     diag = diagnostics if diagnostics is not None else {}
+    market_fetch_errors = 0
+    if wanted:
+        raw_markets = []
+        for ticker in sorted(wanted):
+            try:
+                row = client.get_market(ticker)
+                if isinstance(row, dict) and row:
+                    raw_markets.append(row)
+            except Exception:
+                market_fetch_errors += 1
+        market_source = "targeted_get_market"
+    else:
+        raw_markets = client.list_open_markets(max_markets=max_markets)
+        market_source = "open_market_list"
+    normalized = [_normalized_market(m, normalize_market) for m in raw_markets]
     diag.update({
+        "market_source": market_source,
         "market_rows": len(normalized),
+        "market_fetch_errors": market_fetch_errors,
         "wanted": len(wanted),
         "wanted_found": 0,
         "status_rejected": 0,
