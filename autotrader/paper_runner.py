@@ -558,12 +558,14 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
     )
 
     fair_tickers = {ticker for ticker, _side in fair.probabilities}
+    scanner_diagnostics = {}
     candidates = scan_public(
         client,
         max_markets=max_markets,
         max_orderbooks=min(max_orderbooks, len(fair_tickers)) if fair_tickers else 0,
         clock=clock,
         ticker_filter=fair_tickers,
+        diagnostics=scanner_diagnostics,
     ) if fair_tickers else []
     decision_at = clock().astimezone(timezone.utc)
     schema_probe = _kalshi_schema_probe(client) if not fair.probabilities else {}
@@ -616,6 +618,7 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         "fair_refresh": fair_refresh,
         "kalshi_schema_probe": schema_probe,
         "candidate_count": len(candidates),
+        "scanner_diagnostics": scanner_diagnostics,
         "fresh_probability_count": len(fair.probabilities),
         "fair_diagnostics": (
             getattr(fair, "diagnostics", {}) or {}
