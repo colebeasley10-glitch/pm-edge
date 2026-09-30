@@ -1,12 +1,26 @@
 """Paper-only decision engine. No live-order submission capability."""
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from decimal import Decimal
 from .portfolio import PaperPortfolio
 from .scanner import discover
 from .evaluator import evaluate
 from .fees import prediction_fee
+from .thesis import PositionThesis
 
 D = lambda value: Decimal(str(value))
+
+
+def _parse_iso(value):
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        return None
 
 
 @dataclass
@@ -110,12 +124,72 @@ class PaperEngine:
 
             exposure_key = str(context.get("event_id") or c.ticker)
             snapshot_id = str(context.get("fair_snapshot_id") or "") or None
+
+            thesis = None
+            try:
+                decision_at = _parse_iso(context.get("decision_at")) or datetime.now(timezone.utc)
+                event_start = _parse_iso(context.get("commence_time"))
+                if event_start is not None:
+                    hold_hours = max(
+                        D("0.25"),
+                        min(
+                            D("168"),
+                            D(str(max(0.0, (event_start - decision_at).total_seconds() / 3600.0))),
+                        ),
+                    )
+                else:
+                    hold_hours = D("24")
+                sigma_raw = context.get("sigma")
+                try:
+                    sigma = D(sigma_raw) if sigma_raw not in (None, "") else D("0.03")
+                except Exception:
+                    sigma = D("0.03")
+                side_fair = D(decision.fair_probability)
+                yes_fair = side_fair if c.side == "YES" else D("1") - side_fair
+                net_edge = D(decision.net_edge or "0")
+                capital_per_contract = simulated_fill + effective_fee
+                ev_per_capital_hour = (
+                    net_edge / capital_per_contract / hold_hours
+                    if capital_per_contract > 0 and hold_hours > 0
+                    else D("0")
+                )
+                thesis = PositionThesis(
+                    thesis_version="1",
+                    lane=str(context.get("lane") or "value_edge"),
+                    lane_version=str(context.get("lane_version") or "value_edge_v1"),
+                    ticker=c.ticker,
+                    side=c.side,
+                    fair_snapshot_id=snapshot_id,
+                    fair_source=str(context.get("fair_source") or "independent_fair"),
+                    entry_fair=yes_fair,
+                    entry_sigma=max(D("0"), sigma),
+                    entry_edge_net=net_edge,
+                    entry_price=simulated_fill,
+                    entry_fee_per_contract=effective_fee,
+                    entry_slippage_per_contract=slippage,
+                    expected_hold_hours=hold_hours,
+                    expected_ev_per_contract=net_edge,
+                    expected_ev_per_capital_hour=ev_per_capital_hour,
+                    event_start_at=(
+                        event_start.isoformat().replace("+00:00", "Z")
+                        if event_start is not None else None
+                    ),
+                    created_at=decision_at.isoformat().replace("+00:00", "Z"),
+                    exposure_key=exposure_key,
+                    cluster_ids=(f"event:{exposure_key}",),
+                    execution_style="taker",
+                    max_fair_age_seconds=int(max_event_data_age_seconds),
+                ).to_dict()
+            except Exception as exc:
+                entry["thesis_build_error"] = f"{type(exc).__name__}: {str(exc)[:180]}"
+
             filled = self.portfolio.buy(
                 c.ticker, c.side, contracts,
                 simulated_fill, simulated_fill,
                 int(c.available), effective_fee,
                 exposure_key=exposure_key,
                 fair_snapshot_id=snapshot_id,
+                thesis=thesis,
             )
             entry["decision"] = "paper_filled" if filled else "paper_risk_rejected"
             if filled:
