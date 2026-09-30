@@ -22,7 +22,11 @@ from datetime import datetime, timedelta, timezone
 from pmedge.kalshi import KalshiPublicClient, normalize_market
 from .collector import PUBLIC_BASE
 from .recorder_store import RecorderStore, utc_iso
-from .weather_shadow import OpenMeteoWeatherShadow, parse_weather_contract
+from .weather_shadow import (
+    OpenMeteoWeatherShadow,
+    parse_weather_contract,
+    settlement_source_hint,
+)
 
 
 def _utcnow():
@@ -81,6 +85,7 @@ class RestRecorder:
         self._last_trade_poll_at = None
         self._last_audit_at = None
         self._last_prune_at = None
+        self._last_weather_settlement_at = None
         self._weather_shadow = None
         self._stop = threading.Event()
         self._last_result = {}
@@ -234,6 +239,66 @@ class RestRecorder:
                     markets.append(merged)
 
         return markets, temperature_series, errors
+
+    def _targeted_weather_settlements(self, series_tickers):
+        """Fetch recent settled temperature markets for calibration only."""
+        rows = []
+        errors = []
+        for ticker in list(series_tickers or []):
+            ticker = str(ticker or "").strip()
+            if not ticker:
+                continue
+            try:
+                events = self._api(
+                    f"GET /events?series_ticker={ticker}&status=settled",
+                    lambda ticker=ticker: self.client.list_events(
+                        series_ticker=ticker,
+                        status="settled",
+                        with_nested_markets=True,
+                        max_events=10,
+                    ),
+                )
+            except Exception as exc:
+                if len(errors) < 8:
+                    errors.append({
+                        "series_ticker": ticker,
+                        "error": f"{type(exc).__name__}: {str(exc)[:220]}",
+                    })
+                continue
+            for event in events:
+                event_ticker = str(event.get("event_ticker") or "")
+                event_title = str(event.get("title") or "")
+                for raw in event.get("markets") or []:
+                    if not isinstance(raw, dict):
+                        continue
+                    merged = dict(raw)
+                    merged["event_ticker"] = str(
+                        merged.get("event_ticker") or event_ticker
+                    )
+                    merged["_weather_event_title"] = event_title
+                    merged["series_ticker"] = ticker
+                    normalized = normalize_market(merged)
+                    normalized["_weather_event_title"] = event_title
+                    normalized["series_ticker"] = ticker
+                    spec = parse_weather_contract(normalized)
+                    if spec is None:
+                        continue
+                    settlement_value = (
+                        raw.get("settlement_value_dollars")
+                        or raw.get("settlement_value")
+                        or raw.get("yes_settlement_value_dollars")
+                    )
+                    rows.append({
+                        "ticker": spec.ticker,
+                        "event_ticker": spec.event_ticker,
+                        "status": raw.get("status"),
+                        "result": raw.get("result"),
+                        "yes_settlement_value": settlement_value,
+                        "source_hint": settlement_source_hint(normalized),
+                        "target_date": spec.target_date,
+                        "bucket_label": spec.bucket_label,
+                    })
+        return rows, errors
 
     def cycle(self):
         cycle_started = self.clock().astimezone(timezone.utc)
@@ -465,6 +530,40 @@ class RestRecorder:
                     "error": f"{type(exc).__name__}: {str(exc)[:220]}",
                 })
 
+        weather_settlements_logged = 0
+        weather_settlement_errors = []
+        weather_calibration = None
+        settlement_due = (
+            self._last_weather_settlement_at is None
+            or (cycle_started - self._last_weather_settlement_at).total_seconds()
+            >= int(os.getenv("AUTOTRADER_WEATHER_SETTLEMENT_INTERVAL_SECONDS", "21600"))
+        )
+        if settlement_due:
+            seed_series = [
+                x.strip().upper()
+                for x in os.getenv(
+                    "AUTOTRADER_WEATHER_SERIES_SEEDS",
+                    "KXHIGHAUS,KXHIGHLAX,KXHIGHNY,KXHIGHTSFO,"
+                    "KXHIGHTSEA,KXHIGHTTTN,KXLOWTMIA",
+                ).split(",")
+                if x.strip()
+            ]
+            settlement_rows, weather_settlement_errors = (
+                self._targeted_weather_settlements(seed_series)
+            )
+            try:
+                weather_settlements_logged = self.store.record_weather_settlements(
+                    settlement_rows,
+                    observed_at=self.clock().astimezone(timezone.utc),
+                )
+                weather_calibration = self.store.weather_calibration_summary()
+            except Exception as exc:
+                weather_settlement_errors.append({
+                    "series_ticker": None,
+                    "error": f"{type(exc).__name__}: {str(exc)[:220]}",
+                })
+            self._last_weather_settlement_at = cycle_started
+
         top_rows = 0
         maker_observations = 0
         if universe_refreshed:
@@ -623,6 +722,9 @@ class RestRecorder:
             "weather_shadow_edge_rows": weather_shadow_edge_rows,
             "weather_shadow_top_edges": weather_shadow_top_edges,
             "weather_shadow_errors": weather_shadow_errors,
+            "weather_settlements_logged": weather_settlements_logged,
+            "weather_settlement_errors": weather_settlement_errors,
+            "weather_calibration": weather_calibration,
             "full_snapshots": snapshots,
             "trades_inserted": trades_inserted,
             "point_in_time_audit": audit,
