@@ -1030,6 +1030,9 @@ def main():
     whale_slippage = os.environ.get("WHALE_PAPER_SLIPPAGE", "0.005")
 
     quick_whale_enabled = os.environ.get("WHALE_QUICK_PAPER_ENABLED", "0").strip().lower() in {"1", "true", "yes", "on"}
+    quick_whale_new_entries_enabled = os.environ.get(
+        "WHALE_QUICK_NEW_ENTRIES_ENABLED", "1"
+    ).strip().lower() in {"1", "true", "yes", "on"}
     quick_whale_trigger_event = threading.Event() if quick_whale_enabled else None
     quick_whale_client = KalshiPublicClient(PUBLIC_BASE) if quick_whale_enabled else None
     quick_whale_state_path = os.environ.get("WHALE_QUICK_PORTFOLIO_STATE", "/data/quick-whale-paper-portfolio.json")
@@ -1092,6 +1095,7 @@ def main():
                 "max_flow_age_seconds": quick_whale_max_age,
                 "min_seconds_to_close": quick_whale_min_close,
                 "paid_odds_api_calls": 0,
+                "new_entries_enabled": quick_whale_new_entries_enabled,
             }), flush=True)
             while True:
                 wait_seconds = quick_whale_interval
@@ -1107,6 +1111,7 @@ def main():
                         mode="quick",
                         max_flow_age_seconds=quick_whale_max_age,
                         min_seconds_to_close=quick_whale_min_close,
+                        allow_new_entries=quick_whale_new_entries_enabled,
                     )
                     if result.get("rate_limited"):
                         wait_seconds = quick_whale_backoff
