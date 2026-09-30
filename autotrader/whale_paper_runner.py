@@ -342,13 +342,93 @@ def _seconds_to_close(meta, now):
     return (close_time - now).total_seconds()
 
 
+def _quick_v2_gate(
+    *,
+    reference_cents,
+    current_bid,
+    current_ask,
+    flow_age_seconds,
+    seconds_to_close,
+    flow_trade_count,
+    flow_notional_usd,
+    block_trade=False,
+    min_flow_age_seconds=8,
+    max_flow_age_seconds=55,
+    min_seconds_to_close=180,
+    max_spread="0.04",
+    max_adverse_mid_cents=1,
+    max_follow_through_cents=2,
+    min_flow_notional_usd=500,
+    min_flow_trades=2,
+):
+    """Conservative confirmation gate for the second Quick Whale paper test."""
+    try:
+        ref = D(reference_cents) / D("100")
+        bid = D(current_bid)
+        ask = D(current_ask)
+        age = float(flow_age_seconds)
+        close_left = float(seconds_to_close)
+        notional = D(flow_notional_usd)
+        trades = int(flow_trade_count)
+        spread_cap = D(max_spread)
+        adverse = D(max_adverse_mid_cents) / D("100")
+        follow = D(max_follow_through_cents) / D("100")
+    except Exception:
+        return {"eligible": False, "reason": "quick_v2_invalid_input"}
+
+    if age < float(min_flow_age_seconds):
+        return {"eligible": False, "reason": "quick_v2_wait_for_reaction"}
+    if age > float(max_flow_age_seconds):
+        return {"eligible": False, "reason": "quick_v2_flow_stale"}
+    if close_left < float(min_seconds_to_close):
+        return {"eligible": False, "reason": "quick_v2_too_close_to_close"}
+    if not block_trade and trades < int(min_flow_trades):
+        return {"eligible": False, "reason": "quick_v2_insufficient_flow_persistence"}
+    if notional < D(min_flow_notional_usd):
+        return {"eligible": False, "reason": "quick_v2_flow_too_small"}
+    if not (D("0") < bid <= ask < D("1")):
+        return {"eligible": False, "reason": "quick_v2_invalid_book"}
+
+    spread = ask - bid
+    if spread > spread_cap:
+        return {"eligible": False, "reason": "quick_v2_spread_too_wide", "spread": str(spread)}
+
+    midpoint = (bid + ask) / D("2")
+    if midpoint < ref - adverse:
+        return {
+            "eligible": False,
+            "reason": "quick_v2_adverse_move_after_whale",
+            "midpoint": str(midpoint),
+            "spread": str(spread),
+        }
+    if ask > ref + follow:
+        return {
+            "eligible": False,
+            "reason": "quick_v2_follow_through_too_expensive",
+            "midpoint": str(midpoint),
+            "spread": str(spread),
+        }
+    return {
+        "eligible": True,
+        "reason": "quick_v2_confirmed",
+        "midpoint": str(midpoint),
+        "spread": str(spread),
+        "confirmation_move": str(midpoint - ref),
+    }
+
+
 def _eligible_flow_rows(
     flows, client, state, portfolio, now, *,
     max_flows, slippage, mode="regular",
     max_flow_age_seconds=75, min_seconds_to_close=60,
+    min_flow_age_seconds=8, max_spread="0.04",
+    max_adverse_mid_cents=1, max_follow_through_cents=2,
+    min_flow_notional_usd=500, min_flow_trades=2,
 ):
-    quick = str(mode).lower() == "quick"
-    strategy = "quick_whale" if quick else "whale_flow"
+    mode_name = str(mode).lower()
+    quick_v2 = mode_name == "quick_v2"
+    quick = mode_name in {"quick", "quick_v2"}
+    strategy = "quick_whale_v2" if quick_v2 else ("quick_whale" if quick else "whale_flow")
     cache = state.setdefault("market_meta", {})
     decisions = []
     pending_keys = {
@@ -475,11 +555,57 @@ def _eligible_flow_rows(
             continue
 
         current_ask, available = ask
-        ev = whale_edge._evaluate_price(
-            reference_cents=row["reference_price_cents"],
-            current_ask=float(current_ask),
-            model_fair_side=None,
-        )
+        current_bid_row = _best_bid_for_side(orderbook, side)
+        current_bid = current_bid_row[0] if current_bid_row is not None else None
+        if quick_v2:
+            if current_bid is None:
+                row.update({"decision": "skipped", "reason": "quick_v2_missing_executable_bid"})
+                decisions.append(row)
+                continue
+            gate = _quick_v2_gate(
+                reference_cents=row["reference_price_cents"],
+                current_bid=current_bid,
+                current_ask=current_ask,
+                flow_age_seconds=row.get("flow_age_seconds"),
+                seconds_to_close=row.get("seconds_to_close"),
+                flow_trade_count=row.get("flow_trade_count"),
+                flow_notional_usd=row.get("flow_notional_usd"),
+                block_trade=bool(flow.get("block_trade")),
+                min_flow_age_seconds=min_flow_age_seconds,
+                max_flow_age_seconds=max_flow_age_seconds,
+                min_seconds_to_close=min_seconds_to_close,
+                max_spread=max_spread,
+                max_adverse_mid_cents=max_adverse_mid_cents,
+                max_follow_through_cents=max_follow_through_cents,
+                min_flow_notional_usd=min_flow_notional_usd,
+                min_flow_trades=min_flow_trades,
+            )
+            row.update({
+                "current_bid_cents": int(round(float(current_bid) * 100)),
+                "current_ask_cents": int(round(float(current_ask) * 100)),
+                "confirmation_midpoint": gate.get("midpoint"),
+                "confirmation_move": gate.get("confirmation_move"),
+                "spread": gate.get("spread"),
+            })
+            if not gate.get("eligible"):
+                row.update({"decision": "skipped", "reason": gate.get("reason")})
+                decisions.append(row)
+                continue
+            ev = {
+                "eligible": True,
+                "reason": "quick_v2_confirmed",
+                "execution": "TAKE",
+                "target": float(current_ask),
+                "current_ask_cents": int(round(float(current_ask) * 100)),
+                "target_price_cents": int(round(float(current_ask) * 100)),
+                "price_improvement_cents": row["reference_price_cents"] - int(round(float(current_ask) * 100)),
+            }
+        else:
+            ev = whale_edge._evaluate_price(
+                reference_cents=row["reference_price_cents"],
+                current_ask=float(current_ask),
+                model_fair_side=None,
+            )
         row.update({
             "current_ask_cents": int(round(float(current_ask) * 100)),
             "execution": ev.get("execution"),
@@ -535,7 +661,7 @@ def _eligible_flow_rows(
             continue
 
         fill_price = min(D("0.9999"), current_ask + D(slippage))
-        if quick and fill_price > D(row["reference_price_cents"]) / D("100"):
+        if quick and not quick_v2 and fill_price > D(row["reference_price_cents"]) / D("100"):
             row.update({
                 "decision": "skipped",
                 "reason": "quick_slippage_exceeds_whale_price",
@@ -543,6 +669,20 @@ def _eligible_flow_rows(
             })
             decisions.append(row)
             continue
+
+        if quick_v2:
+            v2_hard_max = (
+                D(row["reference_price_cents"]) / D("100")
+                + D(max_follow_through_cents) / D("100")
+            )
+            if fill_price > v2_hard_max:
+                row.update({
+                    "decision": "skipped",
+                    "reason": "quick_v2_slippage_exceeds_confirmation_cap",
+                    "simulated_fill_price_cents": float(fill_price * 100),
+                })
+                decisions.append(row)
+                continue
 
         filled, result = _paper_buy(
             portfolio,
@@ -561,7 +701,11 @@ def _eligible_flow_rows(
         )
         row.update(result)
         if filled:
-            row["reason"] = "quick_whale_reproducible_price" if quick else "whale_flow_price_guard_passed"
+            row["reason"] = (
+                "quick_whale_v2_confirmed_entry"
+                if quick_v2
+                else ("quick_whale_reproducible_price" if quick else "whale_flow_price_guard_passed")
+            )
         decisions.append(row)
 
     return decisions
@@ -671,6 +815,12 @@ def run_once(
     min_seconds_to_close=60,
     now=None,
     allow_new_entries=True,
+    min_flow_age_seconds=8,
+    max_spread="0.04",
+    max_adverse_mid_cents=1,
+    max_follow_through_cents=2,
+    min_flow_notional_usd=500,
+    min_flow_trades=2,
 ):
     _assert_no_kalshi_write_credentials()
     now = (now or _utcnow()).astimezone(timezone.utc)
@@ -692,8 +842,10 @@ def run_once(
         trades = []
         api_error = None
 
-    quick = str(mode).lower() == "quick"
-    strategy = "quick_whale" if quick else "whale_flow"
+    mode_name = str(mode).lower()
+    quick_v2 = mode_name == "quick_v2"
+    quick = mode_name in {"quick", "quick_v2"}
+    strategy = "quick_whale_v2" if quick_v2 else ("quick_whale" if quick else "whale_flow")
     pending_decisions = [] if quick else _process_pending(
         portfolio, client, state, trades, now, slippage
     )
@@ -715,6 +867,12 @@ def run_once(
         mode=mode,
         max_flow_age_seconds=max_flow_age_seconds,
         min_seconds_to_close=min_seconds_to_close,
+        min_flow_age_seconds=min_flow_age_seconds,
+        max_spread=max_spread,
+        max_adverse_mid_cents=max_adverse_mid_cents,
+        max_follow_through_cents=max_follow_through_cents,
+        min_flow_notional_usd=min_flow_notional_usd,
+        min_flow_trades=min_flow_trades,
     ) if api_error is None and allow_new_entries else []
 
     for trade in trades:
@@ -755,7 +913,10 @@ def run_once(
     target.parent.mkdir(parents=True, exist_ok=True)
     with target.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(run, separators=(",", ":"), default=str) + "\n")
-    prefix = "QUICK_WHALE_PAPER_RUN" if quick else "WHALE_PAPER_RUN"
+    prefix = (
+        "QUICK_WHALE_V2_PAPER_RUN"
+        if quick_v2 else ("QUICK_WHALE_PAPER_RUN" if quick else "WHALE_PAPER_RUN")
+    )
     print(prefix + " " + json.dumps({
         "observed_at": run["observed_at"],
         "strategy": strategy,
