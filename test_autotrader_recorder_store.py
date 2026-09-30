@@ -3,7 +3,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from autotrader.recorder_store import RecorderStore
+from autotrader.recorder_store import RecorderStore, _pack_json, unpack_json
 
 
 class RecorderStoreTests(unittest.TestCase):
@@ -128,6 +128,58 @@ class RecorderStoreTests(unittest.TestCase):
         audit = self.store.audit_point_in_time()
         self.assertFalse(audit["ok"])
         self.assertEqual(audit["checks"]["intent_future_book"], 1)
+
+    def test_raw_json_compression_round_trip(self):
+        payload = {
+            "ticker": "TEST",
+            "rules_primary": "x" * 5000,
+            "nested": {"a": [1, 2, 3]},
+        }
+        packed = _pack_json(payload)
+        self.assertTrue(packed.startswith("zlib64:"))
+        self.assertLess(len(packed), len(str(payload)))
+        self.assertEqual(unpack_json(packed), payload)
+
+    def test_weather_settlement_calibration(self):
+        received = self.t0
+        self.store.record_weather_shadow_fairs(
+            [{
+                "ticker": "WX1",
+                "event_ticker": "W-E1",
+                "city": "Test City",
+                "target_date": "2026-09-29",
+                "bucket_label": "70° to 71°",
+                "variable": "temperature_2m_max",
+                "p_shadow": 0.8,
+                "sampling_sigma": 0.1,
+                "n_members": 20,
+                "ensemble_mean_f": 70.5,
+                "ensemble_stdev_f": 1.0,
+                "latitude": 1.0,
+                "longitude": 2.0,
+                "timezone": "UTC",
+                "model": "test",
+                "rounding_assumption": "nearest_integer_half_up",
+                "promotion_blocker": "test",
+            }],
+            received_at=received,
+        )
+        self.store.record_weather_settlements(
+            [{
+                "ticker": "WX1",
+                "event_ticker": "W-E1",
+                "status": "settled",
+                "result": "YES",
+                "yes_settlement_value": 1.0,
+                "source_hint": "the_weather_company",
+                "target_date": "2026-09-29",
+                "bucket_label": "70° to 71°",
+            }],
+            observed_at=received + timedelta(hours=1),
+        )
+        summary = self.store.weather_calibration_summary()
+        self.assertEqual(summary["n"], 1)
+        self.assertAlmostEqual(summary["brier"], 0.04, places=6)
 
     def test_schema_has_v11_fair_age_fields(self):
         with self.store.connect() as con:
