@@ -72,6 +72,7 @@ class RestRecorder:
         self._last_snapshot_at = None
         self._last_trade_poll_at = None
         self._last_audit_at = None
+        self._last_prune_at = None
         self._weather_shadow = None
         self._stop = threading.Event()
         self._last_result = {}
@@ -184,16 +185,6 @@ class RestRecorder:
             self._last_metadata_at = cycle_started
 
         structural_groups = 0
-        try:
-            normalized_all = [normalize_market(raw) for raw in raw_markets]
-            structural_groups = self.store.record_structural_groups(
-                normalized_all, received_at=market_received
-            )
-        except Exception as exc:
-            self.store.quality_event(
-                "structural_group_write_error",
-                detail={"error": f"{type(exc).__name__}: {exc}"},
-            )
 
         weather_shadow_rows = 0
         weather_shadow_errors = []
@@ -259,6 +250,18 @@ class RestRecorder:
             >= self.snapshot_interval_seconds
         )
         if snapshot_due:
+            try:
+                normalized_all = [normalize_market(raw) for raw in raw_markets]
+                structural_groups = self.store.record_structural_groups(
+                    normalized_all,
+                    received_at=market_received,
+                    max_groups=int(os.getenv("AUTOTRADER_STRUCTURAL_MAX_GROUPS", "200")),
+                )
+            except Exception as exc:
+                self.store.quality_event(
+                    "structural_group_write_error",
+                    detail={"error": f"{type(exc).__name__}: {exc}"},
+                )
             for raw in maker_raw:
                 ticker = str(raw.get("ticker") or "").strip()
                 if not ticker:
@@ -316,6 +319,21 @@ class RestRecorder:
                 detail={"error": f"{type(exc).__name__}: {exc}"},
             )
 
+        retention_pruned = None
+        if (
+            self._last_prune_at is None
+            or (cycle_started - self._last_prune_at).total_seconds() >= 3600
+        ):
+            try:
+                retention_pruned = self.store.prune_retention(
+                    now=self.clock().astimezone(timezone.utc)
+                )
+            except Exception as exc:
+                retention_pruned = {
+                    "error": f"{type(exc).__name__}: {str(exc)[:300]}"
+                }
+            self._last_prune_at = cycle_started
+
         audit = None
         if (
             self._last_audit_at is None
@@ -346,6 +364,7 @@ class RestRecorder:
             "full_snapshots": snapshots,
             "trades_inserted": trades_inserted,
             "point_in_time_audit": audit,
+            "retention_pruned": retention_pruned,
             "db_path": self.store.path,
         }
         self._last_result = result
