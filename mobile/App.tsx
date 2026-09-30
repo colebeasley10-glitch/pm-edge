@@ -1633,6 +1633,10 @@ export default function App() {
   const [autoTrader, setAutoTrader] = useState<AutoTraderStatus | null>(null);
   const [autoTraderLoading, setAutoTraderLoading] = useState(false);
   const [autoTraderError, setAutoTraderError] = useState<string | null>(null);
+  const [whalePaper, setWhalePaper] = useState<WhalePaperStatus | null>(null);
+  const [whalePaperLoading, setWhalePaperLoading] = useState(false);
+  const [whalePaperError, setWhalePaperError] = useState<string | null>(null);
+  const [paperStrategy, setPaperStrategy] = useState<PaperStrategy>("Value Edge");
   const [scores, setScores] = useState<ScoreEvent[]>([]);
   const [selected, setSelected] = useState<Signal | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -1679,7 +1683,31 @@ export default function App() {
       setAutoTraderError(e instanceof Error ? e.message : "Unable to trigger paper scan");
       setAutoTraderLoading(false);
     }
-  }, [refreshAutoTrader]);
+  }, [refreshAutoTrader, refreshWhalePaper]);
+
+  const refreshWhalePaper = useCallback(async () => {
+    setWhalePaperLoading(true);
+    setWhalePaperError(null);
+    try {
+      setWhalePaper(await api.whalePaperStatus());
+    } catch (e) {
+      setWhalePaperError(e instanceof Error ? e.message : "Unable to load Whale paper trader");
+    } finally {
+      setWhalePaperLoading(false);
+    }
+  }, []);
+
+  const runWhalePaperScan = useCallback(async () => {
+    setWhalePaperLoading(true);
+    setWhalePaperError(null);
+    try {
+      await api.runWhalePaperScan();
+      setTimeout(() => { void refreshWhalePaper(); }, 1800);
+    } catch (e) {
+      setWhalePaperError(e instanceof Error ? e.message : "Unable to trigger Whale paper scan");
+      setWhalePaperLoading(false);
+    }
+  }, [refreshWhalePaper]);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -1713,6 +1741,7 @@ export default function App() {
       setSystem(s);
       api.scores().then((x) => setScores(x.items ?? [])).catch(() => setScores([]));
       void refreshAutoTrader();
+      void refreshWhalePaper();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load PM Edge");
     } finally {
@@ -1738,9 +1767,13 @@ export default function App() {
   useEffect(() => {
     if (tab !== "AutoTrader") return;
     void refreshAutoTrader();
-    const timer = setInterval(() => { void refreshAutoTrader(); }, 15000);
+    void refreshWhalePaper();
+    const timer = setInterval(() => {
+      void refreshAutoTrader();
+      void refreshWhalePaper();
+    }, 15000);
     return () => clearInterval(timer);
-  }, [refreshAutoTrader, tab]);
+  }, [refreshAutoTrader, refreshWhalePaper, tab]);
 
   const content = useMemo(() => {
     if (!dashboard && refreshing) {
@@ -1791,7 +1824,18 @@ export default function App() {
     }} />;
     if (tab === "Bets") return <BetsScreen items={bets} positions={positions} unfilled={unfilled} refresh={refresh} refreshing={refreshing} onReview={setSelected} />;
     if (tab === "Live") return <LiveScreen items={openBets} scores={scores} refresh={refresh} refreshing={refreshing} />;
-    if (tab === "AutoTrader") return <AutoTraderScreen data={autoTrader} loading={autoTraderLoading} error={autoTraderError} refresh={refreshAutoTrader} runScan={runAutoTraderScan} />;
+    if (tab === "AutoTrader") return (
+      <View style={{ flex: 1 }}>
+        <View style={{ paddingHorizontal: 16, paddingTop: 12, backgroundColor: colors.bg }}>
+          <PillTabs values={["Value Edge", "Whale Flow"]} selected={paperStrategy} onSelect={setPaperStrategy} />
+        </View>
+        {paperStrategy === "Value Edge" ? (
+          <AutoTraderScreen data={autoTrader} loading={autoTraderLoading} error={autoTraderError} refresh={refreshAutoTrader} runScan={runAutoTraderScan} />
+        ) : (
+          <WhalePaperScreen data={whalePaper} loading={whalePaperLoading} error={whalePaperError} refresh={refreshWhalePaper} runScan={runWhalePaperScan} />
+        )}
+      </View>
+    );
 
     if (moreView === "Analytics" && analytics) return <AnalyticsScreen data={analytics} history={history} />;
     if (moreView === "History") return <HistoryScreen items={history} back={() => setMoreView("Menu")} />;
@@ -1800,7 +1844,7 @@ export default function App() {
     if (moreView === "System" && system) return <SystemScreen data={system} back={() => setMoreView("Menu")} />;
     if (moreView === "Settings") return <SettingsScreen back={() => setMoreView("Menu")} />;
     return <MoreMenu select={setMoreView} />;
-  }, [analytics, autoTrader, autoTraderError, autoTraderLoading, bets, dashboard, error, history, moreView, openBets, positions, passcode, refresh, refreshAutoTrader, refreshing, runAutoTraderScan, scores, system, tab, unfilled]);
+  }, [analytics, autoTrader, autoTraderError, autoTraderLoading, bets, dashboard, error, history, moreView, openBets, paperStrategy, positions, passcode, refresh, refreshAutoTrader, refreshWhalePaper, refreshing, runAutoTraderScan, runWhalePaperScan, scores, system, tab, unfilled, whalePaper, whalePaperError, whalePaperLoading]);
 
   return (
     <SafeAreaView style={styles.root}>
