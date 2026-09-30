@@ -116,8 +116,8 @@ class RestRecorder:
         """Discover open temperature markets by Weather series, not global pagination."""
         try:
             series_rows = self._api(
-                "GET /series?category=Weather",
-                lambda: self.client.list_series(category="Weather", include_volume=True),
+                "GET /series",
+                lambda: self.client.list_series(include_volume=True),
             )
         except Exception as exc:
             return [], [], [{"stage": "series", "error": f"{type(exc).__name__}: {str(exc)[:220]}"}]
@@ -127,6 +127,8 @@ class RestRecorder:
             blob = " ".join([
                 str(row.get("ticker") or ""),
                 str(row.get("title") or ""),
+                str(row.get("category") or ""),
+                " ".join(str(x) for x in (row.get("categories") or [])),
                 " ".join(str(x) for x in (row.get("tags") or [])),
             ]).lower()
             if any(token in blob for token in (
