@@ -19,6 +19,7 @@ def save_portfolio(portfolio: PaperPortfolio, path):
             ticker=p.ticker, side=p.side, contracts=p.contracts,
             entry=str(p.entry), entry_fee=str(p.entry_fee),
             exposure_key=p.exposure_key, fair_snapshot_id=p.fair_snapshot_id,
+            thesis=getattr(p, "thesis", None),
         ) for p in portfolio.positions.values()],
         "ledger": portfolio.ledger,
     }
@@ -49,6 +50,7 @@ def load_portfolio(path):
             raw["ticker"], raw["side"], int(raw["contracts"]),
             Decimal(raw["entry"]), Decimal(raw["entry_fee"]),
             raw.get("exposure_key"), raw.get("fair_snapshot_id"),
+            raw.get("thesis") if isinstance(raw.get("thesis"), dict) else None,
         )
         if p.ticker in positions or p.side not in ("YES", "NO") or p.contracts < 1:
             raise ValueError("Invalid stored paper position")
