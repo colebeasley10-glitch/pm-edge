@@ -417,30 +417,30 @@ def start_recorder_thread(
 
     def build():
         return RestRecorder(
-        db_path=resolved_db_path,
-        interval_seconds=interval_seconds or int(
-            os.getenv("AUTOTRADER_RECORDER_INTERVAL_SECONDS", "60")
-        ),
-        metadata_interval_seconds=metadata_interval_seconds or int(
-            os.getenv("AUTOTRADER_RECORDER_METADATA_INTERVAL_SECONDS", "900")
-        ),
-        snapshot_interval_seconds=snapshot_interval_seconds or int(
-            os.getenv("AUTOTRADER_RECORDER_SNAPSHOT_INTERVAL_SECONDS", "300")
-        ),
-        hot_markets=hot_markets or int(
-            os.getenv("AUTOTRADER_RECORDER_HOT_MARKETS", "40")
-        ),
-        snapshot_markets=snapshot_markets or int(
-            os.getenv("AUTOTRADER_RECORDER_SNAPSHOT_MARKETS", "20")
-        ),
-        orderbook_depth=orderbook_depth or int(
-            os.getenv("AUTOTRADER_RECORDER_ORDERBOOK_DEPTH", "20")
-        ),
-        max_markets=int(os.getenv("AUTOTRADER_RECORDER_MAX_MARKETS", "5000")),
-        fee_schedule_id=fee_schedule_id or os.getenv(
-            "AUTOTRADER_FEE_SCHEDULE_ID", "kalshi-predictions-current"
-        ),
-    )
+            db_path=resolved_db_path,
+            interval_seconds=interval_seconds or int(
+                os.getenv("AUTOTRADER_RECORDER_INTERVAL_SECONDS", "60")
+            ),
+            metadata_interval_seconds=metadata_interval_seconds or int(
+                os.getenv("AUTOTRADER_RECORDER_METADATA_INTERVAL_SECONDS", "900")
+            ),
+            snapshot_interval_seconds=snapshot_interval_seconds or int(
+                os.getenv("AUTOTRADER_RECORDER_SNAPSHOT_INTERVAL_SECONDS", "300")
+            ),
+            hot_markets=hot_markets or int(
+                os.getenv("AUTOTRADER_RECORDER_HOT_MARKETS", "40")
+            ),
+            snapshot_markets=snapshot_markets or int(
+                os.getenv("AUTOTRADER_RECORDER_SNAPSHOT_MARKETS", "20")
+            ),
+            orderbook_depth=orderbook_depth or int(
+                os.getenv("AUTOTRADER_RECORDER_ORDERBOOK_DEPTH", "20")
+            ),
+            max_markets=int(os.getenv("AUTOTRADER_RECORDER_MAX_MARKETS", "5000")),
+            fee_schedule_id=fee_schedule_id or os.getenv(
+                "AUTOTRADER_FEE_SCHEDULE_ID", "kalshi-predictions-current"
+            ),
+        )
 
     try:
         recorder = build()
