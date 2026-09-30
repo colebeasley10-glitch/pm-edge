@@ -13,7 +13,7 @@ import hashlib
 import json
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Iterable
 
@@ -658,7 +658,7 @@ class RecorderStore:
             )
         return len(values)
 
-    def record_structural_groups(self, markets: list[dict], *, received_at) -> int:
+    def record_structural_groups(self, markets: list[dict], *, received_at, max_groups: int = 200) -> int:
         """Record event-level basket consistency without claiming arbitrage.
 
         The event group is NOT assumed exhaustive. We log the price geometry and
@@ -691,15 +691,20 @@ class RecorderStore:
                 bids.append(yb)
             sum_ask = sum(asks) if complete and len(asks) == len(items) else None
             sum_bid = sum(bids) if complete and len(bids) == len(items) else None
+            # Incomplete baskets are not actionable and create enormous
+            # storage volume. Keep only fully quoted groups, then cap each
+            # observation cycle to the groups with the largest raw inconsistency.
+            if not complete or sum_ask is None or sum_bid is None:
+                continue
             rows.append((
                 event,
                 received_at,
                 len(items),
-                int(complete),
+                1,
                 sum_bid,
                 sum_ask,
-                (1.0 - sum_ask) if sum_ask is not None else None,
-                (sum_bid - 1.0) if sum_bid is not None else None,
+                1.0 - sum_ask,
+                sum_bid - 1.0,
                 str(items[0].get("title") or "")[:300],
                 json.dumps(tickers, separators=(",", ":")),
                 0,
@@ -707,6 +712,11 @@ class RecorderStore:
             ))
         if not rows:
             return 0
+        rows.sort(
+            key=lambda r: max(abs(float(r[6] or 0)), abs(float(r[7] or 0))),
+            reverse=True,
+        )
+        rows = rows[:max(1, int(max_groups))]
         with self.connect() as con:
             con.executemany(
                 """INSERT INTO structural_group_observations(
@@ -883,6 +893,46 @@ class RecorderStore:
                 (ticker, utc_iso(t0), utc_iso(t1)),
             ).fetchall()
         return [dict(row) for row in rows]
+
+    def prune_retention(self, *, now=None) -> dict:
+        """Bound recorder growth on the small Railway volume.
+
+        Deletes free SQLite pages for reuse; no VACUUM is attempted because it
+        can require a second full-size copy of the database.
+        """
+        now_dt = now or datetime.now(timezone.utc)
+        if now_dt.tzinfo is None:
+            now_dt = now_dt.replace(tzinfo=timezone.utc)
+        policies = {
+            "ob_top": ("received_at", 14),
+            "ob_snapshots": ("received_at", 14),
+            "trades": ("received_at", 30),
+            "maker_observations": ("received_at", 14),
+            "structural_group_observations": ("received_at", 14),
+            "weather_market_observations": ("received_at", 30),
+            "weather_shadow_fairs": ("received_at", 30),
+            "odds_fetches": ("received_at", 30),
+            "odds_quotes": ("received_at", 30),
+            "fair_snapshots": ("processed_at", 30),
+            "intents": ("created_at", 30),
+            "api_calls": ("received_at", 7),
+            "data_quality_events": ("ts", 30),
+            "audit_runs": ("completed_at", 30),
+        }
+        deleted = {}
+        with self.connect() as con:
+            for table, (column, days) in policies.items():
+                cutoff = utc_iso(now_dt - timedelta(days=days))
+                cur = con.execute(
+                    f"DELETE FROM {table} WHERE {column} < ?",
+                    (cutoff,),
+                )
+                deleted[table] = int(cur.rowcount if cur.rowcount is not None else 0)
+            try:
+                con.execute("PRAGMA wal_checkpoint(PASSIVE)")
+            except sqlite3.Error:
+                pass
+        return deleted
 
     def audit_point_in_time(self) -> dict:
         """Fail-closed research audit for the received_at/processed_at invariant."""
