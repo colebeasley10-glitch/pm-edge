@@ -474,6 +474,61 @@ class RecorderStore:
         blob = json.dumps(watched, sort_keys=True, separators=(",", ":"), default=str)
         return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
+    def record_market_meta_batch(
+        self, rows: Iterable[dict], *, received_at, fee_schedule_id: str
+    ) -> dict:
+        """Append changed market metadata using one SQLite transaction."""
+        received_at = utc_iso(received_at)
+        changed = 0
+        skipped = 0
+        errors = []
+        with self.connect() as con:
+            for raw in rows or []:
+                ticker = str((raw or {}).get("ticker") or "").strip()
+                if not ticker:
+                    skipped += 1
+                    continue
+                try:
+                    content_hash = self._market_content_hash(raw, fee_schedule_id)
+                    prior = con.execute(
+                        """SELECT content_hash FROM markets_meta
+                           WHERE market_ticker=?
+                           ORDER BY received_at DESC LIMIT 1""",
+                        (ticker,),
+                    ).fetchone()
+                    if prior and prior["content_hash"] == content_hash:
+                        skipped += 1
+                        continue
+                    con.execute(
+                        """INSERT INTO markets_meta(
+                            market_ticker,valid_from,event_ticker,series_ticker,
+                            title,subtitle,rules_primary,rules_secondary,open_time,
+                            close_time,expected_expiration_time,status,tick_size,
+                            fee_type,fee_schedule_id,content_hash,source_ts,
+                            received_at,raw_json
+                        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        (
+                            ticker, received_at, raw.get("event_ticker"),
+                            raw.get("series_ticker"), raw.get("title"),
+                            raw.get("subtitle"), raw.get("rules_primary"),
+                            raw.get("rules_secondary"), raw.get("open_time"),
+                            raw.get("close_time"),
+                            raw.get("expected_expiration_time"), raw.get("status"),
+                            json.dumps(raw.get("price_ranges") or [], separators=(",", ":")),
+                            raw.get("fee_type") or raw.get("fee_type_override"),
+                            fee_schedule_id, content_hash, raw.get("updated_time"),
+                            received_at, _pack_json(raw),
+                        ),
+                    )
+                    changed += 1
+                except Exception as exc:
+                    if len(errors) < 10:
+                        errors.append({
+                            "ticker": ticker,
+                            "error": f"{type(exc).__name__}: {str(exc)[:220]}",
+                        })
+        return {"changed": changed, "skipped": skipped, "errors": errors}
+
     def record_market_meta(self, raw: dict, *, received_at, fee_schedule_id: str) -> bool:
         ticker = str(raw.get("ticker") or "").strip()
         if not ticker:
