@@ -129,6 +129,43 @@ class RecorderStoreTests(unittest.TestCase):
         self.assertFalse(audit["ok"])
         self.assertEqual(audit["checks"]["intent_future_book"], 1)
 
+    def test_market_meta_hash_ignores_fast_quote_fields(self):
+        static = {
+            "ticker": "KXTEST",
+            "event_ticker": "KXE",
+            "series_ticker": "KXS",
+            "title": "Test market",
+            "subtitle": "Outcome",
+            "rules_primary": "Rule",
+            "rules_secondary": "",
+            "open_time": "2026-09-29T00:00:00Z",
+            "close_time": "2026-09-30T00:00:00Z",
+            "expected_expiration_time": "2026-09-30T00:00:00Z",
+            "fee_type": "quadratic",
+        }
+        first = {
+            **static,
+            "yes_bid_dollars": "0.40",
+            "yes_ask_dollars": "0.42",
+            "volume_24h_fp": "100",
+            "open_interest_fp": "50",
+            "updated_time": "2026-09-29T12:00:00Z",
+            "price_ranges": [{"start": "0.01", "end": "0.99"}],
+        }
+        second = {
+            **static,
+            "yes_bid_dollars": "0.60",
+            "yes_ask_dollars": "0.62",
+            "volume_24h_fp": "999",
+            "open_interest_fp": "80",
+            "updated_time": "2026-09-29T12:05:00Z",
+            "price_ranges": [{"start": "0.02", "end": "0.98"}],
+        }
+        self.assertEqual(
+            RecorderStore._market_content_hash(first, "fees-v1"),
+            RecorderStore._market_content_hash(second, "fees-v1"),
+        )
+
     def test_raw_json_compression_round_trip(self):
         payload = {
             "ticker": "TEST",
