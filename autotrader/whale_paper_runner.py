@@ -821,6 +821,8 @@ def run_once(
     max_follow_through_cents=2,
     min_flow_notional_usd=500,
     min_flow_trades=2,
+    quick_v2_max_settled_trades=25,
+    quick_v2_max_realized_loss="50",
 ):
     _assert_no_kalshi_write_credentials()
     now = (now or _utcnow()).astimezone(timezone.utc)
@@ -829,6 +831,23 @@ def run_once(
     state = _load_runner_state(runner_state_path)
 
     settlements = _settle_finished_positions(portfolio, client)
+    mode_name = str(mode).lower()
+    quick_v2 = mode_name == "quick_v2"
+    circuit_breaker_reason = None
+    if quick_v2 and allow_new_entries:
+        settled_count = sum(
+            1 for row in portfolio.ledger
+            if str(row.get("action") or "").upper() == "SETTLE"
+        )
+        max_settled = max(1, int(quick_v2_max_settled_trades))
+        max_loss = max(D("0"), D(quick_v2_max_realized_loss))
+        if settled_count >= max_settled:
+            allow_new_entries = False
+            circuit_breaker_reason = "quick_v2_review_sample_reached"
+        elif portfolio.realized_pnl <= -max_loss:
+            allow_new_entries = False
+            circuit_breaker_reason = "quick_v2_max_realized_loss"
+
     if allow_new_entries:
         try:
             trades = whale_edge._public_trades(
@@ -842,8 +861,6 @@ def run_once(
         trades = []
         api_error = None
 
-    mode_name = str(mode).lower()
-    quick_v2 = mode_name == "quick_v2"
     quick = mode_name in {"quick", "quick_v2"}
     strategy = "quick_whale_v2" if quick_v2 else ("quick_whale" if quick else "whale_flow")
     pending_decisions = [] if quick else _process_pending(
@@ -893,6 +910,7 @@ def run_once(
         "observed_at": now.isoformat().replace("+00:00", "Z"),
         "strategy": strategy,
         "new_entries_enabled": bool(allow_new_entries),
+        "circuit_breaker_reason": circuit_breaker_reason,
         "public_trades": len(trades),
         "fresh_trades": len(fresh),
         "qualified_flows": len(flows),
@@ -921,6 +939,7 @@ def run_once(
         "observed_at": run["observed_at"],
         "strategy": strategy,
         "new_entries_enabled": bool(allow_new_entries),
+        "circuit_breaker_reason": circuit_breaker_reason,
         "public_trades": run["public_trades"],
         "fresh_trades": run["fresh_trades"],
         "qualified_flows": run["qualified_flows"],
