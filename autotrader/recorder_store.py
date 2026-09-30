@@ -458,8 +458,15 @@ class RecorderStore:
             )
 
     @staticmethod
-    def _market_content_hash(raw: dict, fee_schedule_id: str) -> str:
-        watched = {
+    def _market_meta_payload(raw: dict, fee_schedule_id: str) -> dict:
+        """Canonical market metadata, excluding fast-moving quote fields.
+
+        Prices, sizes, volume, open interest and provider update timestamps belong
+        in quote/tape observations. Including them here caused append-only
+        metadata history to grow on every market-list refresh.
+        """
+        return {
+            "ticker": raw.get("ticker"),
             "event_ticker": raw.get("event_ticker"),
             "series_ticker": raw.get("series_ticker"),
             "title": raw.get("title"),
@@ -469,12 +476,13 @@ class RecorderStore:
             "open_time": raw.get("open_time"),
             "close_time": raw.get("close_time"),
             "expected_expiration_time": raw.get("expected_expiration_time"),
-            "status": raw.get("status"),
-            "price_level_structure": raw.get("price_level_structure"),
-            "price_ranges": raw.get("price_ranges"),
             "fee_type": raw.get("fee_type") or raw.get("fee_type_override"),
             "fee_schedule_id": fee_schedule_id,
         }
+
+    @classmethod
+    def _market_content_hash(cls, raw: dict, fee_schedule_id: str) -> str:
+        watched = cls._market_meta_payload(raw, fee_schedule_id)
         blob = json.dumps(watched, sort_keys=True, separators=(",", ":"), default=str)
         return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
@@ -521,7 +529,9 @@ class RecorderStore:
                             json.dumps(raw.get("price_ranges") or [], separators=(",", ":")),
                             raw.get("fee_type") or raw.get("fee_type_override"),
                             fee_schedule_id, content_hash, raw.get("updated_time"),
-                            received_at, _pack_json(raw),
+                            received_at, _pack_json(
+                                self._market_meta_payload(raw, fee_schedule_id)
+                            ),
                         ),
                     )
                     changed += 1
@@ -561,7 +571,7 @@ class RecorderStore:
                     json.dumps(raw.get("price_ranges") or [], separators=(",", ":")),
                     raw.get("fee_type") or raw.get("fee_type_override"), fee_schedule_id,
                     content_hash, raw.get("updated_time"), received_at,
-                    _pack_json(raw),
+                    _pack_json(self._market_meta_payload(raw, fee_schedule_id)),
                 ),
             )
         return True
