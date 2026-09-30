@@ -192,6 +192,9 @@ class RestRecorder:
                         received_at=received_at,
                         origin="rest",
                     )
+                    maker_observations += self.store.record_maker_from_orderbook(
+                        normalize_market(raw), book, received_at=received_at
+                    )
                     snapshots += 1
                 except Exception as exc:
                     self.store.quality_event(
