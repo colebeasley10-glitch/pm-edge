@@ -973,6 +973,12 @@ def fair_to_dict(fair, event, spec, usage=None, devig_diag=None, ticker=None):
     )
     entry = {
         "fetched_at": fetched_at,
+        "map_id": str(event.get("id") or event.get("event_id") or ""),
+        "sportsbook_event_id": str(event.get("id") or event.get("event_id") or ""),
+        "commence_time": event.get("commence_time"),
+        "market_type": getattr(spec, "market_type", None),
+        "selection": getattr(spec, "selection", None),
+        "point": getattr(spec, "point", None),
         "fair_yes_prob": float(fair.fair_yes_prob),
         "source": fair.source,
         "confidence": float(fair.confidence),
