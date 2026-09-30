@@ -389,15 +389,20 @@ class RestRecorder:
             targeted_weather_raw, weather_series, weather_discovery_errors = (
                 self._targeted_weather_markets()
             )
+            batch_meta = self.store.record_market_meta_batch(
+                raw_markets,
+                received_at=market_received,
+                fee_schedule_id=self.fee_schedule_id,
+            )
+            meta_changes += int(batch_meta.get("changed") or 0)
+            for err in batch_meta.get("errors") or []:
+                self.store.quality_event(
+                    "metadata_write_error",
+                    market_ticker=err.get("ticker"),
+                    detail={"error": err.get("error")},
+                )
             for raw in raw_markets:
                 try:
-                    meta_changes += int(
-                        self.store.record_market_meta(
-                            raw,
-                            received_at=market_received,
-                            fee_schedule_id=self.fee_schedule_id,
-                        )
-                    )
                     normalized_weather = normalize_market(raw)
                     recorded_weather = self.store.record_weather_market(
                         normalized_weather, received_at=market_received
@@ -411,7 +416,7 @@ class RestRecorder:
                         })
                 except Exception as exc:
                     self.store.quality_event(
-                        "metadata_write_error",
+                        "weather_metadata_write_error",
                         market_ticker=str(raw.get("ticker") or "") or None,
                         detail={"error": f"{type(exc).__name__}: {exc}"},
                     )
