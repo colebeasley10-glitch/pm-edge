@@ -407,12 +407,24 @@ def event_hours(event):
 def fair_ttl_hours(event):
     h = event_hours(event)
     if h <= 3:
-        return 1.5
-    if h <= 12:
-        return 3.0
-    if h <= 36:
-        return 6.0
-    return 12.0
+        ttl = 1.5
+    elif h <= 12:
+        ttl = 3.0
+    elif h <= 36:
+        ttl = 6.0
+    else:
+        ttl = 12.0
+
+    # AutoTrader can impose a stricter maximum age than the alert-oriented
+    # watcher defaults. This keeps the child watcher from reusing a sportsbook
+    # fair that the paper engine would immediately reject as stale.
+    try:
+        hard_seconds = int(os.getenv("PM_EDGE_MAX_FAIR_TTL_SECONDS", "0") or 0)
+    except (TypeError, ValueError):
+        hard_seconds = 0
+    if hard_seconds > 0:
+        ttl = min(ttl, max(1.0 / 60.0, hard_seconds / 3600.0))
+    return ttl
 
 def priority_score(market, event, prev_quote, fair_entry):
     vol = max(0.0, float(market.get("volume_24h") or 0.0))
