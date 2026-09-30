@@ -318,6 +318,31 @@ class RecorderStore:
         CREATE INDEX IF NOT EXISTS idx_maker_obs_ticker_received
             ON maker_observations(market_ticker, received_at);
 
+        CREATE TABLE IF NOT EXISTS maker_probe_orders(
+            probe_id TEXT PRIMARY KEY,
+            market_ticker TEXT NOT NULL,
+            side TEXT NOT NULL,
+            placed_at TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            price REAL NOT NULL,
+            queue_ahead REAL,
+            probe_qty REAL NOT NULL DEFAULT 1.0,
+            status TEXT NOT NULL DEFAULT 'pending',
+            resolved_at TEXT,
+            fill_at TEXT,
+            fill_price REAL,
+            fill_reason TEXT,
+            traded_at_level REAL NOT NULL DEFAULT 0,
+            mid_at_place REAL,
+            mid_5m REAL,
+            mid_30m REAL,
+            mode TEXT NOT NULL DEFAULT 'observe_only'
+        );
+        CREATE INDEX IF NOT EXISTS idx_maker_probe_status_expiry
+            ON maker_probe_orders(status, expires_at);
+        CREATE INDEX IF NOT EXISTS idx_maker_probe_ticker_placed
+            ON maker_probe_orders(market_ticker, placed_at);
+
         CREATE TABLE IF NOT EXISTS weather_market_observations(
             observation_id INTEGER PRIMARY KEY AUTOINCREMENT,
             market_ticker TEXT NOT NULL,
@@ -551,6 +576,68 @@ class RecorderStore:
                 rows,
             )
         return len(rows)
+
+    def create_maker_probes_from_orderbook(
+        self, market: dict, orderbook: dict, *, received_at, ttl_seconds=300
+    ) -> int:
+        """Create one-contract observation probes at the actual best maker bids."""
+        ticker = str(market.get("ticker") or "").strip()
+        if not ticker:
+            return 0
+        book = orderbook.get("orderbook_fp") or {}
+        yes_levels = book.get("yes_dollars") or book.get("yes") or []
+        no_levels = book.get("no_dollars") or book.get("no") or []
+
+        def best(levels):
+            parsed = []
+            for level in levels:
+                if not isinstance(level, (list, tuple)) or len(level) < 2:
+                    continue
+                price = _float(level[0])
+                size = _float(level[1])
+                if price is not None and size is not None and 0 < price < 1 and size > 0:
+                    parsed.append((price, size))
+            return max(parsed, default=(None, None), key=lambda x: x[0] if x[0] is not None else -1)
+
+        yes_bid, yes_q = best(yes_levels)
+        no_bid, no_q = best(no_levels)
+        placed = utc_iso(received_at)
+        try:
+            placed_dt = datetime.fromisoformat(placed.replace("Z", "+00:00"))
+        except Exception:
+            return 0
+        expires = utc_iso(placed_dt + timedelta(seconds=max(60, int(ttl_seconds))))
+
+        mid = None
+        if yes_bid is not None and no_bid is not None:
+            yes_ask = 1.0 - no_bid
+            if 0 < yes_bid <= yes_ask < 1:
+                mid = (yes_bid + yes_ask) / 2.0
+
+        rows = []
+        for side, price, queue in (("YES", yes_bid, yes_q), ("NO", no_bid, no_q)):
+            if price is None or queue is None:
+                continue
+            raw_id = f"{ticker}|{side}|{placed}|{price}|{queue}"
+            probe_id = hashlib.sha256(raw_id.encode("utf-8")).hexdigest()[:24]
+            rows.append((
+                probe_id, ticker, side, placed, expires, price, queue, 1.0,
+                "pending", None, None, None, None, 0.0, mid, None, None,
+                "observe_only",
+            ))
+        if not rows:
+            return 0
+        with self.connect() as con:
+            before = con.total_changes
+            con.executemany(
+                """INSERT OR IGNORE INTO maker_probe_orders(
+                    probe_id,market_ticker,side,placed_at,expires_at,price,
+                    queue_ahead,probe_qty,status,resolved_at,fill_at,fill_price,
+                    fill_reason,traded_at_level,mid_at_place,mid_5m,mid_30m,mode
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                rows,
+            )
+            return int(con.total_changes - before)
 
     def record_maker_from_orderbook(
         self, market: dict, orderbook: dict, *, received_at
@@ -1193,6 +1280,7 @@ class RecorderStore:
             "ob_snapshots": ("received_at", 3),
             "trades": ("received_at", 14),
             "maker_observations": ("received_at", 3),
+            "maker_probe_orders": ("placed_at", 3),
             "structural_group_observations": ("received_at", 3),
             "weather_market_observations": ("received_at", 14),
             "weather_shadow_fairs": ("received_at", 14),
@@ -1235,6 +1323,7 @@ class RecorderStore:
             "ob_snapshots": ("received_at", 14),
             "trades": ("received_at", 30),
             "maker_observations": ("received_at", 14),
+            "maker_probe_orders": ("placed_at", 14),
             "structural_group_observations": ("received_at", 14),
             "weather_market_observations": ("received_at", 30),
             "weather_shadow_fairs": ("received_at", 30),
@@ -1314,7 +1403,8 @@ class RecorderStore:
     def counts(self) -> dict:
         names = ("markets_meta", "ob_top", "ob_snapshots", "trades", "odds_fetches",
                  "odds_quotes", "fair_snapshots", "intents", "data_quality_events",
-                 "audit_runs", "maker_observations", "weather_market_observations",
+                 "audit_runs", "maker_observations", "maker_probe_orders",
+                 "weather_market_observations",
                  "structural_group_observations", "weather_shadow_fairs",
                  "weather_shadow_edges")
         out = {}
