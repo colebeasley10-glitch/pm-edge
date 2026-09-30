@@ -508,8 +508,12 @@ def _load_fair_values(*, api_base, api_token, ledger_path, now, max_age_seconds,
             now=now,
             refresh_interval_seconds=refresh_interval_seconds,
         )
+        reload_now = (
+            clock().astimezone(timezone.utc)
+            if clock is not None else datetime.now(timezone.utc)
+        )
         local = load_pm_edge_ledger(
-            ledger_path, now=now, max_age_seconds=max_age_seconds,
+            ledger_path, now=reload_now, max_age_seconds=max_age_seconds,
         )
         if local.probabilities:
             return local, "autotrader_local_pm_edge_refresh", refresh
