@@ -1,6 +1,6 @@
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 
@@ -87,6 +87,87 @@ class ExitAndMakerTests(unittest.TestCase):
             contracts=10,
         )
         self.assertEqual(d.action, "EXIT_THESIS")
+
+    def test_maker_probe_fills_only_after_trade_through(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = RecorderStore(str(Path(directory) / "r.sqlite3"))
+            t0 = datetime(2026, 9, 29, 20, 0, tzinfo=timezone.utc)
+            market = {
+                "ticker": "TEST",
+                "event_ticker": "EVENT",
+                "volume_24h": 1000,
+                "liquidity_dollars": 500,
+            }
+            book = {
+                "orderbook_fp": {
+                    "yes_dollars": [["0.48", "5.00"]],
+                    "no_dollars": [["0.48", "7.00"]],
+                }
+            }
+            self.assertEqual(
+                store.create_maker_probes_from_orderbook(
+                    market, book, received_at=t0, ttl_seconds=300
+                ),
+                2,
+            )
+            # A YES trade below our 48c maker bid means the level traded through.
+            store.record_trades(
+                [{
+                    "trade_id": "T1",
+                    "ticker": "TEST",
+                    "count_fp": "1.00",
+                    "yes_price_dollars": "0.47",
+                    "no_price_dollars": "0.53",
+                    "created_time": (t0 + timedelta(seconds=20)).isoformat(),
+                    "taker_outcome_side": "no",
+                    "is_block_trade": False,
+                }],
+                received_at=t0 + timedelta(seconds=20),
+            )
+            result = store.evaluate_maker_probes(now=t0 + timedelta(seconds=30))
+            self.assertEqual(result["observed_fills"], 1)
+            with store.connect() as con:
+                yes = con.execute(
+                    "SELECT status,fill_reason FROM maker_probe_orders WHERE side='YES'"
+                ).fetchone()
+                no = con.execute(
+                    "SELECT status FROM maker_probe_orders WHERE side='NO'"
+                ).fetchone()
+            self.assertEqual(yes["status"], "observed_fill")
+            self.assertEqual(yes["fill_reason"], "traded_through")
+            self.assertEqual(no["status"], "pending")
+
+    def test_maker_probe_requires_queue_to_clear_at_same_price(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = RecorderStore(str(Path(directory) / "r.sqlite3"))
+            t0 = datetime(2026, 9, 29, 20, 0, tzinfo=timezone.utc)
+            store.create_maker_probes_from_orderbook(
+                {"ticker": "TEST", "event_ticker": "EVENT"},
+                {
+                    "orderbook_fp": {
+                        "yes_dollars": [["0.48", "5.00"]],
+                        "no_dollars": [["0.48", "5.00"]],
+                    }
+                },
+                received_at=t0,
+                ttl_seconds=300,
+            )
+            # Only four contracts trade at our level; five were ahead of us.
+            store.record_trades(
+                [{
+                    "trade_id": "T1",
+                    "ticker": "TEST",
+                    "count_fp": "4.00",
+                    "yes_price_dollars": "0.48",
+                    "no_price_dollars": "0.52",
+                    "created_time": (t0 + timedelta(seconds=20)).isoformat(),
+                    "taker_outcome_side": "no",
+                    "is_block_trade": False,
+                }],
+                received_at=t0 + timedelta(seconds=20),
+            )
+            result = store.evaluate_maker_probes(now=t0 + timedelta(seconds=30))
+            self.assertEqual(result["observed_fills"], 0)
 
     def test_maker_observation_logs_both_sides_without_fill(self):
         with tempfile.TemporaryDirectory() as directory:
