@@ -335,6 +335,31 @@ class RecorderStore:
         );
         CREATE INDEX IF NOT EXISTS idx_structural_event_received
             ON structural_group_observations(event_ticker, received_at);
+
+        CREATE TABLE IF NOT EXISTS weather_shadow_fairs(
+            observation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticker TEXT NOT NULL,
+            event_ticker TEXT NOT NULL,
+            received_at TEXT NOT NULL,
+            city TEXT,
+            target_date TEXT,
+            bucket_label TEXT,
+            variable TEXT,
+            p_shadow REAL NOT NULL,
+            sampling_sigma REAL,
+            n_members INTEGER,
+            ensemble_mean_f REAL,
+            ensemble_stdev_f REAL,
+            latitude REAL,
+            longitude REAL,
+            timezone TEXT,
+            model TEXT,
+            rounding_assumption TEXT,
+            promotion_blocker TEXT,
+            mode TEXT NOT NULL DEFAULT 'shadow_only'
+        );
+        CREATE INDEX IF NOT EXISTS idx_weather_shadow_ticker_received
+            ON weather_shadow_fairs(ticker, received_at);
         """
         with self.connect() as con:
             con.executescript(ddl)
@@ -585,6 +610,53 @@ class RecorderStore:
                 ),
             )
         return True
+
+    def record_weather_shadow_fairs(self, rows: list[dict], *, received_at) -> int:
+        if not rows:
+            return 0
+        received_at = utc_iso(received_at)
+        values = []
+        for row in rows:
+            try:
+                p = float(row.get("p_shadow"))
+            except (TypeError, ValueError):
+                continue
+            if not (0 <= p <= 1):
+                continue
+            values.append((
+                str(row.get("ticker") or ""),
+                str(row.get("event_ticker") or ""),
+                received_at,
+                row.get("city"),
+                row.get("target_date"),
+                row.get("bucket_label"),
+                row.get("variable"),
+                p,
+                _float(row.get("sampling_sigma")),
+                int(row.get("n_members") or 0),
+                _float(row.get("ensemble_mean_f")),
+                _float(row.get("ensemble_stdev_f")),
+                _float(row.get("latitude")),
+                _float(row.get("longitude")),
+                row.get("timezone"),
+                row.get("model"),
+                row.get("rounding_assumption"),
+                row.get("promotion_blocker"),
+                "shadow_only",
+            ))
+        if not values:
+            return 0
+        with self.connect() as con:
+            con.executemany(
+                """INSERT INTO weather_shadow_fairs(
+                    ticker,event_ticker,received_at,city,target_date,bucket_label,
+                    variable,p_shadow,sampling_sigma,n_members,ensemble_mean_f,
+                    ensemble_stdev_f,latitude,longitude,timezone,model,
+                    rounding_assumption,promotion_blocker,mode
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                values,
+            )
+        return len(values)
 
     def record_structural_groups(self, markets: list[dict], *, received_at) -> int:
         """Record event-level basket consistency without claiming arbitrage.
@@ -864,7 +936,7 @@ class RecorderStore:
         names = ("markets_meta", "ob_top", "ob_snapshots", "trades", "odds_fetches",
                  "odds_quotes", "fair_snapshots", "intents", "data_quality_events",
                  "audit_runs", "maker_observations", "weather_market_observations",
-                 "structural_group_observations")
+                 "structural_group_observations", "weather_shadow_fairs")
         out = {}
         with self.connect() as con:
             for name in names:
