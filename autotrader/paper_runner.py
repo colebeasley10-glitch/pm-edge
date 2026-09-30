@@ -812,7 +812,9 @@ def _paper_status(state_path, runs_path, *, market_client=None, market_cache=Non
     }
 
 
-def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, port, market_client=None):
+def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, port, market_client=None,
+                         whale_client=None, whale_trigger_event=None,
+                         whale_state_path=None, whale_runner_state_path=None, whale_runs_path=None):
     token = str(os.environ.get("AUTOTRADER_API_TOKEN", "") or "").strip()
     market_cache = {}
 
@@ -849,6 +851,19 @@ def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, p
                         market_cache=market_cache,
                     ),
                 )
+            if parsed.path == "/v1/whale-status":
+                if whale_client is None or not whale_state_path or not whale_runner_state_path or not whale_runs_path:
+                    return self._send(503, {"detail": "Whale paper worker unavailable"})
+                from . import whale_paper_runner
+                return self._send(
+                    200,
+                    whale_paper_runner._status(
+                        whale_state_path,
+                        whale_runner_state_path,
+                        whale_runs_path,
+                        whale_client,
+                    ),
+                )
             if parsed.path == "/v1/runs":
                 try:
                     limit = min(100, max(1, int(parse_qs(parsed.query).get("limit", ["20"])[0])))
@@ -869,6 +884,11 @@ def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, p
             if parsed.path == "/v1/run-scan":
                 trigger_event.set()
                 return self._send(202, {"accepted": True, "mode": "paper"})
+            if parsed.path == "/v1/whale-run-scan":
+                if whale_trigger_event is None:
+                    return self._send(503, {"detail": "Whale paper worker unavailable"})
+                whale_trigger_event.set()
+                return self._send(202, {"accepted": True, "mode": "paper", "strategy": "whale_flow"})
             return self._send(404, {"detail": "Not found"})
 
     server = ThreadingHTTPServer(("0.0.0.0", int(port)), Handler)
@@ -904,6 +924,52 @@ def main():
     client = KalshiPublicClient(PUBLIC_BASE)
     trigger_event = threading.Event()
     run_lock = threading.Lock()
+
+    whale_enabled = os.environ.get("WHALE_PAPER_ENABLED", "0").strip().lower() in {"1", "true", "yes", "on"}
+    whale_trigger_event = threading.Event() if whale_enabled else None
+    whale_client = KalshiPublicClient(PUBLIC_BASE) if whale_enabled else None
+    whale_state_path = os.environ.get("WHALE_PAPER_PORTFOLIO_STATE", "/data/whale-paper-portfolio.json")
+    whale_runner_state_path = os.environ.get("WHALE_PAPER_RUNNER_STATE", "/data/whale-paper-state.json")
+    whale_runs_path = os.environ.get("WHALE_PAPER_RUNS", "/data/whale-paper-runs.jsonl")
+    whale_interval = max(60, int(os.environ.get("WHALE_PAPER_SCAN_INTERVAL_SECONDS", "300")))
+    whale_lookback = max(10, int(os.environ.get("WHALE_PAPER_LOOKBACK_MINUTES", "20")))
+    whale_max_flows = max(1, int(os.environ.get("WHALE_PAPER_MAX_FLOWS_PER_SCAN", "30")))
+    whale_slippage = os.environ.get("WHALE_PAPER_SLIPPAGE", "0.005")
+
+    if whale_enabled:
+        from . import whale_paper_runner
+
+        def whale_loop():
+            print(json.dumps({
+                "whale_paper": "starting",
+                "mode": "paper",
+                "interval_seconds": whale_interval,
+                "paid_odds_api_calls": 0,
+            }), flush=True)
+            while True:
+                try:
+                    whale_paper_runner.run_once(
+                        client=whale_client,
+                        state_path=whale_state_path,
+                        runner_state_path=whale_runner_state_path,
+                        runs_path=whale_runs_path,
+                        lookback_minutes=whale_lookback,
+                        max_flows=whale_max_flows,
+                        slippage=whale_slippage,
+                    )
+                except Exception as exc:
+                    print(json.dumps({
+                        "whale_paper_error": type(exc).__name__,
+                        "message": str(exc)[:300],
+                    }), flush=True)
+                whale_trigger_event.wait(timeout=whale_interval)
+                whale_trigger_event.clear()
+
+        threading.Thread(
+            target=whale_loop,
+            name="whale-paper-worker",
+            daemon=True,
+        ).start()
 
     recorder = None
     recorder_thread = None
@@ -950,6 +1016,11 @@ def main():
             trigger_event=trigger_event,
             port=http_port,
             market_client=client,
+            whale_client=whale_client,
+            whale_trigger_event=whale_trigger_event,
+            whale_state_path=whale_state_path if whale_enabled else None,
+            whale_runner_state_path=whale_runner_state_path if whale_enabled else None,
+            whale_runs_path=whale_runs_path if whale_enabled else None,
         )
         print(json.dumps({"autotrader_http": "listening", "port": http_port, "mode": "paper"}), flush=True)
 
