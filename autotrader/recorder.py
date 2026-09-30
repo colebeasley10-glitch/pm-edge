@@ -52,6 +52,7 @@ class RestRecorder:
         hot_markets=40,
         snapshot_markets=20,
         orderbook_depth=20,
+        max_markets=5000,
         fee_schedule_id="kalshi-predictions-current",
         clock=None,
     ):
@@ -63,6 +64,7 @@ class RestRecorder:
         self.hot_markets = max(1, int(hot_markets))
         self.snapshot_markets = max(1, min(int(snapshot_markets), self.hot_markets))
         self.orderbook_depth = max(1, min(int(orderbook_depth), 100))
+        self.max_markets = max(1000, int(max_markets))
         self.fee_schedule_id = str(fee_schedule_id)
         self.clock = clock or _utcnow
         self._last_metadata_at = None
@@ -110,7 +112,7 @@ class RestRecorder:
         cycle_started = self.clock().astimezone(timezone.utc)
         raw_markets = self._api(
             "GET /markets?status=open",
-            lambda: self.client.list_open_markets(max_markets=3000),
+            lambda: self.client.list_open_markets(max_markets=self.max_markets),
         )
         market_received = self.clock().astimezone(timezone.utc)
 
@@ -120,6 +122,27 @@ class RestRecorder:
         )
         hot_raw = ranked[: self.hot_markets]
         hot_tickers = {str(m.get("ticker")) for m in hot_raw}
+
+        # Prefer markets with an actually two-sided list quote for maker
+        # observation. Raw volume alone can otherwise select one-sided or MVE
+        # books that teach us nothing about queue/adverse-selection behavior.
+        maker_raw = []
+        for raw in ranked:
+            try:
+                m = normalize_market(raw)
+                yb, ya = m.get("yes_bid"), m.get("yes_ask")
+                nb, na = m.get("no_bid"), m.get("no_ask")
+                if (
+                    yb is not None and ya is not None and nb is not None and na is not None
+                    and 0 < float(yb) <= float(ya) < 1
+                    and 0 < float(nb) <= float(na) < 1
+                    and float(ya) - float(yb) <= 0.15
+                ):
+                    maker_raw.append(raw)
+                    if len(maker_raw) >= self.snapshot_markets:
+                        break
+            except Exception:
+                continue
 
         metadata_due = (
             self._last_metadata_at is None
@@ -180,7 +203,7 @@ class RestRecorder:
             >= self.snapshot_interval_seconds
         )
         if snapshot_due:
-            for raw in hot_raw[: self.snapshot_markets]:
+            for raw in maker_raw:
                 ticker = str(raw.get("ticker") or "").strip()
                 if not ticker:
                     continue
@@ -327,6 +350,7 @@ def start_recorder_thread(
         orderbook_depth=orderbook_depth or int(
             os.getenv("AUTOTRADER_RECORDER_ORDERBOOK_DEPTH", "20")
         ),
+        max_markets=int(os.getenv("AUTOTRADER_RECORDER_MAX_MARKETS", "5000")),
         fee_schedule_id=fee_schedule_id or os.getenv(
             "AUTOTRADER_FEE_SCHEDULE_ID", "kalshi-predictions-current"
         ),
@@ -357,6 +381,7 @@ def main():
         orderbook_depth=int(
             os.getenv("AUTOTRADER_RECORDER_ORDERBOOK_DEPTH", "20")
         ),
+        max_markets=int(os.getenv("AUTOTRADER_RECORDER_MAX_MARKETS", "5000")),
     )
     recorder.run_forever()
 
