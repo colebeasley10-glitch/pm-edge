@@ -86,6 +86,7 @@ class RestRecorder:
         self._last_audit_at = None
         self._last_prune_at = None
         self._last_weather_settlement_at = None
+        self._weather_settlement_cursor = 0
         self._weather_shadow = None
         self._stop = threading.Event()
         self._last_result = {}
@@ -536,7 +537,7 @@ class RestRecorder:
         settlement_due = (
             self._last_weather_settlement_at is None
             or (cycle_started - self._last_weather_settlement_at).total_seconds()
-            >= int(os.getenv("AUTOTRADER_WEATHER_SETTLEMENT_INTERVAL_SECONDS", "21600"))
+            >= int(os.getenv("AUTOTRADER_WEATHER_SETTLEMENT_INTERVAL_SECONDS", "900"))
         )
         if settlement_due:
             seed_series = [
@@ -548,8 +549,22 @@ class RestRecorder:
                 ).split(",")
                 if x.strip()
             ]
+            batch_size = max(
+                1, int(os.getenv("AUTOTRADER_WEATHER_SETTLEMENT_BATCH_SERIES", "2"))
+            )
+            if seed_series:
+                start = self._weather_settlement_cursor % len(seed_series)
+                batch = [
+                    seed_series[(start + i) % len(seed_series)]
+                    for i in range(min(batch_size, len(seed_series)))
+                ]
+                self._weather_settlement_cursor = (
+                    start + len(batch)
+                ) % len(seed_series)
+            else:
+                batch = []
             settlement_rows, weather_settlement_errors = (
-                self._targeted_weather_settlements(seed_series)
+                self._targeted_weather_settlements(batch)
             )
             try:
                 weather_settlements_logged = self.store.record_weather_settlements(
