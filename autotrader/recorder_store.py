@@ -296,6 +296,27 @@ class RecorderStore:
         );
         CREATE INDEX IF NOT EXISTS idx_maker_obs_ticker_received
             ON maker_observations(market_ticker, received_at);
+
+        CREATE TABLE IF NOT EXISTS weather_market_observations(
+            observation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            market_ticker TEXT NOT NULL,
+            event_ticker TEXT,
+            received_at TEXT NOT NULL,
+            title TEXT,
+            subtitle TEXT,
+            rules_primary TEXT,
+            rules_secondary TEXT,
+            yes_bid REAL,
+            yes_ask REAL,
+            volume_24h REAL,
+            liquidity_dollars REAL,
+            close_time TEXT,
+            series_guess TEXT,
+            city_guess TEXT,
+            mode TEXT NOT NULL DEFAULT 'discovery_only'
+        );
+        CREATE INDEX IF NOT EXISTS idx_weather_obs_ticker_received
+            ON weather_market_observations(market_ticker, received_at);
         """
         with self.connect() as con:
             con.executescript(ddl)
@@ -486,6 +507,66 @@ class RecorderStore:
                 rows,
             )
         return len(rows)
+
+    def record_weather_market(self, market: dict, *, received_at) -> bool:
+        """Record daily/hourly temperature markets for free-source research.
+
+        This is discovery-only. It never converts weather data into a trading
+        probability and therefore cannot create a paper fill.
+        """
+        ticker = str(market.get("ticker") or "").strip()
+        title = str(market.get("title") or "")
+        blob = f"{ticker} {title}".upper()
+        is_weather = (
+            ticker.upper().startswith(("KXHIGH", "KXLOW", "KXTEMP"))
+            or "HIGHEST TEMPERATURE" in blob
+            or "LOWEST TEMPERATURE" in blob
+            or "TEMPERATURE IN " in blob
+        )
+        if not is_weather:
+            return False
+
+        series_guess = ""
+        upper = ticker.upper()
+        for prefix in ("KXHIGH", "KXLOW", "KXTEMP"):
+            if upper.startswith(prefix):
+                series_guess = prefix
+                break
+
+        city_guess = ""
+        lower_title = title.lower()
+        for phrase in ("highest temperature in ", "lowest temperature in ", "temperature in "):
+            if phrase in lower_title:
+                tail = title[lower_title.index(phrase) + len(phrase):]
+                city_guess = tail.split(" on ")[0].split(" today")[0].split("?")[0].strip()
+                break
+
+        with self.connect() as con:
+            con.execute(
+                """INSERT INTO weather_market_observations(
+                    market_ticker,event_ticker,received_at,title,subtitle,
+                    rules_primary,rules_secondary,yes_bid,yes_ask,volume_24h,
+                    liquidity_dollars,close_time,series_guess,city_guess,mode
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    ticker,
+                    market.get("event_ticker"),
+                    utc_iso(received_at),
+                    title,
+                    market.get("subtitle"),
+                    market.get("rules_primary"),
+                    market.get("rules_secondary"),
+                    _float(market.get("yes_bid")),
+                    _float(market.get("yes_ask")),
+                    _float(market.get("volume_24h")),
+                    _float(market.get("liquidity_dollars")),
+                    market.get("close_time"),
+                    series_guess,
+                    city_guess,
+                    "discovery_only",
+                ),
+            )
+        return True
 
     def record_snapshot(self, ticker: str, orderbook: dict, *, received_at,
                         origin="rest", conn_id=None, seq=None):
@@ -704,7 +785,7 @@ class RecorderStore:
     def counts(self) -> dict:
         names = ("markets_meta", "ob_top", "ob_snapshots", "trades", "odds_fetches",
                  "odds_quotes", "fair_snapshots", "intents", "data_quality_events",
-                 "audit_runs", "maker_observations")
+                 "audit_runs", "maker_observations", "weather_market_observations")
         out = {}
         with self.connect() as con:
             for name in names:
