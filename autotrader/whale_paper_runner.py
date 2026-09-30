@@ -365,6 +365,8 @@ def _eligible_flow_rows(
     )
 
     evaluated_for_strategy = 0
+    inspected = 0
+    max_inspections = max(1, int(max_flows)) * (2 if quick else 1)
     for flow in ranked:
         ticker = str(flow.get("ticker") or "")
         side = str(flow.get("side") or "").upper()
@@ -383,6 +385,11 @@ def _eligible_flow_rows(
             "football": bool(whale_edge._is_football(ticker)),
             "strategy": strategy,
         }
+
+        if quick:
+            inspected += 1
+            if inspected > max_inspections:
+                break
 
         if ticker in portfolio.positions or (ticker, side) in pending_keys:
             row.update({"decision": "skipped", "reason": "already_exposed_or_pending"})
