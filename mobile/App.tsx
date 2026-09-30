@@ -37,7 +37,7 @@ type Tab = "Dashboard" | "Bets" | "Live" | "AutoTrader" | "More";
 type MoreView = "Menu" | "Analytics" | "History" | "Pending" | "Account" | "System" | "Settings";
 type AutoTraderView = "Book" | "Markets" | "Blotter" | "Log";
 type WhalePaperView = "Book" | "Flows" | "Pending" | "Log";
-type PaperStrategy = "Value Edge" | "Whale Flow";
+type PaperStrategy = "Value Edge" | "Whale Flow" | "Quick Whale";
 type BetFilter = "Available" | "Filled" | "Unfilled";
 
 const fmtMoney = (x?: number | null, signed = false) => {
@@ -1042,14 +1042,20 @@ function WhalePaperScreen({
   error,
   refresh,
   runScan,
+  quick = false,
 }: {
   data: WhalePaperStatus | null;
   loading: boolean;
   error: string | null;
   refresh: () => void;
   runScan: () => void;
+  quick?: boolean;
 }) {
   const [view, setView] = useState<WhalePaperView>("Book");
+  const strategyTitle = quick ? "Quick Whale" : "Whale Flow";
+  const strategySubtitle = quick
+    ? "Fast-market whale copying · fresh tape + executable price only"
+    : "Automated Kalshi whale-flow paper trading · no real-money orders";
   const p = data?.portfolio;
   const start = Number(data?.starting_bankroll ?? 500);
   const cash = Number(p?.cash ?? start);
@@ -1069,10 +1075,10 @@ function WhalePaperScreen({
       <View style={styles.autoHeaderRow}>
         <View style={{ gap: 4 }}>
           <View style={styles.rowGap}>
-            <Text style={styles.screenTitle}>Whale Flow</Text>
+            <Text style={styles.screenTitle}>{strategyTitle}</Text>
             <Chip label="PAPER ONLY" tone="blue" />
           </View>
-          <Text style={styles.subtitle}>Automated Kalshi whale-flow paper trading · no real-money orders</Text>
+          <Text style={styles.subtitle}>{strategySubtitle}</Text>
         </View>
         <View style={[styles.autoOnlineDot, { backgroundColor: data?.worker_online ? colors.green : colors.red }]} />
       </View>
@@ -1085,10 +1091,12 @@ function WhalePaperScreen({
         />
         <View style={{ flex: 1 }}>
           <Text style={[styles.statusBannerText, !data?.worker_online && { color: colors.red }]}>
-            {data?.worker_online ? "Whale autopilot running in the cloud" : "Whale paper worker unavailable"}
+            {data?.worker_online ? `${strategyTitle} autopilot running in the cloud` : `${strategyTitle} paper worker unavailable`}
           </Text>
           <Text style={styles.mutedSmall}>
-            Scans about every {Math.round(Number(data?.scan_interval_seconds ?? 300) / 60)} minutes · paid odds-data credits: {data?.credit_policy?.paid_odds_api_calls ?? 0}
+            {quick
+              ? `Scans every ${Number(data?.scan_interval_seconds ?? 60)} seconds · no chase · paid odds-data credits: ${data?.credit_policy?.paid_odds_api_calls ?? 0}`
+              : `Scans about every ${Math.round(Number(data?.scan_interval_seconds ?? 300) / 60)} minutes · paid odds-data credits: ${data?.credit_policy?.paid_odds_api_calls ?? 0}`}
           </Text>
         </View>
       </View>
@@ -1101,7 +1109,7 @@ function WhalePaperScreen({
       ) : null}
 
       <View style={styles.autoHero}>
-        <Text style={styles.autoEyebrow}>WHALE PAPER NET ASSET VALUE</Text>
+        <Text style={styles.autoEyebrow}>{quick ? "QUICK WHALE PAPER NET ASSET VALUE" : "WHALE PAPER NET ASSET VALUE"}</Text>
         <View style={styles.autoHeroValueRow}>
           <Text style={styles.autoHeroValue}>{fmtMoney(equity)}</Text>
           <Text style={[styles.autoHeroPnl, { color: totalPnl >= 0 ? colors.green : colors.red }]}>
@@ -1121,14 +1129,14 @@ function WhalePaperScreen({
         <Metric label="Open P/L" value={fmtMoney(unrealized, true)} positive={unrealized >= 0} />
         <Metric label="Realized" value={fmtMoney(realized, true)} positive={realized >= 0} />
         <Metric label="Win / Closed" value={data?.record ?? "0-0"} />
-        <Metric label="Resting" value={String(data?.pending_orders?.length ?? 0)} />
+        <Metric label={quick ? "Fast Lane" : "Resting"} value={quick ? "TAKE ONLY" : String(data?.pending_orders?.length ?? 0)} />
         <Metric label="Last Scan" value={fmtAgo(last?.observed_at)} />
       </View>
 
       <View style={styles.autoActions}>
         <View style={{ flex: 1, gap: 3 }}>
           <Text style={styles.autoActionTitle}>Autopilot</Text>
-          <Text style={styles.mutedSmall}>Public Kalshi data only · $0 paid odds credits</Text>
+          <Text style={styles.mutedSmall}>{quick ? "Public Kalshi data only · fresh flow ≤75s · no price chasing" : "Public Kalshi data only · $0 paid odds credits"}</Text>
         </View>
         <Pressable style={styles.autoRunButton} onPress={runScan} disabled={loading}>
           {loading ? <ActivityIndicator color={colors.bg} /> : <Text style={styles.autoRunButtonText}>Run scan</Text>}
@@ -1182,9 +1190,11 @@ function WhalePaperScreen({
         ) : (
           <View style={styles.autoEmpty}>
             <Ionicons name="water-outline" size={34} color={colors.muted} />
-            <Text style={styles.autoEmptyTitle}>No whale paper positions yet</Text>
+            <Text style={styles.autoEmptyTitle}>{quick ? "No Quick Whale positions yet" : "No whale paper positions yet"}</Text>
             <Text style={[styles.muted, { textAlign: "center" }]}>
-              The worker waits for unusually large directional flow and only simulates an entry when the live price is still reproducible.
+              {quick
+                ? "Quick Whale only fills fresh fast-market flow when the simulated executable price, including slippage, is no worse than the whale price."
+                : "The worker waits for unusually large directional flow and only simulates an entry when the live price is still reproducible."}
             </Text>
           </View>
         )
@@ -1240,8 +1250,10 @@ function WhalePaperScreen({
           ))
         ) : (
           <View style={styles.autoEmpty}>
-            <Text style={styles.autoEmptyTitle}>No resting whale orders</Text>
-            <Text style={[styles.muted, { textAlign: "center" }]}>Maker entries are only counted as fills after the market actually trades through the target.</Text>
+            <Text style={styles.autoEmptyTitle}>{quick ? "Quick Whale does not rest orders" : "No resting whale orders"}</Text>
+            <Text style={[styles.muted, { textAlign: "center" }]}>
+              {quick ? "Fast-market entries are TAKE-only. If the good price is gone, the trade is skipped instead of chased." : "Maker entries are only counted as fills after the market actually trades through the target."}
+            </Text>
           </View>
         )
       ) : null}
@@ -1260,7 +1272,7 @@ function WhalePaperScreen({
             </View>
           ))
         ) : (
-          <View style={styles.autoEmpty}><Text style={styles.autoEmptyTitle}>No whale runs recorded yet</Text></View>
+          <View style={styles.autoEmpty}><Text style={styles.autoEmptyTitle}>{quick ? "No Quick Whale runs recorded yet" : "No whale runs recorded yet"}</Text></View>
         )
       ) : null}
     </ScrollView>
@@ -1636,6 +1648,9 @@ export default function App() {
   const [whalePaper, setWhalePaper] = useState<WhalePaperStatus | null>(null);
   const [whalePaperLoading, setWhalePaperLoading] = useState(false);
   const [whalePaperError, setWhalePaperError] = useState<string | null>(null);
+  const [quickWhale, setQuickWhale] = useState<WhalePaperStatus | null>(null);
+  const [quickWhaleLoading, setQuickWhaleLoading] = useState(false);
+  const [quickWhaleError, setQuickWhaleError] = useState<string | null>(null);
   const [paperStrategy, setPaperStrategy] = useState<PaperStrategy>("Value Edge");
   const [scores, setScores] = useState<ScoreEvent[]>([]);
   const [selected, setSelected] = useState<Signal | null>(null);
@@ -1709,6 +1724,30 @@ export default function App() {
     }
   }, [refreshWhalePaper]);
 
+  const refreshQuickWhale = useCallback(async () => {
+    setQuickWhaleLoading(true);
+    setQuickWhaleError(null);
+    try {
+      setQuickWhale(await api.quickWhaleStatus());
+    } catch (e) {
+      setQuickWhaleError(e instanceof Error ? e.message : "Unable to load Quick Whale paper trader");
+    } finally {
+      setQuickWhaleLoading(false);
+    }
+  }, []);
+
+  const runQuickWhaleScan = useCallback(async () => {
+    setQuickWhaleLoading(true);
+    setQuickWhaleError(null);
+    try {
+      await api.runQuickWhaleScan();
+      setTimeout(() => { void refreshQuickWhale(); }, 1200);
+    } catch (e) {
+      setQuickWhaleError(e instanceof Error ? e.message : "Unable to trigger Quick Whale scan");
+      setQuickWhaleLoading(false);
+    }
+  }, [refreshQuickWhale]);
+
   const refresh = useCallback(async () => {
     setRefreshing(true);
     setError(null);
@@ -1742,12 +1781,13 @@ export default function App() {
       api.scores().then((x) => setScores(x.items ?? [])).catch(() => setScores([]));
       void refreshAutoTrader();
       void refreshWhalePaper();
+      void refreshQuickWhale();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load PM Edge");
     } finally {
       setRefreshing(false);
     }
-  }, [refreshAutoTrader, refreshWhalePaper]);
+  }, [refreshAutoTrader, refreshQuickWhale, refreshWhalePaper]);
 
   const handleReviewUnavailable = useCallback((signal: Signal) => {
     removeSignalFromLists(signal);
@@ -1768,12 +1808,14 @@ export default function App() {
     if (tab !== "AutoTrader") return;
     void refreshAutoTrader();
     void refreshWhalePaper();
+    void refreshQuickWhale();
     const timer = setInterval(() => {
       void refreshAutoTrader();
       void refreshWhalePaper();
+      void refreshQuickWhale();
     }, 15000);
     return () => clearInterval(timer);
-  }, [refreshAutoTrader, refreshWhalePaper, tab]);
+  }, [refreshAutoTrader, refreshQuickWhale, refreshWhalePaper, tab]);
 
   const content = useMemo(() => {
     if (!dashboard && refreshing) {
@@ -1827,12 +1869,14 @@ export default function App() {
     if (tab === "AutoTrader") return (
       <View style={{ flex: 1 }}>
         <View style={{ paddingHorizontal: 16, paddingTop: 12, backgroundColor: colors.bg }}>
-          <PillTabs values={["Value Edge", "Whale Flow"]} selected={paperStrategy} onSelect={setPaperStrategy} />
+          <PillTabs values={["Value Edge", "Whale Flow", "Quick Whale"]} selected={paperStrategy} onSelect={setPaperStrategy} />
         </View>
         {paperStrategy === "Value Edge" ? (
           <AutoTraderScreen data={autoTrader} loading={autoTraderLoading} error={autoTraderError} refresh={refreshAutoTrader} runScan={runAutoTraderScan} />
-        ) : (
+        ) : paperStrategy === "Whale Flow" ? (
           <WhalePaperScreen data={whalePaper} loading={whalePaperLoading} error={whalePaperError} refresh={refreshWhalePaper} runScan={runWhalePaperScan} />
+        ) : (
+          <WhalePaperScreen data={quickWhale} loading={quickWhaleLoading} error={quickWhaleError} refresh={refreshQuickWhale} runScan={runQuickWhaleScan} quick />
         )}
       </View>
     );
@@ -1844,7 +1888,7 @@ export default function App() {
     if (moreView === "System" && system) return <SystemScreen data={system} back={() => setMoreView("Menu")} />;
     if (moreView === "Settings") return <SettingsScreen back={() => setMoreView("Menu")} />;
     return <MoreMenu select={setMoreView} />;
-  }, [analytics, autoTrader, autoTraderError, autoTraderLoading, bets, dashboard, error, history, moreView, openBets, paperStrategy, positions, passcode, refresh, refreshAutoTrader, refreshWhalePaper, refreshing, runAutoTraderScan, runWhalePaperScan, scores, system, tab, unfilled, whalePaper, whalePaperError, whalePaperLoading]);
+  }, [analytics, autoTrader, autoTraderError, autoTraderLoading, bets, dashboard, error, history, moreView, openBets, paperStrategy, positions, passcode, quickWhale, quickWhaleError, quickWhaleLoading, refresh, refreshAutoTrader, refreshQuickWhale, refreshWhalePaper, refreshing, runAutoTraderScan, runQuickWhaleScan, runWhalePaperScan, scores, system, tab, unfilled, whalePaper, whalePaperError, whalePaperLoading]);
 
   return (
     <SafeAreaView style={styles.root}>
