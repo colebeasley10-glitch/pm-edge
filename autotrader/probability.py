@@ -129,6 +129,13 @@ def _build_snapshot(rows, *, now, max_age_seconds, source_default,
             "market_type": market_type,
             "selection": str(row.get("selection") or "").strip(),
             "point": row.get("point"),
+            "sigma": row.get("sigma"),
+            "fair_source": str(row.get("source") or source_default),
+            "fair_v2_method_version": str(row.get("fair_v2_method_version") or ""),
+            "fair_v2_weighted_yes_prob": row.get("fair_v2_weighted_yes_prob"),
+            "source_age_s": row.get("source_age_s"),
+            "system_age_s": row.get("system_age_s"),
+            "delivery_lag_s": row.get("delivery_lag_s"),
         }
         old = latest.get(key)
         if old is None or ts > old[0]:
