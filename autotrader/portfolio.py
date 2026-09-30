@@ -14,6 +14,7 @@ class Position:
     entry_fee: Decimal
     exposure_key: str | None = None
     fair_snapshot_id: str | None = None
+    thesis: dict | None = None
 
 @dataclass
 class PaperPortfolio:
@@ -28,7 +29,8 @@ class PaperPortfolio:
         return sum((p.contracts * (p.entry + p.entry_fee) for p in self.positions.values()), D("0"))
 
     def buy(self, ticker, side, contracts, limit, executable_ask, available,
-            fee_per_contract=D("0"), exposure_key=None, fair_snapshot_id=None):
+            fee_per_contract=D("0"), exposure_key=None, fair_snapshot_id=None,
+            thesis=None):
         """Conservative simulated taker fill at executable ask, not stale limit."""
         price, ask, fee = D(limit), D(executable_ask), D(fee_per_contract)
         if side not in ("YES", "NO") or not ticker or not isinstance(contracts, int) or contracts < 1:
@@ -52,13 +54,15 @@ class PaperPortfolio:
                 or self.exposure() + cost > DEFAULT_CONFIG.starting_bankroll * self.max_total_fraction):
             return False
         self.cash -= cost
+        thesis = dict(thesis) if isinstance(thesis, dict) else None
         self.positions[ticker] = Position(
-            ticker, side, contracts, ask, fee, exposure_key, fair_snapshot_id
+            ticker, side, contracts, ask, fee, exposure_key, fair_snapshot_id, thesis
         )
         self.ledger.append({
             "action": "BUY", "ticker": ticker, "side": side, "contracts": contracts,
             "price": str(ask), "fee": str(fee * contracts),
             "exposure_key": exposure_key, "fair_snapshot_id": fair_snapshot_id,
+            "thesis": thesis,
         })
         return True
 
