@@ -27,6 +27,9 @@ from .scanner import scan_public
 from .storage import load_portfolio, save_portfolio
 from .recorder import start_recorder_thread
 from .recorder_store import RecorderStore
+from .exit_engine import ExitInputs, evaluate_exit
+from .fees import prediction_fee
+from .thesis import PositionThesis
 
 
 def _utcnow():
@@ -104,6 +107,191 @@ def _kalshi_schema_probe(client):
         return probe
     except Exception as exc:
         return {"error": f"{type(exc).__name__}: {exc}"}
+
+
+def _best_bid_for_side(orderbook, side):
+    book = (orderbook or {}).get("orderbook_fp") or {}
+    levels = (
+        book.get("yes_dollars") or book.get("yes") or []
+        if side == "YES"
+        else book.get("no_dollars") or book.get("no") or []
+    )
+    best = None
+    for level in levels or []:
+        if not isinstance(level, (list, tuple)) or len(level) < 2:
+            continue
+        try:
+            price = Decimal(str(level[0]))
+            size = Decimal(str(level[1]))
+        except Exception:
+            continue
+        if not (Decimal("0") < price < Decimal("1")) or size <= 0:
+            continue
+        if best is None or price > best[0]:
+            best = (price, size)
+    return best
+
+
+def _parse_time(value):
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        return None
+
+
+def _manage_open_positions(portfolio, client, fair, *, now, slippage_per_contract="0.005"):
+    """Evaluate thesis-based paper exits using fresh independent fair values."""
+    decisions = []
+    slippage = Decimal(str(slippage_per_contract or "0"))
+    for ticker in list(portfolio.positions):
+        position = portfolio.positions.get(ticker)
+        if position is None:
+            continue
+        raw_thesis = getattr(position, "thesis", None)
+        if not isinstance(raw_thesis, dict):
+            decisions.append({
+                "ticker": ticker,
+                "action": "HOLD",
+                "reason": "legacy_position_without_thesis",
+            })
+            continue
+        try:
+            thesis = PositionThesis.from_dict(raw_thesis)
+        except Exception as exc:
+            decisions.append({
+                "ticker": ticker,
+                "action": "HOLD",
+                "reason": "invalid_thesis",
+                "error": f"{type(exc).__name__}: {str(exc)[:180]}",
+            })
+            continue
+
+        key = (ticker, position.side)
+        side_prob = fair.probabilities.get(key)
+        if side_prob is None:
+            decisions.append({
+                "ticker": ticker,
+                "action": "HOLD",
+                "reason": "no_fresh_independent_fair",
+            })
+            continue
+        yes_fair = (
+            Decimal(str(side_prob))
+            if position.side == "YES"
+            else Decimal("1") - Decimal(str(side_prob))
+        )
+        context = fair.contexts.get(key) or {}
+        try:
+            sigma = Decimal(str(context.get("sigma"))) if context.get("sigma") not in (None, "") else thesis.entry_sigma
+        except Exception:
+            sigma = thesis.entry_sigma
+
+        try:
+            orderbook = client.get_orderbook(ticker, depth=20)
+            best = _best_bid_for_side(orderbook, position.side)
+        except Exception as exc:
+            decisions.append({
+                "ticker": ticker,
+                "action": "HOLD",
+                "reason": "exit_orderbook_unavailable",
+                "error": f"{type(exc).__name__}: {str(exc)[:180]}",
+            })
+            continue
+        if best is None:
+            decisions.append({
+                "ticker": ticker,
+                "action": "HOLD",
+                "reason": "no_executable_exit_bid",
+            })
+            continue
+
+        raw_bid, available = best
+        executable_bid = max(Decimal("0"), raw_bid - slippage)
+        if executable_bid <= 0:
+            decisions.append({
+                "ticker": ticker,
+                "action": "HOLD",
+                "reason": "slippage_consumes_exit_bid",
+            })
+            continue
+        fee_total = prediction_fee(position.contracts, executable_bid)
+        fee_per_contract = fee_total / Decimal(position.contracts)
+
+        event_start = _parse_time(thesis.event_start_at)
+        time_to_event = (
+            (event_start - now).total_seconds() if event_start is not None else None
+        )
+        remaining_hours = Decimal(str(max(
+            0.25,
+            (time_to_event / 3600.0) if time_to_event is not None and time_to_event > 0
+            else float(thesis.expected_hold_hours),
+        )))
+        fair_age = fair.ages.get(key, fair.ages.get(ticker))
+
+        exit_decision = evaluate_exit(
+            thesis,
+            ExitInputs(
+                current_fair=yes_fair,
+                current_sigma=sigma,
+                fair_age_seconds=fair_age,
+                executable_bid=executable_bid,
+                exit_fee_per_contract=fee_per_contract,
+                exit_available=int(available),
+                time_to_event_seconds=time_to_event,
+                expected_remaining_hold_hours=remaining_hours,
+                opportunity_cost_per_capital_hour=Decimal("0"),
+                event_started=bool(event_start is not None and now >= event_start),
+            ),
+            contracts=position.contracts,
+        )
+
+        row = {
+            "ticker": ticker,
+            "action": exit_decision.action,
+            "reason": exit_decision.reason,
+            "raw_bid": str(raw_bid),
+            "simulated_exit_bid": str(executable_bid),
+            "available": int(available),
+            "fee_total": str(fee_total),
+            "hold_value": str(exit_decision.hold_value) if exit_decision.hold_value is not None else None,
+            "exit_value": str(exit_decision.exit_value) if exit_decision.exit_value is not None else None,
+            "opportunity_cost": str(exit_decision.opportunity_cost),
+            "fair_age_seconds": fair_age,
+        }
+
+        if exit_decision.action in {"SELL", "EXIT_THESIS"}:
+            sold = portfolio.sell(
+                ticker,
+                executable_bid,
+                int(available),
+                fee_per_contract=fee_per_contract,
+                reason=exit_decision.reason,
+            )
+            row["executed"] = sold
+            if not sold:
+                row["reason"] = f"{exit_decision.reason}:insufficient_exit_depth_or_risk_check"
+        elif exit_decision.action == "REDUCE":
+            qty = max(1, int(position.contracts * float(exit_decision.qty_fraction)))
+            sold = portfolio.sell_partial(
+                ticker,
+                min(qty, position.contracts),
+                executable_bid,
+                int(available),
+                fee_per_contract=fee_per_contract,
+                reason=exit_decision.reason,
+            )
+            row["executed"] = sold
+            row["contracts_requested"] = qty
+        else:
+            row["executed"] = False
+        decisions.append(row)
+
+    return decisions
 
 
 def _settle_finished_positions(portfolio, client):
@@ -357,6 +545,14 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         allow_refresh=allow_fair_refresh,
         refresh_interval_seconds=refresh_interval_seconds,
     )
+    position_management = _manage_open_positions(
+        portfolio,
+        client,
+        fair,
+        now=started_at,
+        slippage_per_contract=slippage_per_contract,
+    )
+
     fair_tickers = {ticker for ticker, _side in fair.probabilities}
     candidates = scan_public(
         client,
@@ -373,13 +569,23 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
             continue
         quote_ages[(c.ticker, c.side)] = (decision_at - c.observed_at).total_seconds()
 
+    engine_contexts = {}
+    for key, value in (fair.contexts or {}).items():
+        enriched = dict(value or {})
+        enriched["decision_at"] = decision_at.isoformat().replace("+00:00", "Z")
+        enriched["fair_source"] = fair.sources.get(key, enriched.get("fair_source"))
+        enriched["fair_age_seconds"] = fair.ages.get(key, fair.ages.get(key[0]))
+        enriched.setdefault("lane", "value_edge")
+        enriched.setdefault("lane_version", "value_edge_v1")
+        engine_contexts[key] = enriched
+
     engine = PaperEngine(portfolio=portfolio, min_net_edge=Decimal(str(min_net_edge)))
     result = engine.on_candidates(
         candidates,
         probabilities=fair.probabilities,
         quote_ages=quote_ages,
         event_data_ages=fair.ages,
-        contexts=fair.contexts,
+        contexts=engine_contexts,
         fee_per_contract=fee_per_contract,
         slippage_per_contract=slippage_per_contract,
         max_quote_age_seconds=max_quote_age_seconds,
@@ -422,6 +628,7 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
             "filled": result["paper_fills"],
         },
         "settlements": settled,
+        "position_management": position_management,
         "portfolio": result["portfolio"],
         "decisions": engine.decisions,
     }
