@@ -206,7 +206,11 @@ PRIMARY_MARKET = {
 # spreads/totals remain event-specific. AutoTrader rotates a bounded request
 # budget across the candidate universe rather than repeatedly starving the same
 # lower-priority sports.
-BULK_FEATURED_KEY_FOR_TYPE = {"h2h": "h2h"}
+BULK_FEATURED_KEY_FOR_TYPE = {
+    "h2h": "h2h",
+    "spread": "spreads",
+    "total": "totals",
+}
 
 ODDS_MARKETS_FOR_TYPE = {
     "h2h": "h2h",
