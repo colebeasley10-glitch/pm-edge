@@ -174,6 +174,18 @@ class RestRecorder:
                     )
             self._last_metadata_at = cycle_started
 
+        structural_groups = 0
+        try:
+            normalized_all = [normalize_market(raw) for raw in raw_markets]
+            structural_groups = self.store.record_structural_groups(
+                normalized_all, received_at=market_received
+            )
+        except Exception as exc:
+            self.store.quality_event(
+                "structural_group_write_error",
+                detail={"error": f"{type(exc).__name__}: {exc}"},
+            )
+
         top_rows = 0
         maker_observations = 0
         for raw in hot_raw:
@@ -281,6 +293,7 @@ class RestRecorder:
             "hot_markets": len(hot_raw),
             "top_rows": top_rows,
             "maker_observations": maker_observations,
+            "structural_groups_logged": structural_groups,
             "metadata_changes": meta_changes,
             "weather_markets_logged": weather_markets,
             "full_snapshots": snapshots,
