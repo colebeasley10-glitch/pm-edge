@@ -151,6 +151,7 @@ class RestRecorder:
         )
         meta_changes = 0
         weather_markets = 0
+        weather_samples = []
         if metadata_due:
             for raw in raw_markets:
                 try:
@@ -161,11 +162,17 @@ class RestRecorder:
                             fee_schedule_id=self.fee_schedule_id,
                         )
                     )
-                    weather_markets += int(
-                        self.store.record_weather_market(
-                            normalize_market(raw), received_at=market_received
-                        )
+                    normalized_weather = normalize_market(raw)
+                    recorded_weather = self.store.record_weather_market(
+                        normalized_weather, received_at=market_received
                     )
+                    weather_markets += int(recorded_weather)
+                    if recorded_weather and len(weather_samples) < 8:
+                        weather_samples.append({
+                            "ticker": normalized_weather.get("ticker"),
+                            "event_ticker": normalized_weather.get("event_ticker"),
+                            "title": normalized_weather.get("title"),
+                        })
                 except Exception as exc:
                     self.store.quality_event(
                         "metadata_write_error",
@@ -296,6 +303,7 @@ class RestRecorder:
             "structural_groups_logged": structural_groups,
             "metadata_changes": meta_changes,
             "weather_markets_logged": weather_markets,
+            "weather_samples": weather_samples,
             "full_snapshots": snapshots,
             "trades_inserted": trades_inserted,
             "point_in_time_audit": audit,
