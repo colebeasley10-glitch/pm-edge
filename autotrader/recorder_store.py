@@ -969,6 +969,29 @@ class RecorderStore:
             ).fetchall()
         return [dict(row) for row in rows]
 
+    def latest_timestamp(self, table: str, column: str):
+        allowed = {
+            ("markets_meta", "received_at"),
+            ("weather_market_observations", "received_at"),
+            ("audit_runs", "completed_at"),
+        }
+        if (table, column) not in allowed:
+            raise ValueError("Unsupported recorder timestamp lookup")
+        with self.connect() as con:
+            row = con.execute(
+                f"SELECT MAX({column}) AS ts FROM {table}"
+            ).fetchone()
+        value = row["ts"] if row else None
+        if not value:
+            return None
+        try:
+            dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt.astimezone(timezone.utc)
+        except Exception:
+            return None
+
     def storage_bytes(self) -> dict:
         out = {"db": 0, "wal": 0, "shm": 0, "total": 0}
         for key, suffix in (("db", ""), ("wal", "-wal"), ("shm", "-shm")):
