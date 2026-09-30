@@ -146,15 +146,20 @@ class RestRecorder:
             self._last_metadata_at = cycle_started
 
         top_rows = 0
+        maker_observations = 0
         for raw in hot_raw:
             try:
+                normalized = normalize_market(raw)
                 self.store.record_top(
-                    normalize_market(raw),
+                    normalized,
                     received_at=market_received,
                     processed_at=self.clock().astimezone(timezone.utc),
                     origin="rest_market_list",
                 )
                 top_rows += 1
+                maker_observations += self.store.record_maker_observations(
+                    normalized, received_at=market_received
+                )
             except Exception as exc:
                 self.store.quality_event(
                     "top_write_error",
@@ -243,6 +248,7 @@ class RestRecorder:
             "open_markets": len(raw_markets),
             "hot_markets": len(hot_raw),
             "top_rows": top_rows,
+            "maker_observations": maker_observations,
             "metadata_changes": meta_changes,
             "full_snapshots": snapshots,
             "trades_inserted": trades_inserted,
