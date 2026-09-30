@@ -707,10 +707,14 @@ def _paper_status(state_path, runs_path):
             "AUTOTRADER_RECORDER_DB", "/data/autotrader-recorder.sqlite3"
         )
         try:
+            recorder_store = RecorderStore(recorder_path)
             recorder_status = {
                 "enabled": True,
                 "db_path": recorder_path,
-                "counts": RecorderStore(recorder_path).counts(),
+                "counts": recorder_store.counts(),
+                "storage_bytes": recorder_store.storage_bytes(),
+                "maker_probe_summary": recorder_store.maker_probe_summary(),
+                "weather_calibration": recorder_store.weather_calibration_summary(),
             }
         except Exception as exc:
             recorder_status = {
