@@ -403,6 +403,9 @@ def _refresh_local_fair_values(*, ledger_path, refresh_state_path, now,
         "PM_EDGE_MAX_ODDS_REFRESH_PER_RUN": os.environ.get("AUTOTRADER_MAX_ODDS_REFRESH_PER_RUN", "2"),
         "PM_EDGE_MAX_BULK_SPORTS_PER_RUN": os.environ.get("AUTOTRADER_MAX_BULK_SPORTS_PER_RUN", "1"),
         "PM_EDGE_MAX_MARKETS": os.environ.get("AUTOTRADER_FAIR_REFRESH_MAX_MARKETS", "1500"),
+        "PM_EDGE_MAX_FAIR_TTL_SECONDS": os.environ.get(
+            "AUTOTRADER_FAIR_MAX_AGE_SECONDS", "2100"
+        ),
         "PM_EDGE_PREGAME_ONLY": "1",
         "PM_EDGE_REJECT_PUSHABLE_LINES": "1",
         "PM_EDGE_PREGAME_BUFFER_SECONDS": "300",
