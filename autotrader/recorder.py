@@ -837,6 +837,7 @@ def _reset_legacy_recorder_if_needed(db_path: str) -> dict:
         return out
 
     marker_value = None
+    legacy_plain_rows = False
     try:
         con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=5)
         try:
@@ -844,12 +845,23 @@ def _reset_legacy_recorder_if_needed(db_path: str) -> dict:
                 "SELECT value FROM schema_meta WHERE key='raw_payload_format_version'"
             ).fetchone()
             marker_value = row[0] if row else None
+            # The format marker may have been written before the one-time reset
+            # code was deployed. Inspect actual legacy payload rows as the source
+            # of truth so an oversized mixed-format DB cannot evade migration.
+            try:
+                legacy_plain_rows = con.execute(
+                    """SELECT 1 FROM markets_meta
+                       WHERE raw_json NOT LIKE 'zlib64:%' LIMIT 1"""
+                ).fetchone() is not None
+            except sqlite3.Error:
+                legacy_plain_rows = False
         finally:
             con.close()
     except Exception:
         marker_value = None
+        legacy_plain_rows = True
 
-    if marker_value == "zlib64-v1":
+    if marker_value == "zlib64-v1" and not legacy_plain_rows:
         return out
 
     for suffix in ("", "-wal", "-shm"):
