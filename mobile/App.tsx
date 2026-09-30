@@ -1683,7 +1683,7 @@ export default function App() {
       setAutoTraderError(e instanceof Error ? e.message : "Unable to trigger paper scan");
       setAutoTraderLoading(false);
     }
-  }, [refreshAutoTrader, refreshWhalePaper]);
+  }, [refreshAutoTrader]);
 
   const refreshWhalePaper = useCallback(async () => {
     setWhalePaperLoading(true);
@@ -1747,7 +1747,7 @@ export default function App() {
     } finally {
       setRefreshing(false);
     }
-  }, [refreshAutoTrader]);
+  }, [refreshAutoTrader, refreshWhalePaper]);
 
   const handleReviewUnavailable = useCallback((signal: Signal) => {
     removeSignalFromLists(signal);
