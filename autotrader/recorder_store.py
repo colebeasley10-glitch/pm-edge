@@ -935,6 +935,68 @@ class RecorderStore:
             "marked_30m": marked_30m,
         }
 
+    def maker_probe_summary(self) -> dict:
+        """Summarize observation-only maker fill realism and adverse selection."""
+        with self.connect() as con:
+            totals = {
+                str(row["status"]): int(row["n"])
+                for row in con.execute(
+                    """SELECT status,COUNT(*) AS n FROM maker_probe_orders
+                       GROUP BY status"""
+                ).fetchall()
+            }
+            fills = con.execute(
+                """SELECT side,price,mid_at_place,mid_5m,mid_30m
+                   FROM maker_probe_orders
+                   WHERE status='observed_fill'"""
+            ).fetchall()
+
+        def side_mid(yes_mid, side):
+            if yes_mid is None:
+                return None
+            value = float(yes_mid)
+            return value if str(side).upper() == "YES" else 1.0 - value
+
+        drifts_5m, drifts_30m = [], []
+        improvements = []
+        for row in fills:
+            entry = float(row["price"])
+            initial = side_mid(row["mid_at_place"], row["side"])
+            mark5 = side_mid(row["mid_5m"], row["side"])
+            mark30 = side_mid(row["mid_30m"], row["side"])
+            if initial is not None:
+                improvements.append(entry - initial)
+            if mark5 is not None:
+                drifts_5m.append(mark5 - entry)
+            if mark30 is not None:
+                drifts_30m.append(mark30 - entry)
+
+        resolved = totals.get("observed_fill", 0) + totals.get("expired", 0)
+        fill_rate = (
+            totals.get("observed_fill", 0) / resolved if resolved else None
+        )
+        return {
+            "pending": totals.get("pending", 0),
+            "observed_fills": totals.get("observed_fill", 0),
+            "expired": totals.get("expired", 0),
+            "resolved": resolved,
+            "fill_rate_resolved": fill_rate,
+            "avg_entry_vs_mid": (
+                sum(improvements) / len(improvements) if improvements else None
+            ),
+            "avg_side_mid_drift_5m": (
+                sum(drifts_5m) / len(drifts_5m) if drifts_5m else None
+            ),
+            "avg_side_mid_drift_30m": (
+                sum(drifts_30m) / len(drifts_30m) if drifts_30m else None
+            ),
+            "marked_5m": len(drifts_5m),
+            "marked_30m": len(drifts_30m),
+            "interpretation": (
+                "negative side-mid drift after fills indicates adverse selection"
+            ),
+        }
+
     def record_weather_settlements(self, rows: list[dict], *, observed_at) -> int:
         """Persist finalized weather outcomes for calibration of shadow forecasts."""
         if not rows:
