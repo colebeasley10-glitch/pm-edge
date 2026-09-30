@@ -211,6 +211,35 @@ export type AutoTraderStatus = {
   blotter: Array<Record<string, any>>;
   last_run?: AutoTraderRun | null;
   recent_runs: AutoTraderRun[];
+  recorder?: {
+    enabled?: boolean;
+    db_path?: string;
+    counts?: Record<string, number>;
+    storage_bytes?: {
+      db?: number;
+      wal?: number;
+      shm?: number;
+      total?: number;
+    };
+    maker_probe_summary?: {
+      pending?: number;
+      observed_fills?: number;
+      expired?: number;
+      resolved?: number;
+      fill_rate_resolved?: number | null;
+      avg_entry_vs_mid?: number | null;
+      avg_side_mid_drift_5m?: number | null;
+      avg_side_mid_drift_30m?: number | null;
+      marked_5m?: number;
+      marked_30m?: number;
+    };
+    weather_calibration?: {
+      n?: number;
+      brier?: number | null;
+      log_loss?: number | null;
+    };
+    error?: string;
+  };
 };
 
 export type AutoTraderScanResponse = {
