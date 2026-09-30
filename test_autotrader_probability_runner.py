@@ -7,7 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from autotrader.paper_runner import _refresh_local_fair_values, _settle_finished_positions, run_once
+from autotrader.paper_runner import _load_fair_values, _refresh_local_fair_values, _settle_finished_positions, run_once
 from autotrader.probability import load_pm_edge_api, load_pm_edge_ledger
 from autotrader.storage import load_portfolio
 
@@ -154,6 +154,45 @@ class ProbabilityRunnerTests(unittest.TestCase):
             self.assertEqual(child_env["PM_EDGE_MODE"], "paper")
             self.assertEqual(child_env["PM_EDGE_ORDER_SUBMISSION_ENABLED"], "0")
             self.assertEqual(child_env["PUSHOVER_USER_KEY"], "")
+
+    def test_refresh_reloads_against_post_refresh_clock(self):
+        start = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
+        produced = start + timedelta(seconds=30)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            ledger = root / "ledger.csv"
+            refresh_state = root / "refresh.json"
+
+            def fake_refresh(**kwargs):
+                write_ledger(
+                    ledger,
+                    produced,
+                    "0.70",
+                    commence=start + timedelta(hours=4),
+                )
+                return {"attempted": True, "status": "ran"}
+
+            times = iter([produced])
+            with patch(
+                "autotrader.paper_runner._refresh_local_fair_values",
+                side_effect=fake_refresh,
+            ):
+                snap, provider, refresh = _load_fair_values(
+                    api_base="",
+                    api_token="",
+                    ledger_path=ledger,
+                    now=start,
+                    max_age_seconds=300,
+                    refresh_state_path=refresh_state,
+                    allow_refresh=True,
+                    refresh_interval_seconds=60,
+                    clock=lambda: next(times),
+                )
+
+            self.assertEqual(provider, "autotrader_local_pm_edge_refresh")
+            self.assertEqual(refresh["status"], "ran")
+            self.assertIn(("KXTEST", "YES"), snap.probabilities)
+            self.assertEqual(snap.diagnostics["rejected_future"], 0)
 
     def test_changed_odds_key_bypasses_refresh_cooldown(self):
         now = datetime(2026, 9, 29, 14, 0, tzinfo=timezone.utc)
