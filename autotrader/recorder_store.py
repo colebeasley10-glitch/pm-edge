@@ -762,6 +762,120 @@ class RecorderStore:
             )
         return True
 
+    def evaluate_maker_probes(self, *, now=None) -> dict:
+        """Resolve hypothetical maker probes from the observed trade tape only."""
+        now_iso = utc_iso(now)
+        resolved = 0
+        filled = 0
+        expired = 0
+        with self.connect() as con:
+            probes = con.execute(
+                """SELECT * FROM maker_probe_orders
+                   WHERE status='pending' AND placed_at<=?
+                   ORDER BY placed_at LIMIT 500""",
+                (now_iso,),
+            ).fetchall()
+            for probe in probes:
+                ticker = probe["market_ticker"]
+                side = probe["side"]
+                price_col = "yes_price" if side == "YES" else "no_price"
+                trades = con.execute(
+                    f"""SELECT trade_id,received_at,{price_col} AS px,count
+                        FROM trades
+                        WHERE market_ticker=? AND received_at>=?
+                          AND received_at<=? AND {price_col} IS NOT NULL
+                        ORDER BY received_at,trade_id""",
+                    (ticker, probe["placed_at"], min(now_iso, probe["expires_at"])),
+                ).fetchall()
+                queue = float(probe["queue_ahead"] or 0)
+                at_level = 0.0
+                fill_row = None
+                fill_reason = None
+                for tr in trades:
+                    px = float(tr["px"])
+                    qty = float(tr["count"] or 0)
+                    if px < float(probe["price"]):
+                        fill_row = tr
+                        fill_reason = "traded_through"
+                        break
+                    if abs(px - float(probe["price"])) < 1e-9:
+                        at_level += qty
+                        if at_level > queue:
+                            fill_row = tr
+                            fill_reason = "queue_cleared_at_level"
+                            break
+                if fill_row is not None:
+                    con.execute(
+                        """UPDATE maker_probe_orders
+                           SET status='observed_fill',resolved_at=?,fill_at=?,
+                               fill_price=?,fill_reason=?,traded_at_level=?
+                           WHERE probe_id=?""",
+                        (
+                            now_iso, fill_row["received_at"], float(probe["price"]),
+                            fill_reason, at_level, probe["probe_id"],
+                        ),
+                    )
+                    resolved += 1
+                    filled += 1
+                elif now_iso >= probe["expires_at"]:
+                    con.execute(
+                        """UPDATE maker_probe_orders
+                           SET status='expired',resolved_at=?,traded_at_level=?
+                           WHERE probe_id=?""",
+                        (now_iso, at_level, probe["probe_id"]),
+                    )
+                    resolved += 1
+                    expired += 1
+
+            # Add coarse post-fill marks from the first observed top-of-book at
+            # or after +5m / +30m. REST cadence is not precise enough for a 1m mark.
+            fills = con.execute(
+                """SELECT probe_id,market_ticker,fill_at,mid_5m,mid_30m
+                   FROM maker_probe_orders
+                   WHERE status='observed_fill'
+                     AND (mid_5m IS NULL OR mid_30m IS NULL)
+                   ORDER BY fill_at LIMIT 500"""
+            ).fetchall()
+            marked_5m = 0
+            marked_30m = 0
+            for row in fills:
+                try:
+                    fill_dt = datetime.fromisoformat(str(row["fill_at"]).replace("Z","+00:00"))
+                except Exception:
+                    continue
+                updates = {}
+                for label, minutes in (("mid_5m", 5), ("mid_30m", 30)):
+                    if row[label] is not None:
+                        continue
+                    target = utc_iso(fill_dt + timedelta(minutes=minutes))
+                    if now_iso < target:
+                        continue
+                    mark = con.execute(
+                        """SELECT mid FROM ob_top
+                           WHERE market_ticker=? AND valid=1 AND received_at>=?
+                           ORDER BY received_at ASC LIMIT 1""",
+                        (row["market_ticker"], target),
+                    ).fetchone()
+                    if mark and mark["mid"] is not None:
+                        updates[label] = float(mark["mid"])
+                if updates:
+                    sets = ",".join(f"{k}=?" for k in updates)
+                    con.execute(
+                        f"UPDATE maker_probe_orders SET {sets} WHERE probe_id=?",
+                        tuple(updates.values()) + (row["probe_id"],),
+                    )
+                    marked_5m += int("mid_5m" in updates)
+                    marked_30m += int("mid_30m" in updates)
+
+        return {
+            "pending_checked": len(probes),
+            "resolved": resolved,
+            "observed_fills": filled,
+            "expired": expired,
+            "marked_5m": marked_5m,
+            "marked_30m": marked_30m,
+        }
+
     def record_weather_settlements(self, rows: list[dict], *, observed_at) -> int:
         """Persist finalized weather outcomes for calibration of shadow forecasts."""
         if not rows:
