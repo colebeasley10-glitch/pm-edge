@@ -670,6 +670,7 @@ def run_once(
     max_flow_age_seconds=75,
     min_seconds_to_close=60,
     now=None,
+    allow_new_entries=True,
 ):
     _assert_no_kalshi_write_credentials()
     now = (now or _utcnow()).astimezone(timezone.utc)
@@ -678,14 +679,18 @@ def run_once(
     state = _load_runner_state(runner_state_path)
 
     settlements = _settle_finished_positions(portfolio, client)
-    try:
-        trades = whale_edge._public_trades(
-            min_ts=int((now - timedelta(minutes=max(1, int(lookback_minutes)))).timestamp())
-        )
-        api_error = None
-    except Exception as exc:
+    if allow_new_entries:
+        try:
+            trades = whale_edge._public_trades(
+                min_ts=int((now - timedelta(minutes=max(1, int(lookback_minutes)))).timestamp())
+            )
+            api_error = None
+        except Exception as exc:
+            trades = []
+            api_error = f"{type(exc).__name__}: {str(exc)[:240]}"
+    else:
         trades = []
-        api_error = f"{type(exc).__name__}: {str(exc)[:240]}"
+        api_error = None
 
     quick = str(mode).lower() == "quick"
     strategy = "quick_whale" if quick else "whale_flow"
@@ -710,7 +715,7 @@ def run_once(
         mode=mode,
         max_flow_age_seconds=max_flow_age_seconds,
         min_seconds_to_close=min_seconds_to_close,
-    ) if api_error is None else []
+    ) if api_error is None and allow_new_entries else []
 
     for trade in trades:
         tid = str(trade.get("trade_id") or "")
@@ -729,6 +734,7 @@ def run_once(
     run = {
         "observed_at": now.isoformat().replace("+00:00", "Z"),
         "strategy": strategy,
+        "new_entries_enabled": bool(allow_new_entries),
         "public_trades": len(trades),
         "fresh_trades": len(fresh),
         "qualified_flows": len(flows),
@@ -740,7 +746,7 @@ def run_once(
         "rate_limited": rate_limited,
         "credit_usage": {
             "paid_odds_api_calls": 0,
-            "kalshi_public_trade_tape_calls": 1 if api_error is None else 0,
+            "kalshi_public_trade_tape_calls": 1 if api_error is None and allow_new_entries else 0,
         },
         "portfolio": portfolio.snapshot(),
         "decisions": all_decisions[-100:],
@@ -753,6 +759,7 @@ def run_once(
     print(prefix + " " + json.dumps({
         "observed_at": run["observed_at"],
         "strategy": strategy,
+        "new_entries_enabled": bool(allow_new_entries),
         "public_trades": run["public_trades"],
         "fresh_trades": run["fresh_trades"],
         "qualified_flows": run["qualified_flows"],
