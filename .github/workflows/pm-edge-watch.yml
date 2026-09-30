@@ -140,31 +140,9 @@ jobs:
           PM_EDGE_OVERNIGHT_MISSED_RETENTION_DAYS: "14"
         run: python pm_edge_runner_v28.py
 
-      - name: Run free Whale Flow scanner
-        if: always()
-        timeout-minutes: 3
-        continue-on-error: true
-        env:
-          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
-          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
-          STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
-          PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
-          PM_EDGE_WHALE_POLL_MINUTES: "30"
-          PM_EDGE_WHALE_LOOKBACK_MINUTES: "45"
-          PM_EDGE_WHALE_SINGLE_MIN_CONTRACTS: "250"
-          PM_EDGE_WHALE_SINGLE_MIN_NOTIONAL: "100"
-          PM_EDGE_WHALE_AGG_MIN_CONTRACTS: "600"
-          PM_EDGE_WHALE_AGG_MIN_NOTIONAL: "250"
-          PM_EDGE_WHALE_AGG_MIN_TRADES: "2"
-          PM_EDGE_WHALE_MIN_REFERENCE_CENTS: "15"
-          PM_EDGE_WHALE_MAX_REFERENCE_CENTS: "85"
-          PM_EDGE_WHALE_MAX_REST_GAP_CENTS: "4"
-          PM_EDGE_WHALE_BETTER_BY_CENTS: "1"
-          PM_EDGE_WHALE_MODEL_DISAGREE_TOLERANCE: "0.03"
-          PM_EDGE_WHALE_SIGNAL_COOLDOWN_HOURS: "6"
-          PM_EDGE_WHALE_MAX_ALERTS_PER_RUN: "5"
-          PM_EDGE_WHALE_MAX_NON_FOOTBALL_ALERTS_PER_RUN: "2"
-        run: python whale_edge.py
+      # Whale Flow moved to the always-on Railway paper worker.
+      # Keeping it out of this scheduled Actions job avoids duplicate signals
+      # and consumes zero paid sportsbook-odds credits for the Whale lane.
 
       - name: Reconcile PM Edge fills and settlements
         if: always()
