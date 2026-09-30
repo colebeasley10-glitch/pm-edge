@@ -114,13 +114,32 @@ class RestRecorder:
 
     def _targeted_weather_markets(self):
         """Discover open temperature markets by Weather series, not global pagination."""
-        try:
-            series_rows = self._api(
-                "GET /series",
-                lambda: self.client.list_series(include_volume=True),
-            )
-        except Exception as exc:
-            return [], [], [{"stage": "series", "error": f"{type(exc).__name__}: {str(exc)[:220]}"}]
+        series_rows = []
+        series_errors = []
+        seen_series = set()
+        for category in ("Climate and Weather", "Climate And Weather", "Weather", "Climate"):
+            try:
+                rows = self._api(
+                    f"GET /series?category={category}",
+                    lambda category=category: self.client.list_series(
+                        category=category, include_volume=True
+                    ),
+                )
+            except Exception as exc:
+                if len(series_errors) < 4:
+                    series_errors.append({
+                        "stage": "series",
+                        "category": category,
+                        "error": f"{type(exc).__name__}: {str(exc)[:220]}",
+                    })
+                continue
+            for row in rows:
+                ticker = str(row.get("ticker") or "").strip()
+                if ticker and ticker not in seen_series:
+                    seen_series.add(ticker)
+                    series_rows.append(row)
+        if not series_rows:
+            return [], [], series_errors or [{"stage": "series", "error": "no_climate_series_found"}]
 
         temperature_series = []
         for row in series_rows:
@@ -150,7 +169,7 @@ class RestRecorder:
         temperature_series = temperature_series[:max_series]
 
         markets = []
-        errors = []
+        errors = list(series_errors)
         for series in temperature_series:
             ticker = str(series.get("ticker") or "").strip()
             if not ticker:
