@@ -44,6 +44,8 @@ class RecorderStore:
             con.execute("PRAGMA journal_mode=WAL")
             con.execute("PRAGMA synchronous=NORMAL")
             con.execute("PRAGMA busy_timeout=30000")
+            con.execute("PRAGMA wal_autocheckpoint=500")
+            con.execute("PRAGMA journal_size_limit=8388608")
             yield con
             con.commit()
         finally:
@@ -894,6 +896,57 @@ class RecorderStore:
             ).fetchall()
         return [dict(row) for row in rows]
 
+    def storage_bytes(self) -> dict:
+        out = {"db": 0, "wal": 0, "shm": 0, "total": 0}
+        for key, suffix in (("db", ""), ("wal", "-wal"), ("shm", "-shm")):
+            try:
+                size = Path(self.path + suffix).stat().st_size
+            except OSError:
+                size = 0
+            out[key] = int(size)
+            out["total"] += int(size)
+        return out
+
+    def enforce_soft_limit(self, *, max_mb=350, now=None) -> dict:
+        """Aggressively prune old telemetry before the 500 MB volume is full."""
+        before = self.storage_bytes()
+        max_bytes = max(50, int(max_mb)) * 1024 * 1024
+        if before["total"] <= max_bytes:
+            return {"triggered": False, "before": before, "after": before, "deleted": {}}
+
+        now_dt = now or datetime.now(timezone.utc)
+        if now_dt.tzinfo is None:
+            now_dt = now_dt.replace(tzinfo=timezone.utc)
+        aggressive = {
+            "ob_top": ("received_at", 3),
+            "ob_snapshots": ("received_at", 3),
+            "trades": ("received_at", 14),
+            "maker_observations": ("received_at", 3),
+            "structural_group_observations": ("received_at", 3),
+            "weather_market_observations": ("received_at", 14),
+            "weather_shadow_fairs": ("received_at", 14),
+            "odds_fetches": ("received_at", 14),
+            "odds_quotes": ("received_at", 14),
+            "fair_snapshots": ("processed_at", 14),
+            "intents": ("created_at", 14),
+            "api_calls": ("received_at", 3),
+            "data_quality_events": ("ts", 14),
+            "audit_runs": ("completed_at", 14),
+            "markets_meta": ("received_at", 30),
+        }
+        deleted = {}
+        with self.connect() as con:
+            for table, (column, days) in aggressive.items():
+                cutoff = utc_iso(now_dt - timedelta(days=days))
+                cur = con.execute(f"DELETE FROM {table} WHERE {column} < ?", (cutoff,))
+                deleted[table] = int(cur.rowcount if cur.rowcount is not None else 0)
+            try:
+                con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            except sqlite3.Error:
+                pass
+        after = self.storage_bytes()
+        return {"triggered": True, "before": before, "after": after, "deleted": deleted}
+
     def prune_retention(self, *, now=None) -> dict:
         """Bound recorder growth on the small Railway volume.
 
@@ -904,6 +957,7 @@ class RecorderStore:
         if now_dt.tzinfo is None:
             now_dt = now_dt.replace(tzinfo=timezone.utc)
         policies = {
+            "markets_meta": ("received_at", 30),
             "ob_top": ("received_at", 14),
             "ob_snapshots": ("received_at", 14),
             "trades": ("received_at", 30),
