@@ -803,7 +803,7 @@ def main():
     parser = argparse.ArgumentParser(description="Isolated paper-only AutoTrader")
     parser.add_argument("--once", action="store_true")
     parser.add_argument("--interval", type=int, default=300)
-    parser.add_argument("--max-markets", type=int, default=1000)
+    parser.add_argument("--max-markets", type=int, default=6000)
     parser.add_argument("--max-orderbooks", type=int, default=30)
     parser.add_argument("--state", default=os.environ.get("AUTOTRADER_STATE", "/data/autotrader-paper.json"))
     parser.add_argument("--runs", default=os.environ.get("AUTOTRADER_RUNS", "/data/autotrader-paper-runs.jsonl"))
