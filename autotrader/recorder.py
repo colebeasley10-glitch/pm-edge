@@ -21,6 +21,7 @@ from datetime import datetime, timedelta, timezone
 from pmedge.kalshi import KalshiPublicClient, normalize_market
 from .collector import PUBLIC_BASE
 from .recorder_store import RecorderStore, utc_iso
+from .weather_shadow import OpenMeteoWeatherShadow, parse_weather_contract
 
 
 def _utcnow():
@@ -71,6 +72,7 @@ class RestRecorder:
         self._last_snapshot_at = None
         self._last_trade_poll_at = None
         self._last_audit_at = None
+        self._weather_shadow = None
         self._stop = threading.Event()
         self._last_result = {}
 
@@ -193,6 +195,41 @@ class RestRecorder:
                 detail={"error": f"{type(exc).__name__}: {exc}"},
             )
 
+        weather_shadow_rows = 0
+        weather_shadow_errors = []
+        if (
+            metadata_due
+            and os.getenv("AUTOTRADER_WEATHER_SHADOW_ENABLED", "1").strip().lower()
+            not in {"0", "false", "no", "off"}
+        ):
+            try:
+                weather_groups = {}
+                for raw in raw_markets:
+                    m = normalize_market(raw)
+                    spec = parse_weather_contract(m)
+                    if spec is not None:
+                        weather_groups.setdefault(spec.event_ticker, []).append(m)
+                if self._weather_shadow is None:
+                    self._weather_shadow = OpenMeteoWeatherShadow()
+                max_events = max(1, int(os.getenv("AUTOTRADER_WEATHER_SHADOW_MAX_EVENTS", "8")))
+                for event_ticker, group in list(weather_groups.items())[:max_events]:
+                    try:
+                        priced = self._weather_shadow.price_group(group)
+                        weather_shadow_rows += self.store.record_weather_shadow_fairs(
+                            priced, received_at=self.clock().astimezone(timezone.utc)
+                        )
+                    except Exception as exc:
+                        if len(weather_shadow_errors) < 5:
+                            weather_shadow_errors.append({
+                                "event_ticker": event_ticker,
+                                "error": f"{type(exc).__name__}: {str(exc)[:220]}",
+                            })
+            except Exception as exc:
+                weather_shadow_errors.append({
+                    "event_ticker": None,
+                    "error": f"{type(exc).__name__}: {str(exc)[:220]}",
+                })
+
         top_rows = 0
         maker_observations = 0
         for raw in hot_raw:
@@ -304,6 +341,8 @@ class RestRecorder:
             "metadata_changes": meta_changes,
             "weather_markets_logged": weather_markets,
             "weather_samples": weather_samples,
+            "weather_shadow_rows": weather_shadow_rows,
+            "weather_shadow_errors": weather_shadow_errors,
             "full_snapshots": snapshots,
             "trades_inserted": trades_inserted,
             "point_in_time_audit": audit,
