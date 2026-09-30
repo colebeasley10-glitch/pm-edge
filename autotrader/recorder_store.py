@@ -753,6 +753,70 @@ class RecorderStore:
             "log_loss": log_loss / n,
         }
 
+    def record_weather_shadow_intents(self, rows: list[dict], *, received_at) -> int:
+        """Log weather opportunities as blocked research intents, never fills."""
+        if not rows:
+            return 0
+        received_at = utc_iso(received_at)
+        inserted = 0
+        with self.connect() as con:
+            for row in rows:
+                side = str(row.get("best_side") or "").upper()
+                edge = _float(row.get("best_gross_edge"))
+                ticker = str(row.get("ticker") or "").strip()
+                if not ticker or side not in {"YES", "NO"} or edge is None or edge <= 0:
+                    continue
+                ask = _float(row.get("yes_ask") if side == "YES" else row.get("no_ask"))
+                raw_id = "|".join([
+                    "weather_shadow_v1", ticker, side, received_at,
+                    str(row.get("p_shadow") or ""),
+                ])
+                intent_id = hashlib.sha256(raw_id.encode("utf-8")).hexdigest()[:24]
+                cur = con.execute(
+                    """INSERT OR IGNORE INTO intents(
+                        intent_id,created_at,lane,lane_version,code_sha,
+                        fill_model_version,book_id,market_ticker,side,action,
+                        fair_id,ob_received_at,exec_style,limit_price,qty,
+                        edge_gross,fees_est,slippage_est,exit_cost_est,sigma,
+                        required_edge,z,p_fill_est,expected_hold_h,ev_est,score,
+                        status,reject_reason,reject_detail,allocator_run_id
+                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (
+                        intent_id,
+                        received_at,
+                        "weather",
+                        "weather_shadow_v1",
+                        None,
+                        "observation_only_v1",
+                        "research:weather",
+                        ticker,
+                        side,
+                        "OPEN",
+                        None,
+                        received_at,
+                        "taker_observation",
+                        ask,
+                        None,
+                        edge,
+                        None,
+                        None,
+                        None,
+                        _float(row.get("sampling_sigma")),
+                        None,
+                        None,
+                        1.0,
+                        None,
+                        None,
+                        None,
+                        "shadow_blocked",
+                        "calibration_required",
+                        str(row.get("promotion_blocker") or "")[:500],
+                        None,
+                    ),
+                )
+                inserted += int(cur.rowcount > 0)
+        return inserted
+
     def record_weather_shadow_edges(self, rows: list[dict], *, received_at) -> int:
         if not rows:
             return 0
