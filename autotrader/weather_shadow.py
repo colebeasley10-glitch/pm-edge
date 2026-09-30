@@ -121,6 +121,18 @@ def _matches(value: float, contract: WeatherContract) -> bool:
     return True
 
 
+def settlement_source_hint(market: dict) -> str:
+    text = " ".join([
+        str(market.get("rules_primary") or ""),
+        str(market.get("rules_secondary") or ""),
+    ]).lower()
+    if "national weather service" in text or "climatological report" in text:
+        return "nws_climate_report"
+    if "weather company" in text or "weather.com" in text:
+        return "the_weather_company"
+    return "unknown"
+
+
 class OpenMeteoWeatherShadow:
     GEOCODE = "https://geocoding-api.open-meteo.com/v1/search"
     ENSEMBLE = "https://ensemble-api.open-meteo.com/v1/ensemble"
@@ -210,6 +222,34 @@ class OpenMeteoWeatherShadow:
             # Sampling uncertainty only; model/calibration error is intentionally
             # NOT claimed solved and is recorded separately as a promotion blocker.
             sampling_sigma = math.sqrt(max(0.0, p * (1.0 - p) / len(values)))
+            source_market = next(
+                (m for m in markets if str(m.get("ticker") or "") == c.ticker),
+                {},
+            )
+            yes_bid = source_market.get("yes_bid")
+            yes_ask = source_market.get("yes_ask")
+            no_bid = source_market.get("no_bid")
+            no_ask = source_market.get("no_ask")
+            try:
+                yes_bid = float(yes_bid) if yes_bid is not None else None
+                yes_ask = float(yes_ask) if yes_ask is not None else None
+                no_bid = float(no_bid) if no_bid is not None else None
+                no_ask = float(no_ask) if no_ask is not None else None
+            except (TypeError, ValueError):
+                yes_bid = yes_ask = no_bid = no_ask = None
+
+            yes_gross_edge = (
+                p - yes_ask if yes_ask is not None and 0 < yes_ask < 1 else None
+            )
+            no_gross_edge = (
+                (1.0 - p) - no_ask if no_ask is not None and 0 < no_ask < 1 else None
+            )
+            best_side = None
+            best_gross_edge = None
+            for side, edge in (("YES", yes_gross_edge), ("NO", no_gross_edge)):
+                if edge is not None and (best_gross_edge is None or edge > best_gross_edge):
+                    best_side, best_gross_edge = side, edge
+
             out.append({
                 "ticker": c.ticker,
                 "event_ticker": c.event_ticker,
@@ -227,6 +267,15 @@ class OpenMeteoWeatherShadow:
                 "timezone": geo.get("timezone"),
                 "model": self.model,
                 "rounding_assumption": "nearest_integer_half_up",
+                "settlement_source_hint": settlement_source_hint(source_market),
+                "yes_bid": yes_bid,
+                "yes_ask": yes_ask,
+                "no_bid": no_bid,
+                "no_ask": no_ask,
+                "yes_gross_edge": yes_gross_edge,
+                "no_gross_edge": no_gross_edge,
+                "best_side": best_side,
+                "best_gross_edge": best_gross_edge,
                 "promotion_blocker": "requires station/source mapping and empirical calibration",
             })
         return out
