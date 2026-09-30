@@ -30,6 +30,7 @@ from .recorder_store import RecorderStore
 from .exit_engine import ExitInputs, evaluate_exit
 from .fees import prediction_fee
 from .thesis import PositionThesis
+from .learning import update_learning_state, load_learning_state
 
 
 def _utcnow():
@@ -548,7 +549,8 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
              max_quote_age_seconds=5, min_net_edge="0.05",
              fair_api_base=None, fair_api_token=None, now=None, clock=None,
              refresh_state_path="/data/autotrader-fair-refresh.json",
-             allow_fair_refresh=False, refresh_interval_seconds=1800):
+             allow_fair_refresh=False, refresh_interval_seconds=1800,
+             learning_state_path=None, recorder_path=None):
     fixed_now = now
     clock = clock or ((lambda: fixed_now) if fixed_now is not None else _utcnow)
     started_at = clock().astimezone(timezone.utc)
@@ -687,6 +689,53 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         "portfolio": result["portfolio"],
         "decisions": engine.decisions,
     }
+    if learning_state_path:
+        extra_sources = []
+        for lane, lane_runs, lane_state in (
+            (
+                "whale_flow",
+                os.environ.get("WHALE_PAPER_RUNS", "/data/whale-paper-runs.jsonl"),
+                os.environ.get("WHALE_PAPER_PORTFOLIO_STATE", "/data/whale-paper-portfolio.json"),
+            ),
+            (
+                "quick_whale",
+                os.environ.get("WHALE_QUICK_RUNS", "/data/quick-whale-paper-runs.jsonl"),
+                os.environ.get("WHALE_QUICK_PORTFOLIO_STATE", "/data/quick-whale-paper-portfolio.json"),
+            ),
+        ):
+            try:
+                if Path(lane_runs).exists() or Path(lane_state).exists():
+                    extra_sources.append({
+                        "lane": lane,
+                        "runs_path": lane_runs,
+                        "portfolio": load_portfolio(lane_state),
+                    })
+            except Exception:
+                continue
+        try:
+            learning = update_learning_state(
+                runs_path=runs_path,
+                portfolio=engine.portfolio,
+                state_path=learning_state_path,
+                production_min_net_edge=min_net_edge,
+                recorder_path=recorder_path,
+                current_run=run,
+                extra_sources=extra_sources,
+            )
+            run["learning"] = {
+                "status": learning.get("status"),
+                "production_rules_unchanged": True,
+                "settled_trades": (learning.get("sample") or {}).get("settled_trades", 0),
+                "clv_samples": (learning.get("sample") or {}).get("clv_samples", 0),
+                "challenger": learning.get("challenger"),
+            }
+        except Exception as exc:
+            run["learning"] = {
+                "status": "error",
+                "production_rules_unchanged": True,
+                "error": f"{type(exc).__name__}: {str(exc)[:240]}",
+            }
+
     target = Path(runs_path)
     target.parent.mkdir(parents=True, exist_ok=True)
     with target.open("a", encoding="utf-8") as handle:
@@ -809,6 +858,9 @@ def _paper_status(state_path, runs_path, *, market_client=None, market_cache=Non
         "last_run": last_run,
         "recent_runs": runs[-20:],
         "recorder": recorder_status,
+        "learning": load_learning_state(
+            os.environ.get("AUTOTRADER_LEARNING_STATE", "/data/autotrader-learning.json")
+        ),
     }
 
 
@@ -888,6 +940,13 @@ def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, p
                         quick_whale_client,
                         strategy="quick_whale",
                         scan_interval_seconds=quick_whale_scan_interval_seconds,
+                    ),
+                )
+            if parsed.path == "/v1/learning-status":
+                return self._send(
+                    200,
+                    load_learning_state(
+                        os.environ.get("AUTOTRADER_LEARNING_STATE", "/data/autotrader-learning.json")
                     ),
                 )
             if parsed.path == "/v1/runs":
@@ -1144,6 +1203,12 @@ def main():
                     refresh_state_path=args.refresh_state,
                     allow_fair_refresh=args.allow_fair_refresh,
                     refresh_interval_seconds=args.refresh_interval,
+                    learning_state_path=os.environ.get(
+                        "AUTOTRADER_LEARNING_STATE", "/data/autotrader-learning.json"
+                    ),
+                    recorder_path=os.environ.get(
+                        "AUTOTRADER_RECORDER_DB", "/data/autotrader-recorder.sqlite3"
+                    ),
                 )
             print(json.dumps({k: v for k, v in result.items() if k != "decisions"}), flush=True)
         except Exception as exc:
