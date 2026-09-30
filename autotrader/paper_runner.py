@@ -482,6 +482,20 @@ def _load_fair_values(*, api_base, api_token, ledger_path, now, max_age_seconds,
                       refresh_interval_seconds=1800):
     api_error = None
     api_diagnostics = {}
+
+    # Prefer the AutoTrader-owned local sportsbook ledger when it is fresh.
+    # It is generated against the same current Kalshi universe used by this
+    # worker. The shared mobile API can legitimately contain fresh timestamps
+    # for signals tied to markets that are no longer open, which is unsuitable
+    # as an execution universe for AutoTrader.
+    local = load_pm_edge_ledger(
+        ledger_path, now=now, max_age_seconds=max_age_seconds,
+    )
+    if local.probabilities:
+        return local, "pm_edge_local_ledger", {
+            "attempted": False, "reason": "local_fresh"
+        }
+
     if api_base and api_token:
         try:
             snap = load_pm_edge_api(
@@ -490,15 +504,13 @@ def _load_fair_values(*, api_base, api_token, ledger_path, now, max_age_seconds,
             )
             api_diagnostics = getattr(snap, "diagnostics", {}) or {}
             if snap.probabilities:
-                return snap, "pm_edge_mobile_api", {"attempted": False, "reason": "upstream_fresh", "api_diagnostics": api_diagnostics}
+                return snap, "pm_edge_mobile_api", {
+                    "attempted": False,
+                    "reason": "upstream_fresh",
+                    "api_diagnostics": api_diagnostics,
+                }
         except Exception as exc:
             api_error = f"{type(exc).__name__}: {exc}"
-
-    local = load_pm_edge_ledger(
-        ledger_path, now=now, max_age_seconds=max_age_seconds,
-    )
-    if local.probabilities:
-        return local, "pm_edge_local_ledger", {"attempted": False, "reason": "local_fresh"}
 
     refresh = {"attempted": False, "reason": "refresh_disabled"}
     if allow_refresh and refresh_state_path:
