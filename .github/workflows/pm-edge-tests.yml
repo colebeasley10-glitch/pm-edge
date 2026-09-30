@@ -84,6 +84,9 @@ jobs:
       - name: Run Whale Edge guard tests
         run: python test_whale_edge.py
 
+      - name: Run Whale paper autopilot tests
+        run: python test_whale_paper_runner.py
+
       - name: Run regression tests
         run: python test_pm_edge_regressions.py
 

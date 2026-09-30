@@ -251,3 +251,78 @@ export type AutoTraderScanResponse = {
   accepted: boolean;
   mode: "paper";
 };
+
+
+export type WhalePaperPosition = {
+  ticker: string;
+  side: "YES" | "NO" | string;
+  contracts: number;
+  entry: string;
+  entry_fee: string;
+  current_bid?: string | null;
+  market_value?: string | null;
+  open_pnl?: string | null;
+  exposure_key?: string | null;
+  market_title?: string | null;
+  market_subtitle?: string | null;
+  side_label?: string | null;
+  event_ticker?: string | null;
+  close_time?: string | null;
+  thesis?: Record<string, any> | null;
+};
+
+export type WhalePaperRun = {
+  observed_at?: string | null;
+  public_trades?: number;
+  fresh_trades?: number;
+  qualified_flows?: number;
+  paper_fills?: number;
+  maker_orders_resting?: number;
+  pending_orders?: number;
+  api_error?: string | null;
+  credit_usage?: {
+    paid_odds_api_calls?: number;
+    kalshi_public_trade_tape_calls?: number;
+  };
+  portfolio?: {
+    cash?: string;
+    equity?: string;
+    realized_pnl?: string;
+    unrealized_pnl?: string;
+    open_positions?: number;
+  };
+  decisions?: Array<Record<string, any>>;
+};
+
+export type WhalePaperStatus = {
+  mode: "paper";
+  strategy: "whale_flow";
+  worker_online: boolean;
+  scan_interval_seconds: number;
+  starting_bankroll: string;
+  credit_policy: {
+    paid_odds_api_calls: number;
+    source: string;
+    monthly_paid_credit_target: number;
+  };
+  portfolio: {
+    cash: string;
+    equity: string;
+    realized_pnl: string;
+    unrealized_pnl: string;
+    open_positions: number;
+  };
+  positions: WhalePaperPosition[];
+  pending_orders: Array<Record<string, any>>;
+  record: string;
+  settled_count: number;
+  blotter: Array<Record<string, any>>;
+  last_run?: WhalePaperRun | null;
+  recent_runs: WhalePaperRun[];
+};
+
+export type WhalePaperScanResponse = {
+  accepted: boolean;
+  mode: "paper";
+  strategy: "whale_flow";
+};
