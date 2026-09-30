@@ -487,9 +487,14 @@ class RecorderStore:
         return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
     def record_market_meta_batch(
-        self, rows: Iterable[dict], *, received_at, fee_schedule_id: str
+        self, rows: Iterable[dict], *, received_at, fee_schedule_id: str,
+        record_versions: bool = False,
     ) -> dict:
-        """Append changed market metadata using one SQLite transaction."""
+        """Record first-seen metadata, optionally appending changed versions.
+
+        The small Railway research volume defaults to first-seen-only metadata.
+        Quote/tape history remains append-only in its dedicated tables.
+        """
         received_at = utc_iso(received_at)
         changed = 0
         skipped = 0
@@ -508,7 +513,10 @@ class RecorderStore:
                            ORDER BY received_at DESC LIMIT 1""",
                         (ticker,),
                     ).fetchone()
-                    if prior and prior["content_hash"] == content_hash:
+                    if prior and (
+                        not record_versions
+                        or prior["content_hash"] == content_hash
+                    ):
                         skipped += 1
                         continue
                     con.execute(
