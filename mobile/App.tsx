@@ -30,11 +30,14 @@ import type {
   Signal,
   SubmitResponse,
   SystemResponse,
+  WhalePaperStatus,
 } from "./src/types";
 
 type Tab = "Dashboard" | "Bets" | "Live" | "AutoTrader" | "More";
 type MoreView = "Menu" | "Analytics" | "History" | "Pending" | "Account" | "System" | "Settings";
 type AutoTraderView = "Book" | "Markets" | "Blotter" | "Log";
+type WhalePaperView = "Book" | "Flows" | "Pending" | "Log";
+type PaperStrategy = "Value Edge" | "Whale Flow";
 type BetFilter = "Available" | "Filled" | "Unfilled";
 
 const fmtMoney = (x?: number | null, signed = false) => {
