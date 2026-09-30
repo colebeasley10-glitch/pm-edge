@@ -82,7 +82,11 @@ def _bucket(label: str):
 def parse_weather_contract(market: dict) -> WeatherContract | None:
     ticker = str(market.get("ticker") or "").strip()
     event = str(market.get("event_ticker") or "").strip()
-    title = str(market.get("title") or "")
+    title = str(
+        market.get("_weather_event_title")
+        or market.get("title")
+        or ""
+    )
     city = _city_from_title(title)
     target_date = _date_from_event(event or ticker)
     label = str(market.get("yes_sub_title") or market.get("subtitle") or "").strip()
