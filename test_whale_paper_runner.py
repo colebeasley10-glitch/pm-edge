@@ -1,6 +1,6 @@
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -65,6 +65,146 @@ class WhalePaperRunnerTests(unittest.TestCase):
             portfolio = load_portfolio(root / "portfolio.json")
             self.assertIn(FLOW["ticker"], portfolio.positions)
             self.assertEqual(portfolio.positions[FLOW["ticker"]].side, "YES")
+
+    def test_quick_whale_fills_fresh_fast_market_only_at_reproducible_price(self):
+        class QuickClient(FakeClient):
+            def get_market(self, ticker):
+                row = super().get_market(ticker)
+                row.update({
+                    "event_ticker": "KXBTC15M-TEST",
+                    "title": "Bitcoin price up in next 15 minutes?",
+                    "close_time": "2026-09-30T16:15:00Z",
+                })
+                return row
+
+        now = datetime(2026, 9, 30, 16, 0, tzinfo=timezone.utc)
+        flow = dict(FLOW)
+        flow.update({
+            "ticker": "KXBTC15M-26SEP301615-TEST",
+            "latest_time": now - timedelta(seconds=30),
+        })
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch("autotrader.whale_paper_runner.whale_edge._public_trades", return_value=[{"trade_id": "trade-1"}]), \
+                    patch("autotrader.whale_paper_runner.whale_edge._aggregate", return_value=[flow]):
+                result = run_once(
+                    client=QuickClient(),
+                    state_path=root / "portfolio.json",
+                    runner_state_path=root / "runner.json",
+                    runs_path=root / "runs.jsonl",
+                    lookback_minutes=2,
+                    mode="quick",
+                    now=now,
+                )
+            self.assertEqual(result["strategy"], "quick_whale")
+            self.assertEqual(result["paper_fills"], 1)
+            self.assertEqual(result["maker_orders_resting"], 0)
+            self.assertEqual(result["credit_usage"]["paid_odds_api_calls"], 0)
+            portfolio = load_portfolio(root / "portfolio.json")
+            self.assertIn(flow["ticker"], portfolio.positions)
+            self.assertEqual(portfolio.positions[flow["ticker"]].thesis["source"], "quick_whale")
+
+    def test_quick_whale_never_chases_worse_price_or_rests_maker(self):
+        class QuickMovedClient(FakeClient):
+            def get_market(self, ticker):
+                row = super().get_market(ticker)
+                row.update({
+                    "event_ticker": "KXBTC15M-MOVED",
+                    "title": "Bitcoin price up in next 15 minutes?",
+                    "close_time": "2026-09-30T16:15:00Z",
+                })
+                return row
+
+            def get_orderbook(self, ticker, depth=20):
+                return {
+                    "orderbook_fp": {
+                        "yes_dollars": [["0.46", "100"]],
+                        "no_dollars": [["0.47", "100"]],
+                    }
+                }
+
+        now = datetime(2026, 9, 30, 16, 0, tzinfo=timezone.utc)
+        flow = dict(FLOW)
+        flow.update({
+            "ticker": "KXBTC15M-26SEP301615-MOVED",
+            "reference_price": 0.50,
+            "reference_price_cents": 50,
+            "latest_time": now - timedelta(seconds=20),
+        })
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch("autotrader.whale_paper_runner.whale_edge._public_trades", return_value=[{"trade_id": "trade-1"}]), \
+                    patch("autotrader.whale_paper_runner.whale_edge._aggregate", return_value=[flow]):
+                result = run_once(
+                    client=QuickMovedClient(),
+                    state_path=root / "portfolio.json",
+                    runner_state_path=root / "runner.json",
+                    runs_path=root / "runs.jsonl",
+                    lookback_minutes=2,
+                    mode="quick",
+                    now=now,
+                )
+            self.assertEqual(result["paper_fills"], 0)
+            self.assertEqual(result["maker_orders_resting"], 0)
+            self.assertEqual(result["pending_orders"], 0)
+            reasons = {x.get("reason") for x in result["decisions"]}
+            self.assertIn("quick_price_moved_no_chase", reasons)
+
+    def test_quick_whale_rejects_stale_flow(self):
+        class QuickClient(FakeClient):
+            def get_market(self, ticker):
+                row = super().get_market(ticker)
+                row.update({
+                    "event_ticker": "KXBTC15M-STALE",
+                    "title": "Bitcoin price up in next 15 minutes?",
+                    "close_time": "2026-09-30T16:15:00Z",
+                })
+                return row
+
+        now = datetime(2026, 9, 30, 16, 0, tzinfo=timezone.utc)
+        flow = dict(FLOW)
+        flow.update({
+            "ticker": "KXBTC15M-26SEP301615-STALE",
+            "latest_time": now - timedelta(seconds=76),
+        })
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch("autotrader.whale_paper_runner.whale_edge._public_trades", return_value=[{"trade_id": "trade-1"}]), \
+                    patch("autotrader.whale_paper_runner.whale_edge._aggregate", return_value=[flow]):
+                result = run_once(
+                    client=QuickClient(),
+                    state_path=root / "portfolio.json",
+                    runner_state_path=root / "runner.json",
+                    runs_path=root / "runs.jsonl",
+                    lookback_minutes=2,
+                    mode="quick",
+                    max_flow_age_seconds=75,
+                    now=now,
+                )
+            self.assertEqual(result["paper_fills"], 0)
+            reasons = {x.get("reason") for x in result["decisions"]}
+            self.assertIn("quick_flow_stale", reasons)
+
+    def test_regular_whale_still_excludes_fast_markets(self):
+        now = datetime(2026, 9, 30, 16, 0, tzinfo=timezone.utc)
+        flow = dict(FLOW)
+        flow.update({
+            "ticker": "KXBTC15M-26SEP301615-REGULAR",
+            "latest_time": now - timedelta(seconds=20),
+        })
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch("autotrader.whale_paper_runner.whale_edge._public_trades", return_value=[{"trade_id": "trade-1"}]), \
+                    patch("autotrader.whale_paper_runner.whale_edge._aggregate", return_value=[flow]):
+                result = run_once(
+                    client=FakeClient(),
+                    state_path=root / "portfolio.json",
+                    runner_state_path=root / "runner.json",
+                    runs_path=root / "runs.jsonl",
+                    now=now,
+                )
+            self.assertEqual(result["paper_fills"], 0)
+            self.assertEqual(load_portfolio(root / "portfolio.json").positions, {})
 
     def test_worse_live_price_rests_maker_order_instead_of_assuming_fill(self):
         class MakerClient(FakeClient):
