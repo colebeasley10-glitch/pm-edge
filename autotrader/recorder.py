@@ -114,6 +114,18 @@ class RestRecorder:
 
     def cycle(self):
         cycle_started = self.clock().astimezone(timezone.utc)
+        storage_guard = None
+        try:
+            storage_guard = self.store.enforce_soft_limit(
+                max_mb=int(os.getenv("AUTOTRADER_RECORDER_SOFT_MAX_MB", "350")),
+                now=cycle_started,
+            )
+        except Exception as exc:
+            storage_guard = {
+                "triggered": False,
+                "error": f"{type(exc).__name__}: {str(exc)[:240]}",
+            }
+
         raw_markets = self._api(
             "GET /markets?status=open",
             lambda: self.client.list_open_markets(max_markets=self.max_markets),
@@ -366,6 +378,8 @@ class RestRecorder:
             "trades_inserted": trades_inserted,
             "point_in_time_audit": audit,
             "retention_pruned": retention_pruned,
+            "storage_guard": storage_guard,
+            "storage_bytes": self.store.storage_bytes(),
             "db_path": self.store.path,
         }
         self._last_result = result
