@@ -607,6 +607,7 @@ class RestRecorder:
                     )
 
         snapshots = 0
+        maker_probes_created = 0
         snapshot_due = (
             self._last_snapshot_at is None
             or (cycle_started - self._last_snapshot_at).total_seconds()
@@ -644,8 +645,15 @@ class RestRecorder:
                         received_at=received_at,
                         origin="rest",
                     )
+                    normalized_for_book = normalize_market(raw)
                     maker_observations += self.store.record_maker_from_orderbook(
-                        normalize_market(raw), book, received_at=received_at
+                        normalized_for_book, book, received_at=received_at
+                    )
+                    maker_probes_created += self.store.create_maker_probes_from_orderbook(
+                        normalized_for_book,
+                        book,
+                        received_at=received_at,
+                        ttl_seconds=int(os.getenv("AUTOTRADER_MAKER_PROBE_TTL_SECONDS", "300")),
                     )
                     snapshots += 1
                 except Exception as exc:
@@ -671,9 +679,14 @@ class RestRecorder:
                 ),
             )
             trades_received = self.clock().astimezone(timezone.utc)
+            maker_tickers = {
+                str(raw.get("ticker") or "") for raw in maker_raw
+                if str(raw.get("ticker") or "")
+            }
+            tracked_tickers = hot_tickers | maker_tickers
             rows = [
                 row for row in (data.get("trades") or [])
-                if str(row.get("ticker") or row.get("market_ticker") or "") in hot_tickers
+                if str(row.get("ticker") or row.get("market_ticker") or "") in tracked_tickers
             ]
             trades_inserted = self.store.record_trades(rows, received_at=trades_received)
             self._last_trade_poll_at = cycle_started
@@ -682,6 +695,16 @@ class RestRecorder:
                 "trade_poll_error",
                 detail={"error": f"{type(exc).__name__}: {exc}"},
             )
+
+        maker_probe_evaluation = None
+        try:
+            maker_probe_evaluation = self.store.evaluate_maker_probes(
+                now=self.clock().astimezone(timezone.utc)
+            )
+        except Exception as exc:
+            maker_probe_evaluation = {
+                "error": f"{type(exc).__name__}: {str(exc)[:240]}"
+            }
 
         retention_pruned = None
         if (
@@ -746,6 +769,8 @@ class RestRecorder:
             "weather_settlement_errors": weather_settlement_errors,
             "weather_calibration": weather_calibration,
             "full_snapshots": snapshots,
+            "maker_probes_created": maker_probes_created,
+            "maker_probe_evaluation": maker_probe_evaluation,
             "trades_inserted": trades_inserted,
             "point_in_time_audit": audit,
             "retention_pruned": retention_pruned,
