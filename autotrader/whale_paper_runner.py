@@ -224,6 +224,7 @@ def _paper_buy(
     flow_notional_usd,
     reference_price_cents,
     execution,
+    strategy="whale_flow",
 ):
     price = D(price)
     rough_fee = prediction_fee(1, price)
@@ -233,7 +234,7 @@ def _paper_buy(
     fee_total = prediction_fee(contracts, price)
     fee_per_contract = fee_total / D(contracts)
     thesis = {
-        "source": "whale_flow",
+        "source": strategy,
         "source_trade_id": source_trade_id,
         "title": title,
         "flow_contracts": int(flow_contracts),
@@ -250,7 +251,7 @@ def _paper_buy(
         int(available),
         fee_per_contract,
         exposure_key=exposure_key,
-        fair_snapshot_id=f"whale:{source_trade_id}" if source_trade_id else None,
+        fair_snapshot_id=f"{strategy}:{source_trade_id}" if source_trade_id else None,
         thesis=thesis,
     )
     if not filled:
@@ -320,7 +321,34 @@ def _process_pending(portfolio, client, state, trades, now, slippage):
     return decisions
 
 
-def _eligible_flow_rows(flows, client, state, portfolio, now, *, max_flows, slippage):
+def _flow_age_seconds(flow, now):
+    latest = flow.get("latest_time")
+    if latest is None:
+        return None
+    if isinstance(latest, str):
+        latest = _parse_time(latest)
+    if latest is None:
+        return None
+    try:
+        return max(0.0, (now - latest.astimezone(timezone.utc)).total_seconds())
+    except Exception:
+        return None
+
+
+def _seconds_to_close(meta, now):
+    close_time = _parse_time(meta.get("close_time"))
+    if close_time is None:
+        return None
+    return (close_time - now).total_seconds()
+
+
+def _eligible_flow_rows(
+    flows, client, state, portfolio, now, *,
+    max_flows, slippage, mode="regular",
+    max_flow_age_seconds=75, min_seconds_to_close=60,
+):
+    quick = str(mode).lower() == "quick"
+    strategy = "quick_whale" if quick else "whale_flow"
     cache = state.setdefault("market_meta", {})
     decisions = []
     pending_keys = {
@@ -334,11 +362,18 @@ def _eligible_flow_rows(flows, client, state, portfolio, now, *, max_flows, slip
             not whale_edge._is_football(x.get("ticker", "")),
             -float(x.get("flow_notional_usd") or 0),
         ),
-    )[:max_flows]
+    )
 
+    evaluated_for_strategy = 0
+    inspected = 0
+    max_inspections = max(1, int(max_flows)) * (2 if quick else 1)
     for flow in ranked:
         ticker = str(flow.get("ticker") or "")
         side = str(flow.get("side") or "").upper()
+        fast_from_ticker = whale_edge._is_fast_financial_market(ticker)
+        if not quick and fast_from_ticker:
+            continue
+
         row = {
             "ticker": ticker,
             "side": side,
@@ -348,15 +383,19 @@ def _eligible_flow_rows(flows, client, state, portfolio, now, *, max_flows, slip
             "flow_trade_count": int(flow.get("flow_trade_count") or 0),
             "reference_price_cents": int(flow.get("reference_price_cents") or 0),
             "football": bool(whale_edge._is_football(ticker)),
+            "strategy": strategy,
         }
-        if whale_edge._is_fast_financial_market(ticker):
-            row.update({"decision": "skipped", "reason": "fast_financial_market"})
-            decisions.append(row)
-            continue
+
+        if quick:
+            inspected += 1
+            if inspected > max_inspections:
+                break
+
         if ticker in portfolio.positions or (ticker, side) in pending_keys:
             row.update({"decision": "skipped", "reason": "already_exposed_or_pending"})
             decisions.append(row)
             continue
+
         try:
             meta = _market_meta(client, ticker, cache)
             row["title"] = meta.get("title")
@@ -364,23 +403,50 @@ def _eligible_flow_rows(flows, client, state, portfolio, now, *, max_flows, slip
             row["side_label"] = _position_label(meta, side)
             row["event_ticker"] = meta.get("event_ticker")
         except Exception as exc:
-            row.update({"decision": "skipped", "reason": "market_metadata_unavailable", "error": type(exc).__name__})
+            row.update({
+                "decision": "skipped",
+                "reason": "market_metadata_unavailable",
+                "error": f"{type(exc).__name__}: {str(exc)[:160]}",
+            })
             decisions.append(row)
             continue
-        if whale_edge._is_fast_financial_market(ticker, meta.get("title") or ""):
-            row.update({"decision": "skipped", "reason": "fast_financial_market"})
-            decisions.append(row)
+
+        is_fast = fast_from_ticker or whale_edge._is_fast_financial_market(
+            ticker, meta.get("title") or ""
+        )
+        if quick and not is_fast:
             continue
+        if not quick and is_fast:
+            continue
+
+        evaluated_for_strategy += 1
+        if evaluated_for_strategy > max(1, int(max_flows)):
+            break
+
         if str(meta.get("status") or "").lower() not in {"open", "active"}:
             row.update({"decision": "skipped", "reason": "market_not_open"})
             decisions.append(row)
             continue
 
-        late_reason = whale_edge._late_entry_reason(ticker, side, now)
-        if late_reason:
-            row.update({"decision": "skipped", "reason": late_reason})
-            decisions.append(row)
-            continue
+        if quick:
+            age = _flow_age_seconds(flow, now)
+            row["flow_age_seconds"] = age
+            if age is None or age > float(max_flow_age_seconds):
+                row.update({"decision": "skipped", "reason": "quick_flow_stale"})
+                decisions.append(row)
+                continue
+            seconds_to_close = _seconds_to_close(meta, now)
+            row["seconds_to_close"] = seconds_to_close
+            if seconds_to_close is None or seconds_to_close < float(min_seconds_to_close):
+                row.update({"decision": "skipped", "reason": "quick_market_too_close_to_close"})
+                decisions.append(row)
+                continue
+        else:
+            late_reason = whale_edge._late_entry_reason(ticker, side, now)
+            if late_reason:
+                row.update({"decision": "skipped", "reason": late_reason})
+                decisions.append(row)
+                continue
 
         exposure_key = str(meta.get("event_ticker") or ticker)
         if any(getattr(p, "exposure_key", None) == exposure_key for p in portfolio.positions.values()):
@@ -396,7 +462,11 @@ def _eligible_flow_rows(flows, client, state, portfolio, now, *, max_flows, slip
             orderbook = client.get_orderbook(ticker, depth=20)
             ask = _best_ask_for_side(orderbook, side)
         except Exception as exc:
-            row.update({"decision": "skipped", "reason": "orderbook_unavailable", "error": type(exc).__name__})
+            row.update({
+                "decision": "skipped",
+                "reason": "orderbook_unavailable",
+                "error": f"{type(exc).__name__}: {str(exc)[:160]}",
+            })
             decisions.append(row)
             continue
         if ask is None:
@@ -418,14 +488,18 @@ def _eligible_flow_rows(flows, client, state, portfolio, now, *, max_flows, slip
         })
         if not ev.get("eligible"):
             row.update({
-                "decision": "wait" if ev.get("reason") == "wait_for_better_price" else "skipped",
-                "reason": ev.get("reason"),
+                "decision": "skipped" if quick else ("wait" if ev.get("reason") == "wait_for_better_price" else "skipped"),
+                "reason": "quick_price_moved_no_chase" if quick and ev.get("reason") == "wait_for_better_price" else ev.get("reason"),
             })
             decisions.append(row)
             continue
 
         target = D(ev.get("target"))
         if ev.get("execution") == "MAKE":
+            if quick:
+                row.update({"decision": "skipped", "reason": "quick_price_moved_no_chase"})
+                decisions.append(row)
+                continue
             contracts = max(1, int((D("10") / target).to_integral_value(rounding="ROUND_FLOOR")))
             start = whale_edge._trusted_start(ticker, side)
             max_expiry = now + timedelta(minutes=45)
@@ -461,6 +535,15 @@ def _eligible_flow_rows(flows, client, state, portfolio, now, *, max_flows, slip
             continue
 
         fill_price = min(D("0.9999"), current_ask + D(slippage))
+        if quick and fill_price > D(row["reference_price_cents"]) / D("100"):
+            row.update({
+                "decision": "skipped",
+                "reason": "quick_slippage_exceeds_whale_price",
+                "simulated_fill_price_cents": float(fill_price * 100),
+            })
+            decisions.append(row)
+            continue
+
         filled, result = _paper_buy(
             portfolio,
             ticker=ticker,
@@ -474,10 +557,11 @@ def _eligible_flow_rows(flows, client, state, portfolio, now, *, max_flows, slip
             flow_notional_usd=row["flow_notional_usd"],
             reference_price_cents=row["reference_price_cents"],
             execution="TAKE",
+            strategy=strategy,
         )
         row.update(result)
         if filled:
-            row["reason"] = "whale_flow_price_guard_passed"
+            row["reason"] = "quick_whale_reproducible_price" if quick else "whale_flow_price_guard_passed"
         decisions.append(row)
 
     return decisions
@@ -495,7 +579,7 @@ def _live_bids(portfolio, client):
     return bids
 
 
-def _status(state_path, runner_state_path, runs_path, client):
+def _status(state_path, runner_state_path, runs_path, client, *, strategy="whale_flow", scan_interval_seconds=None):
     portfolio = load_portfolio(state_path)
     state = _load_runner_state(runner_state_path)
     runs = []
@@ -546,9 +630,16 @@ def _status(state_path, runner_state_path, runs_path, client):
     losses = sum(1 for x in settled if D(x.get("pnl") or "0") < 0)
     return {
         "mode": "paper",
-        "strategy": "whale_flow",
+        "strategy": strategy,
         "worker_online": True,
-        "scan_interval_seconds": int(os.environ.get("WHALE_PAPER_SCAN_INTERVAL_SECONDS", "300")),
+        "scan_interval_seconds": int(
+            scan_interval_seconds
+            if scan_interval_seconds is not None
+            else os.environ.get(
+                "WHALE_QUICK_SCAN_INTERVAL_SECONDS" if strategy == "quick_whale" else "WHALE_PAPER_SCAN_INTERVAL_SECONDS",
+                "60" if strategy == "quick_whale" else "300",
+            )
+        ),
         "starting_bankroll": "500.00",
         "credit_policy": {
             "paid_odds_api_calls": 0,
@@ -575,6 +666,9 @@ def run_once(
     lookback_minutes=20,
     max_flows=30,
     slippage="0.005",
+    mode="regular",
+    max_flow_age_seconds=75,
+    min_seconds_to_close=60,
     now=None,
 ):
     _assert_no_kalshi_write_credentials()
@@ -586,14 +680,16 @@ def run_once(
     settlements = _settle_finished_positions(portfolio, client)
     try:
         trades = whale_edge._public_trades(
-            min_ts=int((now - timedelta(minutes=max(10, int(lookback_minutes)))).timestamp())
+            min_ts=int((now - timedelta(minutes=max(1, int(lookback_minutes)))).timestamp())
         )
         api_error = None
     except Exception as exc:
         trades = []
         api_error = f"{type(exc).__name__}: {str(exc)[:240]}"
 
-    pending_decisions = _process_pending(
+    quick = str(mode).lower() == "quick"
+    strategy = "quick_whale" if quick else "whale_flow"
+    pending_decisions = [] if quick else _process_pending(
         portfolio, client, state, trades, now, slippage
     )
 
@@ -611,6 +707,9 @@ def run_once(
         now,
         max_flows=max(1, int(max_flows)),
         slippage=slippage,
+        mode=mode,
+        max_flow_age_seconds=max_flow_age_seconds,
+        min_seconds_to_close=min_seconds_to_close,
     ) if api_error is None else []
 
     for trade in trades:
@@ -624,8 +723,12 @@ def run_once(
     all_decisions = pending_decisions + flow_decisions
     fills = sum(1 for x in all_decisions if x.get("decision") == "paper_filled")
     resting = sum(1 for x in all_decisions if x.get("decision") == "paper_maker_resting")
+    rate_limited = bool(api_error and "429" in api_error) or any(
+        "429" in str(x.get("error") or "") for x in all_decisions
+    )
     run = {
         "observed_at": now.isoformat().replace("+00:00", "Z"),
+        "strategy": strategy,
         "public_trades": len(trades),
         "fresh_trades": len(fresh),
         "qualified_flows": len(flows),
@@ -634,6 +737,7 @@ def run_once(
         "pending_orders": len(state.get("pending") or []),
         "settlements": settlements,
         "api_error": api_error,
+        "rate_limited": rate_limited,
         "credit_usage": {
             "paid_odds_api_calls": 0,
             "kalshi_public_trade_tape_calls": 1 if api_error is None else 0,
@@ -645,8 +749,10 @@ def run_once(
     target.parent.mkdir(parents=True, exist_ok=True)
     with target.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(run, separators=(",", ":"), default=str) + "\n")
-    print("WHALE_PAPER_RUN " + json.dumps({
+    prefix = "QUICK_WHALE_PAPER_RUN" if quick else "WHALE_PAPER_RUN"
+    print(prefix + " " + json.dumps({
         "observed_at": run["observed_at"],
+        "strategy": strategy,
         "public_trades": run["public_trades"],
         "fresh_trades": run["fresh_trades"],
         "qualified_flows": run["qualified_flows"],
@@ -654,6 +760,7 @@ def run_once(
         "maker_orders_resting": resting,
         "pending_orders": run["pending_orders"],
         "paid_odds_api_calls": 0,
+        "rate_limited": rate_limited,
         "api_error": api_error,
     }, sort_keys=True), flush=True)
     return run

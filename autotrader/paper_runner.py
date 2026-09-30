@@ -814,7 +814,11 @@ def _paper_status(state_path, runs_path, *, market_client=None, market_cache=Non
 
 def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, port, market_client=None,
                          whale_client=None, whale_trigger_event=None,
-                         whale_state_path=None, whale_runner_state_path=None, whale_runs_path=None):
+                         whale_state_path=None, whale_runner_state_path=None, whale_runs_path=None,
+                         whale_scan_interval_seconds=None,
+                         quick_whale_client=None, quick_whale_trigger_event=None,
+                         quick_whale_state_path=None, quick_whale_runner_state_path=None,
+                         quick_whale_runs_path=None, quick_whale_scan_interval_seconds=None):
     token = str(os.environ.get("AUTOTRADER_API_TOKEN", "") or "").strip()
     market_cache = {}
 
@@ -862,6 +866,28 @@ def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, p
                         whale_runner_state_path,
                         whale_runs_path,
                         whale_client,
+                        strategy="whale_flow",
+                        scan_interval_seconds=whale_scan_interval_seconds,
+                    ),
+                )
+            if parsed.path == "/v1/quick-whale-status":
+                if (
+                    quick_whale_client is None
+                    or not quick_whale_state_path
+                    or not quick_whale_runner_state_path
+                    or not quick_whale_runs_path
+                ):
+                    return self._send(503, {"detail": "Quick Whale paper worker unavailable"})
+                from . import whale_paper_runner
+                return self._send(
+                    200,
+                    whale_paper_runner._status(
+                        quick_whale_state_path,
+                        quick_whale_runner_state_path,
+                        quick_whale_runs_path,
+                        quick_whale_client,
+                        strategy="quick_whale",
+                        scan_interval_seconds=quick_whale_scan_interval_seconds,
                     ),
                 )
             if parsed.path == "/v1/runs":
@@ -889,6 +915,11 @@ def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, p
                     return self._send(503, {"detail": "Whale paper worker unavailable"})
                 whale_trigger_event.set()
                 return self._send(202, {"accepted": True, "mode": "paper", "strategy": "whale_flow"})
+            if parsed.path == "/v1/quick-whale-run-scan":
+                if quick_whale_trigger_event is None:
+                    return self._send(503, {"detail": "Quick Whale paper worker unavailable"})
+                quick_whale_trigger_event.set()
+                return self._send(202, {"accepted": True, "mode": "paper", "strategy": "quick_whale"})
             return self._send(404, {"detail": "Not found"})
 
     server = ThreadingHTTPServer(("0.0.0.0", int(port)), Handler)
@@ -936,6 +967,23 @@ def main():
     whale_max_flows = max(1, int(os.environ.get("WHALE_PAPER_MAX_FLOWS_PER_SCAN", "30")))
     whale_slippage = os.environ.get("WHALE_PAPER_SLIPPAGE", "0.005")
 
+    quick_whale_enabled = os.environ.get("WHALE_QUICK_PAPER_ENABLED", "0").strip().lower() in {"1", "true", "yes", "on"}
+    quick_whale_trigger_event = threading.Event() if quick_whale_enabled else None
+    quick_whale_client = KalshiPublicClient(PUBLIC_BASE) if quick_whale_enabled else None
+    quick_whale_state_path = os.environ.get("WHALE_QUICK_PORTFOLIO_STATE", "/data/quick-whale-paper-portfolio.json")
+    quick_whale_runner_state_path = os.environ.get("WHALE_QUICK_RUNNER_STATE", "/data/quick-whale-paper-state.json")
+    quick_whale_runs_path = os.environ.get("WHALE_QUICK_RUNS", "/data/quick-whale-paper-runs.jsonl")
+    quick_whale_interval = max(30, int(os.environ.get("WHALE_QUICK_SCAN_INTERVAL_SECONDS", "60")))
+    quick_whale_lookback = max(1, int(os.environ.get("WHALE_QUICK_LOOKBACK_MINUTES", "2")))
+    quick_whale_max_flows = max(1, int(os.environ.get("WHALE_QUICK_MAX_FLOWS_PER_SCAN", "8")))
+    quick_whale_slippage = os.environ.get("WHALE_QUICK_SLIPPAGE", "0.005")
+    quick_whale_max_age = max(5, int(os.environ.get("WHALE_QUICK_MAX_FLOW_AGE_SECONDS", "75")))
+    quick_whale_min_close = max(15, int(os.environ.get("WHALE_QUICK_MIN_SECONDS_TO_CLOSE", "60")))
+    quick_whale_backoff = max(
+        quick_whale_interval,
+        int(os.environ.get("WHALE_QUICK_RATE_LIMIT_BACKOFF_SECONDS", "180")),
+    )
+
     if whale_enabled:
         from . import whale_paper_runner
 
@@ -968,6 +1016,51 @@ def main():
         threading.Thread(
             target=whale_loop,
             name="whale-paper-worker",
+            daemon=True,
+        ).start()
+
+    if quick_whale_enabled:
+        from . import whale_paper_runner
+
+        def quick_whale_loop():
+            print(json.dumps({
+                "quick_whale_paper": "starting",
+                "mode": "paper",
+                "interval_seconds": quick_whale_interval,
+                "max_flow_age_seconds": quick_whale_max_age,
+                "min_seconds_to_close": quick_whale_min_close,
+                "paid_odds_api_calls": 0,
+            }), flush=True)
+            while True:
+                wait_seconds = quick_whale_interval
+                try:
+                    result = whale_paper_runner.run_once(
+                        client=quick_whale_client,
+                        state_path=quick_whale_state_path,
+                        runner_state_path=quick_whale_runner_state_path,
+                        runs_path=quick_whale_runs_path,
+                        lookback_minutes=quick_whale_lookback,
+                        max_flows=quick_whale_max_flows,
+                        slippage=quick_whale_slippage,
+                        mode="quick",
+                        max_flow_age_seconds=quick_whale_max_age,
+                        min_seconds_to_close=quick_whale_min_close,
+                    )
+                    if result.get("rate_limited"):
+                        wait_seconds = quick_whale_backoff
+                except Exception as exc:
+                    print(json.dumps({
+                        "quick_whale_paper_error": type(exc).__name__,
+                        "message": str(exc)[:300],
+                    }), flush=True)
+                    if "429" in str(exc):
+                        wait_seconds = quick_whale_backoff
+                quick_whale_trigger_event.wait(timeout=wait_seconds)
+                quick_whale_trigger_event.clear()
+
+        threading.Thread(
+            target=quick_whale_loop,
+            name="quick-whale-paper-worker",
             daemon=True,
         ).start()
 
@@ -1021,6 +1114,13 @@ def main():
             whale_state_path=whale_state_path if whale_enabled else None,
             whale_runner_state_path=whale_runner_state_path if whale_enabled else None,
             whale_runs_path=whale_runs_path if whale_enabled else None,
+            whale_scan_interval_seconds=whale_interval if whale_enabled else None,
+            quick_whale_client=quick_whale_client,
+            quick_whale_trigger_event=quick_whale_trigger_event,
+            quick_whale_state_path=quick_whale_state_path if quick_whale_enabled else None,
+            quick_whale_runner_state_path=quick_whale_runner_state_path if quick_whale_enabled else None,
+            quick_whale_runs_path=quick_whale_runs_path if quick_whale_enabled else None,
+            quick_whale_scan_interval_seconds=quick_whale_interval if quick_whale_enabled else None,
         )
         print(json.dumps({"autotrader_http": "listening", "port": http_port, "mode": "paper"}), flush=True)
 

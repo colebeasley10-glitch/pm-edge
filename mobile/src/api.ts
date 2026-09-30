@@ -75,6 +75,9 @@ export const api = {
   whalePaperStatus: () => autoRequest<WhalePaperStatus>("/v1/whale-status"),
   runWhalePaperScan: () =>
     autoRequest<WhalePaperScanResponse>("/v1/whale-run-scan", { method: "POST" }),
+  quickWhaleStatus: () => autoRequest<WhalePaperStatus>("/v1/quick-whale-status"),
+  runQuickWhaleScan: () =>
+    autoRequest<WhalePaperScanResponse>("/v1/quick-whale-run-scan", { method: "POST" }),
   review: (signalId: string) =>
     request<ReviewResponse>(`/v1/bets/${encodeURIComponent(signalId)}/review`),
   submit: (signalId: string) =>
