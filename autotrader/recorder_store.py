@@ -560,7 +560,11 @@ class RecorderStore:
         probability and therefore cannot create a paper fill.
         """
         ticker = str(market.get("ticker") or "").strip()
-        title = str(market.get("title") or "")
+        title = str(
+            market.get("_weather_event_title")
+            or market.get("title")
+            or ""
+        )
         blob = f"{ticker} {title}".upper()
         is_weather = (
             ticker.upper().startswith(("KXHIGH", "KXLOW", "KXTEMP"))
