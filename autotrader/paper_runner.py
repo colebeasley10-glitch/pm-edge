@@ -727,6 +727,9 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
                 "production_rules_unchanged": True,
                 "settled_trades": (learning.get("sample") or {}).get("settled_trades", 0),
                 "clv_samples": (learning.get("sample") or {}).get("clv_samples", 0),
+                "by_lane": ((learning.get("segments") or {}).get("by_lane") or {}),
+                "by_execution": ((learning.get("segments") or {}).get("by_execution") or {}),
+                "whale_by_flow_notional": ((learning.get("segments") or {}).get("whale_by_flow_notional") or {}),
                 "challenger": learning.get("challenger"),
             }
         except Exception as exc:
