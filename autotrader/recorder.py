@@ -638,10 +638,12 @@ class RestRecorder:
         print(json.dumps({"autotrader_recorder": "starting", "mode": "paper"}), flush=True)
         while not self._stop.is_set():
             started = time.monotonic()
+            cycle_error = None
             try:
                 result = self.cycle()
                 print(json.dumps(result, separators=(",", ":")), flush=True)
             except Exception as exc:
+                cycle_error = exc
                 try:
                     self.store.quality_event(
                         "recorder_cycle_error",
@@ -662,7 +664,7 @@ class RestRecorder:
             delay = max(1.0, self.interval_seconds - (time.monotonic() - started))
             # If Kalshi rate-limits a cold start (before any cache exists), back
             # off instead of hammering the same paginated endpoint every minute.
-            if 'exc' in locals() and "429" in str(exc):
+            if cycle_error is not None and "429" in str(cycle_error):
                 delay = max(delay, 180.0)
             self._stop.wait(delay)
 
