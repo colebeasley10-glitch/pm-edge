@@ -279,6 +279,23 @@ class RecorderStore:
             violations INTEGER NOT NULL,
             detail TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS maker_observations(
+            observation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            market_ticker TEXT NOT NULL,
+            side TEXT NOT NULL,
+            received_at TEXT NOT NULL,
+            bid REAL NOT NULL,
+            ask REAL NOT NULL,
+            spread REAL NOT NULL,
+            queue_ahead REAL,
+            volume_24h REAL,
+            liquidity_dollars REAL,
+            event_ticker TEXT,
+            mode TEXT NOT NULL DEFAULT 'observe_only'
+        );
+        CREATE INDEX IF NOT EXISTS idx_maker_obs_ticker_received
+            ON maker_observations(market_ticker, received_at);
         """
         with self.connect() as con:
             con.executescript(ddl)
@@ -372,6 +389,44 @@ class RecorderStore:
                     None, None, valid, origin,
                 ),
             )
+
+    def record_maker_observations(self, market: dict, *, received_at) -> int:
+        """Log hypothetical maker queue conditions without creating a simulated fill."""
+        ticker = str(market.get("ticker") or "").strip()
+        if not ticker:
+            return 0
+        received_at = utc_iso(received_at)
+        rows = []
+        for side in ("YES", "NO"):
+            prefix = side.lower()
+            bid = _float(market.get(prefix + "_bid"))
+            ask = _float(market.get(prefix + "_ask"))
+            if bid is None or ask is None or not (0 < bid <= ask < 1):
+                continue
+            if side == "YES":
+                queue_ahead = _float(market.get("yes_bid_size"))
+            else:
+                # In Kalshi's binary reciprocal book, NO bid depth corresponds
+                # to the displayed YES ask depth.
+                queue_ahead = _float(market.get("yes_ask_size"))
+            rows.append((
+                ticker, side, received_at, bid, ask, ask - bid, queue_ahead,
+                _float(market.get("volume_24h")),
+                _float(market.get("liquidity_dollars")),
+                market.get("event_ticker"),
+                "observe_only",
+            ))
+        if not rows:
+            return 0
+        with self.connect() as con:
+            con.executemany(
+                """INSERT INTO maker_observations(
+                    market_ticker,side,received_at,bid,ask,spread,queue_ahead,
+                    volume_24h,liquidity_dollars,event_ticker,mode
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+                rows,
+            )
+        return len(rows)
 
     def record_snapshot(self, ticker: str, orderbook: dict, *, received_at,
                         origin="rest", conn_id=None, seq=None):
@@ -590,7 +645,7 @@ class RecorderStore:
     def counts(self) -> dict:
         names = ("markets_meta", "ob_top", "ob_snapshots", "trades", "odds_fetches",
                  "odds_quotes", "fair_snapshots", "intents", "data_quality_events",
-                 "audit_runs")
+                 "audit_runs", "maker_observations")
         out = {}
         with self.connect() as con:
             for name in names:
