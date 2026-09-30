@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import os
+import sqlite3
 import threading
 import time
 import uuid
@@ -378,10 +379,13 @@ class RestRecorder:
                 result = self.cycle()
                 print(json.dumps(result, separators=(",", ":")), flush=True)
             except Exception as exc:
-                self.store.quality_event(
-                    "recorder_cycle_error",
-                    detail={"error": f"{type(exc).__name__}: {exc}"},
-                )
+                try:
+                    self.store.quality_event(
+                        "recorder_cycle_error",
+                        detail={"error": f"{type(exc).__name__}: {exc}"},
+                    )
+                except Exception:
+                    pass
                 print(
                     json.dumps(
                         {
@@ -407,10 +411,13 @@ def start_recorder_thread(
     orderbook_depth=None,
     fee_schedule_id=None,
 ):
-    recorder = RestRecorder(
-        db_path=db_path or os.getenv(
-            "AUTOTRADER_RECORDER_DB", "/data/autotrader-recorder.sqlite3"
-        ),
+    resolved_db_path = db_path or os.getenv(
+        "AUTOTRADER_RECORDER_DB", "/data/autotrader-recorder.sqlite3"
+    )
+
+    def build():
+        return RestRecorder(
+        db_path=resolved_db_path,
         interval_seconds=interval_seconds or int(
             os.getenv("AUTOTRADER_RECORDER_INTERVAL_SECONDS", "60")
         ),
@@ -434,6 +441,43 @@ def start_recorder_thread(
             "AUTOTRADER_FEE_SCHEDULE_ID", "kalshi-predictions-current"
         ),
     )
+
+    try:
+        recorder = build()
+    except (sqlite3.OperationalError, OSError) as exc:
+        full = (
+            "full" in str(exc).lower()
+            or "no space left" in str(exc).lower()
+            or getattr(exc, "errno", None) == 28
+        )
+        allow_reset = os.getenv(
+            "AUTOTRADER_RECORDER_RESET_ON_FULL", "1"
+        ).strip().lower() not in {"0", "false", "no", "off"}
+        if not (full and allow_reset):
+            raise
+        # The recorder DB is research telemetry only. Delete ONLY this database
+        # and its SQLite sidecars; never touch portfolio/fair state on /data.
+        removed = []
+        for suffix in ("", "-wal", "-shm"):
+            target = resolved_db_path + suffix
+            try:
+                if os.path.exists(target):
+                    os.remove(target)
+                    removed.append(target)
+            except OSError:
+                pass
+        print(
+            json.dumps(
+                {
+                    "autotrader_recorder": "reset_after_full_volume",
+                    "removed": removed,
+                    "preserved_other_data": True,
+                }
+            ),
+            flush=True,
+        )
+        recorder = build()
+
     thread = threading.Thread(
         target=recorder.run_forever,
         name="autotrader-recorder",
