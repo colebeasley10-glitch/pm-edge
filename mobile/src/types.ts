@@ -172,6 +172,11 @@ export type AutoTraderPosition = {
   entry_fee: string;
   exposure_key?: string | null;
   fair_snapshot_id?: string | null;
+  market_title?: string | null;
+  market_subtitle?: string | null;
+  side_label?: string | null;
+  event_ticker?: string | null;
+  close_time?: string | null;
 };
 
 export type AutoTraderRun = {

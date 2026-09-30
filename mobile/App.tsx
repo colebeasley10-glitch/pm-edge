@@ -1141,23 +1141,46 @@ function AutoTraderScreen({
 
       {view === "Book" ? (
         data?.positions?.length ? (
-          data.positions.map((position) => (
-            <View key={position.ticker} style={styles.card}>
-              <View style={styles.rowBetween}>
-                <Chip label={String(position.side).toUpperCase()} tone="blue" />
-                <Text style={styles.statValue}>{position.contracts} contracts</Text>
+          data.positions.map((position) => {
+            const entry = Number(position.entry);
+            const feeTotal = Number(position.entry_fee) * Number(position.contracts);
+            const totalCost = entry * Number(position.contracts) + feeTotal;
+            const readableTitle =
+              position.side_label?.trim() ||
+              position.market_title?.trim() ||
+              position.ticker;
+            const contextTitle =
+              position.market_title?.trim() &&
+              position.market_title.trim() !== readableTitle
+                ? position.market_title.trim()
+                : position.market_subtitle?.trim() || "";
+
+            return (
+              <View key={position.ticker} style={styles.card}>
+                <View style={styles.rowBetween}>
+                  <Chip label={String(position.side).toUpperCase()} tone="blue" />
+                  <Text style={styles.statValue}>{position.contracts} contracts</Text>
+                </View>
+                <Text style={styles.betTitle}>{readableTitle}</Text>
+                {contextTitle ? <Text style={styles.muted}>{contextTitle}</Text> : null}
+                <View style={styles.rowBetween}>
+                  <Text style={styles.muted}>Bought at</Text>
+                  <Text style={styles.statValue}>{fmtCents(entry)}</Text>
+                </View>
+                <View style={styles.rowBetween}>
+                  <Text style={styles.muted}>Total cost</Text>
+                  <Text style={styles.statValue}>{fmtMoney(totalCost)}</Text>
+                </View>
+                <View style={styles.rowBetween}>
+                  <Text style={styles.muted}>Fees</Text>
+                  <Text style={styles.statValue}>{fmtMoney(feeTotal)}</Text>
+                </View>
+                {readableTitle !== position.ticker ? (
+                  <Text style={styles.mutedSmall}>Market ID · {position.ticker}</Text>
+                ) : null}
               </View>
-              <Text style={styles.betTitle}>{position.ticker}</Text>
-              <View style={styles.rowBetween}>
-                <Text style={styles.muted}>Entry</Text>
-                <Text style={styles.statValue}>{fmtCents(Number(position.entry))}</Text>
-              </View>
-              <View style={styles.rowBetween}>
-                <Text style={styles.muted}>Entry fee</Text>
-                <Text style={styles.statValue}>{fmtMoney(Number(position.entry_fee) * Number(position.contracts))}</Text>
-              </View>
-            </View>
-          ))
+            );
+          })
         ) : (
           <View style={styles.autoEmpty}>
             <Ionicons name="book-outline" size={34} color={colors.muted} />
