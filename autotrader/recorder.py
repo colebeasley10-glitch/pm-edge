@@ -114,32 +114,49 @@ class RestRecorder:
 
     def _targeted_weather_markets(self):
         """Discover open temperature markets by Weather series, not global pagination."""
-        series_rows = []
+        # Verified current daily-temperature series provide a fast, no-cost
+        # bootstrap. Dynamic category discovery can be enabled separately and
+        # augments these; it is not required for the first shadow dataset.
+        default_seeds = (
+            "KXHIGHAUS,KXHIGHLAX,KXHIGHNY,KXHIGHTSFO,"
+            "KXHIGHTSEA,KXHIGHTTTN,KXLOWTMIA"
+        )
+        seed_tickers = [
+            x.strip().upper()
+            for x in os.getenv("AUTOTRADER_WEATHER_SERIES_SEEDS", default_seeds).split(",")
+            if x.strip()
+        ]
+        series_rows = [{"ticker": ticker, "title": "temperature seed"} for ticker in seed_tickers]
         series_errors = []
-        seen_series = set()
-        for category in ("Climate and Weather", "Climate And Weather", "Weather", "Climate"):
-            try:
-                rows = self._api(
-                    f"GET /series?category={category}",
-                    lambda category=category: self.client.list_series(
-                        category=category, include_volume=True
-                    ),
-                )
-            except Exception as exc:
-                if len(series_errors) < 4:
-                    series_errors.append({
-                        "stage": "series",
-                        "category": category,
-                        "error": f"{type(exc).__name__}: {str(exc)[:220]}",
-                    })
-                continue
-            for row in rows:
-                ticker = str(row.get("ticker") or "").strip()
-                if ticker and ticker not in seen_series:
-                    seen_series.add(ticker)
-                    series_rows.append(row)
+        seen_series = set(seed_tickers)
+
+        dynamic = os.getenv(
+            "AUTOTRADER_WEATHER_DYNAMIC_SERIES", "0"
+        ).strip().lower() in {"1", "true", "yes", "on"}
+        if dynamic:
+            for category in ("Climate and Weather", "Climate And Weather", "Weather", "Climate"):
+                try:
+                    rows = self._api(
+                        f"GET /series?category={category}",
+                        lambda category=category: self.client.list_series(
+                            category=category, include_volume=True
+                        ),
+                    )
+                except Exception as exc:
+                    if len(series_errors) < 4:
+                        series_errors.append({
+                            "stage": "series",
+                            "category": category,
+                            "error": f"{type(exc).__name__}: {str(exc)[:220]}",
+                        })
+                    continue
+                for row in rows:
+                    ticker = str(row.get("ticker") or "").strip()
+                    if ticker and ticker not in seen_series:
+                        seen_series.add(ticker)
+                        series_rows.append(row)
         if not series_rows:
-            return [], [], series_errors or [{"stage": "series", "error": "no_climate_series_found"}]
+            return [], [], [{"stage": "series", "error": "no_temperature_series_configured"}]
 
         temperature_series = []
         for row in series_rows:
