@@ -1058,6 +1058,10 @@ function AutoTraderScreen({
   const decisions = (last?.decisions ?? []) as Array<Record<string, any>>;
   const lastFunnel = last?.funnel ?? {};
   const refreshStatus = String((last?.fair_refresh as any)?.status ?? (last?.fair_refresh as any)?.reason ?? "—");
+  const research = data?.recorder;
+  const makerResearch = research?.maker_probe_summary;
+  const weatherResearch = research?.weather_calibration;
+  const researchMb = Number(research?.storage_bytes?.total ?? 0) / (1024 * 1024);
 
   return (
     <ScrollView
@@ -1235,6 +1239,51 @@ function AutoTraderScreen({
 
       {view === "Log" ? (
         <View style={{ gap: 10 }}>
+          <View style={styles.card}>
+            <View style={styles.rowBetween}>
+              <Text style={styles.sectionTitle}>Research engine</Text>
+              <Chip label={research?.enabled ? "RECORDING" : "OFF"} tone={research?.enabled ? "green" : "red"} />
+            </View>
+            <Text style={styles.mutedSmall}>
+              Shadow research only · does not create real-money orders or bypass strategy gates.
+            </Text>
+            <View style={styles.divider} />
+            <View style={styles.rowBetween}>
+              <Text style={styles.muted}>Recorder storage</Text>
+              <Text style={styles.statValue}>{researchMb > 0 ? `${researchMb.toFixed(0)} MB` : "—"}</Text>
+            </View>
+            <View style={styles.rowBetween}>
+              <Text style={styles.muted}>Maker probes resolved</Text>
+              <Text style={styles.statValue}>{makerResearch?.resolved ?? 0}</Text>
+            </View>
+            <View style={styles.rowBetween}>
+              <Text style={styles.muted}>Observed maker fills</Text>
+              <Text style={styles.statValue}>{makerResearch?.observed_fills ?? 0}</Text>
+            </View>
+            <View style={styles.rowBetween}>
+              <Text style={styles.muted}>Maker fill rate</Text>
+              <Text style={styles.statValue}>
+                {makerResearch?.fill_rate_resolved != null ? fmtPct(Number(makerResearch.fill_rate_resolved)) : "Collecting"}
+              </Text>
+            </View>
+            <View style={styles.rowBetween}>
+              <Text style={styles.muted}>5m post-fill drift</Text>
+              <Text style={Number(makerResearch?.avg_side_mid_drift_5m ?? 0) >= 0 ? styles.greenValue : styles.redValue}>
+                {makerResearch?.avg_side_mid_drift_5m != null ? fmtPct(Number(makerResearch.avg_side_mid_drift_5m)) : "—"}
+              </Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.rowBetween}>
+              <Text style={styles.muted}>Weather settled sample</Text>
+              <Text style={styles.statValue}>{weatherResearch?.n ?? 0}</Text>
+            </View>
+            <View style={styles.rowBetween}>
+              <Text style={styles.muted}>Weather Brier score</Text>
+              <Text style={styles.statValue}>
+                {weatherResearch?.brier != null ? Number(weatherResearch.brier).toFixed(4) : "Collecting"}
+              </Text>
+            </View>
+          </View>
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Latest scan</Text>
             <View style={styles.rowBetween}><Text style={styles.muted}>Fair source</Text><Text style={styles.statValue}>{last?.provider ?? "—"}</Text></View>
