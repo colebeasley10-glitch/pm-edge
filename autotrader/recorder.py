@@ -112,6 +112,84 @@ class RestRecorder:
             except Exception:
                 pass
 
+    def _targeted_weather_markets(self):
+        """Discover open temperature markets by Weather series, not global pagination."""
+        try:
+            series_rows = self._api(
+                "GET /series?category=Weather",
+                lambda: self.client.list_series(category="Weather", include_volume=True),
+            )
+        except Exception as exc:
+            return [], [], [{"stage": "series", "error": f"{type(exc).__name__}: {str(exc)[:220]}"}]
+
+        temperature_series = []
+        for row in series_rows:
+            blob = " ".join([
+                str(row.get("ticker") or ""),
+                str(row.get("title") or ""),
+                " ".join(str(x) for x in (row.get("tags") or [])),
+            ]).lower()
+            if any(token in blob for token in (
+                "temperature", "daily high", "daily low", "highest temperature",
+                "lowest temperature", "high temperature", "low temperature",
+            )):
+                temperature_series.append(row)
+
+        # Prefer active/used series by volume, then deterministic ticker order.
+        def volume(row):
+            try:
+                return float(row.get("volume_fp") or 0)
+            except (TypeError, ValueError):
+                return 0.0
+        temperature_series.sort(
+            key=lambda row: (-volume(row), str(row.get("ticker") or ""))
+        )
+        max_series = max(1, int(os.getenv("AUTOTRADER_WEATHER_MAX_SERIES", "20")))
+        temperature_series = temperature_series[:max_series]
+
+        markets = []
+        errors = []
+        for series in temperature_series:
+            ticker = str(series.get("ticker") or "").strip()
+            if not ticker:
+                continue
+            try:
+                events = self._api(
+                    f"GET /events?series_ticker={ticker}",
+                    lambda ticker=ticker: self.client.list_events(
+                        series_ticker=ticker,
+                        status="open",
+                        with_nested_markets=True,
+                        max_events=20,
+                    ),
+                )
+            except Exception as exc:
+                if len(errors) < 8:
+                    errors.append({
+                        "stage": "events",
+                        "series_ticker": ticker,
+                        "error": f"{type(exc).__name__}: {str(exc)[:220]}",
+                    })
+                continue
+            for event in events:
+                event_title = str(event.get("title") or "")
+                event_ticker = str(event.get("event_ticker") or "")
+                for raw in event.get("markets") or []:
+                    if not isinstance(raw, dict):
+                        continue
+                    merged = dict(raw)
+                    merged["event_ticker"] = str(
+                        merged.get("event_ticker") or event_ticker
+                    )
+                    merged["series_ticker"] = ticker
+                    # Market titles can be generic bucket labels; preserve the
+                    # event title separately for city/date parsing.
+                    merged["_weather_event_title"] = event_title
+                    merged["_weather_series"] = series
+                    markets.append(merged)
+
+        return markets, temperature_series, errors
+
     def cycle(self):
         cycle_started = self.clock().astimezone(timezone.utc)
         storage_guard = None
@@ -168,7 +246,13 @@ class RestRecorder:
         meta_changes = 0
         weather_markets = 0
         weather_samples = []
+        targeted_weather_raw = []
+        weather_series = []
+        weather_discovery_errors = []
         if metadata_due:
+            targeted_weather_raw, weather_series, weather_discovery_errors = (
+                self._targeted_weather_markets()
+            )
             for raw in raw_markets:
                 try:
                     meta_changes += int(
@@ -195,6 +279,33 @@ class RestRecorder:
                         market_ticker=str(raw.get("ticker") or "") or None,
                         detail={"error": f"{type(exc).__name__}: {exc}"},
                     )
+            # Targeted Weather-series discovery reaches markets that may not
+            # appear within the first N globally paginated open markets.
+            for raw in targeted_weather_raw:
+                try:
+                    normalized_weather = normalize_market(raw)
+                    event_title = str(raw.get("_weather_event_title") or "")
+                    if event_title:
+                        normalized_weather["_weather_event_title"] = event_title
+                    normalized_weather["series_ticker"] = str(raw.get("series_ticker") or "")
+                    recorded_weather = self.store.record_weather_market(
+                        normalized_weather, received_at=market_received
+                    )
+                    weather_markets += int(recorded_weather)
+                    if recorded_weather and len(weather_samples) < 8:
+                        weather_samples.append({
+                            "ticker": normalized_weather.get("ticker"),
+                            "event_ticker": normalized_weather.get("event_ticker"),
+                            "series_ticker": normalized_weather.get("series_ticker"),
+                            "title": event_title or normalized_weather.get("title"),
+                        })
+                except Exception as exc:
+                    if len(weather_discovery_errors) < 8:
+                        weather_discovery_errors.append({
+                            "stage": "weather_write",
+                            "ticker": str(raw.get("ticker") or ""),
+                            "error": f"{type(exc).__name__}: {str(exc)[:220]}",
+                        })
             self._last_metadata_at = cycle_started
 
         structural_groups = 0
@@ -208,8 +319,11 @@ class RestRecorder:
         ):
             try:
                 weather_groups = {}
-                for raw in raw_markets:
+                for raw in targeted_weather_raw:
                     m = normalize_market(raw)
+                    if raw.get("_weather_event_title"):
+                        m["_weather_event_title"] = raw.get("_weather_event_title")
+                    m["series_ticker"] = str(raw.get("series_ticker") or "")
                     spec = parse_weather_contract(m)
                     if spec is not None:
                         weather_groups.setdefault(spec.event_ticker, []).append(m)
@@ -371,7 +485,10 @@ class RestRecorder:
             "structural_groups_logged": structural_groups,
             "metadata_changes": meta_changes,
             "weather_markets_logged": weather_markets,
+            "weather_series_found": len(weather_series),
+            "weather_targeted_markets_found": len(targeted_weather_raw),
             "weather_samples": weather_samples,
+            "weather_discovery_errors": weather_discovery_errors,
             "weather_shadow_rows": weather_shadow_rows,
             "weather_shadow_errors": weather_shadow_errors,
             "full_snapshots": snapshots,
