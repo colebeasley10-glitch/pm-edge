@@ -47,6 +47,44 @@ class KalshiPublicClient:
                 break
         return out[:max_markets]
 
+    def list_series(self, *, category: str | None = None, include_volume: bool = False) -> list[dict]:
+        params = {}
+        if category:
+            params["category"] = category
+        if include_volume:
+            params["include_volume"] = "true"
+        data = self._get("/series", params)
+        rows = data.get("series", [])
+        if not isinstance(rows, list):
+            raise KalshiError("Unexpected /series response")
+        return rows
+
+    def list_events(
+        self, *, series_ticker: str | None = None, status: str | None = None,
+        with_nested_markets: bool = False, max_events: int = 1000,
+    ) -> list[dict]:
+        out, cursor = [], None
+        while len(out) < max_events:
+            params = {
+                "limit": min(200, max_events - len(out)),
+                "with_nested_markets": str(bool(with_nested_markets)).lower(),
+            }
+            if series_ticker:
+                params["series_ticker"] = series_ticker
+            if status:
+                params["status"] = status
+            if cursor:
+                params["cursor"] = cursor
+            data = self._get("/events", params)
+            batch = data.get("events", [])
+            if not isinstance(batch, list):
+                raise KalshiError("Unexpected /events response")
+            out.extend(batch)
+            cursor = data.get("cursor")
+            if not cursor or not batch:
+                break
+        return out[:max_events]
+
     def get_market(self, ticker: str) -> dict:
         return self._get(f"/markets/{ticker}").get("market", {})
 
