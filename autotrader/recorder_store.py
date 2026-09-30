@@ -488,37 +488,51 @@ class RecorderStore:
 
     def record_market_meta_batch(
         self, rows: Iterable[dict], *, received_at, fee_schedule_id: str,
-        record_versions: bool = False,
+        record_versions: bool = False, max_distinct_tickers: int = 7500,
     ) -> dict:
-        """Record first-seen metadata, optionally appending changed versions.
+        """Record bounded market metadata using one SQLite transaction.
 
-        The small Railway research volume defaults to first-seen-only metadata.
-        Quote/tape history remains append-only in its dedicated tables.
+        The Railway research volume is intentionally small. By default we keep
+        one row per first-seen ticker and cap the distinct metadata universe.
+        Fast quote/tape history remains append-only in its dedicated tables.
         """
         received_at = utc_iso(received_at)
         changed = 0
         skipped = 0
+        capped = 0
         errors = []
         with self.connect() as con:
+            existing = {
+                str(row["market_ticker"])
+                for row in con.execute(
+                    "SELECT DISTINCT market_ticker FROM markets_meta"
+                ).fetchall()
+                if row["market_ticker"]
+            }
+            max_distinct_tickers = max(1000, int(max_distinct_tickers))
             for raw in rows or []:
                 ticker = str((raw or {}).get("ticker") or "").strip()
                 if not ticker:
                     skipped += 1
                     continue
                 try:
-                    content_hash = self._market_content_hash(raw, fee_schedule_id)
-                    prior = con.execute(
-                        """SELECT content_hash FROM markets_meta
-                           WHERE market_ticker=?
-                           ORDER BY received_at DESC LIMIT 1""",
-                        (ticker,),
-                    ).fetchone()
-                    if prior and (
-                        not record_versions
-                        or prior["content_hash"] == content_hash
-                    ):
+                    if ticker in existing and not record_versions:
                         skipped += 1
                         continue
+                    if ticker not in existing and len(existing) >= max_distinct_tickers:
+                        capped += 1
+                        continue
+                    content_hash = self._market_content_hash(raw, fee_schedule_id)
+                    if record_versions and ticker in existing:
+                        prior = con.execute(
+                            """SELECT content_hash FROM markets_meta
+                               WHERE market_ticker=?
+                               ORDER BY received_at DESC LIMIT 1""",
+                            (ticker,),
+                        ).fetchone()
+                        if prior and prior["content_hash"] == content_hash:
+                            skipped += 1
+                            continue
                     con.execute(
                         """INSERT INTO markets_meta(
                             market_ticker,valid_from,event_ticker,series_ticker,
@@ -543,13 +557,21 @@ class RecorderStore:
                         ),
                     )
                     changed += 1
+                    existing.add(ticker)
                 except Exception as exc:
                     if len(errors) < 10:
                         errors.append({
                             "ticker": ticker,
                             "error": f"{type(exc).__name__}: {str(exc)[:220]}",
                         })
-        return {"changed": changed, "skipped": skipped, "errors": errors}
+        return {
+            "changed": changed,
+            "skipped": skipped,
+            "capped": capped,
+            "distinct_after": len(existing),
+            "max_distinct_tickers": max_distinct_tickers,
+            "errors": errors,
+        }
 
     def record_market_meta(self, raw: dict, *, received_at, fee_schedule_id: str) -> bool:
         ticker = str(raw.get("ticker") or "").strip()
