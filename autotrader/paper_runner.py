@@ -702,6 +702,11 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
                 os.environ.get("WHALE_QUICK_RUNS", "/data/quick-whale-paper-runs.jsonl"),
                 os.environ.get("WHALE_QUICK_PORTFOLIO_STATE", "/data/quick-whale-paper-portfolio.json"),
             ),
+            (
+                "quick_whale_v2",
+                os.environ.get("WHALE_QUICK_V2_RUNS", "/data/quick-whale-v2-paper-runs.jsonl"),
+                os.environ.get("WHALE_QUICK_V2_PORTFOLIO_STATE", "/data/quick-whale-v2-paper-portfolio.json"),
+            ),
         ):
             try:
                 if Path(lane_runs).exists() or Path(lane_state).exists():
@@ -873,7 +878,10 @@ def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, p
                          whale_scan_interval_seconds=None,
                          quick_whale_client=None, quick_whale_trigger_event=None,
                          quick_whale_state_path=None, quick_whale_runner_state_path=None,
-                         quick_whale_runs_path=None, quick_whale_scan_interval_seconds=None):
+                         quick_whale_runs_path=None, quick_whale_scan_interval_seconds=None,
+                         quick_whale_v2_client=None, quick_whale_v2_trigger_event=None,
+                         quick_whale_v2_state_path=None, quick_whale_v2_runner_state_path=None,
+                         quick_whale_v2_runs_path=None, quick_whale_v2_scan_interval_seconds=None):
     token = str(os.environ.get("AUTOTRADER_API_TOKEN", "") or "").strip()
     market_cache = {}
 
@@ -945,6 +953,26 @@ def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, p
                         scan_interval_seconds=quick_whale_scan_interval_seconds,
                     ),
                 )
+            if parsed.path == "/v1/quick-whale-v2-status":
+                if (
+                    quick_whale_v2_client is None
+                    or not quick_whale_v2_state_path
+                    or not quick_whale_v2_runner_state_path
+                    or not quick_whale_v2_runs_path
+                ):
+                    return self._send(503, {"detail": "Quick Whale v2 paper worker unavailable"})
+                from . import whale_paper_runner
+                return self._send(
+                    200,
+                    whale_paper_runner._status(
+                        quick_whale_v2_state_path,
+                        quick_whale_v2_runner_state_path,
+                        quick_whale_v2_runs_path,
+                        quick_whale_v2_client,
+                        strategy="quick_whale_v2",
+                        scan_interval_seconds=quick_whale_v2_scan_interval_seconds,
+                    ),
+                )
             if parsed.path == "/v1/learning-status":
                 return self._send(
                     200,
@@ -982,6 +1010,11 @@ def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, p
                     return self._send(503, {"detail": "Quick Whale paper worker unavailable"})
                 quick_whale_trigger_event.set()
                 return self._send(202, {"accepted": True, "mode": "paper", "strategy": "quick_whale"})
+            if parsed.path == "/v1/quick-whale-v2-run-scan":
+                if quick_whale_v2_trigger_event is None:
+                    return self._send(503, {"detail": "Quick Whale v2 paper worker unavailable"})
+                quick_whale_v2_trigger_event.set()
+                return self._send(202, {"accepted": True, "mode": "paper", "strategy": "quick_whale_v2"})
             return self._send(404, {"detail": "Not found"})
 
     server = ThreadingHTTPServer(("0.0.0.0", int(port)), Handler)
@@ -1047,6 +1080,58 @@ def main():
     quick_whale_backoff = max(
         quick_whale_interval,
         int(os.environ.get("WHALE_QUICK_RATE_LIMIT_BACKOFF_SECONDS", "180")),
+    )
+
+    quick_whale_v2_enabled = os.environ.get(
+        "WHALE_QUICK_V2_PAPER_ENABLED", "0"
+    ).strip().lower() in {"1", "true", "yes", "on"}
+    quick_whale_v2_trigger_event = threading.Event() if quick_whale_v2_enabled else None
+    quick_whale_v2_client = KalshiPublicClient(PUBLIC_BASE) if quick_whale_v2_enabled else None
+    quick_whale_v2_state_path = os.environ.get(
+        "WHALE_QUICK_V2_PORTFOLIO_STATE", "/data/quick-whale-v2-paper-portfolio.json"
+    )
+    quick_whale_v2_runner_state_path = os.environ.get(
+        "WHALE_QUICK_V2_RUNNER_STATE", "/data/quick-whale-v2-paper-state.json"
+    )
+    quick_whale_v2_runs_path = os.environ.get(
+        "WHALE_QUICK_V2_RUNS", "/data/quick-whale-v2-paper-runs.jsonl"
+    )
+    quick_whale_v2_interval = max(
+        30, int(os.environ.get("WHALE_QUICK_V2_SCAN_INTERVAL_SECONDS", "60"))
+    )
+    quick_whale_v2_lookback = max(
+        1, int(os.environ.get("WHALE_QUICK_V2_LOOKBACK_MINUTES", "2"))
+    )
+    quick_whale_v2_max_flows = max(
+        1, int(os.environ.get("WHALE_QUICK_V2_MAX_FLOWS_PER_SCAN", "8"))
+    )
+    quick_whale_v2_slippage = os.environ.get("WHALE_QUICK_V2_SLIPPAGE", "0.005")
+    quick_whale_v2_min_age = max(
+        0, int(os.environ.get("WHALE_QUICK_V2_MIN_FLOW_AGE_SECONDS", "8"))
+    )
+    quick_whale_v2_max_age = max(
+        quick_whale_v2_min_age + 1,
+        int(os.environ.get("WHALE_QUICK_V2_MAX_FLOW_AGE_SECONDS", "55")),
+    )
+    quick_whale_v2_min_close = max(
+        60, int(os.environ.get("WHALE_QUICK_V2_MIN_SECONDS_TO_CLOSE", "180"))
+    )
+    quick_whale_v2_max_spread = os.environ.get("WHALE_QUICK_V2_MAX_SPREAD", "0.04")
+    quick_whale_v2_max_adverse_mid_cents = max(
+        0, int(os.environ.get("WHALE_QUICK_V2_MAX_ADVERSE_MID_CENTS", "1"))
+    )
+    quick_whale_v2_max_follow_through_cents = max(
+        0, int(os.environ.get("WHALE_QUICK_V2_MAX_FOLLOW_THROUGH_CENTS", "2"))
+    )
+    quick_whale_v2_min_notional = max(
+        0, int(os.environ.get("WHALE_QUICK_V2_MIN_FLOW_NOTIONAL_USD", "500"))
+    )
+    quick_whale_v2_min_trades = max(
+        1, int(os.environ.get("WHALE_QUICK_V2_MIN_FLOW_TRADES", "2"))
+    )
+    quick_whale_v2_backoff = max(
+        quick_whale_v2_interval,
+        int(os.environ.get("WHALE_QUICK_V2_RATE_LIMIT_BACKOFF_SECONDS", "180")),
     )
 
     if whale_enabled:
@@ -1131,6 +1216,65 @@ def main():
             daemon=True,
         ).start()
 
+    if quick_whale_v2_enabled:
+        from . import whale_paper_runner
+
+        def quick_whale_v2_loop():
+            print(json.dumps({
+                "quick_whale_v2_paper": "starting",
+                "mode": "paper",
+                "interval_seconds": quick_whale_v2_interval,
+                "min_flow_age_seconds": quick_whale_v2_min_age,
+                "max_flow_age_seconds": quick_whale_v2_max_age,
+                "min_seconds_to_close": quick_whale_v2_min_close,
+                "max_spread": quick_whale_v2_max_spread,
+                "max_adverse_mid_cents": quick_whale_v2_max_adverse_mid_cents,
+                "max_follow_through_cents": quick_whale_v2_max_follow_through_cents,
+                "min_flow_notional_usd": quick_whale_v2_min_notional,
+                "min_flow_trades": quick_whale_v2_min_trades,
+                "paid_odds_api_calls": 0,
+                "new_entries_enabled": True,
+            }), flush=True)
+            while True:
+                wait_seconds = quick_whale_v2_interval
+                try:
+                    result = whale_paper_runner.run_once(
+                        client=quick_whale_v2_client,
+                        state_path=quick_whale_v2_state_path,
+                        runner_state_path=quick_whale_v2_runner_state_path,
+                        runs_path=quick_whale_v2_runs_path,
+                        lookback_minutes=quick_whale_v2_lookback,
+                        max_flows=quick_whale_v2_max_flows,
+                        slippage=quick_whale_v2_slippage,
+                        mode="quick_v2",
+                        max_flow_age_seconds=quick_whale_v2_max_age,
+                        min_seconds_to_close=quick_whale_v2_min_close,
+                        allow_new_entries=True,
+                        min_flow_age_seconds=quick_whale_v2_min_age,
+                        max_spread=quick_whale_v2_max_spread,
+                        max_adverse_mid_cents=quick_whale_v2_max_adverse_mid_cents,
+                        max_follow_through_cents=quick_whale_v2_max_follow_through_cents,
+                        min_flow_notional_usd=quick_whale_v2_min_notional,
+                        min_flow_trades=quick_whale_v2_min_trades,
+                    )
+                    if result.get("rate_limited"):
+                        wait_seconds = quick_whale_v2_backoff
+                except Exception as exc:
+                    print(json.dumps({
+                        "quick_whale_v2_paper_error": type(exc).__name__,
+                        "message": str(exc)[:300],
+                    }), flush=True)
+                    if "429" in str(exc):
+                        wait_seconds = quick_whale_v2_backoff
+                quick_whale_v2_trigger_event.wait(timeout=wait_seconds)
+                quick_whale_v2_trigger_event.clear()
+
+        threading.Thread(
+            target=quick_whale_v2_loop,
+            name="quick-whale-v2-paper-worker",
+            daemon=True,
+        ).start()
+
     recorder = None
     recorder_thread = None
     recorder_enabled = (
@@ -1188,6 +1332,12 @@ def main():
             quick_whale_runner_state_path=quick_whale_runner_state_path if quick_whale_enabled else None,
             quick_whale_runs_path=quick_whale_runs_path if quick_whale_enabled else None,
             quick_whale_scan_interval_seconds=quick_whale_interval if quick_whale_enabled else None,
+            quick_whale_v2_client=quick_whale_v2_client,
+            quick_whale_v2_trigger_event=quick_whale_v2_trigger_event,
+            quick_whale_v2_state_path=quick_whale_v2_state_path if quick_whale_v2_enabled else None,
+            quick_whale_v2_runner_state_path=quick_whale_v2_runner_state_path if quick_whale_v2_enabled else None,
+            quick_whale_v2_runs_path=quick_whale_v2_runs_path if quick_whale_v2_enabled else None,
+            quick_whale_v2_scan_interval_seconds=quick_whale_v2_interval if quick_whale_v2_enabled else None,
         )
         print(json.dumps({"autotrader_http": "listening", "port": http_port, "mode": "paper"}), flush=True)
 
