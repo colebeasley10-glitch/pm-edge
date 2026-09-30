@@ -250,6 +250,22 @@ class OpenMeteoWeatherShadow:
                 if edge is not None and (best_gross_edge is None or edge > best_gross_edge):
                     best_side, best_gross_edge = side, edge
 
+            source_hint = settlement_source_hint(source_market)
+            if source_hint == "the_weather_company":
+                promotion_blocker = (
+                    "independent Open-Meteo ensemble is not Kalshi's settlement "
+                    "source; require empirical calibration to Weather Company outcomes"
+                )
+            elif source_hint == "nws_climate_report":
+                promotion_blocker = (
+                    "independent ensemble must be calibrated to the exact NWS "
+                    "climate-report station and settlement convention"
+                )
+            else:
+                promotion_blocker = (
+                    "settlement source/rules unresolved; no shadow trade promotion"
+                )
+
             out.append({
                 "ticker": c.ticker,
                 "event_ticker": c.event_ticker,
@@ -267,7 +283,11 @@ class OpenMeteoWeatherShadow:
                 "timezone": geo.get("timezone"),
                 "model": self.model,
                 "rounding_assumption": "nearest_integer_half_up",
-                "settlement_source_hint": settlement_source_hint(source_market),
+                "settlement_source_hint": source_hint,
+                "source_alignment": (
+                    "independent_not_same_source"
+                    if source_hint != "unknown" else "unresolved"
+                ),
                 "yes_bid": yes_bid,
                 "yes_ask": yes_ask,
                 "no_bid": no_bid,
@@ -276,6 +296,6 @@ class OpenMeteoWeatherShadow:
                 "no_gross_edge": no_gross_edge,
                 "best_side": best_side,
                 "best_gross_edge": best_gross_edge,
-                "promotion_blocker": "requires station/source mapping and empirical calibration",
+                "promotion_blocker": promotion_blocker,
             })
         return out
