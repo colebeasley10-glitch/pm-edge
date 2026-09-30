@@ -9,15 +9,33 @@ is provenance and staleness metadata; it never makes information knowable early.
 """
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import sqlite3
+import zlib
 from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Iterable
 
 SCHEMA_VERSION = 1
+
+
+def _pack_json(value) -> str:
+    """Compact raw provider payloads to protect the small Railway volume."""
+    raw = json.dumps(value, separators=(",", ":"), default=str).encode("utf-8")
+    compressed = zlib.compress(raw, level=6)
+    return "zlib64:" + base64.b64encode(compressed).decode("ascii")
+
+
+def unpack_json(value: str):
+    """Decode current compressed payloads and legacy plain JSON rows."""
+    text = str(value or "")
+    if text.startswith("zlib64:"):
+        payload = base64.b64decode(text[len("zlib64:"):])
+        return json.loads(zlib.decompress(payload).decode("utf-8"))
+    return json.loads(text)
 
 
 def utc_iso(value: datetime | str | None = None) -> str:
@@ -444,7 +462,7 @@ class RecorderStore:
                     json.dumps(raw.get("price_ranges") or [], separators=(",", ":")),
                     raw.get("fee_type") or raw.get("fee_type_override"), fee_schedule_id,
                     content_hash, raw.get("updated_time"), received_at,
-                    json.dumps(raw, separators=(",", ":"), default=str),
+                    _pack_json(raw),
                 ),
             )
         return True
@@ -845,7 +863,7 @@ class RecorderStore:
                             row.get("taker_book_side"),
                             row.get("created_time"), received_at,
                             int(bool(row.get("is_block_trade"))),
-                            json.dumps(row, separators=(",", ":"), default=str),
+                            _pack_json(row),
                         ),
                     )
                     inserted += int(cur.rowcount > 0)
