@@ -452,6 +452,10 @@ class RecorderStore:
                 "INSERT OR REPLACE INTO schema_meta(key,value) VALUES('schema_version',?)",
                 (str(SCHEMA_VERSION),),
             )
+            con.execute(
+                """INSERT OR REPLACE INTO schema_meta(key,value)
+                   VALUES('raw_payload_format_version','zlib64-v1')"""
+            )
 
     @staticmethod
     def _market_content_hash(raw: dict, fee_schedule_id: str) -> str:
