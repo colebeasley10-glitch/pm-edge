@@ -821,6 +821,50 @@ class RestRecorder:
             self._stop.wait(delay)
 
 
+def _reset_legacy_recorder_if_needed(db_path: str) -> dict:
+    """One-time reset of the early uncompressed research DB.
+
+    Only recorder telemetry is eligible. Paper portfolio/fair state files are
+    separate and are never touched.
+    """
+    out = {"reset": False, "reason": None, "removed": []}
+    try:
+        size = os.path.getsize(db_path)
+    except OSError:
+        return out
+    threshold = int(os.getenv("AUTOTRADER_RECORDER_LEGACY_RESET_MIN_MB", "100")) * 1024 * 1024
+    if size < threshold:
+        return out
+
+    marker_value = None
+    try:
+        con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=5)
+        try:
+            row = con.execute(
+                "SELECT value FROM schema_meta WHERE key='raw_payload_format_version'"
+            ).fetchone()
+            marker_value = row[0] if row else None
+        finally:
+            con.close()
+    except Exception:
+        marker_value = None
+
+    if marker_value == "zlib64-v1":
+        return out
+
+    for suffix in ("", "-wal", "-shm"):
+        target = db_path + suffix
+        try:
+            if os.path.exists(target):
+                os.remove(target)
+                out["removed"].append(target)
+        except OSError:
+            pass
+    out["reset"] = bool(out["removed"])
+    out["reason"] = "legacy_uncompressed_recorder_db"
+    return out
+
+
 def start_recorder_thread(
     *,
     db_path=None,
@@ -836,6 +880,17 @@ def start_recorder_thread(
     resolved_db_path = db_path or os.getenv(
         "AUTOTRADER_RECORDER_DB", "/data/autotrader-recorder.sqlite3"
     )
+    legacy_reset = _reset_legacy_recorder_if_needed(resolved_db_path)
+    if legacy_reset.get("reset"):
+        print(
+            json.dumps({
+                "autotrader_recorder": "legacy_storage_reset",
+                "reason": legacy_reset.get("reason"),
+                "removed": legacy_reset.get("removed"),
+                "preserved_other_data": True,
+            }),
+            flush=True,
+        )
 
     def build():
         return RestRecorder(
