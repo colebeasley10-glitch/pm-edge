@@ -362,6 +362,31 @@ class RecorderStore:
         );
         CREATE INDEX IF NOT EXISTS idx_weather_shadow_ticker_received
             ON weather_shadow_fairs(ticker, received_at);
+
+        CREATE TABLE IF NOT EXISTS weather_shadow_edges(
+            observation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticker TEXT NOT NULL,
+            event_ticker TEXT NOT NULL,
+            received_at TEXT NOT NULL,
+            p_shadow REAL NOT NULL,
+            sampling_sigma REAL,
+            yes_bid REAL,
+            yes_ask REAL,
+            no_bid REAL,
+            no_ask REAL,
+            yes_gross_edge REAL,
+            no_gross_edge REAL,
+            best_side TEXT,
+            best_gross_edge REAL,
+            settlement_source_hint TEXT,
+            city TEXT,
+            target_date TEXT,
+            bucket_label TEXT,
+            model TEXT,
+            mode TEXT NOT NULL DEFAULT 'shadow_only'
+        );
+        CREATE INDEX IF NOT EXISTS idx_weather_edge_ticker_received
+            ON weather_shadow_edges(ticker, received_at);
         """
         with self.connect() as con:
             con.executescript(ddl)
@@ -616,6 +641,50 @@ class RecorderStore:
                 ),
             )
         return True
+
+    def record_weather_shadow_edges(self, rows: list[dict], *, received_at) -> int:
+        if not rows:
+            return 0
+        received_at = utc_iso(received_at)
+        values = []
+        for row in rows:
+            p = _float(row.get("p_shadow"))
+            if p is None or not (0 <= p <= 1):
+                continue
+            values.append((
+                str(row.get("ticker") or ""),
+                str(row.get("event_ticker") or ""),
+                received_at,
+                p,
+                _float(row.get("sampling_sigma")),
+                _float(row.get("yes_bid")),
+                _float(row.get("yes_ask")),
+                _float(row.get("no_bid")),
+                _float(row.get("no_ask")),
+                _float(row.get("yes_gross_edge")),
+                _float(row.get("no_gross_edge")),
+                row.get("best_side"),
+                _float(row.get("best_gross_edge")),
+                row.get("settlement_source_hint"),
+                row.get("city"),
+                row.get("target_date"),
+                row.get("bucket_label"),
+                row.get("model"),
+                "shadow_only",
+            ))
+        if not values:
+            return 0
+        with self.connect() as con:
+            con.executemany(
+                """INSERT INTO weather_shadow_edges(
+                    ticker,event_ticker,received_at,p_shadow,sampling_sigma,
+                    yes_bid,yes_ask,no_bid,no_ask,yes_gross_edge,no_gross_edge,
+                    best_side,best_gross_edge,settlement_source_hint,city,
+                    target_date,bucket_label,model,mode
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                values,
+            )
+        return len(values)
 
     def record_weather_shadow_fairs(self, rows: list[dict], *, received_at) -> int:
         if not rows:
@@ -929,6 +998,7 @@ class RecorderStore:
             "structural_group_observations": ("received_at", 3),
             "weather_market_observations": ("received_at", 14),
             "weather_shadow_fairs": ("received_at", 14),
+            "weather_shadow_edges": ("received_at", 14),
             "odds_fetches": ("received_at", 14),
             "odds_quotes": ("received_at", 14),
             "fair_snapshots": ("processed_at", 14),
@@ -969,6 +1039,7 @@ class RecorderStore:
             "structural_group_observations": ("received_at", 14),
             "weather_market_observations": ("received_at", 30),
             "weather_shadow_fairs": ("received_at", 30),
+            "weather_shadow_edges": ("received_at", 30),
             "odds_fetches": ("received_at", 30),
             "odds_quotes": ("received_at", 30),
             "fair_snapshots": ("processed_at", 30),
@@ -1044,7 +1115,8 @@ class RecorderStore:
         names = ("markets_meta", "ob_top", "ob_snapshots", "trades", "odds_fetches",
                  "odds_quotes", "fair_snapshots", "intents", "data_quality_events",
                  "audit_runs", "maker_observations", "weather_market_observations",
-                 "structural_group_observations", "weather_shadow_fairs")
+                 "structural_group_observations", "weather_shadow_fairs",
+                 "weather_shadow_edges")
         out = {}
         with self.connect() as con:
             for name in names:
