@@ -428,6 +428,65 @@ class RecorderStore:
             )
         return len(rows)
 
+    def record_maker_from_orderbook(
+        self, market: dict, orderbook: dict, *, received_at
+    ) -> int:
+        """Record maker queue conditions from actual orderbook levels.
+
+        YES maker bid queue comes from YES bids. NO maker bid queue comes from
+        NO bids. Executable asks are reciprocal to the opposing best bid.
+        """
+        ticker = str(market.get("ticker") or "").strip()
+        if not ticker:
+            return 0
+        book = orderbook.get("orderbook_fp") or {}
+        yes_levels = book.get("yes_dollars") or book.get("yes") or []
+        no_levels = book.get("no_dollars") or book.get("no") or []
+
+        def best(levels):
+            parsed = []
+            for level in levels:
+                if not isinstance(level, (list, tuple)) or len(level) < 2:
+                    continue
+                price = _float(level[0])
+                size = _float(level[1])
+                if price is not None and size is not None and 0 < price < 1 and size > 0:
+                    parsed.append((price, size))
+            return max(parsed, default=(None, None), key=lambda x: x[0] if x[0] is not None else -1)
+
+        yes_bid, yes_q = best(yes_levels)
+        no_bid, no_q = best(no_levels)
+        received_at = utc_iso(received_at)
+        rows = []
+        if yes_bid is not None and no_bid is not None:
+            yes_ask = 1.0 - no_bid
+            no_ask = 1.0 - yes_bid
+            if 0 < yes_bid <= yes_ask < 1:
+                rows.append((
+                    ticker, "YES", received_at, yes_bid, yes_ask, yes_ask - yes_bid,
+                    yes_q, _float(market.get("volume_24h")),
+                    _float(market.get("liquidity_dollars")),
+                    market.get("event_ticker"), "observe_only",
+                ))
+            if 0 < no_bid <= no_ask < 1:
+                rows.append((
+                    ticker, "NO", received_at, no_bid, no_ask, no_ask - no_bid,
+                    no_q, _float(market.get("volume_24h")),
+                    _float(market.get("liquidity_dollars")),
+                    market.get("event_ticker"), "observe_only",
+                ))
+        if not rows:
+            return 0
+        with self.connect() as con:
+            con.executemany(
+                """INSERT INTO maker_observations(
+                    market_ticker,side,received_at,bid,ask,spread,queue_ahead,
+                    volume_24h,liquidity_dollars,event_ticker,mode
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+                rows,
+            )
+        return len(rows)
+
     def record_snapshot(self, ticker: str, orderbook: dict, *, received_at,
                         origin="rest", conn_id=None, seq=None):
         book = orderbook.get("orderbook_fp") or {}
