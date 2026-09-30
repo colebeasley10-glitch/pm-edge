@@ -202,9 +202,10 @@ PRIMARY_MARKET = {
     "team_total": "team_totals",
 }
 
-# The 500-credit/month Odds API plan makes bulk multi-market refreshes too
-# expensive. Bulk refresh only moneylines; other market types keep the existing
-# event-specific fallback inside the same hard daily credit budget.
+# Bulk refresh featured moneylines efficiently across a sport. Alternate
+# spreads/totals remain event-specific. AutoTrader rotates a bounded request
+# budget across the candidate universe rather than repeatedly starving the same
+# lower-priority sports.
 BULK_FEATURED_KEY_FOR_TYPE = {"h2h": "h2h"}
 
 ODDS_MARKETS_FOR_TYPE = {
@@ -243,6 +244,8 @@ def load_state():
             "quotes": {},
             "alerts": {},
             "daily_usage": {"date": "", "credits": 0},
+            "autotrader_bulk_cursor": 0,
+            "autotrader_event_cursor": 0,
             "first_run_notified": False,
         }
     try:
@@ -254,6 +257,8 @@ def load_state():
         data.setdefault("quotes", {})
         data.setdefault("alerts", {})
         data.setdefault("daily_usage", {"date": "", "credits": 0})
+        data.setdefault("autotrader_bulk_cursor", 0)
+        data.setdefault("autotrader_event_cursor", 0)
         data.setdefault("first_run_notified", False)
         return data
     except Exception:
@@ -266,6 +271,31 @@ def load_state():
             "daily_usage": {"date": "", "credits": 0},
             "first_run_notified": False,
         }
+
+def _priority_plus_rotation(items, *, limit, cursor, reserve_priority=1):
+    """Select a bounded slice while preserving urgent work and rotating the rest.
+
+    Items must already be priority sorted. The first reserve_priority entries
+    remain eligible every run; remaining slots round-robin through the tail so
+    a fixed Odds API budget does not permanently starve lower-ranked sports.
+    """
+    rows = list(items or [])
+    limit = max(0, int(limit))
+    if not rows or limit <= 0:
+        return [], 0
+
+    reserve = min(max(0, int(reserve_priority)), limit, len(rows))
+    selected = list(rows[:reserve])
+    tail = rows[reserve:]
+    slots = limit - len(selected)
+    if not tail or slots <= 0:
+        return selected, 0 if not tail else int(cursor or 0) % len(tail)
+
+    start = int(cursor or 0) % len(tail)
+    take = min(slots, len(tail))
+    selected.extend(tail[(start + i) % len(tail)] for i in range(take))
+    next_cursor = (start + take) % len(tail)
+    return selected, next_cursor
 
 def save_state(state):
     STATE_PATH.write_text(json.dumps(state, indent=2, sort_keys=True, default=str), encoding="utf-8")
@@ -1497,8 +1527,18 @@ def main():
             if featured_key not in row["markets"]:
                 row["markets"].append(featured_key)
 
+    bulk_items = list(bulk_plan.items())
+    bulk_selected, next_bulk_cursor = _priority_plus_rotation(
+        bulk_items,
+        limit=MAX_BULK_SPORTS_PER_RUN,
+        cursor=state.get("autotrader_bulk_cursor", 0),
+        reserve_priority=1,
+    )
+    state["autotrader_bulk_cursor"] = next_bulk_cursor
+    bulk_selected_keys = [sport_key for sport_key, _plan in bulk_selected]
+
     bulk_covered = set()
-    for sport_key, plan in list(bulk_plan.items())[:MAX_BULK_SPORTS_PER_RUN]:
+    for sport_key, plan in bulk_selected:
         if credits_remaining_today <= 0:
             break
 
@@ -1582,7 +1622,36 @@ def main():
                 )
 
     # Event-specific fallback for alternate spreads/totals, team totals and
-    # any featured market not covered by the bulk pass.
+    # any featured market not covered by the bulk pass. Preserve a couple of
+    # highest-priority groups, then rotate the remaining request slots.
+    event_group_plan = []
+    event_group_seen = set()
+    for _, market, spec, em in candidates:
+        cached = state["fair_cache"].get(market["ticker"])
+        ttl = fair_ttl_hours(em.event)
+        if cached and age_hours(cached.get("fetched_at")) <= ttl:
+            continue
+        requested_markets = ODDS_MARKETS_FOR_TYPE.get(spec.market_type)
+        if not requested_markets:
+            continue
+        sport_key = em.event.get("_sport_key")
+        if spec.market_type == "h2h" and (sport_key, "h2h") in bulk_covered:
+            continue
+        group = (sport_key, em.event.get("id"), requested_markets)
+        if group in event_group_seen:
+            continue
+        event_group_seen.add(group)
+        event_group_plan.append(group)
+
+    event_selected, next_event_cursor = _priority_plus_rotation(
+        event_group_plan,
+        limit=MAX_REFRESH_GROUPS,
+        cursor=state.get("autotrader_event_cursor", 0),
+        reserve_priority=min(2, MAX_REFRESH_GROUPS),
+    )
+    state["autotrader_event_cursor"] = next_event_cursor
+    event_selected_set = set(event_selected)
+
     for _, market, spec, em in candidates:
         if hard_odds_failure:
             break
@@ -1604,6 +1673,8 @@ def main():
             continue
 
         group = (sport_key, em.event.get("id"), requested_markets)
+        if group not in event_selected_set:
+            continue
 
         if group not in run_event_odds_cache:
             if refresh_attempts >= MAX_REFRESH_GROUPS or credits_remaining_today <= 0:
@@ -1930,9 +2001,18 @@ def main():
         "sportsbook_horizon_filtered": sportsbook_horizon_filtered,
         "candidates": len(candidates),
         "bulk_refreshes": bulk_refreshes,
+        "bulk_sports_available": len(bulk_items),
+        "bulk_sports_selected": bulk_selected_keys,
+        "bulk_rotation_cursor": state.get("autotrader_bulk_cursor", 0),
         "bulk_events_seen": bulk_events_seen,
         "bulk_fair_successes": bulk_fair_successes,
         "event_refreshes": refreshed_groups,
+        "event_groups_available": len(event_group_plan),
+        "event_groups_selected": [
+            [str(x) if x is not None else "" for x in group]
+            for group in event_selected
+        ],
+        "event_rotation_cursor": state.get("autotrader_event_cursor", 0),
         "fair_attempts": fair_attempts,
         "fair_successes": fair_successes,
         "odds_errors": odds_errors,
