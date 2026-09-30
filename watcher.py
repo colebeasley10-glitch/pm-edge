@@ -2031,6 +2031,11 @@ def main():
         "pass_alerts_sent": pass_sent,
         "odds_credits_today": daily.get("credits", 0),
         "daily_budget": DAILY_ODDS_BUDGET,
+        "config_max_refresh_groups": MAX_REFRESH_GROUPS,
+        "config_max_bulk_sports": MAX_BULK_SPORTS_PER_RUN,
+        "config_max_fair_ttl_seconds": int(
+            os.getenv("PM_EDGE_MAX_FAIR_TTL_SECONDS", "0") or 0
+        ),
         "raw_markets_seen": kalshi_stats.get("raw_markets_seen", 0),
         "open_markets_seen": kalshi_stats.get("open_markets_seen", 0),
         "combo_filtered": kalshi_stats.get("combo_filtered", 0),
