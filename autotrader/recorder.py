@@ -49,6 +49,7 @@ class RestRecorder:
         db_path="/data/autotrader-recorder.sqlite3",
         client=None,
         interval_seconds=60,
+        universe_interval_seconds=300,
         metadata_interval_seconds=900,
         snapshot_interval_seconds=300,
         hot_markets=40,
@@ -61,6 +62,9 @@ class RestRecorder:
         self.store = RecorderStore(db_path)
         self.client = client or KalshiPublicClient(PUBLIC_BASE)
         self.interval_seconds = max(30, int(interval_seconds))
+        self.universe_interval_seconds = max(
+            self.interval_seconds, int(universe_interval_seconds)
+        )
         self.metadata_interval_seconds = max(self.interval_seconds, int(metadata_interval_seconds))
         self.snapshot_interval_seconds = max(self.interval_seconds, int(snapshot_interval_seconds))
         self.hot_markets = max(1, int(hot_markets))
@@ -69,6 +73,9 @@ class RestRecorder:
         self.max_markets = max(1000, int(max_markets))
         self.fee_schedule_id = str(fee_schedule_id)
         self.clock = clock or _utcnow
+        self._last_market_refresh_at = None
+        self._market_cache = []
+        self._market_cache_received_at = None
         self._last_metadata_at = None
         self._last_snapshot_at = None
         self._last_trade_poll_at = None
@@ -242,11 +249,36 @@ class RestRecorder:
                 "error": f"{type(exc).__name__}: {str(exc)[:240]}",
             }
 
-        raw_markets = self._api(
-            "GET /markets?status=open",
-            lambda: self.client.list_open_markets(max_markets=self.max_markets),
+        universe_refreshed = False
+        universe_error = None
+        universe_due = (
+            self._last_market_refresh_at is None
+            or not self._market_cache
+            or (cycle_started - self._last_market_refresh_at).total_seconds()
+            >= self.universe_interval_seconds
         )
-        market_received = self.clock().astimezone(timezone.utc)
+        if universe_due:
+            try:
+                fresh_markets = self._api(
+                    "GET /markets?status=open",
+                    lambda: self.client.list_open_markets(max_markets=self.max_markets),
+                )
+                self._market_cache = list(fresh_markets)
+                self._market_cache_received_at = self.clock().astimezone(timezone.utc)
+                self._last_market_refresh_at = cycle_started
+                universe_refreshed = True
+            except Exception as exc:
+                universe_error = f"{type(exc).__name__}: {str(exc)[:300]}"
+                # A transient Kalshi 429 should not stop trade-tape collection or
+                # the rest of the worker if we have a previously observed universe.
+                if not self._market_cache:
+                    raise
+
+        raw_markets = list(self._market_cache)
+        market_received = (
+            self._market_cache_received_at
+            or self.clock().astimezone(timezone.utc)
+        )
 
         ranked = sorted(
             [m for m in raw_markets if str(m.get("ticker") or "").strip()],
@@ -276,7 +308,7 @@ class RestRecorder:
             except Exception:
                 continue
 
-        metadata_due = (
+        metadata_due = universe_refreshed and (
             self._last_metadata_at is None
             or (cycle_started - self._last_metadata_at).total_seconds()
             >= self.metadata_interval_seconds
@@ -435,25 +467,26 @@ class RestRecorder:
 
         top_rows = 0
         maker_observations = 0
-        for raw in hot_raw:
-            try:
-                normalized = normalize_market(raw)
-                self.store.record_top(
-                    normalized,
-                    received_at=market_received,
-                    processed_at=self.clock().astimezone(timezone.utc),
-                    origin="rest_market_list",
-                )
-                top_rows += 1
-                maker_observations += self.store.record_maker_observations(
-                    normalized, received_at=market_received
-                )
-            except Exception as exc:
-                self.store.quality_event(
-                    "top_write_error",
-                    market_ticker=str(raw.get("ticker") or "") or None,
-                    detail={"error": f"{type(exc).__name__}: {exc}"},
-                )
+        if universe_refreshed:
+            for raw in hot_raw:
+                try:
+                    normalized = normalize_market(raw)
+                    self.store.record_top(
+                        normalized,
+                        received_at=market_received,
+                        processed_at=self.clock().astimezone(timezone.utc),
+                        origin="rest_market_list",
+                    )
+                    top_rows += 1
+                    maker_observations += self.store.record_maker_observations(
+                        normalized, received_at=market_received
+                    )
+                except Exception as exc:
+                    self.store.quality_event(
+                        "top_write_error",
+                        market_ticker=str(raw.get("ticker") or "") or None,
+                        detail={"error": f"{type(exc).__name__}: {exc}"},
+                    )
 
         snapshots = 0
         snapshot_due = (
@@ -462,18 +495,19 @@ class RestRecorder:
             >= self.snapshot_interval_seconds
         )
         if snapshot_due:
-            try:
-                normalized_all = [normalize_market(raw) for raw in raw_markets]
-                structural_groups = self.store.record_structural_groups(
-                    normalized_all,
-                    received_at=market_received,
-                    max_groups=int(os.getenv("AUTOTRADER_STRUCTURAL_MAX_GROUPS", "200")),
-                )
-            except Exception as exc:
-                self.store.quality_event(
-                    "structural_group_write_error",
-                    detail={"error": f"{type(exc).__name__}: {exc}"},
-                )
+            if universe_refreshed:
+                try:
+                    normalized_all = [normalize_market(raw) for raw in raw_markets]
+                    structural_groups = self.store.record_structural_groups(
+                        normalized_all,
+                        received_at=market_received,
+                        max_groups=int(os.getenv("AUTOTRADER_STRUCTURAL_MAX_GROUPS", "200")),
+                    )
+                except Exception as exc:
+                    self.store.quality_event(
+                        "structural_group_write_error",
+                        detail={"error": f"{type(exc).__name__}: {exc}"},
+                    )
             for raw in maker_raw:
                 ticker = str(raw.get("ticker") or "").strip()
                 if not ticker:
@@ -569,6 +603,12 @@ class RestRecorder:
             "recorder": "rest_v1",
             "observed_at": utc_iso(self.clock().astimezone(timezone.utc)),
             "open_markets": len(raw_markets),
+            "universe_refreshed": universe_refreshed,
+            "universe_error": universe_error,
+            "universe_age_seconds": (
+                max(0.0, (cycle_started - self._last_market_refresh_at).total_seconds())
+                if self._last_market_refresh_at is not None else None
+            ),
             "hot_markets": len(hot_raw),
             "top_rows": top_rows,
             "maker_observations": maker_observations,
@@ -620,6 +660,10 @@ class RestRecorder:
                     flush=True,
                 )
             delay = max(1.0, self.interval_seconds - (time.monotonic() - started))
+            # If Kalshi rate-limits a cold start (before any cache exists), back
+            # off instead of hammering the same paginated endpoint every minute.
+            if 'exc' in locals() and "429" in str(exc):
+                delay = max(delay, 180.0)
             self._stop.wait(delay)
 
 
@@ -627,6 +671,7 @@ def start_recorder_thread(
     *,
     db_path=None,
     interval_seconds=None,
+    universe_interval_seconds=None,
     metadata_interval_seconds=None,
     snapshot_interval_seconds=None,
     hot_markets=None,
@@ -643,6 +688,9 @@ def start_recorder_thread(
             db_path=resolved_db_path,
             interval_seconds=interval_seconds or int(
                 os.getenv("AUTOTRADER_RECORDER_INTERVAL_SECONDS", "60")
+            ),
+            universe_interval_seconds=universe_interval_seconds or int(
+                os.getenv("AUTOTRADER_RECORDER_UNIVERSE_INTERVAL_SECONDS", "300")
             ),
             metadata_interval_seconds=metadata_interval_seconds or int(
                 os.getenv("AUTOTRADER_RECORDER_METADATA_INTERVAL_SECONDS", "900")
@@ -714,6 +762,9 @@ def main():
     recorder = RestRecorder(
         db_path=os.getenv("AUTOTRADER_RECORDER_DB", "/data/autotrader-recorder.sqlite3"),
         interval_seconds=int(os.getenv("AUTOTRADER_RECORDER_INTERVAL_SECONDS", "60")),
+        universe_interval_seconds=int(
+            os.getenv("AUTOTRADER_RECORDER_UNIVERSE_INTERVAL_SECONDS", "300")
+        ),
         metadata_interval_seconds=int(
             os.getenv("AUTOTRADER_RECORDER_METADATA_INTERVAL_SECONDS", "900")
         ),
