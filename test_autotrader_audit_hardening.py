@@ -61,6 +61,9 @@ class TimeoutWiringTests(unittest.TestCase):
                 ]):
             with self.assertRaises(Stop):
                 paper_runner.main()
+        # main() configures the process-wide Kalshi limiter; don't leak it.
+        from pmedge.rate_limit import configure_shared_limiter
+        configure_shared_limiter(rate=0, burst=1)
         self.assertTrue(built)
         self.assertEqual(set(built), {6})
 

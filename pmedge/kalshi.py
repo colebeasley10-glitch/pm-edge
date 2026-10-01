@@ -9,6 +9,7 @@ import requests
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
+from .rate_limit import RetryStats, get_with_retry
 from .utils import to_float
 
 
@@ -22,10 +23,15 @@ class KalshiPublicClient:
         self.timeout = timeout
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": "PM-Edge/2.0"})
+        self.retry_stats = RetryStats()
 
     def _get(self, path: str, params: dict | None = None) -> dict:
         try:
-            r = self.session.get(self.base_url + path, params=params or {}, timeout=self.timeout)
+            # Shared process-wide pacing + bounded 429 retries (public GETs only).
+            r = get_with_retry(
+                lambda: self.session.get(self.base_url + path, params=params or {}, timeout=self.timeout),
+                stats=self.retry_stats,
+            )
             r.raise_for_status()
             return r.json()
         except (requests.RequestException, ValueError) as exc:

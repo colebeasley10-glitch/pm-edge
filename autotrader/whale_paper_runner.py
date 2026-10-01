@@ -1248,6 +1248,11 @@ def run_once(
     all_decisions = pending_decisions + flow_decisions + reaction_decisions
     fills = sum(1 for x in all_decisions if x.get("decision") == "paper_filled")
     resting = sum(1 for x in all_decisions if x.get("decision") == "paper_maker_resting")
+    # A 429 that survived retries mid-pagination no longer discards the tape:
+    # the pages already fetched are used and the window is marked truncated
+    # (trade_partial_after_error / trade_rate_limited). That case does NOT put
+    # the lane into its long backoff; only a failed first page or a 429 on a
+    # market/orderbook call does, exactly as before.
     rate_limited = bool(api_error and "429" in api_error) or any(
         "429" in str(x.get("error") or "") for x in all_decisions
     )
@@ -1304,6 +1309,10 @@ def run_once(
         "trade_window_coverage_fraction": tape_diagnostics.get("trade_window_coverage_fraction"),
         "trade_covers_since_last_scan": tape_diagnostics.get("trade_covers_since_last_scan"),
         "trade_fetch_seconds": tape_diagnostics.get("trade_fetch_seconds"),
+        "trade_page_order": tape_diagnostics.get("trade_page_order"),
+        "trade_rate_limited": tape_diagnostics.get("trade_rate_limited"),
+        "trade_rate_limit_retries": tape_diagnostics.get("trade_rate_limit_retries"),
+        "trade_partial_after_error": tape_diagnostics.get("trade_partial_after_error"),
     }, sort_keys=True), flush=True)
     return run
 

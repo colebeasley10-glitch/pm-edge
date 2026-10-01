@@ -20,6 +20,7 @@ from pathlib import Path
 from decimal import Decimal
 
 from pmedge.kalshi import KalshiPublicClient, normalize_market
+from pmedge.rate_limit import configure_shared_limiter, shared_limiter
 from .collector import PUBLIC_BASE
 from .engine import PaperEngine
 from .probability import load_pm_edge_api, load_pm_edge_ledger
@@ -143,6 +144,23 @@ def _value_watchdog(timeout_seconds, *, exit_fn=None, sleep_fn=None, max_checks=
         exit_fn(70)
         return reason
     return None
+
+
+def _env_float_default(name, default):
+    try:
+        return float(os.environ.get(name, default))
+    except (TypeError, ValueError):
+        return float(default)
+
+
+def _limiter_status():
+    limiter = shared_limiter()
+    return {
+        "requests_per_second": limiter.rate,
+        "burst": limiter.burst,
+        "requests_paced": limiter.acquired,
+        "total_wait_seconds": round(limiter.waited_seconds, 3),
+    }
 
 
 def _kalshi_timeout_seconds():
@@ -1128,6 +1146,7 @@ def _paper_status(state_path, runs_path, *, market_client=None, market_cache=Non
         # must show as offline even though the HTTP thread still answers.
         "worker_online": _run_is_recent(last_run, scan_interval),
         "worker_heartbeats": _worker_heartbeat_status(),
+        "kalshi_rate_limiter": _limiter_status(),
         "scan_interval_seconds": scan_interval,
         "starting_bankroll": "500.00",
         "portfolio": portfolio.snapshot(bids=bids),
@@ -1360,6 +1379,22 @@ def main():
             name="value-edge-watchdog",
             daemon=True,
         ).start()
+
+    # One process-wide pacing limiter for every public Kalshi GET made by this
+    # worker (Value Edge, all whale lanes, recorder), so independent threads
+    # cannot burst together into 429s. Env vars override these defaults.
+    limiter = configure_shared_limiter(
+        # Half of Kalshi's documented basic read limit (~20/s); lower via env
+        # if 429s persist, raise only with evidence.
+        rate=_env_float_default("PM_EDGE_KALSHI_RATE_LIMIT_RPS", 10.0),
+        burst=_env_float_default("PM_EDGE_KALSHI_RATE_LIMIT_BURST", 10.0),
+    )
+    print(json.dumps({
+        "kalshi_rate_limiter": "configured",
+        "requests_per_second": limiter.rate,
+        "burst": limiter.burst,
+        "max_429_retries": int(_env_float_default("PM_EDGE_KALSHI_429_MAX_RETRIES", 3)),
+    }), flush=True)
 
     # The configured short timeout must apply to the client the loop actually
     # uses; run_once only builds its own client when none is passed in.
