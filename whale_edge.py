@@ -20,7 +20,11 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
+import threading
+
 import requests
+
+from pmedge.rate_limit import RetryStats, get_with_retry
 
 import dashboard_data
 import signal_tracker
@@ -125,8 +129,21 @@ def _is_fast_financial_market(ticker,question=""):
 TRADE_PAGE_CAP = max(1, int(os.getenv("PM_EDGE_WHALE_TRADE_PAGE_CAP", "10")))
 TRADE_TIMEOUT_SECONDS = max(3, int(os.getenv("PM_EDGE_WHALE_TRADE_TIMEOUT_SECONDS", "20")))
 
+_TRADE_STATS = threading.local()
+
+def _trade_retry_stats():
+    """Per-thread retry counters so each lane's diagnostics count only its own retries."""
+    stats = getattr(_TRADE_STATS, "stats", None)
+    if stats is None:
+        stats = _TRADE_STATS.stats = RetryStats()
+    return stats
+
 def _fetch_trade_page(params):
-    r=requests.get(f"{PUBLIC_BASE}/markets/trades",params=params,timeout=TRADE_TIMEOUT_SECONDS)
+    # Shared process-wide pacing + bounded 429 retries (public GET only).
+    r=get_with_retry(
+        lambda: requests.get(f"{PUBLIC_BASE}/markets/trades",params=params,timeout=TRADE_TIMEOUT_SECONDS),
+        stats=_trade_retry_stats(),
+    )
     r.raise_for_status()
     return r.json()
 
@@ -161,13 +178,26 @@ def _public_trades(*,min_ts,limit=1000,page_cap=None,diagnostics=None,fetch_page
     oldest_any=oldest_in=newest_in=None
     reached_boundary=exhausted=cap_hit=False
     orders=set()
+    fetch_error=None
+    retry_stats=_trade_retry_stats()
+    retries_before=retry_stats.retries
+    limited_before=retry_stats.rate_limited
     while True:
         if pages>=cap:
             cap_hit=bool(cursor) and not (reached_boundary and orders=={"newest_first"})
             break
         params={"limit":max(1,min(int(limit),1000)),"min_ts":min_ts}
         if cursor: params["cursor"]=cursor
-        payload=fetch_page(params)
+        try:
+            payload=fetch_page(params)
+        except Exception as exc:
+            # First page failing: nothing to keep, surface the error as before.
+            if pages==0:
+                raise
+            # Later page failing (e.g. 429 after retries): KEEP what we have and
+            # report the window as truncated instead of discarding every page.
+            fetch_error=f"{type(exc).__name__}: {str(exc)[:200]}"
+            break
         pages+=1
         rows=payload.get("trades",[]) if isinstance(payload,dict) else []
         rows=rows if isinstance(rows,list) else []
@@ -202,7 +232,7 @@ def _public_trades(*,min_ts,limit=1000,page_cap=None,diagnostics=None,fetch_page
         # Only a newest-first walk proves everything older has been passed.
         if reached_boundary and orders=={"newest_first"}:
             break
-    covered=bool(exhausted or (reached_boundary and orders=={"newest_first"}))
+    covered=bool(fetch_error is None and (exhausted or (reached_boundary and orders=={"newest_first"})))
     if diagnostics is not None:
         end=clock()
         ref=now or started
@@ -228,6 +258,13 @@ def _public_trades(*,min_ts,limit=1000,page_cap=None,diagnostics=None,fetch_page
             "trade_requested_lookback_seconds":round(lookback,3),
             "trade_page_order":("unknown" if not orders else "mixed" if len(orders)>1 else next(iter(orders))),
             "trade_fetch_seconds":round(max(0.0,(end-started).total_seconds()),3),
+            "trade_partial_after_error":fetch_error is not None,
+            "trade_fetch_error":fetch_error,
+            "trade_rate_limited":bool(
+                (fetch_error and "429" in fetch_error)
+                or retry_stats.rate_limited>limited_before
+            ),
+            "trade_rate_limit_retries":retry_stats.retries-retries_before,
         })
     return out
 
