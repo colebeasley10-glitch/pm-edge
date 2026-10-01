@@ -3,13 +3,20 @@ from __future__ import annotations
 import csv
 import json
 import os
+import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 
-import approval_links
-import performance_tracker
-import signal_tracker
+sys.path.insert(0, str(Path(__file__).resolve().parent / "tests"))
+from ledger_isolation import CommittedLedgerGuard, isolate_runtime_ledgers  # noqa: E402
+
+# Must run before importing modules that bind ledger paths at import time.
+isolate_runtime_ledgers()
+
+import approval_links  # noqa: E402
+import performance_tracker  # noqa: E402
+import signal_tracker  # noqa: E402
 
 
 class FakeClient:
@@ -180,4 +187,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    with CommittedLedgerGuard():
+        main()

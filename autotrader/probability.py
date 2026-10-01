@@ -129,9 +129,15 @@ def _build_snapshot(rows, *, now, max_age_seconds, source_default,
             "fair_snapshot_id": snapshot_id,
             "commence_time": str(row.get("commence_time") or "").strip(),
             "market_type": market_type,
+            "sport_key": str(row.get("sport_key") or "").strip(),
             "selection": str(row.get("selection") or "").strip(),
             "point": row.get("point"),
-            "sigma": row.get("sigma"),
+            # Provenance only. The ledger now logs fair_v2 sigma, but the
+            # production engine/exit manager must keep using its existing
+            # default until a separately versioned lane promotes it, so this
+            # is deliberately NOT exposed under the "sigma" key they read.
+            "provenance_sigma": row.get("sigma"),
+            "fair_provenance_version": str(row.get("lane_version") or ""),
             "fair_source": str(row.get("source") or source_default),
             "fair_v2_method_version": str(row.get("fair_v2_method_version") or ""),
             "fair_v2_weighted_yes_prob": row.get("fair_v2_weighted_yes_prob"),

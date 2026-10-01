@@ -121,11 +121,69 @@ def _aggregate(samples):
         "pnl": _json_number(pnl, 4),
         "risked": _json_number(risked, 4),
         "roi": _json_number(pnl / risked if risked > 0 else D("0"), 6),
+        "interpretation": (
+            "descriptive_only" if len(samples) < MIN_EDGE_BUCKET_TRADES
+            else "cautious_pattern_only"
+        ),
         "avg_clv": _json_number(
             sum(clvs, D("0")) / D(len(clvs)) if clvs else None, 6
         ) if clvs else None,
         "clv_samples": len(clvs),
     }
+
+
+def _bucket(value, edges, labels, unknown="unknown"):
+    v = _decimal(value)
+    if v is None:
+        return unknown
+    for edge, label in zip(edges, labels):
+        if v < D(str(edge)):
+            return label
+    return labels[-1]
+
+
+def _price_bucket(value):
+    return _bucket(value, (0.30, 0.45, 0.60, 0.75), ("<0.30", "0.30-0.45", "0.45-0.60", "0.60-0.75", "0.75+"))
+
+
+def _age_bucket(seconds):
+    return _bucket(seconds, (60, 300, 900, 2100, 7200),
+                   ("<1m", "1-5m", "5-15m", "15-35m", "35m-2h", "2h+"))
+
+
+def _quote_age_bucket(seconds):
+    return _bucket(seconds, (1, 3, 5, 10), ("<1s", "1-3s", "3-5s", "5-10s", "10s+"))
+
+
+def _research_segments(samples):
+    """Per-lane segmentation for research. Lanes are never pooled."""
+    def thesis(x):
+        return x.get("thesis") or {}
+
+    dims = {
+        "entry_price": lambda x: _price_bucket(x.get("entry_price")),
+        "series": lambda x: str(thesis(x).get("series") or str(x.get("ticker") or "").split("-")[0] or "unknown"),
+        "sport": lambda x: str(thesis(x).get("sport_key") or "unknown"),
+        "market_type": lambda x: str(thesis(x).get("market_type") or "unknown"),
+        "side": lambda x: str(x.get("side") or "unknown").upper(),
+        "execution": lambda x: str(x.get("execution") or "unknown").upper(),
+        "flow_notional": lambda x: _flow_bucket(x.get("flow_notional_usd")),
+        "fair_age": lambda x: _age_bucket(thesis(x).get("fair_age_s")),
+        "source_age": lambda x: _age_bucket(thesis(x).get("source_age_s")),
+        "quote_age": lambda x: _quote_age_bucket(thesis(x).get("quote_age_s")),
+        "entry_edge": lambda x: _edge_bucket(x.get("edge")),
+        "clv_available": lambda x: "yes" if _decimal(x.get("clv")) is not None else "no",
+        "lane_version": lambda x: str(x.get("lane_version") or "unknown"),
+    }
+    by_lane = defaultdict(list)
+    for sample in samples:
+        by_lane[str(sample.get("lane") or "unknown")].append(sample)
+    out = {}
+    for lane, rows in sorted(by_lane.items()):
+        out[lane] = {"all": _aggregate(rows)}
+        for name, fn in dims.items():
+            out[lane][name] = _segment(rows, fn)
+    return out
 
 
 def _segment(samples, key_fn):
@@ -152,13 +210,43 @@ def _book_side_mid(book, side):
     return None
 
 
+def clv_target(thesis):
+    """CLV reference time: recorded event start, else market close (with provenance).
+
+    Mirrors autotrader.clv_capture so evaluation uses the checkpoints that the
+    recorder captured. Naive timestamps are rejected rather than guessed.
+    """
+    thesis = thesis or {}
+    for key, prov_key, default_prov in (
+        ("event_start_at", "event_start_provenance", "thesis_event_start_at"),
+        ("close_time", "close_time_provenance", "kalshi_market_close_time"),
+    ):
+        raw = thesis.get(key)
+        if not raw:
+            continue
+        try:
+            dt = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            continue
+        if dt.tzinfo is None:
+            continue
+        return dt.astimezone(timezone.utc), str(thesis.get(prov_key) or default_prov)
+    return None, None
+
+
 def _closing_clv(sample, recorder):
+    """Closing-line value measured strictly AFTER entry, for evaluation only.
+
+    book_at() returns the latest book received at or before the target, so a
+    later observation can never be attributed to an earlier time.
+    """
     if recorder is None:
         return None
     thesis = sample.get("thesis") or {}
-    target = _parse_iso(thesis.get("event_start_at"))
+    target, provenance = clv_target(thesis)
     if target is None or target > _utcnow():
         return None
+    sample["clv_target_provenance"] = provenance
     try:
         book = recorder.book_at(sample["ticker"], target)
     except Exception:
@@ -176,6 +264,11 @@ def _closing_clv(sample, recorder):
     if closing_mid is None or entry is None:
         return None
     return closing_mid - entry
+
+
+def _normalize_execution(value):
+    text = str(value or "").strip().upper()
+    return {"TAKER": "TAKE", "MAKER": "MAKE"}.get(text, text)
 
 
 def _completed_trades(portfolio, recorder=None, lane_hint=None):
@@ -217,7 +310,9 @@ def _completed_trades(portfolio, recorder=None, lane_hint=None):
                 "thesis": thesis,
                 "edge": thesis.get("entry_edge_net"),
                 "sigma": thesis.get("entry_sigma"),
-                "execution": str(thesis.get("execution") or thesis.get("execution_style") or ""),
+                "execution": _normalize_execution(
+                    thesis.get("execution") or thesis.get("execution_style")
+                ),
                 "flow_notional_usd": thesis.get("flow_notional_usd"),
                 "reference_price_cents": thesis.get("reference_price_cents"),
             }
@@ -467,6 +562,8 @@ def update_learning_state(
         lambda x: f"{x.get('lane') or 'unknown'}:{_flow_bucket(x.get('flow_notional_usd'))}",
     )
 
+    research_segments = _research_segments(all_samples)
+
     clv_samples = [x for x in all_samples if _decimal(x.get("clv")) is not None]
     payload = {
         "schema": SCHEMA,
@@ -487,6 +584,15 @@ def update_learning_state(
             "value_edge_by_entry_edge": edge_segments,
             "by_execution": execution_segments,
             "whale_by_flow_notional": flow_segments,
+            "research": research_segments,
+        },
+        "interpretation_rules": {
+            "descriptive_only_below_trades": MIN_EDGE_BUCKET_TRADES,
+            "cautious_pattern_at_or_above_trades": MIN_EDGE_BUCKET_TRADES,
+            "promotion_gate": (
+                ">=200 settled production trades, >=80 challenger disagreements, "
+                "positive CLV difference with 95% CI excluding zero, manual owner approval"
+            ),
         },
         "clv": {
             "definition": "Side-contract midpoint immediately before recorded event start minus entry price.",

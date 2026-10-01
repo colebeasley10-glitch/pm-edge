@@ -63,7 +63,20 @@ FIELDS = [
     "risk_multiplier",
     "audit_bucket",
     "source_version",
+    # Provenance (logging only; no production decision reads these yet).
+    "sigma",
+    "source_age_s",
+    "lane_version",
+    # Shadow team-matcher validation of the production event match.
+    "matcher_shadow_pass",
+    "matcher_shadow_reason",
+    "matcher_shadow_team_score",
+    "matcher_shadow_date_match",
 ]
+
+# Version of the fair-value provenance carried by rows written by this code.
+# "spreadfix" marks rows produced after the alternate-spread devig correction.
+PROVENANCE_VERSION = "fair_provenance_v1_spreadfix"
 
 
 def _safe_float(value: Any) -> float | None:
@@ -194,6 +207,7 @@ def record_candidate(
     except (TypeError, ValueError):
         books = None
 
+    _shadow = market.get("_matcher_shadow") if isinstance(market.get("_matcher_shadow"), dict) else {}
     fair_fetched_at = str(fair_entry.get("fetched_at") or "")
     snapshot_raw = "|".join([
         ticker,
@@ -246,6 +260,13 @@ def record_candidate(
         "risk_multiplier": _safe_float(getattr(q, "pmedge_risk_multiplier", 1.0)),
         "audit_bucket": str(getattr(q, "pmedge_audit_bucket", "") or ""),
         "source_version": int(source_version),
+        "sigma": _safe_float(fair_entry.get("sigma")),
+        "source_age_s": _safe_float(fair_entry.get("source_age_s")),
+        "lane_version": PROVENANCE_VERSION,
+        "matcher_shadow_pass": _shadow.get("matcher_shadow_pass"),
+        "matcher_shadow_reason": str(_shadow.get("matcher_shadow_reason") or ""),
+        "matcher_shadow_team_score": _safe_float(_shadow.get("matcher_shadow_team_score")),
+        "matcher_shadow_date_match": _shadow.get("matcher_shadow_date_match"),
     }
 
     write_header = not path.exists() or path.stat().st_size == 0

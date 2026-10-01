@@ -445,6 +445,26 @@ class RecorderStore:
         );
         CREATE INDEX IF NOT EXISTS idx_weather_settlement_event
             ON weather_settlements(event_ticker, observed_at);
+        CREATE TABLE IF NOT EXISTS clv_checkpoints(
+            position_key TEXT NOT NULL,
+            checkpoint TEXT NOT NULL,
+            lane TEXT,
+            ticker TEXT NOT NULL,
+            side TEXT,
+            target_at TEXT,
+            target_provenance TEXT,
+            entry_price REAL,
+            received_at TEXT NOT NULL,
+            yes_bid REAL,
+            yes_ask REAL,
+            no_bid REAL,
+            no_ask REAL,
+            side_mid REAL,
+            clv REAL,
+            PRIMARY KEY(position_key, checkpoint)
+        );
+        CREATE INDEX IF NOT EXISTS idx_clv_checkpoint_ticker
+            ON clv_checkpoints(ticker, received_at);
         """
         with self.connect() as con:
             con.executescript(ddl)
@@ -1361,6 +1381,50 @@ class RecorderStore:
                 ),
             )
 
+    def has_clv_checkpoint(self, position_key: str, checkpoint: str) -> bool:
+        with self.connect() as con:
+            row = con.execute(
+                "SELECT 1 FROM clv_checkpoints WHERE position_key=? AND checkpoint=?",
+                (str(position_key), str(checkpoint)),
+            ).fetchone()
+        return row is not None
+
+    def record_clv_checkpoint(self, *, position_key, checkpoint, lane, ticker, side,
+                              target_at, target_provenance, entry_price, received_at,
+                              yes_bid, yes_ask, no_bid, no_ask) -> bool:
+        """One evaluation-only book observation per (position, checkpoint).
+
+        These rows are for measuring CLV AFTER the fact; no entry decision
+        reads them, so they cannot leak future information into a decision.
+        """
+        prefix_bid, prefix_ask = (yes_bid, yes_ask) if str(side).upper() == "YES" else (no_bid, no_ask)
+        mid = None
+        if prefix_bid is not None and prefix_ask is not None:
+            mid = (float(prefix_bid) + float(prefix_ask)) / 2.0
+        clv = None if mid is None or entry_price is None else mid - float(entry_price)
+        with self.connect() as con:
+            cur = con.execute(
+                """INSERT OR IGNORE INTO clv_checkpoints(
+                    position_key,checkpoint,lane,ticker,side,target_at,target_provenance,
+                    entry_price,received_at,yes_bid,yes_ask,no_bid,no_ask,side_mid,clv
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    str(position_key), str(checkpoint), lane, ticker, side,
+                    utc_iso(target_at) if target_at is not None else None, target_provenance,
+                    _float(entry_price), utc_iso(received_at),
+                    _float(yes_bid), _float(yes_ask), _float(no_bid), _float(no_ask), mid, clv,
+                ),
+            )
+            return bool(cur.rowcount and cur.rowcount > 0)
+
+    def clv_checkpoints_for(self, position_key: str) -> list[dict]:
+        with self.connect() as con:
+            rows = con.execute(
+                "SELECT * FROM clv_checkpoints WHERE position_key=? ORDER BY received_at",
+                (str(position_key),),
+            ).fetchall()
+        return [dict(r) for r in rows]
+
     def record_trades(self, rows: Iterable[dict], *, received_at) -> int:
         received_at = utc_iso(received_at)
         inserted = 0
@@ -1614,6 +1678,7 @@ class RecorderStore:
             "api_calls": ("received_at", 7),
             "data_quality_events": ("ts", 30),
             "audit_runs": ("completed_at", 30),
+            "clv_checkpoints": ("received_at", 120),
         }
         deleted = {}
         with self.connect() as con:
@@ -1684,7 +1749,7 @@ class RecorderStore:
                  "audit_runs", "maker_observations", "maker_probe_orders",
                  "weather_market_observations",
                  "structural_group_observations", "weather_shadow_fairs",
-                 "weather_shadow_edges")
+                 "weather_shadow_edges", "clv_checkpoints")
         out = {}
         with self.connect() as con:
             for name in names:
