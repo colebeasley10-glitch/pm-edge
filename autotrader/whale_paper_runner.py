@@ -69,6 +69,35 @@ class PendingMaker:
 
 
 MAKER_SHADOW_VERSION = "maker_tradethrough_v1"
+
+# Reporting boundaries for Quick Whale v2 (analytical metadata only; no state
+# is reset and no historical record is rewritten):
+#   quick_whale_v2_pre_pagination : runs/entries before the first paginated
+#                                   deploy (single 1,000-trade tape page)
+#   quick_whale_v2_pagination_v1  : from that deploy until the horizon fix;
+#                                   records carry no explicit label
+#   quick_whale_v2_pagination_v2  : written by this code (window-filtered tape,
+#                                   explicit horizon coverage, post-fetch
+#                                   flow-age clock); label stamped explicitly
+QUICK_V2_PAGINATION_BOUNDARY_AT = "2026-10-01T17:37:55.407Z"
+QUICK_V2_PAGINATION_BOUNDARY_COMMIT = "888340bb380a76a1b76187cc6df435c3974b9141"
+LANE_VERSIONS = {
+    "whale_flow": "whale_flow_tape_horizon_v1",
+    "quick_whale": "quick_whale_v1_tape_horizon_v1",
+    "quick_whale_v2": "quick_whale_v2_pagination_v2",
+    "quick_whale_v3": "quick_whale_v3_tape_horizon_v1",
+}
+
+
+def quick_v2_version_for(observed_at=None, explicit_lane_version=None):
+    """Classify a Quick Whale v2 run/entry into its reporting period."""
+    if explicit_lane_version:
+        return str(explicit_lane_version)
+    ts = _parse_time(observed_at)
+    if ts is None:
+        return "quick_whale_v2_unknown_period"
+    boundary = _parse_time(QUICK_V2_PAGINATION_BOUNDARY_AT)
+    return "quick_whale_v2_pre_pagination" if ts < boundary else "quick_whale_v2_pagination_v1"
 V3_QUEUE_MAX = 50
 
 
@@ -275,6 +304,7 @@ def _paper_buy(
     strategy="whale_flow",
     timing=None,
     meta=None,
+    entered_at=None,
 ):
     price = D(price)
     rough_fee = prediction_fee(1, price)
@@ -295,6 +325,9 @@ def _paper_buy(
         **(timing or {}),
         "event_ticker": str((meta or {}).get("event_ticker") or ""),
         "series": str(ticker).split("-")[0],
+        "lane_version": LANE_VERSIONS.get(strategy, f"{strategy}_unversioned"),
+        "trade_tape_version": whale_edge.TRADE_TAPE_VERSION,
+        "entered_at": _iso_or_none(entered_at) if entered_at is not None else None,
     }
     filled = portfolio.buy(
         ticker,
@@ -432,6 +465,7 @@ def _process_pending(portfolio, client, state, trades, now, slippage):
             execution="MAKE",
             timing=_position_timing(p.ticker, p.side, market_cache.get(p.ticker), quick=False),
             meta=market_cache.get(p.ticker),
+            entered_at=now,
         )
         decisions.append({
             "ticker": p.ticker, "side": p.side,
@@ -886,6 +920,7 @@ def _eligible_flow_rows(
             strategy=strategy,
             timing=_position_timing(ticker, side, meta, quick=quick),
             meta=meta,
+            entered_at=now,
         )
         row.update(result)
         if filled:
@@ -1106,8 +1141,18 @@ def run_once(
             trades = whale_edge._public_trades(
                 min_ts=int((now - timedelta(minutes=max(1, int(lookback_minutes)))).timestamp()),
                 diagnostics=tape_diagnostics,
+                now=now,
             )
             api_error = None
+            # Trades are only lost for good if the tape fails to reach back to
+            # the previous scan (older trades in the window were seen already).
+            prev_scan = _parse_time(state.get("last_scan_at"))
+            oldest_in = _parse_time(tape_diagnostics.get("trade_oldest_in_window_ts"))
+            tape_diagnostics["trade_previous_scan_at"] = state.get("last_scan_at")
+            tape_diagnostics["trade_covers_since_last_scan"] = (
+                True if tape_diagnostics.get("trade_horizon_covered")
+                else (None if prev_scan is None or oldest_in is None else oldest_in <= prev_scan)
+            )
         except Exception as exc:
             trades = []
             api_error = f"{type(exc).__name__}: {str(exc)[:240]}"
@@ -1131,6 +1176,10 @@ def run_once(
         if str(t.get("trade_id") or "") and str(t.get("trade_id") or "") not in seen
     ]
     flows = whale_edge._aggregate(fresh)
+    # Flow age / time-to-close are judged at the moment the tape is in hand.
+    # Paging can take seconds; measuring from the scan start understated flow
+    # age and weakened the stale-flow guard. (Fixed `now` in tests is kept.)
+    eval_now = now if fixed_now is not None else _utcnow()
     gate_kwargs = dict(
         max_flows=max(1, int(max_flows)),
         slippage=slippage,
@@ -1150,7 +1199,7 @@ def run_once(
         client,
         state,
         portfolio,
-        now,
+        eval_now,
         max_flows=max(1, int(max_flows)),
         slippage=slippage,
         mode=mode,
@@ -1172,15 +1221,15 @@ def run_once(
         # so wait (bounded) inside this scan and re-check with fresh books.
         due = [
             t for t in (_parse_time(q.get("eligible_at")) for q in reaction_queue)
-            if t is not None and 0 < (t - now).total_seconds() <= float(max_reaction_wait_seconds)
+            if t is not None and 0 < (t - eval_now).total_seconds() <= float(max_reaction_wait_seconds)
         ]
-        recheck_now = now
+        recheck_now = eval_now
         if due and allow_new_entries:
-            wait = max(0.0, (max(due) - now).total_seconds())
+            wait = max(0.0, (max(due) - eval_now).total_seconds())
             sleep_fn(wait)
             recheck_now = (
                 clock().astimezone(timezone.utc) if clock is not None
-                else (now + timedelta(seconds=wait) if fixed_now is not None else _utcnow())
+                else (eval_now + timedelta(seconds=wait) if fixed_now is not None else _utcnow())
             )
         reaction_decisions = _process_reaction_queue(
             reaction_queue, client, state, portfolio, recheck_now,
@@ -1204,7 +1253,9 @@ def run_once(
     )
     run = {
         "observed_at": now.isoformat().replace("+00:00", "Z"),
+        "evaluated_at": eval_now.isoformat().replace("+00:00", "Z"),
         "strategy": strategy,
+        "lane_version": LANE_VERSIONS.get(strategy, f"{strategy}_unversioned"),
         "new_entries_enabled": bool(allow_new_entries),
         "circuit_breaker_reason": circuit_breaker_reason,
         "public_trades": len(trades),
@@ -1246,6 +1297,13 @@ def run_once(
         "paid_odds_api_calls": 0,
         "rate_limited": rate_limited,
         "api_error": api_error,
+        "lane_version": run.get("lane_version"),
+        "trade_pages_fetched": tape_diagnostics.get("trade_pages_fetched"),
+        "trade_page_cap_hit": tape_diagnostics.get("trade_page_cap_hit"),
+        "trade_horizon_covered": tape_diagnostics.get("trade_horizon_covered"),
+        "trade_window_coverage_fraction": tape_diagnostics.get("trade_window_coverage_fraction"),
+        "trade_covers_since_last_scan": tape_diagnostics.get("trade_covers_since_last_scan"),
+        "trade_fetch_seconds": tape_diagnostics.get("trade_fetch_seconds"),
     }, sort_keys=True), flush=True)
     return run
 
