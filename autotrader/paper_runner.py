@@ -37,6 +37,15 @@ def _utcnow():
     return datetime.now(timezone.utc)
 
 
+def _value_stage(stage, **fields):
+    payload = {
+        "value_edge_stage": str(stage),
+        "observed_at": _utcnow().isoformat().replace("+00:00", "Z"),
+    }
+    payload.update(fields)
+    print(json.dumps(payload, separators=(",", ":"), default=str), flush=True)
+
+
 _KALSHI_WRITE_ENV_NAMES = (
     "KALSHI_API_KEY_ID",
     "KALSHI_PRIVATE_KEY_PATH",
@@ -554,10 +563,17 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
     fixed_now = now
     clock = clock or ((lambda: fixed_now) if fixed_now is not None else _utcnow)
     started_at = clock().astimezone(timezone.utc)
-    client = client or KalshiPublicClient(PUBLIC_BASE)
+    client = client or KalshiPublicClient(
+        PUBLIC_BASE,
+        timeout=max(3, int(os.environ.get("AUTOTRADER_KALSHI_TIMEOUT_SECONDS", "8"))),
+    )
     portfolio = load_portfolio(state_path)
+    _value_stage("scan_start", open_positions=len(portfolio.positions))
+    _value_stage("settlement_start", open_positions=len(portfolio.positions))
     settled = _settle_finished_positions(portfolio, client)
+    _value_stage("settlement_complete", settled=len(settled))
 
+    _value_stage("fair_load_start")
     fair, provider, fair_refresh = _load_fair_values(
         api_base=fair_api_base, api_token=fair_api_token,
         ledger_path=ledger_path, now=started_at,
@@ -567,6 +583,13 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         refresh_interval_seconds=refresh_interval_seconds,
         clock=clock,
     )
+    _value_stage(
+        "fair_load_complete",
+        provider=provider,
+        fresh_probability_count=len(fair.probabilities),
+        refresh_status=(fair_refresh or {}).get("status") or (fair_refresh or {}).get("reason"),
+    )
+    _value_stage("position_management_start", open_positions=len(portfolio.positions))
     position_management = _manage_open_positions(
         portfolio,
         client,
@@ -574,9 +597,11 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         now=started_at,
         slippage_per_contract=slippage_per_contract,
     )
+    _value_stage("position_management_complete", decisions=len(position_management))
 
     fair_tickers = {ticker for ticker, _side in fair.probabilities}
     scanner_diagnostics = {}
+    _value_stage("market_scan_start", fair_tickers=len(fair_tickers))
     candidates = scan_public(
         client,
         max_markets=max_markets,
@@ -585,6 +610,11 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         ticker_filter=fair_tickers,
         diagnostics=scanner_diagnostics,
     ) if fair_tickers else []
+    _value_stage(
+        "market_scan_complete",
+        candidate_count=len(candidates),
+        fair_tickers=len(fair_tickers),
+    )
     decision_at = clock().astimezone(timezone.utc)
     schema_probe = _kalshi_schema_probe(client) if not fair.probabilities else {}
     quote_ages = {}
@@ -718,6 +748,7 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
             except Exception:
                 continue
         try:
+            _value_stage("learning_start")
             learning = update_learning_state(
                 runs_path=runs_path,
                 portfolio=engine.portfolio,
@@ -726,6 +757,11 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
                 recorder_path=recorder_path,
                 current_run=run,
                 extra_sources=extra_sources,
+            )
+            _value_stage(
+                "learning_complete",
+                status=learning.get("status"),
+                settled_trades=(learning.get("sample") or {}).get("settled_trades", 0),
             )
             run["learning"] = {
                 "status": learning.get("status"),
@@ -748,6 +784,12 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
     target.parent.mkdir(parents=True, exist_ok=True)
     with target.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(run, separators=(",", ":")) + "\n")
+    _value_stage(
+        "scan_complete",
+        paper_fills=result["paper_fills"],
+        candidate_count=len(candidates),
+        fresh_probability_count=len(fair.probabilities),
+    )
     return run
 
 
