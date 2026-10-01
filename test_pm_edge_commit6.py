@@ -11,8 +11,14 @@ def main() -> None:
     assert watcher.DAILY_ODDS_BUDGET == 15
     assert watcher.MAX_BULK_SPORTS_PER_RUN == 2
 
-    # Bulk paid refresh is deliberately moneyline-only (one market credit).
-    assert watcher.BULK_FEATURED_KEY_FOR_TYPE == {"h2h": "h2h"}
+    # Bulk refresh intentionally covers featured moneylines, spreads, and totals.
+    # Credit accounting uses the provider's x-requests-last response header, so
+    # this broader mapping remains quota-accounted rather than assuming one credit.
+    assert watcher.BULK_FEATURED_KEY_FOR_TYPE == {
+        "h2h": "h2h",
+        "spread": "spreads",
+        "total": "totals",
+    }
 
     # Keep the existing fair TTL schedule. The 95-minute Price Fish guard must
     # sit just above the imminent 1.5-hour fair TTL to avoid a dead band.
