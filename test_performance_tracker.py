@@ -2,10 +2,17 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import sys
 from tempfile import TemporaryDirectory
 
-import execution_guard
-import performance_tracker
+sys.path.insert(0, str(Path(__file__).resolve().parent / "tests"))
+from ledger_isolation import CommittedLedgerGuard, isolate_runtime_ledgers  # noqa: E402
+
+# Must run before importing modules that bind ledger paths at import time.
+isolate_runtime_ledgers()
+
+import execution_guard  # noqa: E402
+import performance_tracker  # noqa: E402
 
 
 class FakeClient:
@@ -464,4 +471,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    with CommittedLedgerGuard():
+        main()

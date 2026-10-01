@@ -10,7 +10,7 @@ import json
 import os
 import threading
 import time
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -23,7 +23,7 @@ from autotrader.fees import prediction_fee
 from autotrader.paper_runner import _assert_no_kalshi_write_credentials, _settle_finished_positions
 from autotrader.portfolio import PaperPortfolio
 from autotrader.learning import _completed_trades
-from autotrader.storage import load_portfolio, save_portfolio, tail_jsonl
+from autotrader.storage import append_jsonl, load_portfolio, save_portfolio, tail_jsonl
 from pmedge.kalshi import KalshiPublicClient, normalize_market
 
 import whale_edge
@@ -61,6 +61,15 @@ class PendingMaker:
     reference_price_cents: int
     title: str
     exposure_key: str | None = None
+    # Shadow conservative maker-fill tracking (observational only).
+    shadow_volume: float = 0.0
+    shadow_through_volume: float = 0.0
+    shadow_first_fill_time: str | None = None
+    shadow_seen_ids: list = field(default_factory=list)
+
+
+MAKER_SHADOW_VERSION = "maker_tradethrough_v1"
+V3_QUEUE_MAX = 50
 
 
 def _default_runner_state():
@@ -70,6 +79,7 @@ def _default_runner_state():
         "pending": [],
         "last_scan_at": None,
         "market_meta": {},
+        "reaction_queue": [],
     }
 
 
@@ -87,6 +97,7 @@ def _load_runner_state(path):
     data.setdefault("pending", [])
     data.setdefault("last_scan_at", None)
     data.setdefault("market_meta", {})
+    data.setdefault("reaction_queue", [])
     return data
 
 
@@ -98,6 +109,7 @@ def _save_runner_state(state, path):
     state["seen_trade_ids"] = list(dict.fromkeys(state.get("seen_trade_ids") or []))[-20000:]
     state["pending"] = list(state.get("pending") or [])[-200:]
     state["market_meta"] = dict(list((state.get("market_meta") or {}).items())[-500:])
+    state["reaction_queue"] = list(state.get("reaction_queue") or [])[-V3_QUEUE_MAX:]
     tmp = None
     try:
         with NamedTemporaryFile(
@@ -175,6 +187,41 @@ def _position_label(meta, side):
     return meta.get("no_sub_title") or meta.get("title")
 
 
+def _iso_or_none(dt):
+    return dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z") if dt is not None else None
+
+
+def _position_timing(ticker, side, meta, *, quick):
+    """Event/close times for CLV checkpoints, with provenance. Never fabricated:
+    a field is None when no trustworthy source exists."""
+    meta = meta or {}
+    close_dt = _parse_time(meta.get("close_time"))
+    out = {
+        "close_time": _iso_or_none(close_dt),
+        "close_time_provenance": "kalshi_market_close_time" if close_dt is not None else None,
+        "event_start_at": None,
+        "event_start_provenance": None,
+    }
+    if quick:
+        return out
+    try:
+        _fair_side, fair_start = whale_edge._market_fair_context(ticker, side)
+    except Exception:
+        fair_start = None
+    if fair_start is not None:
+        out["event_start_at"] = _iso_or_none(fair_start)
+        out["event_start_provenance"] = "pm_edge_fair_cache_commence_time"
+        return out
+    try:
+        ticker_start = whale_edge.watcher.kalshi_ticker_game_time({"ticker": ticker})
+    except Exception:
+        ticker_start = None
+    if ticker_start is not None:
+        out["event_start_at"] = _iso_or_none(ticker_start)
+        out["event_start_provenance"] = "kalshi_ticker_game_time"
+    return out
+
+
 def _trade_print_touches_target(trades, pending):
     created = _parse_time(pending.created_at)
     target = D(pending.target)
@@ -226,6 +273,8 @@ def _paper_buy(
     reference_price_cents,
     execution,
     strategy="whale_flow",
+    timing=None,
+    meta=None,
 ):
     price = D(price)
     rough_fee = prediction_fee(1, price)
@@ -242,6 +291,10 @@ def _paper_buy(
         "flow_notional_usd": float(flow_notional_usd),
         "reference_price_cents": int(reference_price_cents),
         "execution": execution,
+        # Provenance for CLV checkpoints and segmented research reporting.
+        **(timing or {}),
+        "event_ticker": str((meta or {}).get("event_ticker") or ""),
+        "series": str(ticker).split("-")[0],
     }
     filled = portfolio.buy(
         ticker,
@@ -265,6 +318,53 @@ def _paper_buy(
     }
 
 
+def _update_maker_shadow(p, trades):
+    """Accumulate public trade volume at or better than the resting target
+    printed AFTER the maker order was created. Observational only."""
+    created = _parse_time(p.created_at)
+    target = D(p.target)
+    seen = set(p.shadow_seen_ids or [])
+    for trade in trades:
+        if str(trade.get("ticker") or "") != p.ticker:
+            continue
+        tid = str(trade.get("trade_id") or "")
+        if not tid or tid in seen:
+            continue
+        ts = _parse_time(trade.get("created_time"))
+        if created is None or ts is None or ts < created:
+            continue
+        price = whale_edge._trade_price(trade, p.side)
+        if price is None or D(price) > target:
+            continue
+        count = float(whale_edge._trade_count(trade))
+        if count <= 0:
+            continue
+        seen.add(tid)
+        p.shadow_volume = float(p.shadow_volume or 0) + count
+        if D(price) < target:
+            p.shadow_through_volume = float(p.shadow_through_volume or 0) + count
+        if p.shadow_first_fill_time is None:
+            p.shadow_first_fill_time = _iso_or_none(ts)
+    p.shadow_seen_ids = list(seen)[-2000:]
+
+
+def _maker_shadow_fields(p):
+    qty = min(int(p.contracts), int(float(p.shadow_volume or 0)))
+    return {
+        "maker_shadow_model_version": MAKER_SHADOW_VERSION,
+        "maker_shadow_would_fill": qty >= 1,
+        "maker_shadow_fill_qty": qty,
+        "maker_shadow_target": p.target,
+        "maker_shadow_trade_through_volume": round(float(p.shadow_volume or 0), 4),
+        "maker_shadow_strictly_better_volume": round(float(p.shadow_through_volume or 0), 4),
+        "maker_shadow_first_fill_time": p.shadow_first_fill_time,
+        "maker_shadow_reason": (
+            "tape_volume_at_or_better_than_target" if qty >= 1
+            else "no_qualifying_trade_through_yet"
+        ),
+    }
+
+
 def _process_pending(portfolio, client, state, trades, now, slippage):
     decisions = []
     kept = []
@@ -275,18 +375,34 @@ def _process_pending(portfolio, client, state, trades, now, slippage):
         except Exception:
             decisions.append({"decision": "pending_dropped", "reason": "invalid_pending_state"})
             continue
+        try:
+            _update_maker_shadow(p, trades)
+        except Exception as exc:  # shadow must never affect the production path
+            decisions.append({"ticker": p.ticker, "decision": "maker_shadow_error",
+                              "reason": f"{type(exc).__name__}: {str(exc)[:120]}"})
+        shadow = _maker_shadow_fields(p)
         expiry = _parse_time(p.expires_at)
         if expiry is None or now >= expiry:
             decisions.append({
                 "ticker": p.ticker, "side": p.side,
                 "decision": "pending_expired", "reason": "maker_order_expired",
+                **shadow,
             })
             continue
         if p.ticker in portfolio.positions:
+            decisions.append({
+                "ticker": p.ticker, "side": p.side,
+                "decision": "pending_dropped", "reason": "position_already_open",
+                **shadow,
+            })
             continue
         touched = _trade_print_touches_target(trades, p)
         if not touched:
             kept.append(asdict(p))
+            decisions.append({
+                "ticker": p.ticker, "side": p.side, "decision": "pending_resting",
+                "reason": "no_production_fill_trigger", "target_price": p.target, **shadow,
+            })
             continue
         try:
             orderbook = client.get_orderbook(p.ticker, depth=20)
@@ -295,6 +411,10 @@ def _process_pending(portfolio, client, state, trades, now, slippage):
             ask = None
         if ask is None or ask[0] > D(p.target):
             kept.append(asdict(p))
+            decisions.append({
+                "ticker": p.ticker, "side": p.side, "decision": "pending_resting",
+                "reason": "ask_above_target", "target_price": p.target, **shadow,
+            })
             continue
         target = D(p.target)
         filled, result = _paper_buy(
@@ -310,11 +430,14 @@ def _process_pending(portfolio, client, state, trades, now, slippage):
             flow_notional_usd=p.flow_notional_usd,
             reference_price_cents=p.reference_price_cents,
             execution="MAKE",
+            timing=_position_timing(p.ticker, p.side, market_cache.get(p.ticker), quick=False),
+            meta=market_cache.get(p.ticker),
         )
         decisions.append({
             "ticker": p.ticker, "side": p.side,
             "title": p.title, "target_price": p.target,
             **result,
+            **shadow,
         })
         if not filled and result.get("reason") not in {"portfolio_guard", "insufficient_paper_risk_budget"}:
             kept.append(asdict(p))
@@ -425,11 +548,18 @@ def _eligible_flow_rows(
     min_flow_age_seconds=8, max_spread="0.04",
     max_adverse_mid_cents=1, max_follow_through_cents=2,
     min_flow_notional_usd=500, min_flow_trades=2,
+    reaction_queue=None,
 ):
     mode_name = str(mode).lower()
-    quick_v2 = mode_name == "quick_v2"
-    quick = mode_name in {"quick", "quick_v2"}
-    strategy = "quick_whale_v2" if quick_v2 else ("quick_whale" if quick else "whale_flow")
+    quick_v3 = mode_name == "quick_v3"
+    # Quick Whale v3 reuses v2's confirmation gate and caps verbatim.
+    quick_v2 = mode_name in {"quick_v2", "quick_v3"}
+    quick = mode_name in {"quick", "quick_v2", "quick_v3"}
+    strategy = (
+        "quick_whale_v3" if quick_v3
+        else "quick_whale_v2" if quick_v2
+        else ("quick_whale" if quick else "whale_flow")
+    )
     cache = state.setdefault("market_meta", {})
     decisions = []
     pending_keys = {
@@ -589,6 +719,61 @@ def _eligible_flow_rows(
                 "spread": gate.get("spread"),
             })
             if not gate.get("eligible"):
+                if (
+                    quick_v3
+                    and reaction_queue is not None
+                    and gate.get("reason") == "quick_v2_wait_for_reaction"
+                ):
+                    # Queue ONLY if waiting is the sole failure: re-run the same
+                    # gate as if the reaction delay had elapsed right now.
+                    probe = _quick_v2_gate(
+                        reference_cents=row["reference_price_cents"],
+                        current_bid=current_bid,
+                        current_ask=current_ask,
+                        flow_age_seconds=max(float(row.get("flow_age_seconds") or 0), float(min_flow_age_seconds)),
+                        seconds_to_close=row.get("seconds_to_close"),
+                        flow_trade_count=row.get("flow_trade_count"),
+                        flow_notional_usd=row.get("flow_notional_usd"),
+                        block_trade=bool(flow.get("block_trade")),
+                        min_flow_age_seconds=min_flow_age_seconds,
+                        max_flow_age_seconds=max_flow_age_seconds,
+                        min_seconds_to_close=min_seconds_to_close,
+                        max_spread=max_spread,
+                        max_adverse_mid_cents=max_adverse_mid_cents,
+                        max_follow_through_cents=max_follow_through_cents,
+                        min_flow_notional_usd=min_flow_notional_usd,
+                        min_flow_trades=min_flow_trades,
+                    )
+                    if probe.get("eligible"):
+                        latest = flow.get("latest_time")
+                        latest_dt = latest if isinstance(latest, datetime) else _parse_time(latest)
+                        if latest_dt is not None:
+                            reaction_queue.append({
+                                "ticker": ticker, "side": side,
+                                "trade_id": row["source_trade_id"],
+                                "reference_price_cents": row["reference_price_cents"],
+                                "flow_contracts": row["flow_contracts"],
+                                "flow_notional_usd": row["flow_notional_usd"],
+                                "flow_trade_count": row["flow_trade_count"],
+                                "block_trade": bool(flow.get("block_trade")),
+                                "latest_time": _iso_or_none(latest_dt),
+                                "queued_at": _iso_or_none(now),
+                                "eligible_at": _iso_or_none(
+                                    latest_dt + timedelta(seconds=float(min_flow_age_seconds))
+                                ),
+                            })
+                            del reaction_queue[:-V3_QUEUE_MAX]
+                            row.update({"decision": "v3_reaction_queued", "reason": "quick_v2_wait_for_reaction"})
+                            decisions.append(row)
+                            continue
+                    else:
+                        row.update({
+                            "decision": "skipped",
+                            "reason": gate.get("reason"),
+                            "v3_not_queued_reason": probe.get("reason"),
+                        })
+                        decisions.append(row)
+                        continue
                 row.update({"decision": "skipped", "reason": gate.get("reason")})
                 decisions.append(row)
                 continue
@@ -699,16 +884,68 @@ def _eligible_flow_rows(
             reference_price_cents=row["reference_price_cents"],
             execution="TAKE",
             strategy=strategy,
+            timing=_position_timing(ticker, side, meta, quick=quick),
+            meta=meta,
         )
         row.update(result)
         if filled:
             row["reason"] = (
-                "quick_whale_v2_confirmed_entry"
+                "quick_whale_v3_confirmed_entry"
+                if quick_v3
+                else "quick_whale_v2_confirmed_entry"
                 if quick_v2
                 else ("quick_whale_reproducible_price" if quick else "whale_flow_price_guard_passed")
             )
         decisions.append(row)
 
+    return decisions
+
+
+def _process_reaction_queue(queue, client, state, portfolio, now, *, allow_new_entries, gate_kwargs):
+    """Quick Whale v3: re-evaluate flows that failed ONLY the reaction delay.
+
+    Uses the identical v2 confirmation gate, caps and risk checks. Entries not
+    yet eligible stay queued; everything else is resolved and logged.
+    """
+    decisions, kept = [], []
+    max_age = float(gate_kwargs.get("max_flow_age_seconds") or 55)
+    for item in list(queue):
+        eligible_at = _parse_time(item.get("eligible_at"))
+        latest = _parse_time(item.get("latest_time"))
+        base = {
+            "ticker": item.get("ticker"), "side": item.get("side"),
+            "strategy": "quick_whale_v3", "v3_requeue_reevaluation": True,
+            "v3_queued_at": item.get("queued_at"), "source_trade_id": item.get("trade_id"),
+        }
+        if eligible_at is None or latest is None:
+            decisions.append({**base, "decision": "skipped", "reason": "v3_queue_invalid_entry"})
+            continue
+        if now < eligible_at:
+            if (now - latest).total_seconds() > max_age:
+                decisions.append({**base, "decision": "skipped", "reason": "quick_v2_flow_stale"})
+            else:
+                kept.append(item)
+            continue
+        if not allow_new_entries:
+            decisions.append({**base, "decision": "skipped", "reason": "v3_new_entries_disabled"})
+            continue
+        flow = {
+            "ticker": item.get("ticker"), "side": item.get("side"),
+            "trade_id": item.get("trade_id"),
+            "reference_price_cents": item.get("reference_price_cents"),
+            "flow_contracts": item.get("flow_contracts"),
+            "flow_notional_usd": item.get("flow_notional_usd"),
+            "flow_trade_count": item.get("flow_trade_count"),
+            "block_trade": bool(item.get("block_trade")),
+            "latest_time": latest,
+        }
+        rows = _eligible_flow_rows([flow], client, state, portfolio, now, reaction_queue=None, **gate_kwargs)
+        if not rows:
+            rows = [{**base, "decision": "skipped", "reason": "v3_requeue_not_evaluated"}]
+        for row in rows:
+            row.update({k: v for k, v in base.items() if k not in row or k.startswith("v3_")})
+        decisions.extend(rows)
+    queue[:] = kept[-V3_QUEUE_MAX:]
     return decisions
 
 
@@ -792,6 +1029,7 @@ def _status(state_path, runner_state_path, runs_path, client, *, strategy="whale
         "portfolio": snap,
         "positions": positions,
         "pending_orders": state.get("pending") or [],
+        "reaction_queue_size": len(state.get("reaction_queue") or []),
         "record": f"{wins}-{losses}",
         "record_basis": "closed_positions_sold_or_settled",
         "closed_count": len(closed),
@@ -824,18 +1062,31 @@ def run_once(
     min_flow_trades=2,
     quick_v2_max_settled_trades=25,
     quick_v2_max_realized_loss="50",
+    max_reaction_wait_seconds=12,
+    sleep_fn=None,
+    clock=None,
 ):
+    """One scan of a whale paper lane.
+
+    quick_v2_max_* are the circuit-breaker limits for whichever quick
+    confirmation lane is running (v2 or v3); each lane has its own portfolio
+    file, so the settled count and realized P/L are never shared.
+    """
     _assert_no_kalshi_write_credentials()
+    fixed_now = now
     now = (now or _utcnow()).astimezone(timezone.utc)
+    sleep_fn = sleep_fn or time.sleep
     client = client or KalshiPublicClient(PUBLIC_BASE)
     portfolio = load_portfolio(state_path)
     state = _load_runner_state(runner_state_path)
 
     settlements = _settle_finished_positions(portfolio, client)
     mode_name = str(mode).lower()
+    quick_v3 = mode_name == "quick_v3"
     quick_v2 = mode_name == "quick_v2"
+    breaker_prefix = "quick_v3" if quick_v3 else "quick_v2"
     circuit_breaker_reason = None
-    if quick_v2 and allow_new_entries:
+    if (quick_v2 or quick_v3) and allow_new_entries:
         settled_count = sum(
             1 for row in portfolio.ledger
             if str(row.get("action") or "").upper() == "SETTLE"
@@ -844,15 +1095,17 @@ def run_once(
         max_loss = max(D("0"), D(quick_v2_max_realized_loss))
         if settled_count >= max_settled:
             allow_new_entries = False
-            circuit_breaker_reason = "quick_v2_review_sample_reached"
+            circuit_breaker_reason = f"{breaker_prefix}_review_sample_reached"
         elif portfolio.realized_pnl <= -max_loss:
             allow_new_entries = False
-            circuit_breaker_reason = "quick_v2_max_realized_loss"
+            circuit_breaker_reason = f"{breaker_prefix}_max_realized_loss"
 
+    tape_diagnostics = {}
     if allow_new_entries:
         try:
             trades = whale_edge._public_trades(
-                min_ts=int((now - timedelta(minutes=max(1, int(lookback_minutes)))).timestamp())
+                min_ts=int((now - timedelta(minutes=max(1, int(lookback_minutes)))).timestamp()),
+                diagnostics=tape_diagnostics,
             )
             api_error = None
         except Exception as exc:
@@ -862,8 +1115,12 @@ def run_once(
         trades = []
         api_error = None
 
-    quick = mode_name in {"quick", "quick_v2"}
-    strategy = "quick_whale_v2" if quick_v2 else ("quick_whale" if quick else "whale_flow")
+    quick = mode_name in {"quick", "quick_v2", "quick_v3"}
+    strategy = (
+        "quick_whale_v3" if quick_v3
+        else "quick_whale_v2" if quick_v2
+        else ("quick_whale" if quick else "whale_flow")
+    )
     pending_decisions = [] if quick else _process_pending(
         portfolio, client, state, trades, now, slippage
     )
@@ -874,6 +1131,20 @@ def run_once(
         if str(t.get("trade_id") or "") and str(t.get("trade_id") or "") not in seen
     ]
     flows = whale_edge._aggregate(fresh)
+    gate_kwargs = dict(
+        max_flows=max(1, int(max_flows)),
+        slippage=slippage,
+        mode=mode,
+        max_flow_age_seconds=max_flow_age_seconds,
+        min_seconds_to_close=min_seconds_to_close,
+        min_flow_age_seconds=min_flow_age_seconds,
+        max_spread=max_spread,
+        max_adverse_mid_cents=max_adverse_mid_cents,
+        max_follow_through_cents=max_follow_through_cents,
+        min_flow_notional_usd=min_flow_notional_usd,
+        min_flow_trades=min_flow_trades,
+    )
+    reaction_queue = state.setdefault("reaction_queue", []) if quick_v3 else None
     flow_decisions = _eligible_flow_rows(
         flows,
         client,
@@ -891,7 +1162,31 @@ def run_once(
         max_follow_through_cents=max_follow_through_cents,
         min_flow_notional_usd=min_flow_notional_usd,
         min_flow_trades=min_flow_trades,
+        reaction_queue=reaction_queue,
     ) if api_error is None and allow_new_entries else []
+
+    reaction_decisions = []
+    if quick_v3 and reaction_queue:
+        # Flows young enough to need a reaction delay become eligible within
+        # seconds; the 60s scan cadence would always see them stale next time,
+        # so wait (bounded) inside this scan and re-check with fresh books.
+        due = [
+            t for t in (_parse_time(q.get("eligible_at")) for q in reaction_queue)
+            if t is not None and 0 < (t - now).total_seconds() <= float(max_reaction_wait_seconds)
+        ]
+        recheck_now = now
+        if due and allow_new_entries:
+            wait = max(0.0, (max(due) - now).total_seconds())
+            sleep_fn(wait)
+            recheck_now = (
+                clock().astimezone(timezone.utc) if clock is not None
+                else (now + timedelta(seconds=wait) if fixed_now is not None else _utcnow())
+            )
+        reaction_decisions = _process_reaction_queue(
+            reaction_queue, client, state, portfolio, recheck_now,
+            allow_new_entries=allow_new_entries and api_error is None,
+            gate_kwargs=gate_kwargs,
+        )
 
     for trade in trades:
         tid = str(trade.get("trade_id") or "")
@@ -901,7 +1196,7 @@ def run_once(
     save_portfolio(portfolio, state_path)
     _save_runner_state(state, runner_state_path)
 
-    all_decisions = pending_decisions + flow_decisions
+    all_decisions = pending_decisions + flow_decisions + reaction_decisions
     fills = sum(1 for x in all_decisions if x.get("decision") == "paper_filled")
     resting = sum(1 for x in all_decisions if x.get("decision") == "paper_maker_resting")
     rate_limited = bool(api_error and "429" in api_error) or any(
@@ -918,6 +1213,8 @@ def run_once(
         "paper_fills": fills,
         "maker_orders_resting": resting,
         "pending_orders": len(state.get("pending") or []),
+        "reaction_queue_size": len(state.get("reaction_queue") or []) if quick_v3 else None,
+        "trade_tape": tape_diagnostics,
         "settlements": settlements,
         "api_error": api_error,
         "rate_limited": rate_limited,
@@ -928,12 +1225,11 @@ def run_once(
         "portfolio": portfolio.snapshot(),
         "decisions": all_decisions[-100:],
     }
-    target = Path(runs_path)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with target.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(run, separators=(",", ":"), default=str) + "\n")
+    # Daily rotation + gzip + retention; each lane writes only its own log.
+    append_jsonl(runs_path, run)
     prefix = (
-        "QUICK_WHALE_V2_PAPER_RUN"
+        "QUICK_WHALE_V3_PAPER_RUN"
+        if quick_v3 else "QUICK_WHALE_V2_PAPER_RUN"
         if quick_v2 else ("QUICK_WHALE_PAPER_RUN" if quick else "WHALE_PAPER_RUN")
     )
     print(prefix + " " + json.dumps({

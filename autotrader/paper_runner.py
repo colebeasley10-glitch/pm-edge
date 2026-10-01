@@ -23,14 +23,16 @@ from pmedge.kalshi import KalshiPublicClient, normalize_market
 from .collector import PUBLIC_BASE
 from .engine import PaperEngine
 from .probability import load_pm_edge_api, load_pm_edge_ledger
-from .scanner import scan_public
-from .storage import load_portfolio, save_portfolio, tail_jsonl
+from .scanner import discover, scan_public, _with_orderbook_depth
+from .storage import append_jsonl, load_portfolio, save_portfolio, tail_jsonl
 from .recorder import start_recorder_thread
 from .recorder_store import RecorderStore
 from .exit_engine import ExitInputs, evaluate_exit
 from .fees import prediction_fee
 from .thesis import PositionThesis
 from .learning import update_learning_state, load_learning_state, _completed_trades
+from .challengers import c2_fields
+from .c2_shadow import load_state as load_c2_state, save_state as save_c2_state, record_exit as record_c2_exit, resolve as resolve_c2, summary as c2_summary
 
 
 def _utcnow():
@@ -261,6 +263,30 @@ def _best_bid_for_side(orderbook, side):
     return best
 
 
+def _make_requote(client, clock):
+    """Fresh single-ticker quote for the pre-fill recheck.
+
+    Uses the scanner's own depth derivation and quote-quality screen
+    (spread/depth/validity), so the recheck applies exactly the production
+    candidate rules to a quote fetched immediately before the paper fill.
+    """
+    def requote(candidate):
+        book = client.get_orderbook(candidate.ticker, depth=1)
+        observed_at = clock().astimezone(timezone.utc)
+        market = {
+            "ticker": candidate.ticker,
+            "title": candidate.title,
+            "status": "open",
+            "volume_24h": candidate.volume_24h,
+        }
+        enriched = _with_orderbook_depth(market, book, observed_at=observed_at)
+        for fresh in discover([enriched]):
+            if fresh.side == candidate.side:
+                return fresh
+        return None
+    return requote
+
+
 def _parse_time(value):
     if not value:
         return None
@@ -273,7 +299,8 @@ def _parse_time(value):
         return None
 
 
-def _manage_open_positions(portfolio, client, fair, *, now, slippage_per_contract="0.005"):
+def _manage_open_positions(portfolio, client, fair, *, now, slippage_per_contract="0.005",
+                           c2_state=None):
     """Evaluate thesis-based paper exits using fresh independent fair values."""
     decisions = []
     slippage = Decimal(str(slippage_per_contract or "0"))
@@ -393,6 +420,17 @@ def _manage_open_positions(portfolio, client, fair, *, now, slippage_per_contrac
             "fair_age_seconds": fair_age,
         }
 
+        entry_price, entry_fee = position.entry, position.entry_fee
+        if exit_decision.action in {"SELL", "EXIT_THESIS", "REDUCE"}:
+            # C2 shadow (observational): would an EV-only exit rule also sell?
+            row.update(c2_fields(
+                production_action=exit_decision.action,
+                production_reason=exit_decision.reason,
+                executable_bid=executable_bid,
+                exit_fee_per_contract=fee_per_contract,
+                current_side_fair=Decimal(str(side_prob)),
+            ))
+        contracts_before = position.contracts
         if exit_decision.action in {"SELL", "EXIT_THESIS"}:
             sold = portfolio.sell(
                 ticker,
@@ -418,6 +456,23 @@ def _manage_open_positions(portfolio, client, fair, *, now, slippage_per_contrac
             row["contracts_requested"] = qty
         else:
             row["executed"] = False
+        if row.get("executed") and c2_state is not None:
+            last = portfolio.ledger[-1] if portfolio.ledger else {}
+            if str(last.get("action") or "") == "SELL" and str(last.get("ticker") or "") == ticker:
+                sold_qty = int(last.get("contracts") or 0)
+                record_c2_exit(
+                    c2_state,
+                    ticker=ticker, side=position.side, contracts=sold_qty,
+                    entry_price=entry_price, entry_fee_per_contract=entry_fee,
+                    exit_price=executable_bid, exit_fee_per_contract=fee_per_contract,
+                    production_exit_pnl=last.get("pnl"),
+                    production_action=exit_decision.action,
+                    production_reason=exit_decision.reason,
+                    c2=row, exited_at=now,
+                )
+                row["production_exit_pnl"] = last.get("pnl")
+                row["contracts_sold"] = sold_qty
+                row["contracts_before"] = contracts_before
         decisions.append(row)
 
     return decisions
@@ -678,7 +733,12 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
              fair_api_base=None, fair_api_token=None, now=None, clock=None,
              refresh_state_path="/data/autotrader-fair-refresh.json",
              allow_fair_refresh=False, refresh_interval_seconds=1800,
-             learning_state_path=None, recorder_path=None, scan_budget_seconds=None):
+             learning_state_path=None, recorder_path=None, scan_budget_seconds=None,
+             fresh_quote_recheck=None, c2_shadow_path=None):
+    if fresh_quote_recheck is None:
+        fresh_quote_recheck = os.environ.get(
+            "AUTOTRADER_VALUE_FRESH_RECHECK", "1"
+        ).strip().lower() not in {"0", "false", "no", "off"}
     fixed_now = now
     clock = clock or ((lambda: fixed_now) if fixed_now is not None else _utcnow)
     started_at = clock().astimezone(timezone.utc)
@@ -705,6 +765,16 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         fresh_probability_count=len(fair.probabilities),
         refresh_status=(fair_refresh or {}).get("status") or (fair_refresh or {}).get("reason"),
     )
+    if c2_shadow_path is None:
+        c2_shadow_path = os.environ.get(
+            "AUTOTRADER_C2_SHADOW_STATE",
+            str(Path(state_path).parent / "autotrader-c2-exit-shadow.json"),
+        )
+    c2_state = load_c2_state(c2_shadow_path)
+    try:
+        resolve_c2(c2_state, client.get_market, normalize=normalize_market, now=started_at)
+    except Exception as exc:
+        c2_state["last_error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
     _value_stage("position_management_start", open_positions=len(portfolio.positions))
     position_management = _manage_open_positions(
         portfolio,
@@ -712,6 +782,7 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         fair,
         now=started_at,
         slippage_per_contract=slippage_per_contract,
+        c2_state=c2_state,
     )
     _value_stage("position_management_complete", decisions=len(position_management))
 
@@ -757,6 +828,7 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         enriched["fair_age_seconds"] = fair.ages.get(key, fair.ages.get(key[0]))
         enriched.setdefault("lane", "value_edge")
         enriched.setdefault("lane_version", "value_edge_v1")
+        enriched["fair_provider"] = provider
         engine_contexts[key] = enriched
 
     engine = PaperEngine(portfolio=portfolio, min_net_edge=Decimal(str(min_net_edge)))
@@ -770,8 +842,14 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         slippage_per_contract=slippage_per_contract,
         max_quote_age_seconds=max_quote_age_seconds,
         max_event_data_age_seconds=probability_max_age_seconds,
+        requote=_make_requote(client, clock) if fresh_quote_recheck else None,
+        clock=clock,
     )
     save_portfolio(engine.portfolio, state_path)
+    try:
+        save_c2_state(c2_state, c2_shadow_path)
+    except Exception as exc:
+        c2_state["last_error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
 
     matched = sum(1 for c in candidates if (c.ticker, c.side) in fair.probabilities)
     quote_fresh = sum(
@@ -842,6 +920,7 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         },
         "settlements": settled,
         "position_management": position_management,
+        "challenger_c2_summary": c2_summary(c2_state),
         "portfolio": result["portfolio"],
         "decisions": engine.decisions,
     }
@@ -862,6 +941,11 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
                 "quick_whale_v2",
                 os.environ.get("WHALE_QUICK_V2_RUNS", "/data/quick-whale-v2-paper-runs.jsonl"),
                 os.environ.get("WHALE_QUICK_V2_PORTFOLIO_STATE", "/data/quick-whale-v2-paper-portfolio.json"),
+            ),
+            (
+                "quick_whale_v3",
+                os.environ.get("WHALE_QUICK_V3_RUNS", "/data/quick-whale-v3-paper-runs.jsonl"),
+                os.environ.get("WHALE_QUICK_V3_PORTFOLIO_STATE", "/data/quick-whale-v3-paper-portfolio.json"),
             ),
         ):
             try:
@@ -906,10 +990,8 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
                 "error": f"{type(exc).__name__}: {str(exc)[:240]}",
             }
 
-    target = Path(runs_path)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with target.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(run, separators=(",", ":")) + "\n")
+    # Daily rotation + gzip + retention; each lane writes only its own log.
+    append_jsonl(runs_path, run)
     _value_stage(
         "scan_complete",
         paper_fills=result["paper_fills"],
@@ -1073,7 +1155,10 @@ def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, p
                          quick_whale_runs_path=None, quick_whale_scan_interval_seconds=None,
                          quick_whale_v2_client=None, quick_whale_v2_trigger_event=None,
                          quick_whale_v2_state_path=None, quick_whale_v2_runner_state_path=None,
-                         quick_whale_v2_runs_path=None, quick_whale_v2_scan_interval_seconds=None):
+                         quick_whale_v2_runs_path=None, quick_whale_v2_scan_interval_seconds=None,
+                         quick_whale_v3_client=None, quick_whale_v3_trigger_event=None,
+                         quick_whale_v3_state_path=None, quick_whale_v3_runner_state_path=None,
+                         quick_whale_v3_runs_path=None, quick_whale_v3_scan_interval_seconds=None):
     token = str(os.environ.get("AUTOTRADER_API_TOKEN", "") or "").strip()
     market_cache = {}
 
@@ -1165,6 +1250,26 @@ def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, p
                         scan_interval_seconds=quick_whale_v2_scan_interval_seconds,
                     ),
                 )
+            if parsed.path == "/v1/quick-whale-v3-status":
+                if (
+                    quick_whale_v3_client is None
+                    or not quick_whale_v3_state_path
+                    or not quick_whale_v3_runner_state_path
+                    or not quick_whale_v3_runs_path
+                ):
+                    return self._send(503, {"detail": "Quick Whale v3 paper worker unavailable"})
+                from . import whale_paper_runner
+                return self._send(
+                    200,
+                    whale_paper_runner._status(
+                        quick_whale_v3_state_path,
+                        quick_whale_v3_runner_state_path,
+                        quick_whale_v3_runs_path,
+                        quick_whale_v3_client,
+                        strategy="quick_whale_v3",
+                        scan_interval_seconds=quick_whale_v3_scan_interval_seconds,
+                    ),
+                )
             if parsed.path == "/v1/learning-status":
                 return self._send(
                     200,
@@ -1207,6 +1312,11 @@ def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, p
                     return self._send(503, {"detail": "Quick Whale v2 paper worker unavailable"})
                 quick_whale_v2_trigger_event.set()
                 return self._send(202, {"accepted": True, "mode": "paper", "strategy": "quick_whale_v2"})
+            if parsed.path == "/v1/quick-whale-v3-run-scan":
+                if quick_whale_v3_trigger_event is None:
+                    return self._send(503, {"detail": "Quick Whale v3 paper worker unavailable"})
+                quick_whale_v3_trigger_event.set()
+                return self._send(202, {"accepted": True, "mode": "paper", "strategy": "quick_whale_v3"})
             return self._send(404, {"detail": "Not found"})
 
     server = ThreadingHTTPServer(("0.0.0.0", int(port)), Handler)
@@ -1341,6 +1451,36 @@ def main():
         int(os.environ.get("WHALE_QUICK_V2_RATE_LIMIT_BACKOFF_SECONDS", "180")),
     )
 
+    # Quick Whale v3: a SEPARATE paper lane (own bankroll, state, run log,
+    # seen IDs, reaction queue and circuit breaker). It re-queues flows that v2
+    # rejects only for the reaction delay; v2 itself is unchanged.
+    quick_whale_v3_enabled = os.environ.get(
+        "WHALE_QUICK_V3_PAPER_ENABLED", "0"
+    ).strip().lower() in {"1", "true", "yes", "on"}
+    quick_whale_v3_trigger_event = threading.Event() if quick_whale_v3_enabled else None
+    quick_whale_v3_client = (
+        KalshiPublicClient(PUBLIC_BASE, timeout=kalshi_timeout) if quick_whale_v3_enabled else None
+    )
+    quick_whale_v3_state_path = os.environ.get(
+        "WHALE_QUICK_V3_PORTFOLIO_STATE", "/data/quick-whale-v3-paper-portfolio.json"
+    )
+    quick_whale_v3_runner_state_path = os.environ.get(
+        "WHALE_QUICK_V3_RUNNER_STATE", "/data/quick-whale-v3-paper-state.json"
+    )
+    quick_whale_v3_runs_path = os.environ.get(
+        "WHALE_QUICK_V3_RUNS", "/data/quick-whale-v3-paper-runs.jsonl"
+    )
+    quick_whale_v3_interval = max(30, int(os.environ.get("WHALE_QUICK_V3_SCAN_INTERVAL_SECONDS", "60")))
+    quick_whale_v3_backoff = max(
+        quick_whale_v3_interval,
+        int(os.environ.get("WHALE_QUICK_V3_RATE_LIMIT_BACKOFF_SECONDS", "180")),
+    )
+    quick_whale_v3_max_settled = max(1, int(os.environ.get("WHALE_QUICK_V3_MAX_SETTLED_TRADES", "25")))
+    quick_whale_v3_max_loss = os.environ.get("WHALE_QUICK_V3_MAX_REALIZED_LOSS", "50")
+    quick_whale_v3_max_wait = max(
+        0, min(30, int(os.environ.get("WHALE_QUICK_V3_MAX_REACTION_WAIT_SECONDS", "12")))
+    )
+
     lane_paths = {"value_edge": {"portfolio": args.state, "runs": args.runs}}
     if whale_enabled:
         lane_paths["whale_flow"] = {
@@ -1355,6 +1495,11 @@ def main():
         lane_paths["quick_whale_v2"] = {
             "portfolio": quick_whale_v2_state_path, "runner_state": quick_whale_v2_runner_state_path,
             "runs": quick_whale_v2_runs_path,
+        }
+    if quick_whale_v3_enabled:
+        lane_paths["quick_whale_v3"] = {
+            "portfolio": quick_whale_v3_state_path, "runner_state": quick_whale_v3_runner_state_path,
+            "runs": quick_whale_v3_runs_path,
         }
     _assert_distinct_lane_paths(lane_paths)
 
@@ -1505,6 +1650,73 @@ def main():
             daemon=True,
         ).start()
 
+    if quick_whale_v3_enabled:
+        from . import whale_paper_runner
+
+        def quick_whale_v3_loop():
+            # Same confirmation thresholds as v2 (shared env values), separate everything else.
+            print(json.dumps({
+                "quick_whale_v3_paper": "starting",
+                "mode": "paper",
+                "interval_seconds": quick_whale_v3_interval,
+                "min_flow_age_seconds": quick_whale_v2_min_age,
+                "max_flow_age_seconds": quick_whale_v2_max_age,
+                "min_seconds_to_close": quick_whale_v2_min_close,
+                "max_spread": quick_whale_v2_max_spread,
+                "max_adverse_mid_cents": quick_whale_v2_max_adverse_mid_cents,
+                "max_follow_through_cents": quick_whale_v2_max_follow_through_cents,
+                "min_flow_notional_usd": quick_whale_v2_min_notional,
+                "min_flow_trades": quick_whale_v2_min_trades,
+                "max_reaction_wait_seconds": quick_whale_v3_max_wait,
+                "circuit_breaker_settled_trades": quick_whale_v3_max_settled,
+                "circuit_breaker_max_realized_loss": quick_whale_v3_max_loss,
+                "portfolio_state": quick_whale_v3_state_path,
+                "paid_odds_api_calls": 0,
+            }), flush=True)
+            while True:
+                _worker_beat("quick_whale_v3", _stale_after(quick_whale_v3_interval, quick_whale_v3_backoff))
+                wait_seconds = quick_whale_v3_interval
+                try:
+                    result = whale_paper_runner.run_once(
+                        client=quick_whale_v3_client,
+                        state_path=quick_whale_v3_state_path,
+                        runner_state_path=quick_whale_v3_runner_state_path,
+                        runs_path=quick_whale_v3_runs_path,
+                        lookback_minutes=quick_whale_v2_lookback,
+                        max_flows=quick_whale_v2_max_flows,
+                        slippage=quick_whale_v2_slippage,
+                        mode="quick_v3",
+                        max_flow_age_seconds=quick_whale_v2_max_age,
+                        min_seconds_to_close=quick_whale_v2_min_close,
+                        allow_new_entries=True,
+                        min_flow_age_seconds=quick_whale_v2_min_age,
+                        max_spread=quick_whale_v2_max_spread,
+                        max_adverse_mid_cents=quick_whale_v2_max_adverse_mid_cents,
+                        max_follow_through_cents=quick_whale_v2_max_follow_through_cents,
+                        min_flow_notional_usd=quick_whale_v2_min_notional,
+                        min_flow_trades=quick_whale_v2_min_trades,
+                        quick_v2_max_settled_trades=quick_whale_v3_max_settled,
+                        quick_v2_max_realized_loss=quick_whale_v3_max_loss,
+                        max_reaction_wait_seconds=quick_whale_v3_max_wait,
+                    )
+                    if result.get("rate_limited"):
+                        wait_seconds = quick_whale_v3_backoff
+                except Exception as exc:
+                    print(json.dumps({
+                        "quick_whale_v3_paper_error": type(exc).__name__,
+                        "message": str(exc)[:300],
+                    }), flush=True)
+                    if "429" in str(exc):
+                        wait_seconds = quick_whale_v3_backoff
+                quick_whale_v3_trigger_event.wait(timeout=wait_seconds)
+                quick_whale_v3_trigger_event.clear()
+
+        threading.Thread(
+            target=quick_whale_v3_loop,
+            name="quick-whale-v3-paper-worker",
+            daemon=True,
+        ).start()
+
     recorder = None
     recorder_thread = None
     recorder_enabled = (
@@ -1568,6 +1780,12 @@ def main():
             quick_whale_v2_runner_state_path=quick_whale_v2_runner_state_path if quick_whale_v2_enabled else None,
             quick_whale_v2_runs_path=quick_whale_v2_runs_path if quick_whale_v2_enabled else None,
             quick_whale_v2_scan_interval_seconds=quick_whale_v2_interval if quick_whale_v2_enabled else None,
+            quick_whale_v3_client=quick_whale_v3_client,
+            quick_whale_v3_trigger_event=quick_whale_v3_trigger_event,
+            quick_whale_v3_state_path=quick_whale_v3_state_path if quick_whale_v3_enabled else None,
+            quick_whale_v3_runner_state_path=quick_whale_v3_runner_state_path if quick_whale_v3_enabled else None,
+            quick_whale_v3_runs_path=quick_whale_v3_runs_path if quick_whale_v3_enabled else None,
+            quick_whale_v3_scan_interval_seconds=quick_whale_v3_interval if quick_whale_v3_enabled else None,
         )
         print(json.dumps({"autotrader_http": "listening", "port": http_port, "mode": "paper"}), flush=True)
 

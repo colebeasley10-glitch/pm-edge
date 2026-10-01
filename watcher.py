@@ -1349,6 +1349,9 @@ def main():
 
     sport_identified = 0
     same_sport_matches = 0
+    matcher_shadow_accepted = 0
+    matcher_shadow_would_fail = 0
+    matcher_shadow_fail_reasons = {}
     accepted_same_sport = 0
     accepted_same_sport_strong = 0
     accepted_same_sport_time_confirmed = 0
@@ -1427,6 +1430,10 @@ def main():
             sample_rejection("event_match_failed_or_ambiguous", market.get("ticker"))
             continue
 
+        # Shadow-only matcher validation: carried to the candidate ledger for
+        # later analysis; it never changes which matches are accepted.
+        market["_matcher_shadow"] = dict(getattr(em, "shadow", None) or {})
+
         # Once the sport is identified, prefer direct participant-pair evidence
         # over the generic combined confidence score. match_event already rejects
         # ambiguous near-ties and only considers pair scores >= 0.55.
@@ -1464,6 +1471,13 @@ def main():
             if em.confidence < MATCH_MIN_UNKNOWN_SPORT:
                 continue
             accepted_unknown_sport += 1
+
+        matcher_shadow_accepted += 1
+        if (market.get("_matcher_shadow") or {}).get("matcher_shadow_pass") is False:
+            matcher_shadow_would_fail += 1
+            reason = str((market.get("_matcher_shadow") or {}).get("matcher_shadow_reason") or "unknown")
+            matcher_shadow_fail_reasons[reason] = matcher_shadow_fail_reasons.get(reason, 0) + 1
+            sample_rejection("matcher_shadow_would_fail", market.get("ticker"))
 
         if not event_is_near_term(em.event):
             held = str(market.get("ticker") or "") in HELD_POSITION_TICKERS
@@ -1998,6 +2012,9 @@ def main():
         "rejected_low_score_bad_time": rejected_low_score_bad_time,
         "rejected_strong_bad_time": rejected_strong_bad_time,
         "accepted_unknown_sport": accepted_unknown_sport,
+        "matcher_shadow_accepted_matches": matcher_shadow_accepted,
+        "matcher_shadow_would_fail": matcher_shadow_would_fail,
+        "matcher_shadow_fail_reasons": matcher_shadow_fail_reasons,
         "top_same_sport_team_score": round(top_same_sport_team_score, 4),
         "top_same_sport_confidence": round(top_same_sport_confidence, 4),
         "best_confirmed_time_delta_hours": None if best_confirmed_time_delta_hours is None else round(best_confirmed_time_delta_hours, 3),

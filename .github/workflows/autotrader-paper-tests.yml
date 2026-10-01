@@ -7,6 +7,9 @@ on:
       - 'autotrader/**'
       - 'test_autotrader_*.py'
       - 'test_quick_whale_v2.py'
+      - 'whale_edge.py'
+      - 'candidate_tracker.py'
+      - 'tests/**'
       - 'pmedge/**'
       - '.github/workflows/autotrader-paper-tests.yml'
   workflow_dispatch:
@@ -43,3 +46,4 @@ jobs:
           test_autotrader_security
           test_quick_whale_v2
           test_autotrader_audit_hardening
+          test_autotrader_phase2_shadow

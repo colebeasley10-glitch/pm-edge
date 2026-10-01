@@ -122,12 +122,60 @@ def _is_fast_financial_market(ticker,question=""):
     commodity=bool(re.search(r"\b(GOLD|SILVER|XAU|XAG|COMMODITY|OIL|WTI|BRENT)\b",text))
     return fast_window and commodity
 
-def _public_trades(*,min_ts,limit=1000):
-    r=requests.get(f"{PUBLIC_BASE}/markets/trades",params={"limit":max(1,min(int(limit),1000)),"min_ts":int(min_ts)},timeout=20)
+TRADE_PAGE_CAP = max(1, int(os.getenv("PM_EDGE_WHALE_TRADE_PAGE_CAP", "10")))
+TRADE_TIMEOUT_SECONDS = max(3, int(os.getenv("PM_EDGE_WHALE_TRADE_TIMEOUT_SECONDS", "20")))
+
+def _fetch_trade_page(params):
+    r=requests.get(f"{PUBLIC_BASE}/markets/trades",params=params,timeout=TRADE_TIMEOUT_SECONDS)
     r.raise_for_status()
-    payload=r.json()
-    rows=payload.get("trades",[]) if isinstance(payload,dict) else []
-    return rows if isinstance(rows,list) else []
+    return r.json()
+
+def _public_trades(*,min_ts,limit=1000,page_cap=None,diagnostics=None,fetch_page=None):
+    """Public, read-only trade tape covering [min_ts, now] via cursor pagination.
+
+    A single 1,000-row page silently truncated the lookback window in busy
+    periods. Stops when there is no cursor, a page is empty, the oldest row on
+    a page is at/before min_ts, or the page cap is reached. Trade IDs are
+    de-duplicated across pages (rows without an ID are kept as-is).
+    """
+    fetch_page=fetch_page or _fetch_trade_page
+    cap=max(1,int(page_cap if page_cap is not None else TRADE_PAGE_CAP))
+    min_ts=int(min_ts)
+    out=[]; seen=set(); cursor=None
+    pages=fetched=deduped=0; oldest=None; cap_hit=False
+    while True:
+        if pages>=cap:
+            cap_hit=bool(cursor); break
+        params={"limit":max(1,min(int(limit),1000)),"min_ts":min_ts}
+        if cursor: params["cursor"]=cursor
+        payload=fetch_page(params)
+        pages+=1
+        rows=payload.get("trades",[]) if isinstance(payload,dict) else []
+        rows=rows if isinstance(rows,list) else []
+        if not rows: break
+        fetched+=len(rows)
+        page_oldest=None
+        for t in rows:
+            if not isinstance(t,dict): continue
+            tid=str(t.get("trade_id") or "")
+            if tid:
+                if tid in seen:
+                    deduped+=1; continue
+                seen.add(tid)
+            out.append(t)
+            ts=_parse_iso(t.get("created_time")) if t.get("created_time") else None
+            if ts is not None and (page_oldest is None or ts<page_oldest): page_oldest=ts
+        if page_oldest is not None and (oldest is None or page_oldest<oldest): oldest=page_oldest
+        cursor=payload.get("cursor") if isinstance(payload,dict) else None
+        if not cursor: break
+        if page_oldest is not None and page_oldest.timestamp()<=min_ts: break
+    if diagnostics is not None:
+        diagnostics.update({
+            "trade_pages_fetched":pages,"trade_rows_fetched":fetched,"trade_rows_deduped":deduped,
+            "trade_oldest_ts":_iso(oldest) if oldest is not None else None,
+            "trade_page_cap_hit":cap_hit,"trade_page_cap":cap,
+        })
+    return out
 
 def _trade_side(t):
     side=str(t.get("taker_outcome_side") or t.get("taker_side") or "").upper()

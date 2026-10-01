@@ -69,7 +69,12 @@ class PositionThesis:
             "expected_hold_hours", "expected_ev_per_contract",
             "expected_ev_per_capital_hour", "invalidation_fair_move_sigma",
         }
-        data = dict(row)
+        # Theses may carry extra provenance/research keys (fair age, recheck
+        # telemetry, challenger tags). Only the declared fields define the
+        # thesis; ignoring extras keeps exit management working.
+        from dataclasses import fields as _fields
+        allowed = {f.name for f in _fields(cls)}
+        data = {k: v for k, v in dict(row).items() if k in allowed}
         for key in decimal_fields:
             data[key] = D(data[key])
         data["cluster_ids"] = tuple(data.get("cluster_ids") or ())

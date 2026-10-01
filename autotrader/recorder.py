@@ -21,6 +21,7 @@ from datetime import datetime, timedelta, timezone
 
 from pmedge.kalshi import KalshiPublicClient, normalize_market
 from .collector import PUBLIC_BASE
+from .clv_capture import capture_clv_checkpoints
 from .recorder_store import RecorderStore, utc_iso
 from .weather_shadow import (
     OpenMeteoWeatherShadow,
@@ -77,6 +78,7 @@ class RestRecorder:
         self.max_markets = max(1000, int(max_markets))
         self.fee_schedule_id = str(fee_schedule_id)
         self.clock = clock or _utcnow
+        self._clv_close_time_cache = {}
         self._last_market_refresh_at = None
         self._market_cache = []
         self._market_cache_received_at = None
@@ -678,6 +680,18 @@ class RestRecorder:
                     )
             self._last_snapshot_at = cycle_started
 
+        # CLV checkpoints for open positions in every paper lane (evaluation only).
+        clv_summary = None
+        if os.getenv("AUTOTRADER_CLV_CAPTURE_ENABLED", "1").strip().lower() not in {"0", "false", "no", "off"}:
+            try:
+                clv_summary = capture_clv_checkpoints(
+                    self.store, self.client,
+                    now=self.clock().astimezone(timezone.utc),
+                    close_time_cache=self._clv_close_time_cache,
+                )
+            except Exception as exc:
+                clv_summary = {"error": f"{type(exc).__name__}: {str(exc)[:200]}"}
+
         trades_inserted = 0
         try:
             min_ts = None
@@ -798,6 +812,7 @@ class RestRecorder:
             "maker_probe_evaluation": maker_probe_evaluation,
             "maker_probe_summary": maker_probe_summary,
             "trades_inserted": trades_inserted,
+            "clv_checkpoints": clv_summary,
             "point_in_time_audit": audit,
             "retention_pruned": retention_pruned,
             "storage_guard": storage_guard,
