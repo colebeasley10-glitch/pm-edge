@@ -130,31 +130,51 @@ def _fetch_trade_page(params):
     r.raise_for_status()
     return r.json()
 
-def _public_trades(*,min_ts,limit=1000,page_cap=None,diagnostics=None,fetch_page=None):
-    """Public, read-only trade tape covering [min_ts, now] via cursor pagination.
+TRADE_TAPE_VERSION = "trade_tape_horizon_v1"
 
-    A single 1,000-row page silently truncated the lookback window in busy
-    periods. Stops when there is no cursor, a page is empty, the oldest row on
-    a page is at/before min_ts, or the page cap is reached. Trade IDs are
-    de-duplicated across pages (rows without an ID are kept as-is).
+def _public_trades(*,min_ts,limit=1000,page_cap=None,diagnostics=None,fetch_page=None,now=None,clock=None):
+    """Public, read-only trade tape for the window [min_ts, now] via cursor pagination.
+
+    Returns ONLY trades whose created_time is inside the requested window,
+    de-duplicated by trade_id. Rows older than min_ts, and rows without a
+    parseable created_time (their window membership is unknown), are dropped
+    and counted.
+
+    Paging stops when:
+      * the server reports no further cursor   -> window complete
+      * a page is empty                        -> window complete
+      * a newest-first page reaches a row at/before min_ts -> window complete
+      * the page cap is reached with a cursor still pending -> TRUNCATED
+    min_ts is sent on every request, so when the server applies it (the
+    original single-page design relied on that) no out-of-window row is ever
+    returned and only the cursor or the cap can end paging. Full pages up to
+    the cap therefore mean the window holds more trades than the cap allows:
+    trade_horizon_covered=False reports that explicitly instead of hiding it.
     """
     fetch_page=fetch_page or _fetch_trade_page
+    clock=clock or _now
     cap=max(1,int(page_cap if page_cap is not None else TRADE_PAGE_CAP))
     min_ts=int(min_ts)
+    started=clock()
     out=[]; seen=set(); cursor=None
-    pages=fetched=deduped=0; oldest=None; cap_hit=False
+    pages=fetched=deduped=outside=missing_ts=0
+    oldest_any=oldest_in=newest_in=None
+    reached_boundary=exhausted=cap_hit=False
+    orders=set()
     while True:
         if pages>=cap:
-            cap_hit=bool(cursor); break
+            cap_hit=bool(cursor) and not (reached_boundary and orders=={"newest_first"})
+            break
         params={"limit":max(1,min(int(limit),1000)),"min_ts":min_ts}
         if cursor: params["cursor"]=cursor
         payload=fetch_page(params)
         pages+=1
         rows=payload.get("trades",[]) if isinstance(payload,dict) else []
         rows=rows if isinstance(rows,list) else []
-        if not rows: break
+        if not rows:
+            exhausted=True; break
         fetched+=len(rows)
-        page_oldest=None
+        page_ts=[]
         for t in rows:
             if not isinstance(t,dict): continue
             tid=str(t.get("trade_id") or "")
@@ -162,18 +182,52 @@ def _public_trades(*,min_ts,limit=1000,page_cap=None,diagnostics=None,fetch_page
                 if tid in seen:
                     deduped+=1; continue
                 seen.add(tid)
-            out.append(t)
             ts=_parse_iso(t.get("created_time")) if t.get("created_time") else None
-            if ts is not None and (page_oldest is None or ts<page_oldest): page_oldest=ts
-        if page_oldest is not None and (oldest is None or page_oldest<oldest): oldest=page_oldest
+            if ts is None:
+                missing_ts+=1; continue
+            page_ts.append(ts)
+            if oldest_any is None or ts<oldest_any: oldest_any=ts
+            if ts.timestamp()<=min_ts: reached_boundary=True
+            if ts.timestamp()<min_ts:
+                outside+=1; continue
+            out.append(t)
+            if oldest_in is None or ts<oldest_in: oldest_in=ts
+            if newest_in is None or ts>newest_in: newest_in=ts
+        if len(page_ts)>=2:
+            if page_ts[0]>page_ts[-1]: orders.add("newest_first")
+            elif page_ts[0]<page_ts[-1]: orders.add("oldest_first")
         cursor=payload.get("cursor") if isinstance(payload,dict) else None
-        if not cursor: break
-        if page_oldest is not None and page_oldest.timestamp()<=min_ts: break
+        if not cursor:
+            exhausted=True; break
+        # Only a newest-first walk proves everything older has been passed.
+        if reached_boundary and orders=={"newest_first"}:
+            break
+    covered=bool(exhausted or (reached_boundary and orders=={"newest_first"}))
     if diagnostics is not None:
+        end=clock()
+        ref=now or started
+        lookback=max(0.0,ref.timestamp()-min_ts)
+        if covered:
+            fraction=1.0
+        elif oldest_in is not None and lookback>0:
+            fraction=max(0.0,min(1.0,(ref.timestamp()-oldest_in.timestamp())/lookback))
+        else:
+            fraction=0.0
         diagnostics.update({
+            "trade_tape_version":TRADE_TAPE_VERSION,
             "trade_pages_fetched":pages,"trade_rows_fetched":fetched,"trade_rows_deduped":deduped,
-            "trade_oldest_ts":_iso(oldest) if oldest is not None else None,
+            "trade_rows_in_window":len(out),"trade_rows_outside_window":outside,
+            "trade_rows_missing_ts":missing_ts,
+            "trade_oldest_ts":_iso(oldest_any) if oldest_any is not None else None,
+            "trade_oldest_in_window_ts":_iso(oldest_in) if oldest_in is not None else None,
+            "trade_newest_ts":_iso(newest_in) if newest_in is not None else None,
             "trade_page_cap_hit":cap_hit,"trade_page_cap":cap,
+            "trade_horizon_covered":covered,
+            "trade_window_coverage_fraction":round(fraction,4),
+            "trade_requested_min_ts":_iso(datetime.fromtimestamp(min_ts,tz=timezone.utc)),
+            "trade_requested_lookback_seconds":round(lookback,3),
+            "trade_page_order":("unknown" if not orders else "mixed" if len(orders)>1 else next(iter(orders))),
+            "trade_fetch_seconds":round(max(0.0,(end-started).total_seconds()),3),
         })
     return out
 
@@ -329,7 +383,7 @@ def _message(flow,snapshot,ev,model_fair_side):
 def run_once(*,now=None):
     now=(now or _now()).astimezone(timezone.utc); state=_load_state()
     if not _poll_due(state,now): return {"enabled":True,"polled":False,"signals":0,"reason":"poll_interval"}
-    try: trades=_public_trades(min_ts=int((now-timedelta(minutes=LOOKBACK_MINUTES)).timestamp()))
+    try: trades=_public_trades(min_ts=int((now-timedelta(minutes=LOOKBACK_MINUTES)).timestamp()),now=now)
     except Exception as exc:
         print("WHALE_FLOW_API_ERROR",type(exc).__name__,str(exc)[:240])
         return {"enabled":True,"polled":False,"signals":0,"reason":"public_api_error"}
