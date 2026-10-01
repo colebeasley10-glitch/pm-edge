@@ -15,7 +15,7 @@ the production strategy.
 """
 from __future__ import annotations
 
-from collections import defaultdict, deque
+from collections import defaultdict
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 import json
@@ -59,22 +59,12 @@ def _decimal(value, default=None):
 
 
 def _tail_jsonl(path, limit=MAX_RUNS_PER_LANE):
-    target = Path(path)
-    if not target.exists() or target.stat().st_size == 0:
+    # Bounded reverse read: lane run logs grow without limit and this runs
+    # inside every Value Edge scan, under the scan watchdog.
+    from .storage import tail_jsonl
+    if not path:
         return []
-    rows = deque(maxlen=max(1, int(limit)))
-    try:
-        with target.open("r", encoding="utf-8", errors="replace") as handle:
-            for line in handle:
-                try:
-                    value = json.loads(line)
-                except Exception:
-                    continue
-                if isinstance(value, dict):
-                    rows.append(value)
-    except OSError:
-        return []
-    return list(rows)
+    return tail_jsonl(path, limit)
 
 
 def _json_number(value, places=6):

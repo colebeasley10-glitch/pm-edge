@@ -112,9 +112,21 @@ def _book_prob_spread(bookmaker, selection, point, aliases, market_keys=("spread
             target = next((o for o in candidates if team_similarity(selection, str(o.get("name", "")), aliases) >= 0.70), None)
             if not target:
                 continue
-            pair = [o for o in outcomes if abs(abs(float(o.get("point", -999))) - abs(point)) < 1e-6]
-            if len(pair) >= 2:
-                return _target_bundle(pair[:2], str(target.get("name")))
+            # The complement of "Team -3.5" is "Opponent +3.5" -- the other
+            # team at the mirrored line. Alternate-spread feeds list both teams
+            # at both signs, so matching on |point| alone can pair Team -3.5
+            # with Team +3.5 and, because outcomes are keyed by name, return
+            # the wrong line's probability. Require exactly one opponent row.
+            target_name = str(target.get("name", ""))
+            opponents = [
+                o for o in outcomes
+                if abs(float(o.get("point", -999)) + point) < 1e-6
+                and str(o.get("name", "")) != target_name
+                and team_similarity(selection, str(o.get("name", "")), aliases) < 0.70
+            ]
+            if len(opponents) != 1:
+                continue
+            return _target_bundle([target, opponents[0]], target_name)
     return None
 
 

@@ -278,7 +278,10 @@ class ProbabilityRunnerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             ledger = Path(directory) / "ledger.csv"
             write_ledger(ledger, now - timedelta(seconds=30))
-            text = ledger.read_text(encoding="utf-8").replace("+00:00", "")
+            # write_ledger emits "Z"-suffixed timestamps; strip the zone from the
+            # fair timestamp so it is genuinely naive.
+            when = (now - timedelta(seconds=30)).isoformat().replace("+00:00", "")
+            text = ledger.read_text(encoding="utf-8").replace(when + "Z", when)
             ledger.write_text(text, encoding="utf-8")
             snap = load_pm_edge_ledger(ledger, now=now, max_age_seconds=300)
             self.assertEqual(snap.probabilities, {})

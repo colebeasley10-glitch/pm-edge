@@ -7,6 +7,59 @@ from decimal import Decimal
 from .portfolio import PaperPortfolio, Position
 
 
+def tail_jsonl(path, limit=50, *, block_size=65536):
+    """Return the last ``limit`` JSON-object lines without reading the whole file.
+
+    Run logs on the Railway volume are append-only and grow without bound, so
+    status endpoints and the learning loop must not re-read them from the
+    start on every request/scan. Unparseable lines (for example a line still
+    being appended) are skipped, matching the previous full-read behavior.
+    """
+    limit = max(1, int(limit))
+    target = Path(path)
+    try:
+        size = target.stat().st_size
+    except OSError:
+        return []
+    if size == 0:
+        return []
+
+    rows = []
+
+    def _parse(raw):
+        try:
+            value = json.loads(raw.decode("utf-8", errors="replace"))
+        except Exception:
+            return
+        if isinstance(value, dict):
+            rows.append(value)
+
+    try:
+        with target.open("rb") as handle:
+            pos = size
+            carry = b""
+            while pos > 0 and len(rows) < limit:
+                step = min(int(block_size), pos)
+                pos -= step
+                handle.seek(pos)
+                chunk = handle.read(step) + carry
+                lines = chunk.split(b"\n")
+                # The first piece may be the tail of an earlier line unless we
+                # reached the start of the file.
+                carry = lines[0]
+                for line in reversed(lines[1:]):
+                    if line.strip():
+                        _parse(line)
+                        if len(rows) >= limit:
+                            break
+            if pos == 0 and len(rows) < limit and carry.strip():
+                _parse(carry)
+    except OSError:
+        return []
+    rows.reverse()
+    return rows[-limit:]
+
+
 def save_portfolio(portfolio: PaperPortfolio, path):
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)

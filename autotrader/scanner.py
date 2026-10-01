@@ -1,4 +1,5 @@
 """Read-only Kalshi market discovery for the paper AutoTrader."""
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
@@ -108,12 +109,17 @@ def _normalized_market(raw, normalize_market):
 def scan_public(client, *, max_markets=3000, max_orderbooks=250,
                 max_spread=Decimal("0.08"), min_volume=Decimal("100"),
                 min_depth=Decimal("1"), clock: Callable[[], datetime] | None = None,
-                ticker_filter=None, diagnostics=None):
+                ticker_filter=None, diagnostics=None, deadline_monotonic=None):
     """Discover executable public quotes with real top-of-book depth.
 
     Market-list prices are only a cheap prefilter. Executable asks and sizes are
     derived from the public orderbook. Each orderbook observation is timestamped
     so the decision layer can fail closed on stale quotes.
+
+    ``deadline_monotonic`` bounds the sequential network work. Once it passes,
+    remaining fetches are skipped (fail closed: fewer candidates, never a
+    stale or guessed quote) so a slow Kalshi API cannot push the scan past the
+    Value Edge watchdog and trigger a restart loop.
     """
     from pmedge.kalshi import normalize_market
 
@@ -121,9 +127,17 @@ def scan_public(client, *, max_markets=3000, max_orderbooks=250,
     wanted = set(ticker_filter or [])
     diag = diagnostics if diagnostics is not None else {}
     market_fetch_errors = 0
+    deadline_skipped = 0
+
+    def _past_deadline():
+        return deadline_monotonic is not None and time.monotonic() > deadline_monotonic
+
     if wanted:
         raw_markets = []
         for ticker in sorted(wanted):
+            if _past_deadline():
+                deadline_skipped += 1
+                continue
             try:
                 row = client.get_market(ticker)
                 if isinstance(row, dict) and row:
@@ -150,6 +164,7 @@ def scan_public(client, *, max_markets=3000, max_orderbooks=250,
         "orderbooks_ok": 0,
         "orderbooks_error": 0,
         "candidates": 0,
+        "deadline_skipped": deadline_skipped,
     })
     prefiltered = []
     for m in normalized:
@@ -192,6 +207,9 @@ def scan_public(client, *, max_markets=3000, max_orderbooks=250,
     prefiltered.sort(key=lambda m: D(m.get("volume_24h") or "0"), reverse=True)
     enriched = []
     for m in prefiltered[:max(0, int(max_orderbooks))]:
+        if _past_deadline():
+            diag["deadline_skipped"] += 1
+            continue
         diag["orderbooks_attempted"] += 1
         try:
             book = client.get_orderbook(m["ticker"], depth=1)

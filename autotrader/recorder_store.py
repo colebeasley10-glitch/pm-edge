@@ -476,6 +476,9 @@ class RecorderStore:
             "open_time": raw.get("open_time"),
             "close_time": raw.get("close_time"),
             "expected_expiration_time": raw.get("expected_expiration_time"),
+            # Lifecycle status (open -> closed -> settled) changes rarely and a
+            # backtest needs to know when trading stopped; it is not a quote field.
+            "status": raw.get("status"),
             "fee_type": raw.get("fee_type") or raw.get("fee_type_override"),
             "fee_schedule_id": fee_schedule_id,
         }

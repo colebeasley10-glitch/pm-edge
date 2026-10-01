@@ -22,7 +22,8 @@ from autotrader.collector import PUBLIC_BASE
 from autotrader.fees import prediction_fee
 from autotrader.paper_runner import _assert_no_kalshi_write_credentials, _settle_finished_positions
 from autotrader.portfolio import PaperPortfolio
-from autotrader.storage import load_portfolio, save_portfolio
+from autotrader.learning import _completed_trades
+from autotrader.storage import load_portfolio, save_portfolio, tail_jsonl
 from pmedge.kalshi import KalshiPublicClient, normalize_market
 
 import whale_edge
@@ -726,20 +727,8 @@ def _live_bids(portfolio, client):
 def _status(state_path, runner_state_path, runs_path, client, *, strategy="whale_flow", scan_interval_seconds=None):
     portfolio = load_portfolio(state_path)
     state = _load_runner_state(runner_state_path)
-    runs = []
-    p = Path(runs_path)
-    if p.exists():
-        try:
-            lines = p.read_text(encoding="utf-8", errors="replace").splitlines()
-            for line in lines[-50:]:
-                try:
-                    value = json.loads(line)
-                except Exception:
-                    continue
-                if isinstance(value, dict):
-                    runs.append(value)
-        except OSError:
-            pass
+    # Bounded reverse read; these run logs grow by one line per scan forever.
+    runs = tail_jsonl(runs_path, 50)
     bids = _live_bids(portfolio, client)
     snap = portfolio.snapshot(bids=bids)
     positions = []
@@ -770,20 +759,30 @@ def _status(state_path, runner_state_path, runs_path, client, *, strategy="whale
             "thesis": getattr(pos, "thesis", None),
         })
     settled = [x for x in portfolio.ledger if str(x.get("action") or "").upper() == "SETTLE"]
-    wins = sum(1 for x in settled if D(x.get("pnl") or "0") > 0)
-    losses = sum(1 for x in settled if D(x.get("pnl") or "0") < 0)
+    closed = _completed_trades(portfolio, lane_hint=strategy)
+    wins = sum(1 for x in closed if D(x.get("pnl") or "0") > 0)
+    losses = sum(1 for x in closed if D(x.get("pnl") or "0") < 0)
+    interval = int(
+        scan_interval_seconds
+        if scan_interval_seconds is not None
+        else os.environ.get(
+            "WHALE_QUICK_SCAN_INTERVAL_SECONDS" if strategy == "quick_whale" else "WHALE_PAPER_SCAN_INTERVAL_SECONDS",
+            "60" if strategy == "quick_whale" else "300",
+        )
+    )
+    last_scan = _parse_time(state.get("last_scan_at"))
+    last_scan_age = (_utcnow() - last_scan).total_seconds() if last_scan is not None else None
     return {
         "mode": "paper",
         "strategy": strategy,
-        "worker_online": True,
-        "scan_interval_seconds": int(
-            scan_interval_seconds
-            if scan_interval_seconds is not None
-            else os.environ.get(
-                "WHALE_QUICK_SCAN_INTERVAL_SECONDS" if strategy == "quick_whale" else "WHALE_PAPER_SCAN_INTERVAL_SECONDS",
-                "60" if strategy == "quick_whale" else "300",
-            )
+        # Derived from the persisted scan time: the HTTP thread answering does
+        # not prove the lane's worker thread is still scanning.
+        "worker_online": bool(
+            last_scan_age is not None and last_scan_age <= max(3 * interval, interval + 600)
         ),
+        "last_scan_at": state.get("last_scan_at"),
+        "last_scan_age_seconds": None if last_scan_age is None else round(last_scan_age, 1),
+        "scan_interval_seconds": interval,
         "starting_bankroll": "500.00",
         "credit_policy": {
             "paid_odds_api_calls": 0,
@@ -794,6 +793,8 @@ def _status(state_path, runner_state_path, runs_path, client, *, strategy="whale
         "positions": positions,
         "pending_orders": state.get("pending") or [],
         "record": f"{wins}-{losses}",
+        "record_basis": "closed_positions_sold_or_settled",
+        "closed_count": len(closed),
         "settled_count": len(settled),
         "blotter": portfolio.ledger[-100:],
         "last_run": runs[-1] if runs else None,
