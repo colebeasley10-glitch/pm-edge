@@ -37,13 +37,54 @@ def _utcnow():
     return datetime.now(timezone.utc)
 
 
+_VALUE_STAGE_LOCK = threading.Lock()
+_VALUE_STAGE_STATE = {
+    "active": False,
+    "started_monotonic": None,
+    "stage": None,
+}
+
+
 def _value_stage(stage, **fields):
+    stage = str(stage)
+    now_mono = time.monotonic()
+    with _VALUE_STAGE_LOCK:
+        _VALUE_STAGE_STATE["stage"] = stage
+        if stage == "scan_start":
+            _VALUE_STAGE_STATE["active"] = True
+            _VALUE_STAGE_STATE["started_monotonic"] = now_mono
+        elif stage in {"scan_complete", "scan_error"}:
+            _VALUE_STAGE_STATE["active"] = False
+            _VALUE_STAGE_STATE["started_monotonic"] = None
     payload = {
-        "value_edge_stage": str(stage),
+        "value_edge_stage": stage,
         "observed_at": _utcnow().isoformat().replace("+00:00", "Z"),
     }
     payload.update(fields)
     print(json.dumps(payload, separators=(",", ":"), default=str), flush=True)
+
+
+def _value_watchdog(timeout_seconds):
+    timeout_seconds = max(300, int(timeout_seconds))
+    while True:
+        time.sleep(30)
+        with _VALUE_STAGE_LOCK:
+            active = bool(_VALUE_STAGE_STATE.get("active"))
+            started = _VALUE_STAGE_STATE.get("started_monotonic")
+            stage = _VALUE_STAGE_STATE.get("stage")
+        if not active or started is None:
+            continue
+        elapsed = time.monotonic() - float(started)
+        if elapsed <= timeout_seconds:
+            continue
+        print(json.dumps({
+            "value_edge_watchdog": "restart_required",
+            "stage": stage,
+            "elapsed_seconds": round(elapsed, 1),
+            "timeout_seconds": timeout_seconds,
+            "observed_at": _utcnow().isoformat().replace("+00:00", "Z"),
+        }, separators=(",", ":")), flush=True)
+        os._exit(70)
 
 
 _KALSHI_WRITE_ENV_NAMES = (
@@ -1089,6 +1130,18 @@ def main():
     if args.interval < 30 or args.max_markets < 1 or args.max_orderbooks < 1:
         parser.error("interval must be >= 30 seconds; market limits must be >= 1")
 
+    if not args.once:
+        watchdog_timeout = max(
+            300,
+            int(os.environ.get("AUTOTRADER_VALUE_SCAN_WATCHDOG_SECONDS", "420")),
+        )
+        threading.Thread(
+            target=_value_watchdog,
+            args=(watchdog_timeout,),
+            name="value-edge-watchdog",
+            daemon=True,
+        ).start()
+
     client = KalshiPublicClient(PUBLIC_BASE)
     trigger_event = threading.Event()
     run_lock = threading.Lock()
@@ -1412,6 +1465,11 @@ def main():
                 )
             print(json.dumps({k: v for k, v in result.items() if k != "decisions"}), flush=True)
         except Exception as exc:
+            _value_stage(
+                "scan_error",
+                error=type(exc).__name__,
+                message=str(exc)[:500],
+            )
             print(json.dumps({"error": type(exc).__name__, "message": str(exc)}), flush=True)
             if args.once:
                 raise
