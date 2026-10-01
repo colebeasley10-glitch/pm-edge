@@ -24,13 +24,13 @@ from .collector import PUBLIC_BASE
 from .engine import PaperEngine
 from .probability import load_pm_edge_api, load_pm_edge_ledger
 from .scanner import scan_public
-from .storage import load_portfolio, save_portfolio
+from .storage import load_portfolio, save_portfolio, tail_jsonl
 from .recorder import start_recorder_thread
 from .recorder_store import RecorderStore
 from .exit_engine import ExitInputs, evaluate_exit
 from .fees import prediction_fee
 from .thesis import PositionThesis
-from .learning import update_learning_state, load_learning_state
+from .learning import update_learning_state, load_learning_state, _completed_trades
 
 
 def _utcnow():
@@ -64,27 +64,105 @@ def _value_stage(stage, **fields):
     print(json.dumps(payload, separators=(",", ":"), default=str), flush=True)
 
 
-def _value_watchdog(timeout_seconds):
+# Background lane loops (Whale Flow, Quick Whale, Quick Whale v2) beat here on
+# every iteration. Before this existed only the Value Edge scan was watched, so
+# a hung whale thread left the container "healthy" while that lane silently
+# stopped trading.
+_WORKER_HEARTBEATS = {}
+
+
+def _worker_beat(name, stale_after_seconds, *, now_monotonic=None):
+    with _VALUE_STAGE_LOCK:
+        _WORKER_HEARTBEATS[str(name)] = {
+            "last_beat_monotonic": time.monotonic() if now_monotonic is None else float(now_monotonic),
+            "stale_after_seconds": max(60.0, float(stale_after_seconds)),
+            "last_beat_at": _utcnow().isoformat().replace("+00:00", "Z"),
+        }
+
+
+def _worker_heartbeat_status(now_monotonic=None):
+    now_mono = time.monotonic() if now_monotonic is None else float(now_monotonic)
+    with _VALUE_STAGE_LOCK:
+        beats = {k: dict(v) for k, v in _WORKER_HEARTBEATS.items()}
+    out = {}
+    for name, beat in beats.items():
+        age = now_mono - float(beat["last_beat_monotonic"])
+        out[name] = {
+            "last_beat_at": beat.get("last_beat_at"),
+            "age_seconds": round(age, 1),
+            "stale_after_seconds": beat["stale_after_seconds"],
+            "online": age <= beat["stale_after_seconds"],
+        }
+    return out
+
+
+def _watchdog_check(timeout_seconds, *, now_monotonic=None):
+    """Return a restart reason dict, or None when every watched loop is healthy."""
     timeout_seconds = max(300, int(timeout_seconds))
-    while True:
-        time.sleep(30)
-        with _VALUE_STAGE_LOCK:
-            active = bool(_VALUE_STAGE_STATE.get("active"))
-            started = _VALUE_STAGE_STATE.get("started_monotonic")
-            stage = _VALUE_STAGE_STATE.get("stage")
-        if not active or started is None:
-            continue
-        elapsed = time.monotonic() - float(started)
-        if elapsed <= timeout_seconds:
-            continue
-        print(json.dumps({
+    now_mono = time.monotonic() if now_monotonic is None else float(now_monotonic)
+    with _VALUE_STAGE_LOCK:
+        active = bool(_VALUE_STAGE_STATE.get("active"))
+        started = _VALUE_STAGE_STATE.get("started_monotonic")
+        stage = _VALUE_STAGE_STATE.get("stage")
+    if active and started is not None:
+        elapsed = now_mono - float(started)
+        if elapsed > timeout_seconds:
+            return {
+                "value_edge_watchdog": "restart_required",
+                "stage": stage,
+                "elapsed_seconds": round(elapsed, 1),
+                "timeout_seconds": timeout_seconds,
+            }
+    stale = {
+        name: row for name, row in _worker_heartbeat_status(now_mono).items()
+        if not row["online"]
+    }
+    if stale:
+        return {
             "value_edge_watchdog": "restart_required",
-            "stage": stage,
-            "elapsed_seconds": round(elapsed, 1),
-            "timeout_seconds": timeout_seconds,
-            "observed_at": _utcnow().isoformat().replace("+00:00", "Z"),
-        }, separators=(",", ":")), flush=True)
-        os._exit(70)
+            "stage": "lane_worker_heartbeat_stale",
+            "stale_workers": stale,
+        }
+    return None
+
+
+def _value_watchdog(timeout_seconds, *, exit_fn=None, sleep_fn=None, max_checks=None):
+    exit_fn = exit_fn or os._exit
+    sleep_fn = sleep_fn or time.sleep
+    checks = 0
+    while max_checks is None or checks < max_checks:
+        checks += 1
+        sleep_fn(30)
+        reason = _watchdog_check(timeout_seconds)
+        if reason is None:
+            continue
+        reason["observed_at"] = _utcnow().isoformat().replace("+00:00", "Z")
+        print(json.dumps(reason, separators=(",", ":"), default=str), flush=True)
+        exit_fn(70)
+        return reason
+    return None
+
+
+def _kalshi_timeout_seconds():
+    try:
+        return max(3, int(os.environ.get("AUTOTRADER_KALSHI_TIMEOUT_SECONDS", "8")))
+    except (TypeError, ValueError):
+        return 8
+
+
+def _assert_distinct_lane_paths(paths_by_lane):
+    """Refuse to start if two lanes would share a bankroll, runner state or run log."""
+    seen = {}
+    for lane, paths in paths_by_lane.items():
+        for kind, value in paths.items():
+            if not value:
+                continue
+            key = os.path.abspath(str(value))
+            if key in seen:
+                raise RuntimeError(
+                    f"Lane state path collision: {lane}.{kind} and {seen[key]} both use {value}"
+                )
+            seen[key] = f"{lane}.{kind}"
 
 
 _KALSHI_WRITE_ENV_NAMES = (
@@ -600,14 +678,11 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
              fair_api_base=None, fair_api_token=None, now=None, clock=None,
              refresh_state_path="/data/autotrader-fair-refresh.json",
              allow_fair_refresh=False, refresh_interval_seconds=1800,
-             learning_state_path=None, recorder_path=None):
+             learning_state_path=None, recorder_path=None, scan_budget_seconds=None):
     fixed_now = now
     clock = clock or ((lambda: fixed_now) if fixed_now is not None else _utcnow)
     started_at = clock().astimezone(timezone.utc)
-    client = client or KalshiPublicClient(
-        PUBLIC_BASE,
-        timeout=max(3, int(os.environ.get("AUTOTRADER_KALSHI_TIMEOUT_SECONDS", "8"))),
-    )
+    client = client or KalshiPublicClient(PUBLIC_BASE, timeout=_kalshi_timeout_seconds())
     portfolio = load_portfolio(state_path)
     _value_stage("scan_start", open_positions=len(portfolio.positions))
     _value_stage("settlement_start", open_positions=len(portfolio.positions))
@@ -643,6 +718,15 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
     fair_tickers = {ticker for ticker, _side in fair.probabilities}
     scanner_diagnostics = {}
     _value_stage("market_scan_start", fair_tickers=len(fair_tickers))
+    if scan_budget_seconds is None:
+        try:
+            scan_budget_seconds = int(os.environ.get("AUTOTRADER_VALUE_SCAN_BUDGET_SECONDS", "150"))
+        except (TypeError, ValueError):
+            scan_budget_seconds = 150
+    scan_deadline = (
+        time.monotonic() + max(10, int(scan_budget_seconds))
+        if scan_budget_seconds and int(scan_budget_seconds) > 0 else None
+    )
     candidates = scan_public(
         client,
         max_markets=max_markets,
@@ -650,6 +734,7 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         clock=clock,
         ticker_filter=fair_tickers,
         diagnostics=scanner_diagnostics,
+        deadline_monotonic=scan_deadline,
     ) if fair_tickers else []
     _value_stage(
         "market_scan_complete",
@@ -836,22 +921,27 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
 
 
 def _tail_jsonl(path, limit=50):
-    p = Path(path)
-    if not p.exists() or p.stat().st_size == 0:
-        return []
-    rows = []
-    try:
-        with p.open("r", encoding="utf-8", errors="replace") as handle:
-            for line in handle:
-                try:
-                    value = json.loads(line)
-                except Exception:
-                    continue
-                if isinstance(value, dict):
-                    rows.append(value)
-    except OSError:
-        return []
-    return rows[-max(1, int(limit)):]
+    return tail_jsonl(path, limit)
+
+
+def _closed_record(portfolio):
+    """W-L over closed round trips (sold OR settled), not settlements only.
+
+    Value Edge actively exits positions, so counting only SETTLE rows hid every
+    sold position from the dashboard's "Win / Closed" record.
+    """
+    closed = _completed_trades(portfolio)
+    wins = sum(1 for x in closed if Decimal(str(x.get("pnl") or "0")) > 0)
+    losses = sum(1 for x in closed if Decimal(str(x.get("pnl") or "0")) < 0)
+    return wins, losses, len(closed)
+
+
+def _run_is_recent(run, interval_seconds, *, now=None, grace_seconds=600):
+    observed = _parse_time((run or {}).get("observed_at"))
+    if observed is None:
+        return False
+    now = now or _utcnow()
+    return (now - observed).total_seconds() <= max(3 * int(interval_seconds), int(interval_seconds) + int(grace_seconds))
 
 
 def _fair_value_rows(path, limit=1000):
@@ -884,6 +974,18 @@ def _paper_status(state_path, runs_path, *, market_client=None, market_cache=Non
     last_run = runs[-1] if runs else None
     positions = []
     cache = market_cache if market_cache is not None else {}
+    # Mark open positions at the live executable bid. Without bids the
+    # snapshot values every open position at zero, so the app showed the full
+    # cost of open Value Edge positions as an unrealized loss.
+    bids = {}
+    if market_client is not None:
+        for ticker, pos in portfolio.positions.items():
+            try:
+                best = _best_bid_for_side(market_client.get_orderbook(ticker, depth=20), pos.side)
+            except Exception:
+                best = None
+            if best is not None:
+                bids[ticker] = str(best[0])
     for ticker, pos in portfolio.positions.items():
         market = cache.get(ticker)
         if market is None and market_client is not None:
@@ -911,10 +1013,12 @@ def _paper_status(state_path, runs_path, *, market_client=None, market_cache=Non
             "side_label": side_label or None,
             "event_ticker": market.get("event_ticker") or None,
             "close_time": market.get("close_time"),
+            "event_start_at": (getattr(pos, "thesis", None) or {}).get("event_start_at"),
+            "current_bid": bids.get(ticker),
         })
     settled = [x for x in portfolio.ledger if str(x.get("action") or "").upper() == "SETTLE"]
-    wins = sum(1 for x in settled if Decimal(str(x.get("pnl") or "0")) > 0)
-    losses = sum(1 for x in settled if Decimal(str(x.get("pnl") or "0")) < 0)
+    wins, losses, closed_count = _closed_record(portfolio)
+    scan_interval = int(os.environ.get("AUTOTRADER_SCAN_INTERVAL_SECONDS", "300"))
     recorder_status = {"enabled": False}
     if os.environ.get("AUTOTRADER_RECORDER_ENABLED", "1").strip().lower() not in {"0", "false", "no", "off"}:
         recorder_path = os.environ.get(
@@ -938,12 +1042,17 @@ def _paper_status(state_path, runs_path, *, market_client=None, market_cache=Non
             }
     return {
         "mode": "paper",
-        "worker_online": True,
-        "scan_interval_seconds": int(os.environ.get("AUTOTRADER_SCAN_INTERVAL_SECONDS", "300")),
+        # Derived from the last persisted scan, not hard-coded: a stalled loop
+        # must show as offline even though the HTTP thread still answers.
+        "worker_online": _run_is_recent(last_run, scan_interval),
+        "worker_heartbeats": _worker_heartbeat_status(),
+        "scan_interval_seconds": scan_interval,
         "starting_bankroll": "500.00",
-        "portfolio": portfolio.snapshot(),
+        "portfolio": portfolio.snapshot(bids=bids),
         "positions": positions,
         "record": f"{wins}-{losses}",
+        "record_basis": "closed_positions_sold_or_settled",
+        "closed_count": closed_count,
         "settled_count": len(settled),
         "blotter": portfolio.ledger[-100:],
         "last_run": last_run,
@@ -1142,13 +1251,16 @@ def main():
             daemon=True,
         ).start()
 
-    client = KalshiPublicClient(PUBLIC_BASE)
+    # The configured short timeout must apply to the client the loop actually
+    # uses; run_once only builds its own client when none is passed in.
+    kalshi_timeout = _kalshi_timeout_seconds()
+    client = KalshiPublicClient(PUBLIC_BASE, timeout=kalshi_timeout)
     trigger_event = threading.Event()
     run_lock = threading.Lock()
 
     whale_enabled = os.environ.get("WHALE_PAPER_ENABLED", "0").strip().lower() in {"1", "true", "yes", "on"}
     whale_trigger_event = threading.Event() if whale_enabled else None
-    whale_client = KalshiPublicClient(PUBLIC_BASE) if whale_enabled else None
+    whale_client = KalshiPublicClient(PUBLIC_BASE, timeout=kalshi_timeout) if whale_enabled else None
     whale_state_path = os.environ.get("WHALE_PAPER_PORTFOLIO_STATE", "/data/whale-paper-portfolio.json")
     whale_runner_state_path = os.environ.get("WHALE_PAPER_RUNNER_STATE", "/data/whale-paper-state.json")
     whale_runs_path = os.environ.get("WHALE_PAPER_RUNS", "/data/whale-paper-runs.jsonl")
@@ -1162,7 +1274,7 @@ def main():
         "WHALE_QUICK_NEW_ENTRIES_ENABLED", "1"
     ).strip().lower() in {"1", "true", "yes", "on"}
     quick_whale_trigger_event = threading.Event() if quick_whale_enabled else None
-    quick_whale_client = KalshiPublicClient(PUBLIC_BASE) if quick_whale_enabled else None
+    quick_whale_client = KalshiPublicClient(PUBLIC_BASE, timeout=kalshi_timeout) if quick_whale_enabled else None
     quick_whale_state_path = os.environ.get("WHALE_QUICK_PORTFOLIO_STATE", "/data/quick-whale-paper-portfolio.json")
     quick_whale_runner_state_path = os.environ.get("WHALE_QUICK_RUNNER_STATE", "/data/quick-whale-paper-state.json")
     quick_whale_runs_path = os.environ.get("WHALE_QUICK_RUNS", "/data/quick-whale-paper-runs.jsonl")
@@ -1181,7 +1293,7 @@ def main():
         "WHALE_QUICK_V2_PAPER_ENABLED", "0"
     ).strip().lower() in {"1", "true", "yes", "on"}
     quick_whale_v2_trigger_event = threading.Event() if quick_whale_v2_enabled else None
-    quick_whale_v2_client = KalshiPublicClient(PUBLIC_BASE) if quick_whale_v2_enabled else None
+    quick_whale_v2_client = KalshiPublicClient(PUBLIC_BASE, timeout=kalshi_timeout) if quick_whale_v2_enabled else None
     quick_whale_v2_state_path = os.environ.get(
         "WHALE_QUICK_V2_PORTFOLIO_STATE", "/data/quick-whale-v2-paper-portfolio.json"
     )
@@ -1229,6 +1341,26 @@ def main():
         int(os.environ.get("WHALE_QUICK_V2_RATE_LIMIT_BACKOFF_SECONDS", "180")),
     )
 
+    lane_paths = {"value_edge": {"portfolio": args.state, "runs": args.runs}}
+    if whale_enabled:
+        lane_paths["whale_flow"] = {
+            "portfolio": whale_state_path, "runner_state": whale_runner_state_path, "runs": whale_runs_path,
+        }
+    if quick_whale_enabled:
+        lane_paths["quick_whale"] = {
+            "portfolio": quick_whale_state_path, "runner_state": quick_whale_runner_state_path,
+            "runs": quick_whale_runs_path,
+        }
+    if quick_whale_v2_enabled:
+        lane_paths["quick_whale_v2"] = {
+            "portfolio": quick_whale_v2_state_path, "runner_state": quick_whale_v2_runner_state_path,
+            "runs": quick_whale_v2_runs_path,
+        }
+    _assert_distinct_lane_paths(lane_paths)
+
+    def _stale_after(interval, backoff=0):
+        return max(900, 6 * int(interval), 3 * int(backoff))
+
     if whale_enabled:
         from . import whale_paper_runner
 
@@ -1240,6 +1372,7 @@ def main():
                 "paid_odds_api_calls": 0,
             }), flush=True)
             while True:
+                _worker_beat("whale_flow", _stale_after(whale_interval))
                 try:
                     whale_paper_runner.run_once(
                         client=whale_client,
@@ -1278,6 +1411,7 @@ def main():
                 "new_entries_enabled": quick_whale_new_entries_enabled,
             }), flush=True)
             while True:
+                _worker_beat("quick_whale", _stale_after(quick_whale_interval, quick_whale_backoff))
                 wait_seconds = quick_whale_interval
                 try:
                     result = whale_paper_runner.run_once(
@@ -1331,6 +1465,7 @@ def main():
                 "new_entries_enabled": True,
             }), flush=True)
             while True:
+                _worker_beat("quick_whale_v2", _stale_after(quick_whale_v2_interval, quick_whale_v2_backoff))
                 wait_seconds = quick_whale_v2_interval
                 try:
                     result = whale_paper_runner.run_once(

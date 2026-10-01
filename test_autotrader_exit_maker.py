@@ -68,7 +68,10 @@ class ExitAndMakerTests(unittest.TestCase):
             ),
             contracts=10,
         )
-        self.assertEqual(d.action, "HOLD")
+        # ADD_REVIEW is advisory only (the runner never executes it); the
+        # property under test is that a price drop alone never forces an exit.
+        self.assertIn(d.action, {"HOLD", "ADD_REVIEW"})
+        self.assertNotIn(d.action, {"SELL", "EXIT_THESIS", "REDUCE"})
 
     def test_adverse_fair_move_invalidates_thesis(self):
         d = evaluate_exit(
