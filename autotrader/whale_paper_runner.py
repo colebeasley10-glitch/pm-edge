@@ -325,10 +325,7 @@ def _paper_buy(
         **(timing or {}),
         "event_ticker": str((meta or {}).get("event_ticker") or ""),
         "series": str(ticker).split("-")[0],
-        "lane_version": (
-            LANE_VERSIONS.get(strategy, f"{strategy}_unversioned")
-            + ("_shared_tape_v1" if trade_tape is not None else "")
-        ),
+        "lane_version": LANE_VERSIONS.get(strategy, f"{strategy}_unversioned"),
         "trade_tape_version": whale_edge.TRADE_TAPE_VERSION,
         "entered_at": _iso_or_none(entered_at) if entered_at is not None else None,
     }
@@ -1302,7 +1299,10 @@ def run_once(
         "observed_at": now.isoformat().replace("+00:00", "Z"),
         "evaluated_at": eval_now.isoformat().replace("+00:00", "Z"),
         "strategy": strategy,
-        "lane_version": LANE_VERSIONS.get(strategy, f"{strategy}_unversioned"),
+        "lane_version": (
+            LANE_VERSIONS.get(strategy, f"{strategy}_unversioned")
+            + ("_shared_tape_v1" if trade_tape is not None else "")
+        ),
         "new_entries_enabled": bool(allow_new_entries),
         "circuit_breaker_reason": circuit_breaker_reason,
         "public_trades": len(trades),
