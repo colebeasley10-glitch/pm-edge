@@ -28,6 +28,7 @@ from .scanner import discover, scan_public, _with_orderbook_depth
 from .storage import append_jsonl, load_portfolio, save_portfolio, tail_jsonl
 from .recorder import start_recorder_thread
 from .recorder_store import RecorderStore
+from .shared_trade_tape import SharedTradeTape
 from .exit_engine import ExitInputs, evaluate_exit
 from .fees import prediction_fee
 from .thesis import PositionThesis
@@ -1068,7 +1069,9 @@ def _fair_value_rows(path, limit=1000):
     return out
 
 
-def _paper_status(state_path, runs_path, *, market_client=None, market_cache=None):
+def _paper_status(
+    state_path, runs_path, *, market_client=None, market_cache=None, shared_trade_tape=None
+):
     portfolio = load_portfolio(state_path)
     runs = _tail_jsonl(runs_path, 50)
     last_run = runs[-1] if runs else None
@@ -1147,6 +1150,9 @@ def _paper_status(state_path, runs_path, *, market_client=None, market_cache=Non
         "worker_online": _run_is_recent(last_run, scan_interval),
         "worker_heartbeats": _worker_heartbeat_status(),
         "kalshi_rate_limiter": _limiter_status(),
+        "shared_trade_tape": (
+            shared_trade_tape.status() if shared_trade_tape is not None else {"enabled": False}
+        ),
         "scan_interval_seconds": scan_interval,
         "starting_bankroll": "500.00",
         "portfolio": portfolio.snapshot(bids=bids),
@@ -1177,7 +1183,8 @@ def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, p
                          quick_whale_v2_runs_path=None, quick_whale_v2_scan_interval_seconds=None,
                          quick_whale_v3_client=None, quick_whale_v3_trigger_event=None,
                          quick_whale_v3_state_path=None, quick_whale_v3_runner_state_path=None,
-                         quick_whale_v3_runs_path=None, quick_whale_v3_scan_interval_seconds=None):
+                         quick_whale_v3_runs_path=None, quick_whale_v3_scan_interval_seconds=None,
+                         shared_trade_tape=None):
     token = str(os.environ.get("AUTOTRADER_API_TOKEN", "") or "").strip()
     market_cache = {}
 
@@ -1212,6 +1219,7 @@ def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, p
                         runs_path,
                         market_client=market_client,
                         market_cache=market_cache,
+                        shared_trade_tape=shared_trade_tape,
                     ),
                 )
             if parsed.path == "/v1/whale-status":
@@ -1516,6 +1524,20 @@ def main():
         0, min(30, int(os.environ.get("WHALE_QUICK_V3_MAX_REACTION_WAIT_SECONDS", "12")))
     )
 
+    shared_trade_tape = None
+    if whale_enabled or quick_whale_enabled or quick_whale_v2_enabled or quick_whale_v3_enabled:
+        enabled_lookbacks = []
+        if whale_enabled:
+            enabled_lookbacks.append(whale_lookback)
+        if quick_whale_enabled:
+            enabled_lookbacks.append(quick_whale_lookback)
+        if quick_whale_v2_enabled or quick_whale_v3_enabled:
+            enabled_lookbacks.append(quick_whale_v2_lookback)
+        shared_trade_tape = SharedTradeTape(
+            retention_minutes=max(enabled_lookbacks or [20]) + 2,
+        )
+        shared_trade_tape.start()
+
     lane_paths = {"value_edge": {"portfolio": args.state, "runs": args.runs}}
     if whale_enabled:
         lane_paths["whale_flow"] = {
@@ -1562,6 +1584,7 @@ def main():
                         lookback_minutes=whale_lookback,
                         max_flows=whale_max_flows,
                         slippage=whale_slippage,
+                        trade_tape=shared_trade_tape,
                     )
                 except Exception as exc:
                     print(json.dumps({
@@ -1606,6 +1629,7 @@ def main():
                         max_flow_age_seconds=quick_whale_max_age,
                         min_seconds_to_close=quick_whale_min_close,
                         allow_new_entries=quick_whale_new_entries_enabled,
+                        trade_tape=shared_trade_tape,
                     )
                     if result.get("rate_limited"):
                         wait_seconds = quick_whale_backoff
@@ -1666,6 +1690,7 @@ def main():
                         max_follow_through_cents=quick_whale_v2_max_follow_through_cents,
                         min_flow_notional_usd=quick_whale_v2_min_notional,
                         min_flow_trades=quick_whale_v2_min_trades,
+                        trade_tape=shared_trade_tape,
                     )
                     if result.get("rate_limited"):
                         wait_seconds = quick_whale_v2_backoff
@@ -1733,6 +1758,7 @@ def main():
                         quick_v2_max_settled_trades=quick_whale_v3_max_settled,
                         quick_v2_max_realized_loss=quick_whale_v3_max_loss,
                         max_reaction_wait_seconds=quick_whale_v3_max_wait,
+                        trade_tape=shared_trade_tape,
                     )
                     if result.get("rate_limited"):
                         wait_seconds = quick_whale_v3_backoff
@@ -1761,7 +1787,9 @@ def main():
     )
     if recorder_enabled:
         try:
-            recorder, recorder_thread = start_recorder_thread()
+            recorder, recorder_thread = start_recorder_thread(
+                shared_trade_tape=shared_trade_tape
+            )
             print(
                 json.dumps(
                     {
@@ -1821,6 +1849,7 @@ def main():
             quick_whale_v3_runner_state_path=quick_whale_v3_runner_state_path if quick_whale_v3_enabled else None,
             quick_whale_v3_runs_path=quick_whale_v3_runs_path if quick_whale_v3_enabled else None,
             quick_whale_v3_scan_interval_seconds=quick_whale_v3_interval if quick_whale_v3_enabled else None,
+            shared_trade_tape=shared_trade_tape,
         )
         print(json.dumps({"autotrader_http": "listening", "port": http_port, "mode": "paper"}), flush=True)
 

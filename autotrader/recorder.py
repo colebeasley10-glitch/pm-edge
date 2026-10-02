@@ -63,6 +63,7 @@ class RestRecorder:
         max_markets=5000,
         fee_schedule_id="kalshi-predictions-current",
         clock=None,
+        shared_trade_tape=None,
     ):
         self.store = RecorderStore(db_path)
         self.client = client or KalshiPublicClient(PUBLIC_BASE)
@@ -78,6 +79,7 @@ class RestRecorder:
         self.max_markets = max(1000, int(max_markets))
         self.fee_schedule_id = str(fee_schedule_id)
         self.clock = clock or _utcnow
+        self.shared_trade_tape = shared_trade_tape
         self._clv_close_time_cache = {}
         self._last_market_refresh_at = None
         self._market_cache = []
@@ -693,19 +695,38 @@ class RestRecorder:
                 clv_summary = {"error": f"{type(exc).__name__}: {str(exc)[:200]}"}
 
         trades_inserted = 0
+        trade_source = "direct_public_api"
+        trade_tape_diagnostics = None
         try:
-            min_ts = None
             if self._last_trade_poll_at is not None:
                 # One-second overlap; trade_id primary key handles duplicates.
                 min_ts = int((self._last_trade_poll_at - timedelta(seconds=1)).timestamp())
-            data = self._api(
-                "GET /markets/trades",
-                lambda: self.client.get_trades(
-                    limit=1000,
+            else:
+                # The recorder does not need historical warm-up. On its first
+                # shared-tape cycle, cover only one recorder interval.
+                min_ts = int(
+                    (cycle_started - timedelta(seconds=self.interval_seconds + 2)).timestamp()
+                )
+
+            if self.shared_trade_tape is not None:
+                shared_rows, trade_tape_diagnostics = self.shared_trade_tape.snapshot(
                     min_ts=min_ts,
-                    is_block_trade=False,
-                ),
-            )
+                    now=cycle_started,
+                )
+                if not trade_tape_diagnostics.get("trade_horizon_covered"):
+                    raise RuntimeError("shared trade tape has not covered recorder continuity window")
+                data = {"trades": shared_rows}
+                trade_source = "shared_collector"
+            else:
+                data = self._api(
+                    "GET /markets/trades",
+                    lambda: self.client.get_trades(
+                        limit=1000,
+                        min_ts=(min_ts if self._last_trade_poll_at is not None else None),
+                        is_block_trade=False,
+                    ),
+                )
+
             trades_received = self.clock().astimezone(timezone.utc)
             maker_tickers = {
                 str(raw.get("ticker") or "") for raw in maker_raw
@@ -721,7 +742,10 @@ class RestRecorder:
         except Exception as exc:
             self.store.quality_event(
                 "trade_poll_error",
-                detail={"error": f"{type(exc).__name__}: {exc}"},
+                detail={
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "source": trade_source,
+                },
             )
 
         maker_probe_evaluation = None
@@ -812,6 +836,8 @@ class RestRecorder:
             "maker_probe_evaluation": maker_probe_evaluation,
             "maker_probe_summary": maker_probe_summary,
             "trades_inserted": trades_inserted,
+            "trade_source": trade_source,
+            "trade_tape": trade_tape_diagnostics,
             "clv_checkpoints": clv_summary,
             "point_in_time_audit": audit,
             "retention_pruned": retention_pruned,
@@ -934,6 +960,7 @@ def start_recorder_thread(
     snapshot_markets=None,
     orderbook_depth=None,
     fee_schedule_id=None,
+    shared_trade_tape=None,
 ):
     resolved_db_path = db_path or os.getenv(
         "AUTOTRADER_RECORDER_DB", "/data/autotrader-recorder.sqlite3"
@@ -978,6 +1005,7 @@ def start_recorder_thread(
             fee_schedule_id=fee_schedule_id or os.getenv(
                 "AUTOTRADER_FEE_SCHEDULE_ID", "kalshi-predictions-current"
             ),
+            shared_trade_tape=shared_trade_tape,
         )
 
     try:
