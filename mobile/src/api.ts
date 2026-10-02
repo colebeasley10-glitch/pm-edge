@@ -75,9 +75,12 @@ export const api = {
   whalePaperStatus: () => autoRequest<WhalePaperStatus>("/v1/whale-status"),
   runWhalePaperScan: () =>
     autoRequest<WhalePaperScanResponse>("/v1/whale-run-scan", { method: "POST" }),
-  quickWhaleStatus: () => autoRequest<WhalePaperStatus>("/v1/quick-whale-v2-status"),
-  runQuickWhaleScan: () =>
+  quickWhaleV2Status: () => autoRequest<WhalePaperStatus>("/v1/quick-whale-v2-status"),
+  runQuickWhaleV2Scan: () =>
     autoRequest<WhalePaperScanResponse>("/v1/quick-whale-v2-run-scan", { method: "POST" }),
+  quickWhaleV3Status: () => autoRequest<WhalePaperStatus>("/v1/quick-whale-v3-status"),
+  runQuickWhaleV3Scan: () =>
+    autoRequest<WhalePaperScanResponse>("/v1/quick-whale-v3-run-scan", { method: "POST" }),
   review: (signalId: string) =>
     request<ReviewResponse>(`/v1/bets/${encodeURIComponent(signalId)}/review`),
   submit: (signalId: string) =>

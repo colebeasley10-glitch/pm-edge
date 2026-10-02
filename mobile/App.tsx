@@ -39,6 +39,7 @@ type MoreView = "Menu" | "Analytics" | "History" | "Pending" | "Account" | "Syst
 type AutoTraderView = "Book" | "Markets" | "Blotter" | "Closed" | "Log";
 type WhalePaperView = "Book" | "Flows" | "Pending" | "Closed" | "Log";
 type PaperStrategy = "Value Edge" | "Whale Flow" | "Quick Whale";
+type QuickWhaleVersion = "v3" | "v2 Beta";
 type BetFilter = "Available" | "Filled" | "Unfilled";
 
 const fmtMoney = (x?: number | null, signed = false) => {
@@ -1094,19 +1095,25 @@ function WhalePaperScreen({
   error,
   refresh,
   runScan,
-  quick = false,
+  quickVersion,
 }: {
   data: WhalePaperStatus | null;
   loading: boolean;
   error: string | null;
   refresh: () => void;
   runScan: () => void;
-  quick?: boolean;
+  quickVersion?: "v2" | "v3";
 }) {
   const [view, setView] = useState<WhalePaperView>("Book");
-  const strategyTitle = quick ? "Quick Whale v2" : "Whale Flow";
+  const quick = Boolean(quickVersion);
+  const strategyTitle =
+    quickVersion === "v3" ? "Quick Whale v3" :
+    quickVersion === "v2" ? "Quick Whale v2 Beta" :
+    "Whale Flow";
   const strategySubtitle = quick
-    ? "Fast-market whale copying · post-whale confirmation + executable price only"
+    ? quickVersion === "v3"
+      ? "Fast-market whale copying · reaction recheck + post-whale confirmation · executable price only"
+      : "Beta archive/live lane · post-whale confirmation + executable price only"
     : "Automated Kalshi whale-flow paper trading · no real-money orders";
   const p = data?.portfolio;
   const start = Number(data?.starting_bankroll ?? 500);
@@ -1129,6 +1136,7 @@ function WhalePaperScreen({
           <View style={styles.rowGap}>
             <Text style={styles.screenTitle}>{strategyTitle}</Text>
             <Chip label="PAPER ONLY" tone="blue" />
+            {quickVersion === "v2" ? <Chip label="BETA" /> : null}
           </View>
           <Text style={styles.subtitle}>{strategySubtitle}</Text>
         </View>
@@ -1161,7 +1169,7 @@ function WhalePaperScreen({
       ) : null}
 
       <View style={styles.autoHero}>
-        <Text style={styles.autoEyebrow}>{quick ? "QUICK WHALE V2 PAPER NET ASSET VALUE" : "WHALE PAPER NET ASSET VALUE"}</Text>
+        <Text style={styles.autoEyebrow}>{quick ? `${strategyTitle.toUpperCase()} PAPER NET ASSET VALUE` : "WHALE PAPER NET ASSET VALUE"}</Text>
         <View style={styles.autoHeroValueRow}>
           <Text style={styles.autoHeroValue}>{fmtMoney(equity)}</Text>
           <Text style={[styles.autoHeroPnl, { color: totalPnl >= 0 ? colors.green : colors.red }]}>
@@ -1245,7 +1253,7 @@ function WhalePaperScreen({
             <Text style={styles.autoEmptyTitle}>{quick ? "No Quick Whale positions yet" : "No whale paper positions yet"}</Text>
             <Text style={[styles.muted, { textAlign: "center" }]}>
               {quick
-                ? "Quick Whale v2 only fills when fresh whale flow is followed by market confirmation, a tight spread, and an executable price inside the chase cap."
+                ? `${strategyTitle} only fills when fresh whale flow survives confirmation, spread, slippage, and executable-price checks.`
                 : "The worker waits for unusually large directional flow and only simulates an entry when the live price is still reproducible."}
             </Text>
           </View>
@@ -1750,10 +1758,14 @@ export default function App() {
   const [whalePaper, setWhalePaper] = useState<WhalePaperStatus | null>(null);
   const [whalePaperLoading, setWhalePaperLoading] = useState(false);
   const [whalePaperError, setWhalePaperError] = useState<string | null>(null);
-  const [quickWhale, setQuickWhale] = useState<WhalePaperStatus | null>(null);
-  const [quickWhaleLoading, setQuickWhaleLoading] = useState(false);
-  const [quickWhaleError, setQuickWhaleError] = useState<string | null>(null);
+  const [quickWhaleV2, setQuickWhaleV2] = useState<WhalePaperStatus | null>(null);
+  const [quickWhaleV2Loading, setQuickWhaleV2Loading] = useState(false);
+  const [quickWhaleV2Error, setQuickWhaleV2Error] = useState<string | null>(null);
+  const [quickWhaleV3, setQuickWhaleV3] = useState<WhalePaperStatus | null>(null);
+  const [quickWhaleV3Loading, setQuickWhaleV3Loading] = useState(false);
+  const [quickWhaleV3Error, setQuickWhaleV3Error] = useState<string | null>(null);
   const [paperStrategy, setPaperStrategy] = useState<PaperStrategy>("Value Edge");
+  const [quickWhaleVersion, setQuickWhaleVersion] = useState<QuickWhaleVersion>("v3");
   const [scores, setScores] = useState<ScoreEvent[]>([]);
   const [selected, setSelected] = useState<Signal | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -1826,29 +1838,53 @@ export default function App() {
     }
   }, [refreshWhalePaper]);
 
-  const refreshQuickWhale = useCallback(async () => {
-    setQuickWhaleLoading(true);
-    setQuickWhaleError(null);
+  const refreshQuickWhaleV2 = useCallback(async () => {
+    setQuickWhaleV2Loading(true);
+    setQuickWhaleV2Error(null);
     try {
-      setQuickWhale(await api.quickWhaleStatus());
+      setQuickWhaleV2(await api.quickWhaleV2Status());
     } catch (e) {
-      setQuickWhaleError(e instanceof Error ? e.message : "Unable to load Quick Whale paper trader");
+      setQuickWhaleV2Error(e instanceof Error ? e.message : "Unable to load Quick Whale v2 Beta");
     } finally {
-      setQuickWhaleLoading(false);
+      setQuickWhaleV2Loading(false);
     }
   }, []);
 
-  const runQuickWhaleScan = useCallback(async () => {
-    setQuickWhaleLoading(true);
-    setQuickWhaleError(null);
+  const runQuickWhaleV2Scan = useCallback(async () => {
+    setQuickWhaleV2Loading(true);
+    setQuickWhaleV2Error(null);
     try {
-      await api.runQuickWhaleScan();
-      setTimeout(() => { void refreshQuickWhale(); }, 1200);
+      await api.runQuickWhaleV2Scan();
+      setTimeout(() => { void refreshQuickWhaleV2(); }, 1200);
     } catch (e) {
-      setQuickWhaleError(e instanceof Error ? e.message : "Unable to trigger Quick Whale scan");
-      setQuickWhaleLoading(false);
+      setQuickWhaleV2Error(e instanceof Error ? e.message : "Unable to trigger Quick Whale v2 scan");
+      setQuickWhaleV2Loading(false);
     }
-  }, [refreshQuickWhale]);
+  }, [refreshQuickWhaleV2]);
+
+  const refreshQuickWhaleV3 = useCallback(async () => {
+    setQuickWhaleV3Loading(true);
+    setQuickWhaleV3Error(null);
+    try {
+      setQuickWhaleV3(await api.quickWhaleV3Status());
+    } catch (e) {
+      setQuickWhaleV3Error(e instanceof Error ? e.message : "Unable to load Quick Whale v3");
+    } finally {
+      setQuickWhaleV3Loading(false);
+    }
+  }, []);
+
+  const runQuickWhaleV3Scan = useCallback(async () => {
+    setQuickWhaleV3Loading(true);
+    setQuickWhaleV3Error(null);
+    try {
+      await api.runQuickWhaleV3Scan();
+      setTimeout(() => { void refreshQuickWhaleV3(); }, 1200);
+    } catch (e) {
+      setQuickWhaleV3Error(e instanceof Error ? e.message : "Unable to trigger Quick Whale v3 scan");
+      setQuickWhaleV3Loading(false);
+    }
+  }, [refreshQuickWhaleV3]);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -1883,13 +1919,14 @@ export default function App() {
       api.scores().then((x) => setScores(x.items ?? [])).catch(() => setScores([]));
       void refreshAutoTrader();
       void refreshWhalePaper();
-      void refreshQuickWhale();
+      void refreshQuickWhaleV2();
+      void refreshQuickWhaleV3();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load PM Edge");
     } finally {
       setRefreshing(false);
     }
-  }, [refreshAutoTrader, refreshQuickWhale, refreshWhalePaper]);
+  }, [refreshAutoTrader, refreshQuickWhaleV2, refreshQuickWhaleV3, refreshWhalePaper]);
 
   const handleReviewUnavailable = useCallback((signal: Signal) => {
     removeSignalFromLists(signal);
@@ -1910,14 +1947,16 @@ export default function App() {
     if (tab !== "AutoTrader") return;
     void refreshAutoTrader();
     void refreshWhalePaper();
-    void refreshQuickWhale();
+    void refreshQuickWhaleV2();
+    void refreshQuickWhaleV3();
     const timer = setInterval(() => {
       void refreshAutoTrader();
       void refreshWhalePaper();
-      void refreshQuickWhale();
+      void refreshQuickWhaleV2();
+      void refreshQuickWhaleV3();
     }, 15000);
     return () => clearInterval(timer);
-  }, [refreshAutoTrader, refreshQuickWhale, refreshWhalePaper, tab]);
+  }, [refreshAutoTrader, refreshQuickWhaleV2, refreshQuickWhaleV3, refreshWhalePaper, tab]);
 
   const content = useMemo(() => {
     if (!dashboard && refreshing) {
@@ -1978,7 +2017,30 @@ export default function App() {
         ) : paperStrategy === "Whale Flow" ? (
           <WhalePaperScreen data={whalePaper} loading={whalePaperLoading} error={whalePaperError} refresh={refreshWhalePaper} runScan={runWhalePaperScan} />
         ) : (
-          <WhalePaperScreen data={quickWhale} loading={quickWhaleLoading} error={quickWhaleError} refresh={refreshQuickWhale} runScan={runQuickWhaleScan} quick />
+          <View style={{ flex: 1 }}>
+            <View style={{ paddingHorizontal: 16, paddingTop: 8, backgroundColor: colors.bg }}>
+              <PillTabs values={["v3", "v2 Beta"]} selected={quickWhaleVersion} onSelect={setQuickWhaleVersion} />
+            </View>
+            {quickWhaleVersion === "v3" ? (
+              <WhalePaperScreen
+                data={quickWhaleV3}
+                loading={quickWhaleV3Loading}
+                error={quickWhaleV3Error}
+                refresh={refreshQuickWhaleV3}
+                runScan={runQuickWhaleV3Scan}
+                quickVersion="v3"
+              />
+            ) : (
+              <WhalePaperScreen
+                data={quickWhaleV2}
+                loading={quickWhaleV2Loading}
+                error={quickWhaleV2Error}
+                refresh={refreshQuickWhaleV2}
+                runScan={runQuickWhaleV2Scan}
+                quickVersion="v2"
+              />
+            )}
+          </View>
         )}
       </View>
     );
@@ -1990,7 +2052,7 @@ export default function App() {
     if (moreView === "System" && system) return <SystemScreen data={system} back={() => setMoreView("Menu")} />;
     if (moreView === "Settings") return <SettingsScreen back={() => setMoreView("Menu")} />;
     return <MoreMenu select={setMoreView} />;
-  }, [analytics, autoTrader, autoTraderError, autoTraderLoading, bets, dashboard, error, history, moreView, openBets, paperStrategy, positions, passcode, quickWhale, quickWhaleError, quickWhaleLoading, refresh, refreshAutoTrader, refreshQuickWhale, refreshWhalePaper, refreshing, runAutoTraderScan, runQuickWhaleScan, runWhalePaperScan, scores, system, tab, unfilled, whalePaper, whalePaperError, whalePaperLoading]);
+  }, [analytics, autoTrader, autoTraderError, autoTraderLoading, bets, dashboard, error, history, moreView, openBets, paperStrategy, positions, passcode, quickWhaleV2, quickWhaleV2Error, quickWhaleV2Loading, quickWhaleV3, quickWhaleV3Error, quickWhaleV3Loading, quickWhaleVersion, refresh, refreshAutoTrader, refreshQuickWhaleV2, refreshQuickWhaleV3, refreshWhalePaper, refreshing, runAutoTraderScan, runQuickWhaleV2Scan, runQuickWhaleV3Scan, runWhalePaperScan, scores, system, tab, unfilled, whalePaper, whalePaperError, whalePaperLoading]);
 
   return (
     <SafeAreaView style={styles.root}>
