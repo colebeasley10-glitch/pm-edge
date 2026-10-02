@@ -1120,7 +1120,46 @@ def _paper_status(
             "current_bid": bids.get(ticker),
         })
     settled = [x for x in portfolio.ledger if str(x.get("action") or "").upper() == "SETTLE"]
-    wins, losses, closed_count = _closed_record(portfolio)
+    closed = _completed_trades(portfolio, lane_hint="value_edge")
+    closed_bets = []
+    for sample in closed[-100:]:
+        ticker = str(sample.get("ticker") or "")
+        market = cache.get(ticker)
+        if market is None and market_client is not None:
+            try:
+                market = normalize_market(market_client.get_market(ticker))
+            except Exception:
+                market = {}
+            cache[ticker] = market
+        market = market or {}
+        side = str(sample.get("side") or "").upper()
+        side_label = (
+            market.get("yes_sub_title")
+            if side == "YES"
+            else market.get("no_sub_title")
+        )
+        pnl = Decimal(str(sample.get("pnl") or "0"))
+        risked = Decimal(str(sample.get("risked") or "0"))
+        returned = risked + pnl
+        outcome = "WIN" if pnl > 0 else "LOSS" if pnl < 0 else "PUSH"
+        closed_bets.append({
+            "ticker": ticker,
+            "side": side,
+            "market_title": market.get("title") or ticker,
+            "market_subtitle": market.get("subtitle") or None,
+            "side_label": side_label or None,
+            "contracts": int(sample.get("contracts") or 0),
+            "entry_price": str(sample.get("entry_price") or "0"),
+            "risked": str(risked),
+            "pnl": str(pnl),
+            "roi": str(sample.get("roi") or "0"),
+            "returned": str(returned),
+            "outcome": outcome,
+            "lane": str(sample.get("lane") or "value_edge"),
+        })
+    wins = sum(1 for x in closed if Decimal(str(x.get("pnl") or "0")) > 0)
+    losses = sum(1 for x in closed if Decimal(str(x.get("pnl") or "0")) < 0)
+    closed_count = len(closed)
     scan_interval = int(os.environ.get("AUTOTRADER_SCAN_INTERVAL_SECONDS", "300"))
     recorder_status = {"enabled": False}
     if os.environ.get("AUTOTRADER_RECORDER_ENABLED", "1").strip().lower() not in {"0", "false", "no", "off"}:
@@ -1161,6 +1200,7 @@ def _paper_status(
         "record_basis": "closed_positions_sold_or_settled",
         "closed_count": closed_count,
         "settled_count": len(settled),
+        "closed_bets": closed_bets,
         "blotter": portfolio.ledger[-100:],
         "last_run": last_run,
         "recent_runs": runs[-20:],
