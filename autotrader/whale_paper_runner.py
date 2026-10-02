@@ -325,7 +325,10 @@ def _paper_buy(
         **(timing or {}),
         "event_ticker": str((meta or {}).get("event_ticker") or ""),
         "series": str(ticker).split("-")[0],
-        "lane_version": LANE_VERSIONS.get(strategy, f"{strategy}_unversioned"),
+        "lane_version": (
+            LANE_VERSIONS.get(strategy, f"{strategy}_unversioned")
+            + ("_shared_tape_v1" if trade_tape is not None else "")
+        ),
         "trade_tape_version": whale_edge.TRADE_TAPE_VERSION,
         "entered_at": _iso_or_none(entered_at) if entered_at is not None else None,
     }
@@ -1100,6 +1103,7 @@ def run_once(
     max_reaction_wait_seconds=12,
     sleep_fn=None,
     clock=None,
+    trade_tape=None,
 ):
     """One scan of a whale paper lane.
 
@@ -1136,19 +1140,48 @@ def run_once(
             circuit_breaker_reason = f"{breaker_prefix}_max_realized_loss"
 
     tape_diagnostics = {}
+    prev_scan = _parse_time(state.get("last_scan_at"))
+    window_min_ts = int(
+        (now - timedelta(minutes=max(1, int(lookback_minutes)))).timestamp()
+    )
+    # Once a lane has a persisted scan watermark, older rows in the nominal
+    # lookback have already been processed. Asking the shared collector only
+    # for the continuity interval avoids reprocessing tens of thousands of
+    # trades after seen_trade_ids rolls over.
+    request_min_ts = window_min_ts
+    if trade_tape is not None and prev_scan is not None:
+        request_min_ts = max(
+            window_min_ts,
+            int((prev_scan - timedelta(seconds=2)).timestamp()),
+        )
+
     if allow_new_entries:
         try:
-            trades = whale_edge._public_trades(
-                min_ts=int((now - timedelta(minutes=max(1, int(lookback_minutes)))).timestamp()),
-                diagnostics=tape_diagnostics,
-                now=now,
-            )
-            api_error = None
-            # Trades are only lost for good if the tape fails to reach back to
-            # the previous scan (older trades in the window were seen already).
-            prev_scan = _parse_time(state.get("last_scan_at"))
+            if trade_tape is not None:
+                trades, tape_diagnostics = trade_tape.snapshot(
+                    min_ts=request_min_ts,
+                    now=now,
+                )
+                if not tape_diagnostics.get("trade_horizon_covered"):
+                    trades = []
+                    api_error = "SharedTradeTapeNotReady: requested continuity window not covered"
+                else:
+                    api_error = None
+            else:
+                trades = whale_edge._public_trades(
+                    min_ts=request_min_ts,
+                    diagnostics=tape_diagnostics,
+                    now=now,
+                )
+                api_error = None
+
+            # Trades are only safe to advance past if the tape reaches back to
+            # the previous scan. Shared-tape snapshots report this explicitly.
             oldest_in = _parse_time(tape_diagnostics.get("trade_oldest_in_window_ts"))
             tape_diagnostics["trade_previous_scan_at"] = state.get("last_scan_at")
+            tape_diagnostics["trade_request_min_ts"] = datetime.fromtimestamp(
+                request_min_ts, tz=timezone.utc
+            ).isoformat().replace("+00:00", "Z")
             tape_diagnostics["trade_covers_since_last_scan"] = (
                 True if tape_diagnostics.get("trade_horizon_covered")
                 else (None if prev_scan is None or oldest_in is None else oldest_in <= prev_scan)
@@ -1241,13 +1274,22 @@ def run_once(
         tid = str(trade.get("trade_id") or "")
         if tid:
             state.setdefault("seen_trade_ids", []).append(tid)
-    state["last_scan_at"] = now.isoformat().replace("+00:00", "Z")
+    # Never advance the continuity watermark across an uncovered/failed tape.
+    if api_error is None:
+        state["last_scan_at"] = now.isoformat().replace("+00:00", "Z")
     save_portfolio(portfolio, state_path)
     _save_runner_state(state, runner_state_path)
 
     all_decisions = pending_decisions + flow_decisions + reaction_decisions
     fills = sum(1 for x in all_decisions if x.get("decision") == "paper_filled")
     resting = sum(1 for x in all_decisions if x.get("decision") == "paper_maker_resting")
+    decision_reasons = {}
+    decision_counts = {}
+    for item in all_decisions:
+        reason = str(item.get("reason") or "unspecified")
+        decision = str(item.get("decision") or "unspecified")
+        decision_reasons[reason] = decision_reasons.get(reason, 0) + 1
+        decision_counts[decision] = decision_counts.get(decision, 0) + 1
     # A 429 that survived retries mid-pagination no longer discards the tape:
     # the pages already fetched are used and the window is marked truncated
     # (trade_partial_after_error / trade_rate_limited). That case does NOT put
@@ -1270,13 +1312,19 @@ def run_once(
         "maker_orders_resting": resting,
         "pending_orders": len(state.get("pending") or []),
         "reaction_queue_size": len(state.get("reaction_queue") or []) if quick_v3 else None,
+        "trade_source": tape_diagnostics.get("trade_source") or "direct_pagination",
         "trade_tape": tape_diagnostics,
+        "decision_reasons": decision_reasons,
+        "decision_counts": decision_counts,
         "settlements": settlements,
         "api_error": api_error,
         "rate_limited": rate_limited,
         "credit_usage": {
             "paid_odds_api_calls": 0,
-            "kalshi_public_trade_tape_calls": 1 if api_error is None and allow_new_entries else 0,
+            "kalshi_public_trade_tape_calls": (
+                0 if trade_tape is not None
+                else (1 if api_error is None and allow_new_entries else 0)
+            ),
         },
         "portfolio": portfolio.snapshot(),
         "decisions": all_decisions[-100:],
@@ -1313,6 +1361,10 @@ def run_once(
         "trade_rate_limited": tape_diagnostics.get("trade_rate_limited"),
         "trade_rate_limit_retries": tape_diagnostics.get("trade_rate_limit_retries"),
         "trade_partial_after_error": tape_diagnostics.get("trade_partial_after_error"),
+        "trade_source": run.get("trade_source"),
+        "shared_collector_ready": tape_diagnostics.get("shared_collector_ready"),
+        "decision_reasons": decision_reasons,
+        "decision_counts": decision_counts,
     }, sort_keys=True), flush=True)
     return run
 
