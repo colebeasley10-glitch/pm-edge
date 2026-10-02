@@ -33,6 +33,7 @@ from .exit_engine import ExitInputs, evaluate_exit
 from .fees import prediction_fee
 from .thesis import PositionThesis
 from .learning import update_learning_state, load_learning_state, _completed_trades
+from .paper_fill_alerts import notify_paper_fills
 from .challengers import c2_fields
 from .c2_shadow import load_state as load_c2_state, save_state as save_c2_state, record_exit as record_c2_exit, resolve as resolve_c2, summary as c2_summary
 
@@ -943,6 +944,19 @@ def run_once(*, client=None, state_path="data/autotrader-paper.json",
         "portfolio": result["portfolio"],
         "decisions": engine.decisions,
     }
+    try:
+        run["fill_alerts"] = notify_paper_fills("value_edge", engine.decisions)
+    except Exception as exc:
+        # Notifications are observational only and must never affect trading.
+        run["fill_alerts"] = {
+            "enabled": True,
+            "configured": False,
+            "queued": 0,
+            "sent": 0,
+            "pending": None,
+            "failed": 1,
+            "error": f"{type(exc).__name__}: {str(exc)[:180]}",
+        }
     if learning_state_path:
         extra_sources = []
         for lane, lane_runs, lane_state in (
