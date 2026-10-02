@@ -23,6 +23,7 @@ from autotrader.fees import prediction_fee
 from autotrader.paper_runner import _assert_no_kalshi_write_credentials, _settle_finished_positions
 from autotrader.portfolio import PaperPortfolio
 from autotrader.learning import _completed_trades
+from autotrader.paper_fill_alerts import notify_paper_fills
 from autotrader.storage import append_jsonl, load_portfolio, save_portfolio, tail_jsonl
 from pmedge.kalshi import KalshiPublicClient, normalize_market
 
@@ -1369,6 +1370,19 @@ def run_once(
         "portfolio": portfolio.snapshot(),
         "decisions": all_decisions[-100:],
     }
+    try:
+        run["fill_alerts"] = notify_paper_fills(strategy, all_decisions)
+    except Exception as exc:
+        # Notifications are observational only and must never affect trading.
+        run["fill_alerts"] = {
+            "enabled": True,
+            "configured": False,
+            "queued": 0,
+            "sent": 0,
+            "pending": None,
+            "failed": 1,
+            "error": f"{type(exc).__name__}: {str(exc)[:180]}",
+        }
     # Daily rotation + gzip + retention; each lane writes only its own log.
     append_jsonl(runs_path, run)
     prefix = (
