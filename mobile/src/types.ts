@@ -315,7 +315,7 @@ export type WhalePaperRun = {
 
 export type WhalePaperStatus = {
   mode: "paper";
-  strategy: "whale_flow" | "quick_whale";
+  strategy: "whale_flow" | "quick_whale" | "quick_whale_v2" | "quick_whale_v3";
   worker_online: boolean;
   scan_interval_seconds: number;
   starting_bankroll: string;
@@ -345,5 +345,5 @@ export type WhalePaperStatus = {
 export type WhalePaperScanResponse = {
   accepted: boolean;
   mode: "paper";
-  strategy: "whale_flow" | "quick_whale";
+  strategy: "whale_flow" | "quick_whale" | "quick_whale_v2" | "quick_whale_v3";
 };
