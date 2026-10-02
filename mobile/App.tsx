@@ -22,6 +22,7 @@ import { colors, radius } from "./src/theme";
 import type {
   AnalyticsResponse,
   AutoTraderStatus,
+  ClosedPaperBet,
   DashboardResponse,
   HistoryBet,
   OpenBet,
@@ -35,8 +36,8 @@ import type {
 
 type Tab = "Dashboard" | "Bets" | "Live" | "AutoTrader" | "More";
 type MoreView = "Menu" | "Analytics" | "History" | "Pending" | "Account" | "System" | "Settings";
-type AutoTraderView = "Book" | "Markets" | "Blotter" | "Log";
-type WhalePaperView = "Book" | "Flows" | "Pending" | "Log";
+type AutoTraderView = "Book" | "Markets" | "Blotter" | "Closed" | "Log";
+type WhalePaperView = "Book" | "Flows" | "Pending" | "Closed" | "Log";
 type PaperStrategy = "Value Edge" | "Whale Flow" | "Quick Whale";
 type BetFilter = "Available" | "Filled" | "Unfilled";
 
@@ -1034,6 +1035,57 @@ function SettingsScreen({ back }: { back: () => void }) {
   );
 }
 
+function ClosedPaperBetCard({ bet }: { bet: ClosedPaperBet }) {
+  const pnl = Number(bet.pnl ?? 0);
+  const risked = Number(bet.risked ?? 0);
+  const returned = Number(bet.returned ?? (risked + pnl));
+  const roi = Number(bet.roi ?? 0);
+  const outcome = String(bet.outcome ?? (pnl > 0 ? "WIN" : pnl < 0 ? "LOSS" : "PUSH")).toUpperCase();
+  const outcomeTone = outcome === "WIN" ? "green" : outcome === "LOSS" ? "red" : "default";
+  const readableTitle =
+    bet.side_label?.trim() ||
+    bet.market_title?.trim() ||
+    bet.ticker;
+  const contextTitle =
+    bet.market_title?.trim() &&
+    bet.market_title.trim() !== readableTitle
+      ? bet.market_title.trim()
+      : bet.market_subtitle?.trim() || "";
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.rowBetween}>
+        <View style={styles.rowGap}>
+          <Chip label={outcome} tone={outcomeTone} />
+          <Chip label={String(bet.side ?? "—").toUpperCase()} tone="blue" />
+        </View>
+        <View style={{ alignItems: "flex-end" }}>
+          <Text style={pnl >= 0 ? styles.greenValue : styles.redValue}>{fmtMoney(pnl, true)}</Text>
+          <Text style={styles.mutedSmall}>{fmtPct(roi)} ROI</Text>
+        </View>
+      </View>
+
+      <Text style={styles.betTitle}>{readableTitle}</Text>
+      {contextTitle ? <Text style={styles.muted}>{contextTitle}</Text> : null}
+
+      <View style={styles.rowBetween}>
+        <Text style={styles.muted}>Risked</Text>
+        <Text style={styles.statValue}>{fmtMoney(risked)}</Text>
+      </View>
+      <View style={styles.rowBetween}>
+        <Text style={styles.muted}>Returned</Text>
+        <Text style={styles.statValue}>{fmtMoney(returned)}</Text>
+      </View>
+      <View style={styles.rowBetween}>
+        <Text style={styles.muted}>Entry</Text>
+        <Text style={styles.statValue}>{fmtCents(Number(bet.entry_price ?? 0))}</Text>
+      </View>
+      <Text style={styles.mutedSmall}>
+        {Number(bet.contracts ?? 0)} contracts · Market ID {bet.ticker}
+      </Text>
+    </View>
+  );
+}
 
 
 function WhalePaperScreen({
@@ -1143,7 +1195,7 @@ function WhalePaperScreen({
         </Pressable>
       </View>
 
-      <PillTabs values={["Book", "Flows", "Pending", "Log"]} selected={view} onSelect={setView} />
+      <PillTabs values={["Book", "Flows", "Pending", "Closed", "Log"]} selected={view} onSelect={setView} />
 
       {view === "Book" ? (
         data?.positions?.length ? (
@@ -1254,6 +1306,31 @@ function WhalePaperScreen({
             <Text style={[styles.muted, { textAlign: "center" }]}>
               {quick ? "Fast-market entries are TAKE-only. If the good price is gone, the trade is skipped instead of chased." : "Maker entries are only counted as fills after the market actually trades through the target."}
             </Text>
+          </View>
+        )
+      ) : null}
+
+      {view === "Closed" ? (
+        data?.closed_bets?.length ? (
+          <>
+            <View style={styles.card}>
+              <View style={styles.rowBetween}>
+                <Text style={styles.sectionTitle}>Closed bets</Text>
+                <Chip label={data.record ?? "0-0"} tone="blue" />
+              </View>
+              <Text style={styles.mutedSmall}>
+                {data.closed_count ?? data.closed_bets.length} total closed · realized P/L {fmtMoney(realized, true)}
+              </Text>
+            </View>
+            {[...data.closed_bets].reverse().map((bet, index) => (
+              <ClosedPaperBetCard key={`${bet.ticker}-${index}`} bet={bet} />
+            ))}
+          </>
+        ) : (
+          <View style={styles.autoEmpty}>
+            <Ionicons name="checkmark-done-outline" size={34} color={colors.muted} />
+            <Text style={styles.autoEmptyTitle}>No closed bets yet</Text>
+            <Text style={[styles.muted, { textAlign: "center" }]}>Settled bets and fully exited positions will appear here automatically.</Text>
           </View>
         )
       ) : null}
@@ -1385,7 +1462,7 @@ function AutoTraderScreen({
         </Pressable>
       </View>
 
-      <PillTabs values={["Book", "Markets", "Blotter", "Log"]} selected={view} onSelect={setView} />
+      <PillTabs values={["Book", "Markets", "Blotter", "Closed", "Log"]} selected={view} onSelect={setView} />
 
       {view === "Book" ? (
         data?.positions?.length ? (
@@ -1504,6 +1581,31 @@ function AutoTraderScreen({
           <View style={styles.autoEmpty}>
             <Text style={styles.autoEmptyTitle}>No paper fills yet</Text>
             <Text style={styles.muted}>Fills and settlements will appear here automatically.</Text>
+          </View>
+        )
+      ) : null}
+
+      {view === "Closed" ? (
+        data?.closed_bets?.length ? (
+          <>
+            <View style={styles.card}>
+              <View style={styles.rowBetween}>
+                <Text style={styles.sectionTitle}>Closed bets</Text>
+                <Chip label={data.record ?? "0-0"} tone="blue" />
+              </View>
+              <Text style={styles.mutedSmall}>
+                {data.closed_count ?? data.closed_bets.length} total closed · realized P/L {fmtMoney(realized, true)}
+              </Text>
+            </View>
+            {[...data.closed_bets].reverse().map((bet, index) => (
+              <ClosedPaperBetCard key={`${bet.ticker}-${index}`} bet={bet} />
+            ))}
+          </>
+        ) : (
+          <View style={styles.autoEmpty}>
+            <Ionicons name="checkmark-done-outline" size={34} color={colors.muted} />
+            <Text style={styles.autoEmptyTitle}>No closed bets yet</Text>
+            <Text style={[styles.muted, { textAlign: "center" }]}>Settled bets and fully exited positions will appear here automatically.</Text>
           </View>
         )
       ) : null}
