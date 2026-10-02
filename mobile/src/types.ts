@@ -179,6 +179,22 @@ export type AutoTraderPosition = {
   close_time?: string | null;
 };
 
+export type ClosedPaperBet = {
+  ticker: string;
+  side: "YES" | "NO" | string;
+  market_title?: string | null;
+  market_subtitle?: string | null;
+  side_label?: string | null;
+  contracts: number;
+  entry_price: string;
+  risked: string;
+  pnl: string;
+  roi: string;
+  returned: string;
+  outcome: "WIN" | "LOSS" | "PUSH" | string;
+  lane?: string | null;
+};
+
 export type AutoTraderRun = {
   observed_at?: string | null;
   provider?: string | null;
@@ -213,6 +229,8 @@ export type AutoTraderStatus = {
   positions: AutoTraderPosition[];
   record: string;
   settled_count: number;
+  closed_count?: number;
+  closed_bets: ClosedPaperBet[];
   blotter: Array<Record<string, any>>;
   last_run?: AutoTraderRun | null;
   recent_runs: AutoTraderRun[];
@@ -317,6 +335,8 @@ export type WhalePaperStatus = {
   pending_orders: Array<Record<string, any>>;
   record: string;
   settled_count: number;
+  closed_count?: number;
+  closed_bets: ClosedPaperBet[];
   blotter: Array<Record<string, any>>;
   last_run?: WhalePaperRun | null;
   recent_runs: WhalePaperRun[];
