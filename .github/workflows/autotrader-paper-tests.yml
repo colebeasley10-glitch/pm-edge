@@ -12,6 +12,20 @@ on:
       - 'tests/**'
       - 'pmedge/**'
       - 'test_kalshi_rate_limit.py'
+      - 'test_shared_trade_tape.py'
+      - '.github/workflows/autotrader-paper-tests.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'autotrader/**'
+      - 'test_autotrader_*.py'
+      - 'test_quick_whale_v2.py'
+      - 'test_shared_trade_tape.py'
+      - 'whale_edge.py'
+      - 'candidate_tracker.py'
+      - 'tests/**'
+      - 'pmedge/**'
+      - 'test_kalshi_rate_limit.py'
       - '.github/workflows/autotrader-paper-tests.yml'
   workflow_dispatch:
 
@@ -50,3 +64,4 @@ jobs:
           test_autotrader_phase2_shadow
           test_whale_tape_horizon
           test_kalshi_rate_limit
+          test_shared_trade_tape
