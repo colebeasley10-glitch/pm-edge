@@ -1044,6 +1044,33 @@ def _status(state_path, runner_state_path, runs_path, client, *, strategy="whale
         })
     settled = [x for x in portfolio.ledger if str(x.get("action") or "").upper() == "SETTLE"]
     closed = _completed_trades(portfolio, lane_hint=strategy)
+    closed_bets = []
+    for sample in closed[-100:]:
+        ticker = str(sample.get("ticker") or "")
+        try:
+            meta = _market_meta(client, ticker, cache)
+        except Exception:
+            meta = cache.get(ticker) or {}
+        side = str(sample.get("side") or "").upper()
+        pnl = D(sample.get("pnl") or "0")
+        risked = D(sample.get("risked") or "0")
+        returned = risked + pnl
+        outcome = "WIN" if pnl > 0 else "LOSS" if pnl < 0 else "PUSH"
+        closed_bets.append({
+            "ticker": ticker,
+            "side": side,
+            "market_title": meta.get("title") or ticker,
+            "market_subtitle": meta.get("subtitle") or None,
+            "side_label": _position_label(meta, side) or None,
+            "contracts": int(sample.get("contracts") or 0),
+            "entry_price": str(sample.get("entry_price") or "0"),
+            "risked": str(risked),
+            "pnl": str(pnl),
+            "roi": str(sample.get("roi") or "0"),
+            "returned": str(returned),
+            "outcome": outcome,
+            "lane": str(sample.get("lane") or strategy),
+        })
     wins = sum(1 for x in closed if D(x.get("pnl") or "0") > 0)
     losses = sum(1 for x in closed if D(x.get("pnl") or "0") < 0)
     interval = int(
@@ -1081,6 +1108,7 @@ def _status(state_path, runner_state_path, runs_path, client, *, strategy="whale
         "record_basis": "closed_positions_sold_or_settled",
         "closed_count": len(closed),
         "settled_count": len(settled),
+        "closed_bets": closed_bets,
         "blotter": portfolio.ledger[-100:],
         "last_run": runs[-1] if runs else None,
         "recent_runs": runs[-20:],
