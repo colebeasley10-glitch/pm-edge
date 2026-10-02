@@ -601,13 +601,25 @@ def _eligible_flow_rows(
         for x in state.get("pending") or []
         if isinstance(x, dict)
     }
-    ranked = sorted(
-        flows,
-        key=lambda x: (
-            not whale_edge._is_football(x.get("ticker", "")),
-            -float(x.get("flow_notional_usd") or 0),
-        ),
-    )
+    # The regular Whale Flow lane prioritizes football. Quick Whale is the
+    # opposite: it is explicitly a fast-financial-market lane, so fast tickers
+    # must reach the inspection budget before unrelated football flow.
+    if quick:
+        ranked = sorted(
+            flows,
+            key=lambda x: (
+                not whale_edge._is_fast_financial_market(x.get("ticker", "")),
+                -float(x.get("flow_notional_usd") or 0),
+            ),
+        )
+    else:
+        ranked = sorted(
+            flows,
+            key=lambda x: (
+                not whale_edge._is_football(x.get("ticker", "")),
+                -float(x.get("flow_notional_usd") or 0),
+            ),
+        )
 
     evaluated_for_strategy = 0
     inspected = 0
