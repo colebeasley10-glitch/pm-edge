@@ -57,15 +57,15 @@ def main():
         pos("KXNFLGAME-E1-A", "YES"), pos("KXNFLGAME-E2-A", "YES"), pos("KXNFLGAME-E3-A", "YES")
     ]
     sport_orders = [order(x["ticker"], "YES", 2) for x in sport_positions]
-    cap = approval_guardrails.evaluate_position_guard(
+    no_count_cap = approval_guardrails.evaluate_position_guard(
         ticker="KXNFLGAME-E4-A", side="YES", candidate_risk=2,
         positions=sport_positions, orders=sport_orders, now=NOW,
     )
-    assert cap["reason"] == "sport_position_cap"
+    assert no_count_cap["blocked"] is False
+    assert no_count_cap["sport_open_positions"] == 3
 
-    # Per-sport dollar exposure is intentionally uncapped for now. A strong
-    # same-sport candidate may proceed as long as it does not hit the separate
-    # 3-position sport cap or the $40 total open-risk cap.
+    # Per-sport position count and dollar exposure are intentionally uncapped.
+    # The separate $75 total open-risk cap still applies across PM Edge.
     one_sport_position = [pos("KXNFLGAME-E1-A", "YES")]
     one_sport_orders = [order("KXNFLGAME-E1-A", "YES", 9.5)]
     no_sport_dollar_cap = approval_guardrails.evaluate_position_guard(
@@ -73,6 +73,13 @@ def main():
         positions=one_sport_position, orders=one_sport_orders, now=NOW,
     )
     assert no_sport_dollar_cap["blocked"] is False
+
+    daily_cap = approval_guardrails.evaluate_position_guard(
+        ticker="KXNFLGAME-E5-A", side="YES", candidate_risk=70.0,
+        positions=sport_positions, orders=sport_orders, now=NOW,
+    )
+    assert daily_cap["blocked"] is True
+    assert daily_cap["reason"] == "daily_open_risk_cap"
 
     market = {"ticker":"T","yes_bid":0.20,"yes_ask":0.21,"no_bid":0.79,"no_ask":0.80}
     fair = {"fair_yes_prob":0.50,"n_books":4}

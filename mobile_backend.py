@@ -542,8 +542,8 @@ def system() -> dict:
         "drawdown": state.get("drawdown_circuit") or {},
         "guardrails": {
             "max_per_order_dollars": 10.0,
-            "max_open_risk_dollars": 40.0,
-            "max_open_positions_per_sport": approval_guardrails.MAX_SPORT_POSITIONS,
+            "max_open_risk_dollars": approval_guardrails.DAILY_RISK_BUDGET_DOLLARS,
+            "max_open_positions_per_sport": None,
             "per_sport_dollar_cap": None,
         },
         "tracking": {
