@@ -196,16 +196,21 @@ def load_pm_edge_ledger(path="pm_edge_candidate_ledger.csv", *, now=None, max_ag
     if not p.exists() or p.stat().st_size == 0:
         return ProbabilitySnapshot({}, {}, {}, now)
 
-    rows = []
+    # Stream scored rows directly into the snapshot builder instead of
+    # materializing the entire ledger in memory. The production ledger can
+    # contain tens of thousands of historical rows; keeping a second full list
+    # alongside the shared trade tape can push the Railway worker over its
+    # memory limit even though most rows are immediately rejected as stale.
     with p.open("r", encoding="utf-8", newline="") as handle:
-        for row in csv.DictReader(handle):
-            if str(row.get("stage") or "").lower() != "score":
-                continue
-            rows.append(row)
-    return _build_snapshot(
-        rows, now=now, max_age_seconds=max_age_seconds,
-        source_default="pm_edge_sportsbook_ledger",
-    )
+        rows = (
+            row
+            for row in csv.DictReader(handle)
+            if str(row.get("stage") or "").lower() == "score"
+        )
+        return _build_snapshot(
+            rows, now=now, max_age_seconds=max_age_seconds,
+            source_default="pm_edge_sportsbook_ledger",
+        )
 
 
 def load_pm_edge_api(base_url, token, *, now=None, max_age_seconds=5400, timeout=10):
