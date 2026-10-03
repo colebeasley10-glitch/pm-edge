@@ -1628,8 +1628,9 @@ def main():
             ),
             storage_path=os.environ.get(
                 "PM_EDGE_SHARED_TRADE_TAPE_DB",
-                "/data/shared-trade-tape.sqlite3",
+                "/data/shared-trade-tape-v2.sqlite3",
             ),
+            legacy_storage_path="/data/shared-trade-tape.sqlite3",
         )
         shared_trade_tape.start()
 
