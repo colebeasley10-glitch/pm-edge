@@ -488,22 +488,29 @@ class SharedTradeTape:
         self._stop.set()
 
 
-class DiskBackedSharedTradeTape(SharedTradeTape):
-    """Shared trade tape with rows stored on disk instead of the Python heap.
 
-    Coverage/backfill metadata stays in memory, but the high-volume public trade
-    rows live in SQLite on the persistent volume. This preserves the exact
-    snapshot interface while preventing busy Kalshi periods from exhausting a
-    1 GB worker.
+class DiskBackedSharedTradeTape(SharedTradeTape):
+    """Shared trade tape with compact rows stored on the persistent volume.
+
+    Only fields consumed by Whale Flow/Quick Whale are persisted. The public
+    snapshot shape is reconstructed on read, so lane behavior and coverage
+    semantics stay unchanged while both Python heap and disk usage stay bounded.
     """
 
-    def __init__(self, *, storage_path, **kwargs):
+    def __init__(self, *, storage_path, legacy_storage_path=None, **kwargs):
         super().__init__(**kwargs)
         self.storage_path = str(storage_path)
         Path(self.storage_path).parent.mkdir(parents=True, exist_ok=True)
+        if legacy_storage_path:
+            legacy = Path(str(legacy_storage_path))
+            current = Path(self.storage_path)
+            if legacy != current:
+                for suffix in ("", "-wal", "-shm"):
+                    try:
+                        Path(str(legacy) + suffix).unlink(missing_ok=True)
+                    except Exception:
+                        pass
         self._init_store()
-        # The base class allocates this mapping for its in-memory backend. Keep
-        # it empty in disk mode so retained trades cannot grow the Python heap.
         with self._lock:
             self._rows.clear()
 
@@ -524,13 +531,10 @@ class DiskBackedSharedTradeTape(SharedTradeTape):
                     epoch REAL NOT NULL,
                     ticker TEXT NOT NULL,
                     side TEXT,
-                    yes_price,
-                    no_price,
-                    count_fp,
-                    count_value,
-                    is_block_trade INTEGER NOT NULL,
-                    created_time TEXT NOT NULL
-                )
+                    price REAL,
+                    count_value REAL,
+                    is_block_trade INTEGER NOT NULL
+                ) WITHOUT ROWID
                 """
             )
             conn.execute(
@@ -540,6 +544,13 @@ class DiskBackedSharedTradeTape(SharedTradeTape):
             conn.commit()
         finally:
             conn.close()
+
+    @staticmethod
+    def _number(value):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
 
     def _merge(self, rows):
         oldest = None
@@ -554,9 +565,23 @@ class DiskBackedSharedTradeTape(SharedTradeTape):
                 oldest = epoch
             if newest is None or epoch > newest:
                 newest = epoch
+            side = str(item[3] or "").upper()
+            price = (
+                self._number(item[4]) if side == "YES"
+                else self._number(item[5]) if side == "NO"
+                else None
+            )
+            count_value = self._number(item[6])
+            if count_value is None:
+                count_value = self._number(item[7])
             compacted.append((
-                item[1], item[0], item[2], item[3], item[4], item[5],
-                item[6], item[7], 1 if item[8] else 0, item[9],
+                item[1],
+                item[0],
+                item[2],
+                side,
+                price,
+                count_value,
+                1 if item[8] else 0,
             ))
 
         inserted = 0
@@ -567,9 +592,9 @@ class DiskBackedSharedTradeTape(SharedTradeTape):
                 conn.executemany(
                     """
                     INSERT OR IGNORE INTO tape_trades (
-                        trade_id, epoch, ticker, side, yes_price, no_price,
-                        count_fp, count_value, is_block_trade, created_time
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        trade_id, epoch, ticker, side, price, count_value,
+                        is_block_trade
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
                     compacted,
                 )
@@ -606,6 +631,15 @@ class DiskBackedSharedTradeTape(SharedTradeTape):
         finally:
             conn.close()
 
+    def _storage_bytes(self):
+        total = 0
+        for suffix in ("", "-wal", "-shm"):
+            try:
+                total += Path(self.storage_path + suffix).stat().st_size
+            except OSError:
+                pass
+        return total
+
     def snapshot(self, *, min_ts, now=None):
         current = (now or self.clock()).astimezone(timezone.utc)
         now_epoch = current.timestamp()
@@ -616,8 +650,8 @@ class DiskBackedSharedTradeTape(SharedTradeTape):
         try:
             raw = conn.execute(
                 """
-                SELECT epoch, trade_id, ticker, side, yes_price, no_price,
-                       count_fp, count_value, is_block_trade, created_time
+                SELECT epoch, trade_id, ticker, side, price, count_value,
+                       is_block_trade
                 FROM tape_trades
                 WHERE epoch >= ? AND epoch <= ?
                 ORDER BY epoch DESC
@@ -630,13 +664,32 @@ class DiskBackedSharedTradeTape(SharedTradeTape):
         finally:
             conn.close()
 
-        items = [
-            (
-                row[0], row[1], row[2], row[3], row[4], row[5],
-                row[6], row[7], bool(row[8]), row[9],
-            )
-            for row in raw
-        ]
+        items = []
+        for epoch, trade_id, ticker, side, price, count_value, is_block in raw:
+            side = str(side or "").upper()
+            yes_price = None
+            no_price = None
+            if price is not None:
+                if side == "YES":
+                    yes_price = price
+                    no_price = 1.0 - float(price)
+                elif side == "NO":
+                    no_price = price
+                    yes_price = 1.0 - float(price)
+            created_time = _iso(datetime.fromtimestamp(epoch, tz=timezone.utc))
+            items.append((
+                epoch,
+                trade_id,
+                ticker,
+                side,
+                yes_price,
+                no_price,
+                count_value,
+                None,
+                bool(is_block),
+                created_time,
+            ))
+
         collector_rows = int(stat[0] or 0)
         oldest_all = stat[1]
         newest_all = stat[2]
@@ -670,7 +723,7 @@ class DiskBackedSharedTradeTape(SharedTradeTape):
         diagnostics = {
             "trade_tape_version": VERSION,
             "trade_source": "shared_collector",
-            "trade_tape_backend": "sqlite_disk",
+            "trade_tape_backend": "sqlite_disk_compact_v2",
             "trade_pages_fetched": 0,
             "trade_rows_fetched": len(items),
             "trade_rows_deduped": 0,
@@ -725,8 +778,9 @@ class DiskBackedSharedTradeTape(SharedTradeTape):
             return {
                 "version": VERSION,
                 "running": bool(self._thread and self._thread.is_alive()),
-                "storage_backend": "sqlite_disk",
+                "storage_backend": "sqlite_disk_compact_v2",
                 "storage_path": self.storage_path,
+                "storage_bytes": self._storage_bytes(),
                 "retention_seconds": self.retention_seconds,
                 "page_cap_per_batch": self.page_cap,
                 "poll_seconds": self.poll_seconds,
