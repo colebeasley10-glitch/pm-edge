@@ -95,8 +95,9 @@ const adaptiveContextLabel = (value?: string | null) => {
     .split("|")
     .filter((part) => !part.startsWith("lane:"))
     .map((part) => {
-      const [key, ...rest] = part.split(":");
-      const raw = rest.join(":");
+      const pieces = part.split(":");
+      const key = pieces.shift() ?? "";
+      const raw = pieces.join(":");
       return `${labels[key] ?? key.replaceAll("_", " ")} ${raw}`;
     });
   return parts.length ? parts.join(" · ") : value.replaceAll("_", " ");
