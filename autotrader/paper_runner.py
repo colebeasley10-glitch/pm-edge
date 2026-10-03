@@ -1351,6 +1351,20 @@ def _start_status_server(*, state_path, runs_path, ledger_path, trigger_event, p
                         scan_interval_seconds=quick_whale_v3_scan_interval_seconds,
                     ),
                 )
+            if parsed.path == "/v1/adaptive-whale-status":
+                from .adaptive_shadow import load_status as load_adaptive_whale_status
+                return self._send(
+                    200,
+                    load_adaptive_whale_status(
+                        os.environ.get(
+                            "ADAPTIVE_WHALE_SHADOW_STATE",
+                            "/data/quick-whale-adaptive-shadow.json",
+                        ),
+                        interval_seconds=int(
+                            os.environ.get("ADAPTIVE_WHALE_SHADOW_INTERVAL_SECONDS", "60")
+                        ),
+                    ),
+                )
             if parsed.path == "/v1/learning-status":
                 return self._send(
                     200,
