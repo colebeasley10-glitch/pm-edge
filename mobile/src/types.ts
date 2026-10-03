@@ -104,7 +104,7 @@ export type SystemResponse = {
   guardrails: {
     max_per_order_dollars: number;
     max_open_risk_dollars: number;
-    max_open_positions_per_sport: number;
+    max_open_positions_per_sport: number | null;
     per_sport_dollar_cap: number | null;
   };
   tracking: {
