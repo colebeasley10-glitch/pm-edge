@@ -1,4 +1,5 @@
 import type {
+  AdaptiveWhaleStatus,
   AnalyticsResponse,
   AutoTraderScanResponse,
   AutoTraderStatus,
@@ -81,6 +82,7 @@ export const api = {
   quickWhaleV3Status: () => autoRequest<WhalePaperStatus>("/v1/quick-whale-v3-status"),
   runQuickWhaleV3Scan: () =>
     autoRequest<WhalePaperScanResponse>("/v1/quick-whale-v3-run-scan", { method: "POST" }),
+  adaptiveWhaleStatus: () => autoRequest<AdaptiveWhaleStatus>("/v1/adaptive-whale-status"),
   review: (signalId: string) =>
     request<ReviewResponse>(`/v1/bets/${encodeURIComponent(signalId)}/review`),
   submit: (signalId: string) =>
