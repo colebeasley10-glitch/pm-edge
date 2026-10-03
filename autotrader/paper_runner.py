@@ -1578,6 +1578,22 @@ def main():
         0, min(30, int(os.environ.get("WHALE_QUICK_V3_MAX_REACTION_WAIT_SECONDS", "12")))
     )
 
+    # Adaptive learner is deliberately shadow-only. It reads completed v2/v3
+    # paper trades and writes recommendations to its own state/log files; it
+    # cannot mutate either trading lane.
+    adaptive_whale_shadow_enabled = os.environ.get(
+        "ADAPTIVE_WHALE_SHADOW_ENABLED", "0"
+    ).strip().lower() in {"1", "true", "yes", "on"}
+    adaptive_whale_shadow_interval = max(
+        30, int(os.environ.get("ADAPTIVE_WHALE_SHADOW_INTERVAL_SECONDS", "60"))
+    )
+    adaptive_whale_shadow_state_path = os.environ.get(
+        "ADAPTIVE_WHALE_SHADOW_STATE", "/data/quick-whale-adaptive-shadow.json"
+    )
+    adaptive_whale_shadow_log_path = os.environ.get(
+        "ADAPTIVE_WHALE_SHADOW_LOG", "/data/quick-whale-adaptive-learning.jsonl"
+    )
+
     shared_trade_tape = None
     if whale_enabled or quick_whale_enabled or quick_whale_v2_enabled or quick_whale_v3_enabled:
         enabled_lookbacks = []
@@ -1829,6 +1845,43 @@ def main():
         threading.Thread(
             target=quick_whale_v3_loop,
             name="quick-whale-v3-paper-worker",
+            daemon=True,
+        ).start()
+
+    if adaptive_whale_shadow_enabled and (quick_whale_v2_enabled or quick_whale_v3_enabled):
+        from .adaptive_shadow import run_once as run_adaptive_whale_shadow_once
+
+        def adaptive_whale_shadow_loop():
+            print(json.dumps({
+                "adaptive_whale_shadow": "starting",
+                "mode": "shadow_only",
+                "interval_seconds": adaptive_whale_shadow_interval,
+                "production_mutation_allowed": False,
+            }), flush=True)
+            while True:
+                try:
+                    result = run_adaptive_whale_shadow_once(
+                        v2_portfolio_path=quick_whale_v2_state_path,
+                        v3_portfolio_path=quick_whale_v3_state_path,
+                        state_path=adaptive_whale_shadow_state_path,
+                        log_path=adaptive_whale_shadow_log_path,
+                        recorder_path=os.environ.get(
+                            "AUTOTRADER_RECORDER_DB", "/data/autotrader-recorder.sqlite3"
+                        ),
+                    )
+                    print(json.dumps({
+                        "ADAPTIVE_WHALE_SHADOW": result,
+                    }, separators=(",", ":"), default=str), flush=True)
+                except Exception as exc:
+                    print(json.dumps({
+                        "adaptive_whale_shadow_error": type(exc).__name__,
+                        "message": str(exc)[:300],
+                    }), flush=True)
+                time.sleep(adaptive_whale_shadow_interval)
+
+        threading.Thread(
+            target=adaptive_whale_shadow_loop,
+            name="adaptive-whale-shadow-worker",
             daemon=True,
         ).start()
 
