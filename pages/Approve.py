@@ -255,8 +255,7 @@ def _position_guard_message(reason: str) -> str:
     messages = {
         "event_position_exists": "another position is already open for this event",
         "second_ladder_rung": "a second spread/total rung on the same game and side is blocked",
-        "sport_position_cap": "this would exceed 3 open PM Edge positions in the same sport today",
-        "daily_open_risk_cap": "this would exceed $40 of open PM Edge risk today",
+        "daily_open_risk_cap": "this would exceed $75 of open PM Edge risk today",
     }
     return messages.get(str(reason or ""), str(reason or "position guard"))
 
