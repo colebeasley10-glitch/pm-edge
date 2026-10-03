@@ -28,7 +28,7 @@ from .scanner import discover, scan_public, _with_orderbook_depth
 from .storage import append_jsonl, load_portfolio, save_portfolio, tail_jsonl
 from .recorder import start_recorder_thread
 from .recorder_store import RecorderStore
-from .shared_trade_tape import SharedTradeTape
+from .shared_trade_tape import DiskBackedSharedTradeTape
 from .exit_engine import ExitInputs, evaluate_exit
 from .fees import prediction_fee
 from .thesis import PositionThesis
@@ -1617,8 +1617,19 @@ def main():
             enabled_lookbacks.append(quick_whale_lookback)
         if quick_whale_v2_enabled or quick_whale_v3_enabled:
             enabled_lookbacks.append(quick_whale_v2_lookback)
-        shared_trade_tape = SharedTradeTape(
+        shared_trade_tape = DiskBackedSharedTradeTape(
             retention_minutes=max(enabled_lookbacks or [20]) + 2,
+            # Keep each warm-up batch small enough that raw API pages cannot
+            # create a large transient heap spike. Coverage is unchanged; the
+            # backfill simply completes over more short batches.
+            page_cap=max(
+                1,
+                int(os.environ.get("PM_EDGE_SHARED_TRADE_TAPE_PAGE_CAP", "10")),
+            ),
+            storage_path=os.environ.get(
+                "PM_EDGE_SHARED_TRADE_TAPE_DB",
+                "/data/shared-trade-tape.sqlite3",
+            ),
         )
         shared_trade_tape.start()
 
