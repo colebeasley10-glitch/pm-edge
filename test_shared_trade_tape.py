@@ -130,7 +130,8 @@ class SharedTradeTapeTests(unittest.TestCase):
             )
             result = tape.refresh(now=self.now)
             self.assertTrue(result["backfill_complete"])
-            self.assertEqual(result["storage_backend"], "sqlite_disk")
+            self.assertEqual(result["storage_backend"], "sqlite_disk_compact_v2")
+            self.assertGreater(result["storage_bytes"], 0)
             self.assertEqual(len(tape._rows), 0)
 
             min_ts = int((self.now - timedelta(seconds=40)).timestamp())
@@ -140,7 +141,7 @@ class SharedTradeTapeTests(unittest.TestCase):
             self.assertEqual([row["trade_id"] for row in first], ["t1", "t2", "t3", "t4"])
             self.assertEqual(first, second)
             self.assertTrue(first_diag["trade_horizon_covered"])
-            self.assertEqual(first_diag["trade_tape_backend"], "sqlite_disk")
+            self.assertEqual(first_diag["trade_tape_backend"], "sqlite_disk_compact_v2")
             self.assertTrue(second_diag["trade_horizon_covered"])
             self.assertEqual(len(calls), 2)
 
