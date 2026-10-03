@@ -396,6 +396,40 @@ def learn_samples(
     return state
 
 
+def load_status(path, *, interval_seconds=60):
+    """Return the dashboard-safe shadow-learning snapshot.
+
+    Internal profile maps and processed trade identifiers stay on disk. The API
+    exposes only aggregate recommendations and evidence summaries.
+    """
+    state = _load_state(path)
+    updated_at = state.get("updated_at")
+    updated = _parse_time(updated_at)
+    now = _utcnow()
+    stale_after = max(180, 3 * max(30, int(interval_seconds)))
+    worker_online = bool(
+        updated is not None and 0 <= (now - updated).total_seconds() <= stale_after
+    )
+    return {
+        "mode": "adaptive_shadow",
+        "worker_online": worker_online,
+        "updated_at": updated_at,
+        "new_trades_learned_last_run": int(state.get("new_trades_learned_last_run") or 0),
+        "processed_trades": len(state.get("processed_trade_ids") or []),
+        "source_completed_trades": state.get("source_completed_trades") or {},
+        "recommendations": state.get("recommendations") or {},
+        "controls": state.get("controls") or {
+            "max_step_per_learned_trade": DEFAULT_STEP_LIMIT,
+            "min_position_size_multiplier": MIN_SIZE_MULTIPLIER,
+            "max_position_size_multiplier": MAX_SIZE_MULTIPLIER,
+            "production_mutation_allowed": False,
+            "real_money_mutation_allowed": False,
+        },
+        "production_rules_unchanged": True,
+        "auto_apply_enabled": False,
+    }
+
+
 def run_once(
     *,
     v2_portfolio_path,
