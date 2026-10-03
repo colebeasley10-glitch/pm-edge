@@ -20,6 +20,7 @@ import {
 import { api } from "./src/api";
 import { colors, radius } from "./src/theme";
 import type {
+  AdaptiveWhaleStatus,
   AnalyticsResponse,
   AutoTraderStatus,
   ClosedPaperBet,
@@ -37,7 +38,7 @@ import type {
 type Tab = "Dashboard" | "Bets" | "Live" | "AutoTrader" | "More";
 type MoreView = "Menu" | "Analytics" | "History" | "Pending" | "Account" | "System" | "Settings";
 type AutoTraderView = "Book" | "Markets" | "Blotter" | "Closed" | "Log";
-type WhalePaperView = "Book" | "Flows" | "Pending" | "Closed" | "Log";
+type WhalePaperView = "Book" | "Flows" | "Pending" | "Closed" | "Learning" | "Log";
 type PaperStrategy = "Value Edge" | "Whale Flow" | "Quick Whale";
 type QuickWhaleVersion = "v3" | "v2 Beta";
 type BetFilter = "Available" | "Filled" | "Unfilled";
@@ -79,6 +80,27 @@ const fmtAgo = (value?: string | null) => {
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
   return `${hours}h ago`;
+};
+
+const adaptiveContextLabel = (value?: string | null) => {
+  if (!value) return "Unknown pattern";
+  const labels: Record<string, string> = {
+    series: "Series",
+    side: "Side",
+    entry_price: "Entry",
+    flow: "Flow",
+    horizon: "Horizon",
+  };
+  const parts = value
+    .split("|")
+    .filter((part) => !part.startsWith("lane:"))
+    .map((part) => {
+      const pieces = part.split(":");
+      const key = pieces.shift() ?? "";
+      const raw = pieces.join(":");
+      return `${labels[key] ?? key.replaceAll("_", " ")} ${raw}`;
+    });
+  return parts.length ? parts.join(" · ") : value.replaceAll("_", " ");
 };
 
 const laneLabel = (value?: string | null) => {
@@ -1096,6 +1118,9 @@ function WhalePaperScreen({
   refresh,
   runScan,
   quickVersion,
+  adaptive,
+  adaptiveError,
+  refreshAdaptive,
 }: {
   data: WhalePaperStatus | null;
   loading: boolean;
@@ -1103,6 +1128,9 @@ function WhalePaperScreen({
   refresh: () => void;
   runScan: () => void;
   quickVersion?: "v2" | "v3";
+  adaptive?: AdaptiveWhaleStatus | null;
+  adaptiveError?: string | null;
+  refreshAdaptive?: () => void;
 }) {
   const [view, setView] = useState<WhalePaperView>("Book");
   const quick = Boolean(quickVersion);
@@ -1125,11 +1153,20 @@ function WhalePaperScreen({
   const roi = start > 0 ? totalPnl / start : 0;
   const last = data?.last_run;
   const decisions = (last?.decisions ?? []) as Array<Record<string, any>>;
+  const adaptiveLane =
+    quickVersion === "v3" ? "quick_whale_v3" :
+    quickVersion === "v2" ? "quick_whale_v2" :
+    "";
+  const adaptiveRec = adaptiveLane ? adaptive?.recommendations?.[adaptiveLane] : undefined;
+  const refreshScreen = () => {
+    refresh();
+    refreshAdaptive?.();
+  };
 
   return (
     <ScrollView
       contentContainerStyle={styles.screen}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.blue} />}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={refreshScreen} tintColor={colors.blue} />}
     >
       <View style={styles.autoHeaderRow}>
         <View style={{ gap: 4 }}>
@@ -1203,7 +1240,31 @@ function WhalePaperScreen({
         </Pressable>
       </View>
 
-      <PillTabs values={["Book", "Flows", "Pending", "Closed", "Log"]} selected={view} onSelect={setView} />
+      {quick ? (
+        <Pressable style={styles.card} onPress={() => setView("Learning")}>
+          <View style={styles.rowBetween}>
+            <View style={{ flex: 1, gap: 3 }}>
+              <Text style={styles.sectionTitle}>Adaptive Learning</Text>
+              <Text style={styles.mutedSmall}>
+                {adaptiveRec
+                  ? `${adaptiveRec.settled_trades} trades learned · shadow size ${Number(adaptiveRec.position_size_multiplier).toFixed(2)}× · target ${Number(adaptiveRec.target_position_size_multiplier).toFixed(2)}×`
+                  : "Continuous learner is collecting Quick Whale results."}
+              </Text>
+            </View>
+            <Chip
+              label={adaptive?.worker_online ? "LIVE" : "SHADOW"}
+              tone={adaptive?.worker_online ? "green" : "blue"}
+            />
+          </View>
+          <Text style={styles.mutedSmall}>Shadow only — current v2/v3 trading rules are unchanged.</Text>
+        </Pressable>
+      ) : null}
+
+      <PillTabs
+        values={quick ? ["Book", "Flows", "Pending", "Closed", "Learning", "Log"] : ["Book", "Flows", "Pending", "Closed", "Log"]}
+        selected={view}
+        onSelect={setView}
+      />
 
       {view === "Book" ? (
         data?.positions?.length ? (
@@ -1341,6 +1402,95 @@ function WhalePaperScreen({
             <Text style={[styles.muted, { textAlign: "center" }]}>Settled bets and fully exited positions will appear here automatically.</Text>
           </View>
         )
+      ) : null}
+
+      {quick && view === "Learning" ? (
+        <View style={{ gap: 12 }}>
+          <View style={styles.card}>
+            <View style={styles.rowBetween}>
+              <View style={{ flex: 1, gap: 3 }}>
+                <Text style={styles.sectionTitle}>Adaptive learner</Text>
+                <Text style={styles.mutedSmall}>
+                  Learns after every completed Quick Whale paper trade and updates its shadow recommendation continuously.
+                </Text>
+              </View>
+              <Chip label={adaptive?.worker_online ? "LIVE" : "OFFLINE"} tone={adaptive?.worker_online ? "green" : "red"} />
+            </View>
+            <Text style={styles.mutedSmall}>
+              Last update {fmtAgo(adaptive?.updated_at)} · {adaptive?.new_trades_learned_last_run ?? 0} new trade{(adaptive?.new_trades_learned_last_run ?? 0) === 1 ? "" : "s"} learned last pass
+            </Text>
+            <View style={[styles.notice, { marginTop: 6 }]}>
+              <Ionicons name="flask-outline" size={20} color={colors.blue2} />
+              <Text style={styles.noticeText}>
+                Shadow only. These recommendations are not changing {strategyTitle} yet.
+              </Text>
+            </View>
+          </View>
+
+          {adaptiveError ? (
+            <View style={[styles.notice, styles.noticeRed]}>
+              <Ionicons name="warning-outline" size={21} color={colors.red} />
+              <Text style={styles.noticeText}>{adaptiveError}</Text>
+            </View>
+          ) : null}
+
+          {adaptiveRec ? (
+            <>
+              <View style={styles.metricsGrid}>
+                <Metric label="Trades Learned" value={String(adaptiveRec.settled_trades)} />
+                <Metric label="Shadow Size" value={`${Number(adaptiveRec.position_size_multiplier).toFixed(2)}×`} />
+                <Metric label="Target Size" value={`${Number(adaptiveRec.target_position_size_multiplier).toFixed(2)}×`} />
+                <Metric label="Confidence" value={`${Math.round(Number(adaptiveRec.confidence) * 100)}%`} />
+                <Metric label="Sample P/L" value={fmtMoney(Number(adaptiveRec.realized_pnl), true)} positive={Number(adaptiveRec.realized_pnl) >= 0} />
+                <Metric label="Sample ROI" value={fmtPct(Number(adaptiveRec.realized_roi))} positive={Number(adaptiveRec.realized_roi) >= 0} />
+              </View>
+
+              <View style={styles.card}>
+                <View style={styles.rowBetween}>
+                  <Text style={styles.sectionTitle}>Strongest patterns</Text>
+                  <Chip label="LEARNING" tone="green" />
+                </View>
+                {(adaptiveRec.context?.strongest ?? []).slice(0, 3).map((row, index) => (
+                  <View key={`strong-${row.context}-${index}`} style={[styles.autoLogRow, { paddingHorizontal: 0 }]}>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <Text style={styles.statValue}>{adaptiveContextLabel(row.context)}</Text>
+                      <Text style={styles.mutedSmall}>
+                        {row.n} trades · P/L {fmtMoney(Number(row.pnl), true)} · ROI {fmtPct(Number(row.roi))}
+                      </Text>
+                    </View>
+                    <Chip label={`${Number(row.target_size_multiplier).toFixed(2)}×`} tone={Number(row.shrunk_roi) >= 0 ? "green" : "default"} />
+                  </View>
+                ))}
+              </View>
+
+              <View style={styles.card}>
+                <View style={styles.rowBetween}>
+                  <Text style={styles.sectionTitle}>Weakest patterns</Text>
+                  <Chip label="LEARNING" tone="red" />
+                </View>
+                {(adaptiveRec.context?.weakest ?? []).slice(0, 3).map((row, index) => (
+                  <View key={`weak-${row.context}-${index}`} style={[styles.autoLogRow, { paddingHorizontal: 0 }]}>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <Text style={styles.statValue}>{adaptiveContextLabel(row.context)}</Text>
+                      <Text style={styles.mutedSmall}>
+                        {row.n} trades · P/L {fmtMoney(Number(row.pnl), true)} · ROI {fmtPct(Number(row.roi))}
+                      </Text>
+                    </View>
+                    <Chip label={`${Number(row.target_size_multiplier).toFixed(2)}×`} tone="red" />
+                  </View>
+                ))}
+              </View>
+            </>
+          ) : (
+            <View style={styles.autoEmpty}>
+              <Ionicons name="flask-outline" size={34} color={colors.muted} />
+              <Text style={styles.autoEmptyTitle}>No learning snapshot yet</Text>
+              <Text style={[styles.muted, { textAlign: "center" }]}>
+                The adaptive worker will appear here after it processes completed Quick Whale trades.
+              </Text>
+            </View>
+          )}
+        </View>
       ) : null}
 
       {view === "Log" ? (
@@ -1764,6 +1914,8 @@ export default function App() {
   const [quickWhaleV3, setQuickWhaleV3] = useState<WhalePaperStatus | null>(null);
   const [quickWhaleV3Loading, setQuickWhaleV3Loading] = useState(false);
   const [quickWhaleV3Error, setQuickWhaleV3Error] = useState<string | null>(null);
+  const [adaptiveWhale, setAdaptiveWhale] = useState<AdaptiveWhaleStatus | null>(null);
+  const [adaptiveWhaleError, setAdaptiveWhaleError] = useState<string | null>(null);
   const [paperStrategy, setPaperStrategy] = useState<PaperStrategy>("Value Edge");
   const [quickWhaleVersion, setQuickWhaleVersion] = useState<QuickWhaleVersion>("v3");
   const [scores, setScores] = useState<ScoreEvent[]>([]);
@@ -1886,6 +2038,15 @@ export default function App() {
     }
   }, [refreshQuickWhaleV3]);
 
+  const refreshAdaptiveWhale = useCallback(async () => {
+    try {
+      setAdaptiveWhale(await api.adaptiveWhaleStatus());
+      setAdaptiveWhaleError(null);
+    } catch (e) {
+      setAdaptiveWhaleError(e instanceof Error ? e.message : "Unable to load Adaptive Learning");
+    }
+  }, []);
+
   const refresh = useCallback(async () => {
     setRefreshing(true);
     setError(null);
@@ -1921,12 +2082,13 @@ export default function App() {
       void refreshWhalePaper();
       void refreshQuickWhaleV2();
       void refreshQuickWhaleV3();
+      void refreshAdaptiveWhale();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load PM Edge");
     } finally {
       setRefreshing(false);
     }
-  }, [refreshAutoTrader, refreshQuickWhaleV2, refreshQuickWhaleV3, refreshWhalePaper]);
+  }, [refreshAdaptiveWhale, refreshAutoTrader, refreshQuickWhaleV2, refreshQuickWhaleV3, refreshWhalePaper]);
 
   const handleReviewUnavailable = useCallback((signal: Signal) => {
     removeSignalFromLists(signal);
@@ -1949,14 +2111,16 @@ export default function App() {
     void refreshWhalePaper();
     void refreshQuickWhaleV2();
     void refreshQuickWhaleV3();
+    void refreshAdaptiveWhale();
     const timer = setInterval(() => {
       void refreshAutoTrader();
       void refreshWhalePaper();
       void refreshQuickWhaleV2();
       void refreshQuickWhaleV3();
+      void refreshAdaptiveWhale();
     }, 15000);
     return () => clearInterval(timer);
-  }, [refreshAutoTrader, refreshQuickWhaleV2, refreshQuickWhaleV3, refreshWhalePaper, tab]);
+  }, [refreshAdaptiveWhale, refreshAutoTrader, refreshQuickWhaleV2, refreshQuickWhaleV3, refreshWhalePaper, tab]);
 
   const content = useMemo(() => {
     if (!dashboard && refreshing) {
@@ -2029,6 +2193,9 @@ export default function App() {
                 refresh={refreshQuickWhaleV3}
                 runScan={runQuickWhaleV3Scan}
                 quickVersion="v3"
+                adaptive={adaptiveWhale}
+                adaptiveError={adaptiveWhaleError}
+                refreshAdaptive={refreshAdaptiveWhale}
               />
             ) : (
               <WhalePaperScreen
@@ -2038,6 +2205,9 @@ export default function App() {
                 refresh={refreshQuickWhaleV2}
                 runScan={runQuickWhaleV2Scan}
                 quickVersion="v2"
+                adaptive={adaptiveWhale}
+                adaptiveError={adaptiveWhaleError}
+                refreshAdaptive={refreshAdaptiveWhale}
               />
             )}
           </View>
@@ -2052,7 +2222,7 @@ export default function App() {
     if (moreView === "System" && system) return <SystemScreen data={system} back={() => setMoreView("Menu")} />;
     if (moreView === "Settings") return <SettingsScreen back={() => setMoreView("Menu")} />;
     return <MoreMenu select={setMoreView} />;
-  }, [analytics, autoTrader, autoTraderError, autoTraderLoading, bets, dashboard, error, history, moreView, openBets, paperStrategy, positions, passcode, quickWhaleV2, quickWhaleV2Error, quickWhaleV2Loading, quickWhaleV3, quickWhaleV3Error, quickWhaleV3Loading, quickWhaleVersion, refresh, refreshAutoTrader, refreshQuickWhaleV2, refreshQuickWhaleV3, refreshWhalePaper, refreshing, runAutoTraderScan, runQuickWhaleV2Scan, runQuickWhaleV3Scan, runWhalePaperScan, scores, system, tab, unfilled, whalePaper, whalePaperError, whalePaperLoading]);
+  }, [adaptiveWhale, adaptiveWhaleError, analytics, autoTrader, autoTraderError, autoTraderLoading, bets, dashboard, error, history, moreView, openBets, paperStrategy, positions, passcode, quickWhaleV2, quickWhaleV2Error, quickWhaleV2Loading, quickWhaleV3, quickWhaleV3Error, quickWhaleV3Loading, quickWhaleVersion, refresh, refreshAdaptiveWhale, refreshAutoTrader, refreshQuickWhaleV2, refreshQuickWhaleV3, refreshWhalePaper, refreshing, runAutoTraderScan, runQuickWhaleV2Scan, runQuickWhaleV3Scan, runWhalePaperScan, scores, system, tab, unfilled, whalePaper, whalePaperError, whalePaperLoading]);
 
   return (
     <SafeAreaView style={styles.root}>

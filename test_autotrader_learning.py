@@ -1,7 +1,10 @@
+import json
+import tempfile
 import unittest
+from datetime import datetime, timezone
 
 from autotrader.learning import _build_challenger
-from autotrader.adaptive_shadow import learn_samples, _profile_signal
+from autotrader.adaptive_shadow import learn_samples, load_status, _profile_signal
 
 
 def sample(edge, roi, risked="10"):
@@ -123,6 +126,28 @@ class LearningLoopTests(unittest.TestCase):
         strong_signal = _profile_signal(strong)
         self.assertGreater(weak_signal["shrunk_roi"], strong_signal["shrunk_roi"])
         self.assertGreater(weak_signal["target_size_multiplier"], strong_signal["target_size_multiplier"])
+
+
+    def test_adaptive_status_is_dashboard_safe_and_reports_fresh_worker(self):
+        with tempfile.NamedTemporaryFile(mode="w+", suffix=".json") as handle:
+            json.dump({
+                "updated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                "processed_trade_ids": ["secret-a", "secret-b"],
+                "profiles": {"internal": {"n": 2}},
+                "new_trades_learned_last_run": 1,
+                "source_completed_trades": {"quick_whale_v2": 2},
+                "recommendations": {"quick_whale_v2": {"settled_trades": 2}},
+                "controls": {"production_mutation_allowed": False},
+            }, handle)
+            handle.flush()
+            status = load_status(handle.name, interval_seconds=60)
+
+        self.assertTrue(status["worker_online"])
+        self.assertEqual(status["processed_trades"], 2)
+        self.assertEqual(status["new_trades_learned_last_run"], 1)
+        self.assertFalse(status["auto_apply_enabled"])
+        self.assertNotIn("processed_trade_ids", status)
+        self.assertNotIn("profiles", status)
 
 
 if __name__ == "__main__":
