@@ -5,8 +5,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 EASTERN = ZoneInfo("America/New_York")
-DAILY_RISK_BUDGET_DOLLARS = 40.0
-MAX_SPORT_POSITIONS = 3
+DAILY_RISK_BUDGET_DOLLARS = 75.0
 
 
 def event_key(ticker: str) -> str:
@@ -172,9 +171,6 @@ def evaluate_position_guard(
             sport_open_risk += risk
 
     sport_pairs = {pair for pair in open_today_pairs if sport_prefix(pair[0]) == candidate_sport}
-    projected_sport_count = len(sport_pairs) + (0 if same_pair_open or (ticker, side) in sport_pairs else 1)
-    if projected_sport_count > MAX_SPORT_POSITIONS:
-        return {"blocked": True, "reason": "sport_position_cap"}
 
     projected_total_risk = total_open_risk + max(0.0, float(candidate_risk))
     if projected_total_risk > daily_risk_budget + 1e-9:
