@@ -1617,6 +1617,18 @@ def main():
             enabled_lookbacks.append(quick_whale_lookback)
         if quick_whale_v2_enabled or quick_whale_v3_enabled:
             enabled_lookbacks.append(quick_whale_v2_lookback)
+        # This tape is reconstructible cache data, not durable strategy
+        # state. Keep it off the small persistent /data volume; every process
+        # start backfills the requested horizon from Kalshi anyway.
+        for legacy_path in (
+            "/data/shared-trade-tape.sqlite3",
+            "/data/shared-trade-tape-v2.sqlite3",
+        ):
+            for suffix in ("", "-wal", "-shm"):
+                try:
+                    Path(legacy_path + suffix).unlink(missing_ok=True)
+                except Exception:
+                    pass
         shared_trade_tape = DiskBackedSharedTradeTape(
             retention_minutes=max(enabled_lookbacks or [20]) + 2,
             # Keep each warm-up batch small enough that raw API pages cannot
@@ -1628,9 +1640,8 @@ def main():
             ),
             storage_path=os.environ.get(
                 "PM_EDGE_SHARED_TRADE_TAPE_DB",
-                "/data/shared-trade-tape-v2.sqlite3",
+                "/tmp/shared-trade-tape-v2.sqlite3",
             ),
-            legacy_storage_path="/data/shared-trade-tape.sqlite3",
         )
         shared_trade_tape.start()
 
