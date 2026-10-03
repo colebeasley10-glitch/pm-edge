@@ -342,6 +342,53 @@ export type WhalePaperStatus = {
   recent_runs: WhalePaperRun[];
 };
 
+export type AdaptiveWhaleContextRow = {
+  context: string;
+  n: number;
+  pnl: number;
+  roi: number;
+  confidence: number;
+  shrunk_roi: number;
+  target_size_multiplier: number;
+};
+
+export type AdaptiveWhaleRecommendation = {
+  lane: "quick_whale_v2" | "quick_whale_v3" | string;
+  position_size_multiplier: number;
+  target_position_size_multiplier: number;
+  confidence: number;
+  shrunk_roi: number;
+  settled_trades: number;
+  realized_pnl: number;
+  realized_roi: number;
+  context: {
+    weakest: AdaptiveWhaleContextRow[];
+    strongest: AdaptiveWhaleContextRow[];
+  };
+  shadow_only: boolean;
+  production_rules_unchanged: boolean;
+  updated_at?: string | null;
+};
+
+export type AdaptiveWhaleStatus = {
+  mode: "adaptive_shadow";
+  worker_online: boolean;
+  updated_at?: string | null;
+  new_trades_learned_last_run: number;
+  processed_trades: number;
+  source_completed_trades: Record<string, number>;
+  recommendations: Record<string, AdaptiveWhaleRecommendation>;
+  controls: {
+    max_step_per_learned_trade?: number;
+    min_position_size_multiplier?: number;
+    max_position_size_multiplier?: number;
+    production_mutation_allowed?: boolean;
+    real_money_mutation_allowed?: boolean;
+  };
+  production_rules_unchanged: boolean;
+  auto_apply_enabled: boolean;
+};
+
 export type WhalePaperScanResponse = {
   accepted: boolean;
   mode: "paper";
