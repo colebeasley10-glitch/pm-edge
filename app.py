@@ -426,6 +426,15 @@ with tab_league:
             word = "same price" if abs(d) < 0.5 else f"{abs(d):.0f}¢ {'worse' if d > 0 else 'better'}"
             return f", 5 min later {cents(a5)} ({word})"
 
+        def _buy(r):
+            n = int(_num(r.get("contracts")) or 0)
+            cost, fee = _num(r.get("cost")) or 0.0, _num(r.get("fee")) or 0.0
+            unit = "contract" if n == 1 else "contracts"
+            return (f"<br>{n} {unit} at {cents(r.get('entry_price'))} = {money(cost)} "
+                    f"+ {money(fee)} fee ({money(cost + fee)} in), " + {
+                        "won": f"paid back {money(n)}", "lost": "paid back $0.00",
+                        "void": f"{money(cost)} refunded"}.get(str(r.get("status")), f"pays {money(n)} if it wins"))
+
         def _pick_row(r):
             strat = esc(LEAGUE_LABELS.get(r.get("strategy"), r.get("strategy")))
             title = f"{esc(str(r.get('side') or '').title())} on {esc(r.get('title') or r.get('ticker'))}"
@@ -438,16 +447,17 @@ with tab_league:
                     move = (mark - entry) * 100
                     trend = "winning" if move > 0.4 else "losing" if move < -0.4 else "even"
                     value = money(contracts * (mark - entry), signed=True)
-                    sub = (f"{strat}, bought {cents(entry)}{esc(_tap_note(r))}, now {cents(mark)} ({trend}), {esc(_ends(r))}")
+                    sub = (f"{strat}, now {cents(mark)} ({trend}), {esc(_ends(r))}"
+                           f"{_buy(r)}{esc(_tap_note(r))}")
                     return (title, sub, f"<span class='num'>{value}</span>", tone(move))
-                return (title, f"{strat}, bought {cents(entry)}{esc(_tap_note(r))}, {esc(_ends(r))}",
+                return (title, f"{strat}, {esc(_ends(r))}{_buy(r)}{esc(_tap_note(r))}",
                         f"<span class='num'>{cents(entry)}</span>", "")
             if stt == "void":
-                return (title, f"{strat}, market voided, stake returned", "<span class='num'>$0.00</span>", "")
+                return (title, f"{strat}, market voided, stake returned{_buy(r)}", "<span class='num'>$0.00</span>", "")
             word = "Won" if stt == "won" else "Lost"
             clv = _num(r.get("clv_cents"))
-            sub = (f"{word}. {strat}, bought {cents(entry)}{esc(_tap_note(r))}"
-                   + (f", {clv:+.0f}¢ vs close" if clv is not None else ""))
+            sub = (f"{word}. {strat}" + (f", {clv:+.0f}¢ vs close" if clv is not None else "")
+                   + f"{_buy(r)}{esc(_tap_note(r))}")
             return (title, sub, f"<span class='num'>{money(r.get('pl'), signed=True)}</span>", tone(r.get("pl")))
 
         live = league[league["status"].fillna("") == "open"].copy()
