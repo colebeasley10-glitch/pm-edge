@@ -324,6 +324,8 @@ lg_pl = float(pd.to_numeric(league.get("pl"), errors="coerce").fillna(0).sum()) 
 lg_record = f"{int((lg_status == 'won').sum())}-{int((lg_status == 'lost').sum())}"
 lg_clv = pd.to_numeric(league.get("clv_cents"), errors="coerce").dropna() if not league.empty else pd.Series(dtype=float)
 lg_last = _when(league_status.get("ran_at"))
+if lg_last is not None and (datetime.now(timezone.utc) - lg_last).total_seconds() < 75 * 60:
+    running = True
 st.markdown(
     f"""
     <div class='pe-head'>
@@ -365,7 +367,7 @@ with tab_league:
         st.markdown("<div class='section'>Standings</div>", unsafe_allow_html=True)
         st.markdown(rows_html(
             (esc(LEAGUE_LABELS[n]),
-             f"{w}-{l} record, {o} open" + (f", beats close by {c:+.1f}¢" if c is not None else "") +
+             f"{w}-{l} record, {o} open" + (f", {c:+.1f}¢ vs close" if c is not None else "") +
              f"<br>{esc(LEAGUE_HOW[n])}",
              f"<span class='num'>{money(pl, signed=True)}</span>", tone(pl))
             for n, total, o, w, l, pl, c, nc in rows

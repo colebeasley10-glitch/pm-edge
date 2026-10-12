@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+import re
+
 import whale_edge
 from league.book import Pick, side_quotes
 
@@ -31,7 +33,9 @@ def category_for(ticker: str) -> str:
 def run(kalshi, now: datetime, session=None) -> list[Pick]:
     trades = whale_edge._public_trades(
         min_ts=int((now - timedelta(minutes=whale_edge.LOOKBACK_MINUTES)).timestamp()), now=now)
-    flows = [x for x in whale_edge._aggregate(trades) if not whale_edge._is_fast_financial_market(x["ticker"])]
+    fast = re.compile(r"(\d+M-|^KX(BTC|ETH|SOL|XRP|DOGE|GOLD|SILVER|WTI|INX|NASDAQ))")
+    flows = [x for x in whale_edge._aggregate(trades)
+             if not whale_edge._is_fast_financial_market(x["ticker"]) and not fast.search(x["ticker"].upper())]
     flows.sort(key=lambda x: -x["flow_notional_usd"])
     if not flows:
         return []

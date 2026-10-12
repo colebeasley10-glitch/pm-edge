@@ -23,6 +23,8 @@ from league.book import Pick, f
 NAME = "weather"
 DIAG: dict = {}
 MIN_EDGE = 0.06          # forecasts are noisy; demand more than other lanes
+MAX_EDGE = 0.15          # bigger gaps mean the market knows something the models don't
+MAX_SIGMA = 3.2          # skip days the models can't agree on
 MAX_PICKS = 8
 MAX_PER_EVENT = 1
 
@@ -244,6 +246,8 @@ class Weather:
                 sigma = math.sqrt(spread ** 2 + 1.3 ** 2)
             elif obs is not None:
                 mu, sigma = obs, 0.8   # day is essentially over
+        if sigma > MAX_SIGMA:
+            return []
         out = []
         for m in ms:
             b = bucket(m)
@@ -289,7 +293,7 @@ def run(kalshi, now: datetime, session=None) -> list[Pick]:
                     e = pk.edge()
                     if e is None or e < MIN_EDGE:
                         continue
-                    if e > 0.25:  # model far from a liquid market: trust the market, log it
+                    if e > MAX_EDGE:  # model far from a liquid market: trust the market, log it
                         DIAG["skipped_far_from_market"] += 1
                         continue
                     best.append((e, pk))

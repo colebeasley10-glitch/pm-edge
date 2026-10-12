@@ -4,9 +4,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "14,44 * * * *"
-  push:
-    branches: [strategy-league]
-    paths: ["league/**", ".github/workflows/league.yml"]
 
 concurrency:
   group: league-${{ github.ref }}
