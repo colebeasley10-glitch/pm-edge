@@ -15,7 +15,7 @@ permissions:
 jobs:
   round:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -31,6 +31,15 @@ jobs:
           LEAGUE_PUSH: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}
           PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
         run: python -m league.run
+      - name: Five-minute follow-up (tap-delay price + extra mark)
+        continue-on-error: true
+        env:
+          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
+          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
+          STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
+          LEAGUE_PUSH: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}
+          PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
+        run: python -m league.followup
       - name: Save league results
         if: always()
         run: |

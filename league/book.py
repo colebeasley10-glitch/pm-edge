@@ -26,7 +26,7 @@ FIELDS = [
     "trade_id", "strategy", "opened_at", "ticker", "event_ticker", "title", "category",
     "side", "entry_price", "contracts", "cost", "fee", "fair", "edge", "reason",
     "close_time", "ends_at", "status", "result", "settled_at", "pl", "last_mid", "last_mid_at",
-    "closing_mid", "clv_cents",
+    "closing_mid", "clv_cents", "ask_5m", "mid_5m", "checked_5m_at",
 ]
 
 

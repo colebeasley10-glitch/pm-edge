@@ -397,8 +397,13 @@ with tab_league:
             stt = g.get("status", pd.Series(dtype=str)).fillna("")
             pl = float(pd.to_numeric(g.get("pl"), errors="coerce").fillna(0).sum()) if not g.empty else 0.0
             clv_g = pd.to_numeric(g.get("clv_cents"), errors="coerce").dropna() if not g.empty else pd.Series(dtype=float)
+            slip = pd.Series(dtype=float)
+            if not g.empty and "ask_5m" in g:
+                slip = ((pd.to_numeric(g["ask_5m"], errors="coerce")
+                         - pd.to_numeric(g["entry_price"], errors="coerce")) * 100).dropna()
             rows.append((name, len(g), int((stt == "open").sum()), int((stt == "won").sum()), int((stt == "lost").sum()),
-                         pl, clv_g.mean() if len(clv_g) else None, len(clv_g)))
+                         pl, clv_g.mean() if len(clv_g) else None, len(clv_g),
+                         slip.mean() if len(slip) else None, len(slip)))
         def _ends(r):
             dt = _when(r.get("ends_at") or r.get("close_time"))
             if not dt:
@@ -413,6 +418,14 @@ with tab_league:
                 return f"ends {day} {local_time(dt)}"
             return f"ends {dt.astimezone(EASTERN).strftime('%b %-d')}"
 
+        def _tap_note(r):
+            a5, en = _num(r.get("ask_5m")), _num(r.get("entry_price"))
+            if a5 is None or en is None:
+                return ""
+            d = (a5 - en) * 100
+            word = "same price" if abs(d) < 0.5 else f"{abs(d):.0f}¢ {'worse' if d > 0 else 'better'}"
+            return f", 5 min later {cents(a5)} ({word})"
+
         def _pick_row(r):
             strat = esc(LEAGUE_LABELS.get(r.get("strategy"), r.get("strategy")))
             title = f"{esc(str(r.get('side') or '').title())} on {esc(r.get('title') or r.get('ticker'))}"
@@ -425,15 +438,16 @@ with tab_league:
                     move = (mark - entry) * 100
                     trend = "winning" if move > 0.4 else "losing" if move < -0.4 else "even"
                     value = money(contracts * (mark - entry), signed=True)
-                    sub = (f"{strat}, bought {cents(entry)}, now {cents(mark)} ({trend}), {esc(_ends(r))}")
+                    sub = (f"{strat}, bought {cents(entry)}{esc(_tap_note(r))}, now {cents(mark)} ({trend}), {esc(_ends(r))}")
                     return (title, sub, f"<span class='num'>{value}</span>", tone(move))
-                return (title, f"{strat}, bought {cents(entry)}, {esc(_ends(r))}",
+                return (title, f"{strat}, bought {cents(entry)}{esc(_tap_note(r))}, {esc(_ends(r))}",
                         f"<span class='num'>{cents(entry)}</span>", "")
             if stt == "void":
                 return (title, f"{strat}, market voided, stake returned", "<span class='num'>$0.00</span>", "")
             word = "Won" if stt == "won" else "Lost"
             clv = _num(r.get("clv_cents"))
-            sub = f"{word}. {strat}, bought {cents(entry)}" + (f", {clv:+.0f}¢ vs close" if clv is not None else "")
+            sub = (f"{word}. {strat}, bought {cents(entry)}{esc(_tap_note(r))}"
+                   + (f", {clv:+.0f}¢ vs close" if clv is not None else ""))
             return (title, sub, f"<span class='num'>{money(r.get('pl'), signed=True)}</span>", tone(r.get("pl")))
 
         live = league[league["status"].fillna("") == "open"].copy()
@@ -483,9 +497,10 @@ with tab_league:
         st.markdown(rows_html(
             (esc(LEAGUE_LABELS[n]),
              f"{w}-{l} record, {o} open" + (f", {c:+.1f}¢ vs close" if c is not None else "") +
+             (f", tapping 5 min late costs {sl:+.1f}¢ on average" if sl is not None and ns >= 3 else "") +
              f"<br>{esc(LEAGUE_HOW[n])}",
              f"<span class='num'>{money(pl, signed=True)}</span>", tone(pl))
-            for n, total, o, w, l, pl, c, nc in rows
+            for n, total, o, w, l, pl, c, nc, sl, ns in rows
         ), unsafe_allow_html=True)
 
         st.markdown("<div class='pe-lede'>Each pick is a $10 paper bet at the price you could buy right then, "
