@@ -10,6 +10,7 @@ as bet slips with a tear line. Gold is reserved for prices and the main action.
 from __future__ import annotations
 
 import html
+import io
 import math
 import os
 from datetime import datetime, timedelta, timezone
@@ -301,8 +302,43 @@ LEAGUE_HOW = {
     "crypto": "BTC and ETH volatility model vs hourly markets",
 }
 
+REFRESH_COOLDOWN_SECS = 15
+
+
+def _refresh_live_bets() -> None:
+    """Button callback: pull current Kalshi prices for open league bets (read-only, in memory)."""
+    last = st.session_state.get("league_live") or {}
+    last_at = _when(last.get("checked_at"))
+    if last_at and (datetime.now(timezone.utc) - last_at).total_seconds() < REFRESH_COOLDOWN_SECS:
+        return
+    from league import book as league_book, live as league_live
+    from league.kalshi import LeagueKalshi
+    _, status_now = load_league()
+    try:
+        out = league_live.refresh(league_book.load(), LeagueKalshi().markets)
+    except Exception as exc:
+        st.session_state["league_live_error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
+        return
+    st.session_state.pop("league_live_error", None)
+    if out["open"] and not (out["marked"] or out["settled"]):
+        st.session_state["league_live_error"] = "Kalshi didn't return prices just now. Try again in a minute."
+        return
+    df = pd.read_csv(io.StringIO(pd.DataFrame(out["rows"]).to_csv(index=False)))
+    st.session_state["league_live"] = {
+        "df": df, "checked_at": out["checked_at"], "settled": out["settled"],
+        "base_ran_at": status_now.get("ran_at"),
+    }
+
+
 data, state = load()
 league, league_status = load_league()
+_live_override = st.session_state.get("league_live")
+if _live_override and _live_override.get("base_ran_at") == league_status.get("ran_at"):
+    league = _live_override["df"]
+else:
+    # a newer round landed since the last manual check; its marks are fresher and official
+    st.session_state.pop("league_live", None)
+    _live_override = None
 signals, orders, clv = data["signals"], data["orders"], data["clv"]
 summary = dashboard_data.actual_summary(orders)
 picks = dashboard_data.new_signals(signals, orders)
@@ -414,10 +450,23 @@ with tab_league:
             mk, en = _num(r.get("last_mid")), _num(r.get("entry_price"))
             if mk is not None and en is not None:
                 unreal += (_num(r.get("contracts")) or 0) * (mk - en)
+        if _live_override:
+            as_of = f"Prices checked {ago(_live_override['checked_at'])}"
+            if _live_override.get("settled"):
+                n = _live_override["settled"]
+                as_of += f", {n} just settled (made official on the next round)"
+        else:
+            as_of = f"Prices from the last round, {ago(lg_last)}"
         st.markdown(f"<div class='section'>Live bets ({len(live)})</div>"
                     + (f"<div class='pe-lede' style='margin:.2rem 0 0'>Worth {money(unreal, signed=True)} "
-                       "right now if they all sold at today's price. Updates every 30 minutes.</div>" if len(live) else ""),
+                       f"right now if they all sold at today's price. {esc(as_of)}.</div>"
+                       if len(live) else ""),
                     unsafe_allow_html=True)
+        if len(live) or _live_override:
+            st.button("↻ Refresh live prices", key="refresh_live", width="stretch",
+                      on_click=_refresh_live_bets)
+            if st.session_state.get("league_live_error"):
+                st.caption(f"Couldn't refresh: {st.session_state['league_live_error']}")
         if live.empty:
             st.markdown("<div class='pe-lede'>No paper bets running right now.</div>", unsafe_allow_html=True)
         else:
