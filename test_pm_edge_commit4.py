@@ -84,11 +84,18 @@ def main():
             "signal,s2,2026-09-21T12:00:00Z,T2,NO,0.50,2026-09-21T15:00:00Z\n",
             encoding="utf-8",
         )
-        candidates.write_text("ticker,evaluated_at,fair_probability\n", encoding="utf-8")
+        candidates.write_text(
+            "ticker,side,evaluated_at,fair_probability,yes_bid,yes_ask,no_bid,no_ask\n"
+            # opposite-side row is newer; v1 wrongly picked it up
+            "T1,YES,2026-09-21T14:30:00Z,0.58,0.54,0.56,0.44,0.46\n"
+            "T1,NO,2026-09-21T14:45:00Z,0.42,0.54,0.56,0.44,0.46\n",
+            encoding="utf-8",
+        )
         old_sig, old_cand, old_clv = clv_tracker.SIGNAL_LEDGER, clv_tracker.CANDIDATE_LEDGER, clv_tracker.CLV_LEDGER
         clv_tracker.SIGNAL_LEDGER, clv_tracker.CANDIDATE_LEDGER, clv_tracker.CLV_LEDGER = signals, candidates, clv
         try:
-            result = clv_tracker.capture_clv(now=datetime(2026,9,21,15,5,tzinfo=timezone.utc), getter=getter)
+            # 10 minutes before start: live pre-game quote is the close.
+            result = clv_tracker.capture_clv(now=datetime(2026,9,21,14,50,tzinfo=timezone.utc), getter=getter)
         finally:
             clv_tracker.SIGNAL_LEDGER, clv_tracker.CANDIDATE_LEDGER, clv_tracker.CLV_LEDGER = old_sig, old_cand, old_clv
         assert result["captured"] == 2
@@ -96,6 +103,33 @@ def main():
             rows = {r["signal_id"]:r for r in csv.DictReader(fh)}
         assert float(rows["s1"]["clv_cents"]) == 5.0
         assert float(rows["s2"]["clv_cents"]) == -5.0
+        assert rows["s1"]["close_source"] == "live_pregame"
+        assert float(rows["s1"]["closing_fair"]) == 0.58  # side-matched, not the NO row
+
+        # After start, the live price must NOT be used; fall back to the
+        # last pre-game snapshot instead.
+        clv.unlink()
+        clv_tracker.SIGNAL_LEDGER, clv_tracker.CANDIDATE_LEDGER, clv_tracker.CLV_LEDGER = signals, candidates, clv
+        try:
+            def exploding_getter(*a, **k):
+                raise AssertionError("live price fetched after commence")
+            result = clv_tracker.capture_clv(now=datetime(2026,9,21,17,0,tzinfo=timezone.utc), getter=exploding_getter)
+        finally:
+            clv_tracker.SIGNAL_LEDGER, clv_tracker.CANDIDATE_LEDGER, clv_tracker.CLV_LEDGER = old_sig, old_cand, old_clv
+        with clv.open("r", encoding="utf-8", newline="") as fh:
+            rows = {r["signal_id"]:r for r in csv.DictReader(fh)}
+        assert rows["s1"]["close_source"] == "snapshot_pregame"
+        assert abs(float(rows["s1"]["clv_cents"]) - 5.0) < 1e-6   # mid 0.55 vs entry 0.50
+        assert "s2" not in rows  # T2 has no pre-game snapshot: skipped, not faked
+
+        # Too early: nothing captured yet.
+        clv.unlink()
+        clv_tracker.SIGNAL_LEDGER, clv_tracker.CANDIDATE_LEDGER, clv_tracker.CLV_LEDGER = signals, candidates, clv
+        try:
+            result = clv_tracker.capture_clv(now=datetime(2026,9,21,12,30,tzinfo=timezone.utc), getter=getter)
+        finally:
+            clv_tracker.SIGNAL_LEDGER, clv_tracker.CANDIDATE_LEDGER, clv_tracker.CLV_LEDGER = old_sig, old_cand, old_clv
+        assert result["captured"] == 0 and result["waiting"] == 2
 
     print("PM Edge Commit 4 instrumentation tests: PASS")
 

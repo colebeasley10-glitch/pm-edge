@@ -21,7 +21,7 @@ PATH_ENV = {
     "PM_EDGE_SIGNAL_LEDGER_PATH": "pm_edge_signal_ledger.csv",
     "PM_EDGE_FILL_LEDGER_PATH": "pm_edge_fill_ledger.csv",
     "PM_EDGE_CANDIDATE_LEDGER_PATH": "pm_edge_candidate_ledger.csv",
-    "PM_EDGE_CLV_LEDGER_PATH": "pm_edge_clv_ledger.csv",
+    "PM_EDGE_CLV_LEDGER_PATH": "pm_edge_clv_ledger_v2.csv",
     "PM_EDGE_AUTO_LEDGER_PATH": "pm_edge_auto_ledger.csv",
     "PM_EDGE_SIGNAL_OUTCOME_LEDGER_PATH": "pm_edge_signal_outcomes.csv",
     "PM_EDGE_PERFORMANCE_HISTORY_PATH": ".pm_edge_performance_history.json",

@@ -18,7 +18,7 @@ from pm_edge_runner_v20 import calculate_share_order
 SIGNAL_LEDGER = Path(os.getenv("PM_EDGE_SIGNAL_LEDGER_PATH", "pm_edge_signal_ledger.csv"))
 AUTO_LEDGER = Path(os.getenv("PM_EDGE_AUTO_LEDGER_PATH", "pm_edge_auto_ledger.csv"))
 CANDIDATE_LEDGER = Path(os.getenv("PM_EDGE_CANDIDATE_LEDGER_PATH", "pm_edge_candidate_ledger.csv"))
-CLV_LEDGER = Path(os.getenv("PM_EDGE_CLV_LEDGER_PATH", "pm_edge_clv_ledger.csv"))
+CLV_LEDGER = Path(os.getenv("PM_EDGE_CLV_LEDGER_PATH", "pm_edge_clv_ledger_v2.csv"))
 FILL_LEDGER = Path(os.getenv("PM_EDGE_FILL_LEDGER_PATH", "pm_edge_fill_ledger.csv"))
 SIGNAL_OUTCOMES = Path(os.getenv("PM_EDGE_SIGNAL_OUTCOME_LEDGER_PATH", "pm_edge_signal_outcomes.csv"))
 STATE_PATH = Path(os.getenv("PM_EDGE_WATCH_STATE", ".pm_edge_watch_state.json"))
