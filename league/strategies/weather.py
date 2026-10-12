@@ -21,6 +21,7 @@ import requests
 from league.book import Pick, f
 
 NAME = "weather"
+DIAG: dict = {}
 MIN_EDGE = 0.06          # forecasts are noisy; demand more than other lanes
 MAX_PICKS = 8
 MAX_PER_EVENT = 1
@@ -214,6 +215,8 @@ class Weather:
 
 
 def run(kalshi, now: datetime, session=None) -> list[Pick]:
+    DIAG.clear()
+    DIAG.update({"events": 0, "priced": 0, "skipped_far_from_market": 0, "samples": []})
     wx = Weather(session)
     series = [s.get("ticker") for s in kalshi.series("Climate and Weather")]
     series = [s for s in series if s and variable_for(s) and re.match(r"^KX(HIGH|LOW)", s)]
@@ -225,14 +228,24 @@ def run(kalshi, now: datetime, session=None) -> list[Pick]:
             except Exception as exc:  # one bad station never stops the lane
                 print("WEATHER_EVENT_ERROR", ev.get("event_ticker"), type(exc).__name__, str(exc)[:160])
                 continue
+            DIAG["events"] += 1
+            DIAG["priced"] += bool(priced)
+            if priced and len(DIAG["samples"]) < 12:
+                DIAG["samples"].append({"event": ev.get("event_ticker"), "note": priced[0][2],
+                                        "model_vs_ask": [(m.get("yes_sub_title"), round(p, 2), m.get("yes_ask"))
+                                                         for m, p, _ in priced]})
             best = []
             for m, p, note in priced:
                 for side, fair in (("YES", p), ("NO", 1.0 - p)):
                     pk = Pick(NAME, m, side, fair, note, category="Weather", min_edge=MIN_EDGE,
                               extra={"title": f"{ev.get('title')} — {m.get('yes_sub_title')}"})
                     e = pk.edge()
-                    if e is not None and e >= MIN_EDGE:
-                        best.append((e, pk))
+                    if e is None or e < MIN_EDGE:
+                        continue
+                    if e > 0.25:  # model far from a liquid market: trust the market, log it
+                        DIAG["skipped_far_from_market"] += 1
+                        continue
+                    best.append((e, pk))
             best.sort(key=lambda x: -x[0])
             picks += [pk for _, pk in best[:MAX_PER_EVENT]]
     picks.sort(key=lambda p: -(p.edge() or 0))

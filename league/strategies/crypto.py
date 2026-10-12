@@ -15,6 +15,7 @@ import requests
 from league.book import Pick, f, parse_dt
 
 NAME = "crypto"
+DIAG: dict = {}
 MIN_EDGE = 0.05
 MAX_PICKS = 4
 TAIL_INFLATE = 1.25
@@ -45,6 +46,8 @@ def prob_above(spot: float, strike: float, hours: float, vol_h: float) -> float:
 def run(kalshi, now: datetime, session=None) -> list[Pick]:
     s = session or requests.Session()
     picks: list[Pick] = []
+    DIAG.clear()
+    DIAG.update({"markets_priced": 0, "vol": {}, "best": []})
     for series, product in ASSETS.items():
         try:
             spot = float(s.get(f"https://api.exchange.coinbase.com/products/{product}/ticker", timeout=15).json()["price"])
@@ -54,6 +57,7 @@ def run(kalshi, now: datetime, session=None) -> list[Pick]:
         except Exception as exc:
             print("CRYPTO_PRICE_ERROR", product, type(exc).__name__, str(exc)[:120])
             continue
+        DIAG["vol"][product] = vol
         if not vol:
             continue
         for ev in kalshi.open_events(series, limit=6):
@@ -66,6 +70,10 @@ def run(kalshi, now: datetime, session=None) -> list[Pick]:
                 if not (0.75 <= hours <= 10):
                     continue
                 p = prob_above(spot, strike, hours, vol)
+                DIAG["markets_priced"] += 1
+                ya = m.get("yes_ask")
+                if ya is not None:
+                    DIAG["best"].append((round(p - ya, 3), m.get("ticker")))
                 if not (0.08 <= p <= 0.92):
                     continue
                 for side, fair in (("YES", p), ("NO", 1.0 - p)):
@@ -76,5 +84,6 @@ def run(kalshi, now: datetime, session=None) -> list[Pick]:
                     e = pk.edge()
                     if e is not None and e >= MIN_EDGE:
                         picks.append(pk)
+    DIAG["best"] = sorted(DIAG["best"], key=lambda x: -abs(x[0]))[:6]
     picks.sort(key=lambda p: -(p.edge() or 0))
     return picks[:MAX_PICKS]

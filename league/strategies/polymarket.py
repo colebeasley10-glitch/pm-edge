@@ -17,6 +17,7 @@ from rapidfuzz import fuzz
 from league.book import Pick, f, parse_dt
 
 NAME = "polymarket"
+DIAG: dict = {}
 MIN_EDGE = 0.02
 MAX_PICKS = 10
 MIN_LIQUIDITY = 5000.0
@@ -173,20 +174,30 @@ def fetch_poly_events(session: requests.Session, now: datetime) -> list[dict]:
 
 def run(kalshi, now: datetime, session=None) -> list[Pick]:
     s = session or requests.Session()
-    games = poly_games(fetch_poly_events(s, now), now)
+    raw = fetch_poly_events(s, now)
+    games = poly_games(raw, now)
+    DIAG.clear()
+    DIAG.update({"poly_events": len(raw), "poly_games": len(games), "kalshi_events": 0, "matched": 0,
+                 "priced": 0, "best_gaps": []})
     if not games:
         return []
     series = [x.get("ticker") for x in kalshi.series("Sports") if GAME_SERIES_RE.match(str(x.get("ticker") or ""))]
     picks: list[Pick] = []
     for ser in series:
         for ev in kalshi.open_events(ser, limit=40):
+            DIAG["kalshi_events"] += 1
             g = match_game(ev, games)
             if not g:
                 continue
+            DIAG["matched"] += 1
             for m in ev["markets"]:
                 p = team_prob(m, ev, g)
                 if p is None:
                     continue
+                DIAG["priced"] += 1
+                ya = m.get("yes_ask")
+                if ya is not None:
+                    DIAG["best_gaps"].append((round(p - ya, 3), m.get("ticker")))
                 for side, fair in (("YES", p), ("NO", 1.0 - p)):
                     pk = Pick(NAME, m, side, fair,
                               f"Polymarket has this at {fair:.0%} ({g['title']})",
@@ -196,5 +207,6 @@ def run(kalshi, now: datetime, session=None) -> list[Pick]:
                     e = pk.edge()
                     if e is not None and e >= MIN_EDGE:
                         picks.append(pk)
+    DIAG["best_gaps"] = sorted(DIAG["best_gaps"], reverse=True)[:8]
     picks.sort(key=lambda p: -(p.edge() or 0))
     return picks[:MAX_PICKS]

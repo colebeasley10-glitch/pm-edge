@@ -77,6 +77,8 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
         except Exception as exc:
             st["error"] = f"{type(exc).__name__}: {str(exc)[:200]}"
             traceback.print_exc()
+        if getattr(strat, "DIAG", None):
+            st["diag"] = strat.DIAG
         status["strategies"][strat.NAME] = st
     book.save(rows)
     status["standings"] = book.standings(rows)
