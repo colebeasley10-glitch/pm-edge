@@ -34,13 +34,57 @@ def _read_csv(path: Path) -> pd.DataFrame:
     if not path.exists() or path.stat().st_size == 0:
         return pd.DataFrame()
     try:
-        return pd.read_csv(path)
+        return pd.read_csv(path, low_memory=False)
     except Exception:
         return pd.DataFrame()
 
 
-def load_data() -> dict[str, pd.DataFrame]:
-    return {
+# Fresh start: everything before this moment is history from the old
+# strategy. The ledgers keep it for audit, but the app counts from here.
+# Override with PM_EDGE_STATS_START (ISO time) or set it empty to show all.
+DEFAULT_STATS_START = "2026-10-12T15:00:00Z"  # v29 taker gate went live
+
+_TIME_COLUMN = {
+    "signals": "alerted_at",
+    "orders": "trade_date",
+    "candidates": "evaluated_at",
+    "clv": "captured_at",
+    "fills": "filled_at",
+    "signal_outcomes": "trade_date",
+}
+
+
+def stats_start() -> datetime | None:
+    raw = os.getenv("PM_EDGE_STATS_START", DEFAULT_STATS_START).strip()
+    if not raw:
+        return None
+    try:
+        dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return (dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)).astimezone(timezone.utc)
+
+
+def apply_fresh_start(data: dict[str, pd.DataFrame], start: datetime | None) -> dict[str, pd.DataFrame]:
+    if start is None:
+        return data
+    out = {}
+    for name, df in data.items():
+        col = _TIME_COLUMN.get(name)
+        if df.empty or not col or col not in df.columns:
+            out[name] = df
+            continue
+        if col == "trade_date":  # date-only column: keep the start day itself
+            day = pd.to_datetime(df[col], errors="coerce")
+            keep = day.ge(pd.Timestamp(start.date()))
+        else:
+            keep = pd.to_datetime(df[col], errors="coerce", utc=True).ge(start)
+        out[name] = df[keep.fillna(False)].copy()
+    return out
+
+
+def load_data(*, start: datetime | None = ...) -> dict[str, pd.DataFrame]:
+    data = {
         "signals": _normalize_signals(_read_csv(SIGNAL_LEDGER)),
         "orders": _read_csv(AUTO_LEDGER),
         "candidates": _read_csv(CANDIDATE_LEDGER),
@@ -48,6 +92,7 @@ def load_data() -> dict[str, pd.DataFrame]:
         "fills": _read_csv(FILL_LEDGER),
         "signal_outcomes": _read_csv(SIGNAL_OUTCOMES),
     }
+    return apply_fresh_start(data, stats_start() if start is ... else start)
 
 
 def _normalize_signals(df: pd.DataFrame) -> pd.DataFrame:

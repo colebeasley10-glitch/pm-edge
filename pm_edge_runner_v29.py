@@ -18,7 +18,10 @@ Fish):
 * Gross taker edges above PM_EDGE_TAKER_GATE_IMPLAUSIBLE are treated as
   probable market-matching errors and dropped ("implausible_taker_edge").
 
-Set PM_EDGE_TAKER_GATE=0 to fall back to exact v28 behavior.
+It also focuses paid Odds API credits on the thin markets where Kalshi has
+lagged the books (PM_EDGE_FOCUS_SPORTS; empty = all sports).
+
+Set PM_EDGE_TAKER_GATE=0 to fall back to v28 scoring.
 """
 from __future__ import annotations
 
@@ -35,6 +38,25 @@ TAKER_GATE_ENABLED = str(os.getenv("PM_EDGE_TAKER_GATE", "1")).strip().lower() n
 TAKER_MIN_EDGE = float(os.getenv("PM_EDGE_TAKER_GATE_MIN_EDGE", "0.03"))
 TAKER_IMPLAUSIBLE = float(os.getenv("PM_EDGE_TAKER_GATE_IMPLAUSIBLE", "0.10"))
 TAKER_FEE_RATE = float(os.getenv("PM_EDGE_TAKER_FEE_RATE", "0.07"))
+
+# Free Odds API plan = 500 credits/month. Spend them only where Kalshi has
+# actually lagged the books (2026-10 audit: NCAAF, cricket, KBO, NPB). Entries
+# ending in "_" are prefixes. Empty string = no filter (old behavior).
+FOCUS_SPORTS = [
+    s.strip() for s in os.getenv(
+        "PM_EDGE_FOCUS_SPORTS",
+        "americanfootball_ncaaf,baseball_kbo,baseball_npb,cricket_",
+    ).split(",") if s.strip()
+]
+
+
+def sport_in_focus(sport_key: str, focus: list[str] | None = None) -> bool:
+    focus = FOCUS_SPORTS if focus is None else focus
+    if not focus:
+        return True
+    key = str(sport_key or "")
+    return any(key.startswith(f) if f.endswith("_") else key == f for f in focus)
+
 
 V29_STATS = {
     "taker_gate_checked": 0,
@@ -128,6 +150,20 @@ def apply_taker_gate(market: dict, fair_entry: dict, q, *, buffer: float,
 
 def install_v29_patch() -> None:
     watcher.WATCHER_VERSION = 29
+
+    # Credit focus: markets from other sports never match a sportsbook event,
+    # so no paid odds request is ever made for them. Listing events is free.
+    original_get_events = watcher.get_events
+
+    def get_events_v29(odds, state):
+        events, cost = original_get_events(odds, state)
+        kept = [e for e in events if sport_in_focus(e.get("_sport_key"))]
+        V29_STATS["focus_events_kept"] = len(kept)
+        V29_STATS["focus_events_dropped"] = len(events) - len(kept)
+        return kept, cost
+
+    watcher.get_events = get_events_v29
+
     if not TAKER_GATE_ENABLED:
         return
     buffer = float(watcher.MODEL_BUFFER) + float(watcher.SLIPPAGE_BUFFER)
@@ -194,6 +230,12 @@ def self_test() -> None:
     qd = QuoteDecision("YES", "MAKE", 0.49, 0.47, 0.48, 0.41, 0.41, 0.0, 0.08, 0.045, 0.01, True, "x")
     out, reason = apply_taker_gate(market, {"fair_yes_prob": 0.49}, qd, buffer=buf)
     assert reason == "no_taker_edge" and out.qualifies is False and qd.qualifies is True
+
+    # Sport focus.
+    f = ["americanfootball_ncaaf", "baseball_kbo", "baseball_npb", "cricket_"]
+    assert sport_in_focus("americanfootball_ncaaf", f) and sport_in_focus("cricket_international_t20", f)
+    assert not sport_in_focus("americanfootball_nfl", f) and not sport_in_focus("baseball_mlb", f)
+    assert sport_in_focus("basketball_nba", [])
 
     # Non-qualifying signals pass through untouched.
     p = SimpleNamespace(qualifies=False, side="YES")
