@@ -502,6 +502,59 @@ with tab_league:
                         unsafe_allow_html=True)
         else:
             st.markdown(rows_html(_pick_row(r) for r in done.to_dict("records")), unsafe_allow_html=True)
+        # ---- Sharp scorecard: is it ready for a real-money test? ----
+        from league import scorecard as league_scorecard
+        sc = league_scorecard.scorecard(league, "sharp")
+        if sc:
+            st.markdown("<div class='section'>Sharp scorecard</div>", unsafe_allow_html=True)
+            since_sc = sc["since"].tz_convert(EASTERN).strftime("%b %-d") if pd.notna(sc["since"]) else "the start"
+            st.markdown(
+                f"""
+                <div class='pe-board'>
+                  <div><div class='k'>Sharp profit since {esc(since_sc)}</div>
+                    <div class='big num {tone(sc["pl"])}'>{money(sc["pl"], signed=True)}</div>
+                    <div class='k'>{money(sc["staked"])} staked, {sc["open"]} open</div></div>
+                  <div class='side'>
+                    <div><div class='k'>Record</div><div class='v num'>{sc["won"]}-{sc["lost"]}</div></div>
+                    <div><div class='k'>ROI</div><div class='v num {tone(sc["roi"] or 0)}'>{pct(sc["roi"], signed=True)}</div></div>
+                    <div><div class='k'>Beat close</div><div class='v num {tone(sc["clv"] or 0)}'>{(f"{sc['clv']:+.1f}¢") if sc["clv"] is not None else "—"}</div></div>
+                  </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            done_checks = sum(1 for c in sc["checks"] if c[3])
+            verdict = ("Ready for a small real-money test." if sc["ready"]
+                       else f"Not ready for real money yet: {done_checks} of {len(sc['checks'])} checks passed.")
+            st.markdown(f"<div class='pe-lede' style='margin:.4rem 0 0'><b>{esc(verdict)}</b></div>",
+                        unsafe_allow_html=True)
+            st.markdown(rows_html(
+                (("✅ " if ok else "⬜ ") + esc(label), esc(detail), "", "up" if ok else "")
+                for label, _v, _need, ok, detail in sc["checks"]
+            ), unsafe_allow_html=True)
+            if len(sc["curve"]) >= 2:
+                st.line_chart(sc["curve"].set_index("when")["Profit"], height=180, color="#F2C14E")
+            if sc["groups"]:
+                note = ""
+                if sc["top_share"] and sc["top_share"] >= 0.5 and sc["bets"] >= 5:
+                    note = (f"<div class='pe-lede' style='margin:.2rem 0 0'>{sc['top_share']:.0%} of settled bets are "
+                            f"{esc(sc['groups'][0]['group'])}, so the record mostly reflects that one market.</div>")
+                st.markdown("<div class='section'>Sharp by market</div>" + note, unsafe_allow_html=True)
+                st.markdown(rows_html(
+                    (esc(g["group"]), f"{g['won']}-{g['lost']}, {pct(g['roi'], signed=True)} ROI on {money(g['staked'])}",
+                     f"<span class='num'>{money(g['pl'], signed=True)}</span>", tone(g["pl"]))
+                    for g in sc["groups"]
+                ), unsafe_allow_html=True)
+            if not sc["daily"].empty:
+                st.markdown("<div class='section'>Sharp by day</div>", unsafe_allow_html=True)
+                st.markdown(rows_html(
+                    (esc(pd.Timestamp(d["day"]).strftime("%a %b %-d")),
+                     f"{int(d['won'])}-{int(d['lost'])}, {pct(d['roi'], signed=True)} ROI, "
+                     f"running total {money(d['total'], signed=True)}",
+                     f"<span class='num'>{money(d['pl'], signed=True)}</span>", tone(d["pl"]))
+                    for d in sc["daily"].sort_values("day", ascending=False).to_dict("records")
+                ), unsafe_allow_html=True)
+
         rows.sort(key=lambda r: (-(r[6] if r[6] is not None else -99), -r[5]))
         st.markdown("<div class='section'>Strategy standings</div>", unsafe_allow_html=True)
         st.markdown(rows_html(
