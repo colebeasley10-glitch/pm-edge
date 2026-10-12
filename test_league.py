@@ -123,3 +123,12 @@ if __name__ == "__main__":
     test_crypto()
     test_round()
     print("League tests: PASS")
+
+
+def test_sharp_daily_cap_is_20_others_default(monkeypatch):
+    from league import run
+    monkeypatch.delenv("LEAGUE_DAILY_CAP_SHARP", raising=False)
+    assert run.daily_cap("sharp") == 20
+    assert run.daily_cap("weather") == run.DAILY_CAP
+    monkeypatch.setenv("LEAGUE_DAILY_CAP_SHARP", "5")
+    assert run.daily_cap("sharp") == 5

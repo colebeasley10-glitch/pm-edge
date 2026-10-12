@@ -18,6 +18,13 @@ from league.strategies import books, crypto, polymarket, sharp, weather
 
 STATUS = Path(os.getenv("LEAGUE_STATUS_PATH", "league_status.json"))
 DAILY_CAP = int(os.getenv("LEAGUE_DAILY_CAP_PER_STRATEGY", "12"))
+# Per-strategy overrides of DAILY_CAP; env LEAGUE_DAILY_CAP_<NAME> (e.g. LEAGUE_DAILY_CAP_SHARP) wins.
+STRATEGY_CAPS = {"sharp": 20}
+
+
+def daily_cap(name: str) -> int:
+    env = os.getenv(f"LEAGUE_DAILY_CAP_{name.upper()}")
+    return int(env) if env else STRATEGY_CAPS.get(name, DAILY_CAP)
 STRATEGIES = [weather, polymarket, books, sharp, crypto]
 LABELS = {"weather": "Weather", "polymarket": "Polymarket", "books": "Sportsbooks",
           "sharp": "Sharp money", "crypto": "Crypto"}
@@ -86,7 +93,7 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
         try:
             picks = strat.run(kalshi, now, session)
             st["picks_found"] = len(picks)
-            room = max(0, DAILY_CAP - opened_today(rows, strat.NAME, now))
+            room = max(0, daily_cap(strat.NAME) - opened_today(rows, strat.NAME, now))
             for pk in picks:
                 if st["opened"] >= room:
                     st["skipped"]["daily_cap"] = st["skipped"].get("daily_cap", 0) + 1
