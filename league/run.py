@@ -19,7 +19,7 @@ from league.strategies import books, crypto, polymarket, sharp, weather
 STATUS = Path(os.getenv("LEAGUE_STATUS_PATH", "league_status.json"))
 DAILY_CAP = int(os.getenv("LEAGUE_DAILY_CAP_PER_STRATEGY", "12"))
 # Per-strategy overrides of DAILY_CAP; env LEAGUE_DAILY_CAP_<NAME> (e.g. LEAGUE_DAILY_CAP_SHARP) wins.
-STRATEGY_CAPS = {"sharp": 20}
+STRATEGY_CAPS = {"sharp": 30}
 
 
 def daily_cap(name: str) -> int:
