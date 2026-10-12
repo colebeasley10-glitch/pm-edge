@@ -1,15 +1,18 @@
-"""PM Edge — phone-first dashboard.
+"""PM Edge: phone-first dashboard.
 
-Four tabs: Picks (what to bet now), My Bets (open + settled), Results (is it
+Four tabs: Picks (what to bet now), My bets (open + settled), Results (is it
 working?), System (is it running?). Stats count from the fresh start set in
 dashboard_data.DEFAULT_STATS_START; older history stays in the ledgers.
+
+Look: night-game navy, scoreboard numerals (Archivo Expanded), and picks drawn
+as bet slips with a tear line. Gold is reserved for prices and the main action.
 """
 from __future__ import annotations
 
 import html
 import math
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
@@ -27,7 +30,7 @@ FOCUS_LABELS = {
     "americanfootball_ncaaf": "NCAAF",
     "baseball_kbo": "KBO",
     "baseball_npb": "NPB",
-    "cricket_": "Cricket",
+    "cricket_": "cricket",
 }
 MIN_EDGE = float(os.getenv("PM_EDGE_TAKER_GATE_MIN_EDGE", "0.03"))
 CLV_VERDICT_MIN = 20  # alerts needed before CLV says anything
@@ -58,34 +61,76 @@ _seed_env_from_secrets()
 # ---------------------------------------------------------------- styling --
 st.markdown(
     """
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&display=swap" rel="stylesheet">
     <style>
-    :root { --pe-green:#16a34a; --pe-red:#dc2626; --pe-amber:#d97706; --pe-muted:rgba(128,128,128,.85); }
-    .block-container { padding-top: 1rem; padding-bottom: 3rem; max-width: 720px; }
-    [data-testid="stSidebar"], [data-testid="collapsedControl"] { display: none; }
-    h1, h2, h3 { letter-spacing: -0.01em; }
-    .pe-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:.25rem; }
-    .pe-brand { font-size:1.6rem; font-weight:800; }
-    .pe-status { font-size:.85rem; color:var(--pe-muted); }
-    .pe-dot { display:inline-block; width:.55rem; height:.55rem; border-radius:50%; margin-right:.35rem; vertical-align:middle; }
-    .pe-kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:.5rem; margin:.75rem 0 .25rem; }
-    .pe-kpi { border:1px solid rgba(128,128,128,.25); border-radius:14px; padding:.65rem .75rem; }
-    .pe-kpi .l { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--pe-muted); }
-    .pe-kpi .v { font-size:1.35rem; font-weight:750; margin-top:.1rem; }
-    .pe-card { border:1px solid rgba(128,128,128,.25); border-radius:16px; padding:.9rem 1rem; margin-bottom:.4rem; }
-    .pe-card .row { display:flex; justify-content:space-between; gap:.75rem; align-items:flex-start; }
-    .pe-title { font-weight:700; font-size:1.02rem; line-height:1.3; }
-    .pe-sub { font-size:.82rem; color:var(--pe-muted); margin-top:.15rem; }
-    .pe-big { font-size:1.5rem; font-weight:800; text-align:right; white-space:nowrap; }
-    .pe-tag { display:inline-block; padding:.08rem .5rem; border-radius:999px; font-size:.72rem; font-weight:650;
-              border:1px solid rgba(128,128,128,.35); margin-right:.3rem; }
-    .pe-yes { background:rgba(22,163,74,.12); border-color:rgba(22,163,74,.45); }
-    .pe-no  { background:rgba(220,38,38,.10); border-color:rgba(220,38,38,.40); }
-    .pe-stats { display:flex; gap:1.1rem; margin-top:.6rem; font-size:.85rem; }
-    .pe-stats b { display:block; font-size:1rem; }
-    .pe-win { color:var(--pe-green); } .pe-loss { color:var(--pe-red); }
-    .pe-empty { text-align:center; padding:2rem 1rem; border:1px dashed rgba(128,128,128,.35); border-radius:16px; }
-    .pe-empty .e { font-size:2rem; }
-    .pe-verdict { border-radius:14px; padding:.8rem 1rem; margin:.5rem 0 1rem; border:1px solid rgba(128,128,128,.3); }
+    :root {
+      --bg:#0D1B2A; --panel:#14263A; --line:#24394F; --text:#EAF0F6; --muted:#8DA0B5;
+      --gold:#F2C14E; --up:#4CC38A; --down:#F26D5B;
+    }
+    html, body, .stApp, .stApp p, .stApp span, .stApp div, .stApp button, .stApp label {
+      font-family:'Archivo', system-ui, sans-serif !important;
+    }
+    .stApp { background:var(--bg); color:var(--text); }
+    [data-testid="stHeader"] { background:transparent; }
+    [data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stDecoration"] { display:none; }
+    .block-container { padding-top:4.25rem; padding-bottom:4rem; max-width:640px; }
+    .num { font-stretch:125%; font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+    /* header */
+    .pe-head { display:flex; align-items:center; justify-content:space-between; }
+    .pe-mark { font-stretch:125%; font-weight:800; font-size:1.45rem; letter-spacing:-.02em; }
+    .pe-mark i { font-style:normal; color:var(--gold); }
+    .pe-pill { font-size:.8rem; font-weight:600; padding:.3rem .7rem; border-radius:999px;
+               background:var(--panel); border:1px solid var(--line); }
+    .pe-pill b { display:inline-block; width:.5rem; height:.5rem; border-radius:50%; margin-right:.4rem; }
+    .pe-lede { color:var(--muted); font-size:.92rem; margin:.5rem 0 1.1rem; line-height:1.45; }
+    /* scoreboard */
+    .pe-board { background:var(--panel); border:1px solid var(--line); border-radius:18px;
+                padding:1rem 1.15rem; display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; }
+    .pe-board .k { color:var(--muted); font-size:.82rem; }
+    .pe-board .big { font-size:2.4rem; font-weight:800; line-height:1.05; margin-top:.15rem; }
+    .pe-board .side { display:flex; gap:1.25rem; text-align:right; }
+    .pe-board .side .v { font-size:1.2rem; font-weight:700; margin-top:.1rem; }
+    .up { color:var(--up); } .down { color:var(--down); }
+    /* tabs */
+    .stTabs [data-baseweb="tab-list"] { gap:1.4rem; border-bottom:1px solid var(--line); margin-top:1.1rem; }
+    .stTabs [data-baseweb="tab"] { padding:.6rem 0; color:var(--muted); }
+    .stTabs [aria-selected="true"] { color:var(--text) !important; }
+    .stTabs [data-baseweb="tab-highlight"] { background:var(--gold) !important; }
+    .stTabs [data-baseweb="tab-border"] { display:none; }
+    /* bet slip */
+    .slip { background:var(--panel); border:1px solid var(--line); border-radius:18px; margin:1rem 0 .55rem; position:relative; }
+    .slip .top { padding:1rem 1.15rem .9rem; }
+    .slip .meta { display:flex; justify-content:space-between; color:var(--muted); font-size:.8rem; }
+    .slip .side { font-weight:700; letter-spacing:.02em; }
+    .slip .side.yes { color:var(--up); } .slip .side.no { color:var(--down); }
+    .slip h4 { font-size:1.08rem; font-weight:650; line-height:1.3; margin:.45rem 0 0; padding:0 !important; color:var(--text); }
+    .slip .tear { border-top:1.5px dashed var(--line); margin:0 .9rem; position:relative; }
+    .slip .tear:before, .slip .tear:after { content:""; position:absolute; top:-10px; width:20px; height:20px;
+        border-radius:50%; background:var(--bg); border:1px solid var(--line); }
+    .slip .tear:before { left:-1.55rem; clip-path:inset(0 0 0 50%); }
+    .slip .tear:after { right:-1.55rem; clip-path:inset(0 50% 0 0); }
+    .slip .bottom { padding:.9rem 1.15rem 1rem; display:grid; grid-template-columns:auto 1fr; gap:1.2rem; align-items:center; }
+    .slip .price { font-size:2.6rem; font-weight:800; color:var(--gold); line-height:1; }
+    .slip .price small { display:block; font-size:.75rem; font-weight:500; color:var(--muted); font-stretch:100%; margin-top:.3rem; }
+    .slip dl { display:grid; grid-template-columns:1fr auto; row-gap:.28rem; column-gap:.75rem; margin:0; font-size:.88rem; }
+    .slip dt { color:var(--muted); } .slip dd { margin:0; text-align:right; font-weight:650; }
+    /* lists */
+    .row-list { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:.2rem 1.1rem; margin:.6rem 0 1rem; }
+    .row-list .r { display:flex; justify-content:space-between; gap:1rem; padding:.75rem 0; border-bottom:1px solid var(--line); }
+    .row-list .r:last-child { border-bottom:0; }
+    .row-list .t { font-weight:600; font-size:.95rem; line-height:1.3; }
+    .row-list .s { color:var(--muted); font-size:.8rem; margin-top:.15rem; }
+    .row-list .v { font-weight:700; text-align:right; white-space:nowrap; }
+    .section { font-size:.95rem; font-weight:700; margin:1.3rem 0 .1rem; }
+    .quiet { text-align:center; padding:2.6rem 1.2rem; color:var(--muted); line-height:1.5; }
+    .quiet strong { display:block; color:var(--text); font-size:1.1rem; font-weight:700; margin-bottom:.35rem; }
+    .verdict { border-left:3px solid var(--gold); padding:.2rem 0 .2rem 1rem; margin:1.2rem 0 1rem; }
+    .verdict strong { font-size:1.15rem; }
+    .verdict p { color:var(--muted); margin:.3rem 0 0; font-size:.9rem; line-height:1.45; }
+    .stButton button, .stLinkButton a { border-radius:12px !important; font-weight:700 !important; padding:.65rem 1rem !important; }
+    .stLinkButton a[kind="primary"], .stLinkButton a[data-testid="stBaseLinkButton-primary"] {
+      background:var(--gold) !important; color:#1A1405 !important; border:0 !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -127,6 +172,11 @@ def esc(value) -> str:
     return html.escape(str(value if value is not None and str(value) != "nan" else ""))
 
 
+def tone(x) -> str:
+    x = _num(x) or 0
+    return "up" if x > 0 else "down" if x < 0 else ""
+
+
 def _when(value) -> datetime | None:
     try:
         ts = pd.to_datetime(value, utc=True)
@@ -138,7 +188,7 @@ def _when(value) -> datetime | None:
 def ago(value) -> str:
     dt = _when(value)
     if not dt:
-        return "never"
+        return "not yet"
     mins = int((datetime.now(timezone.utc) - dt).total_seconds() // 60)
     if mins < 1:
         return "just now"
@@ -146,7 +196,11 @@ def ago(value) -> str:
         return f"{mins} min ago"
     if mins < 48 * 60:
         return f"{mins // 60}h ago"
-    return f"{mins // 1440}d ago"
+    return f"{mins // 1440} days ago"
+
+
+def local_time(dt: datetime) -> str:
+    return dt.astimezone(EASTERN).strftime("%-I:%M %p").lower().replace(" ", "")
 
 
 def starts(value) -> str:
@@ -154,17 +208,27 @@ def starts(value) -> str:
     if not dt:
         return "Start time unknown"
     secs = (dt - datetime.now(timezone.utc)).total_seconds()
-    local = dt.astimezone(EASTERN).strftime("%a %-I:%M %p")
+    day = dt.astimezone(EASTERN).strftime("%a")
     if secs <= 0:
-        return f"Started · {local}"
+        return f"Started {day} {local_time(dt)}"
     h, m = int(secs // 3600), int(secs % 3600 // 60)
-    return f"Starts in {h}h {m}m · {local}" if h else f"Starts in {m}m · {local}"
+    return f"{day} {local_time(dt)}, in {h}h {m}m" if h else f"{day} {local_time(dt)}, in {m}m"
+
+
+def short_date(value) -> str:
+    dt = _when(value)
+    return dt.strftime("%b %-d") if dt else ""
+
+
+def next_scan() -> str:
+    now = datetime.now(timezone.utc)
+    nxt = now.replace(second=0, microsecond=0) + timedelta(minutes=30 - now.minute % 30)
+    return local_time(nxt)
 
 
 def app_root() -> str | None:
     try:
-        current = str(st.context.url or "").strip()
-        parsed = urlsplit(current)
+        parsed = urlsplit(str(st.context.url or "").strip())
         if parsed.scheme and parsed.netloc:
             return f"{parsed.scheme}://{parsed.netloc}"
     except Exception:
@@ -175,21 +239,20 @@ def app_root() -> str | None:
 def focus_label() -> str:
     raw = os.getenv("PM_EDGE_FOCUS_SPORTS", ",".join(FOCUS_LABELS))
     labels = [FOCUS_LABELS.get(s.strip(), s.strip()) for s in raw.split(",") if s.strip()]
-    return " · ".join(labels) if labels else "All sports"
+    if not labels:
+        return "every sport"
+    return labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " and " + labels[-1]
 
 
-def side_tag(side: str) -> str:
-    side = str(side or "").upper()
-    cls = "pe-yes" if side == "YES" else "pe-no"
-    return f"<span class='pe-tag {cls}'>BUY {esc(side)}</span>"
+def quiet(title: str, body: str) -> None:
+    st.markdown(f"<div class='quiet'><strong>{esc(title)}</strong>{esc(body)}</div>", unsafe_allow_html=True)
 
 
-def empty(emoji: str, title: str, body: str) -> None:
-    st.markdown(
-        f"<div class='pe-empty'><div class='e'>{emoji}</div><b>{esc(title)}</b>"
-        f"<div class='pe-sub'>{esc(body)}</div></div>",
-        unsafe_allow_html=True,
-    )
+def rows_html(items) -> str:
+    return "<div class='row-list'>" + "".join(
+        f"<div class='r'><div><div class='t'>{t}</div><div class='s'>{s}</div></div><div class='v {c}'>{v}</div></div>"
+        for t, s, v, c in items
+    ) + "</div>"
 
 
 # ------------------------------------------------------------------- data --
@@ -204,7 +267,7 @@ def load():
 def kalshi_status():
     client = KalshiReadOnlyClient.from_env()
     if client is None:
-        return {"connected": False, "error": "Kalshi keys not set in Streamlit secrets."}
+        return {"connected": False, "error": "Add your Kalshi keys in the app's Streamlit secrets."}
     try:
         client.get_positions(limit=1)
         return {"connected": True, "error": ""}
@@ -217,62 +280,67 @@ signals, orders, clv = data["signals"], data["orders"], data["clv"]
 summary = dashboard_data.actual_summary(orders)
 picks = dashboard_data.new_signals(signals, orders)
 open_bets = dashboard_data.open_order_rows(orders)
-open_bets = open_bets[~open_bets.get("status", pd.Series(dtype=str)).fillna("").astype(str)
-                      .isin(["awaiting_approval", "expired_stale_edge"])] if not open_bets.empty else open_bets
+if not open_bets.empty:
+    open_bets = open_bets[~open_bets.get("status", pd.Series(dtype=str)).fillna("").astype(str)
+                          .isin(["awaiting_approval", "expired_stale_edge"])]
+settled = orders[orders.get("status", pd.Series(dtype=str)).fillna("").astype(str)
+                 .str.startswith(("settled_", "closed_early_"))] if not orders.empty else orders
 start = dashboard_data.stats_start()
-last_run = (state.get("daily_usage") or {}).get("date")
-last_activity = dashboard_data.last_model_activity(data) or _when(state.get("events_cache", {}).get("fetched_at"))
+last_activity = dashboard_data.last_model_activity(data) or _when((state.get("events_cache") or {}).get("fetched_at"))
 clv_vals = pd.to_numeric(clv.get("clv_cents", pd.Series(dtype=float)), errors="coerce").dropna()
+running = last_activity is not None and (datetime.now(timezone.utc) - last_activity).total_seconds() < 3 * 3600
 
 # ----------------------------------------------------------------- header --
-running = last_activity is not None and (datetime.now(timezone.utc) - last_activity).total_seconds() < 3 * 3600
-dot = "#16a34a" if running else "#d97706"
+since = start.astimezone(EASTERN).strftime("%b %-d") if start else "the start"
 st.markdown(
     f"""
-    <div class='pe-top'><div class='pe-brand'>🎯 PM Edge</div></div>
-    <div class='pe-status'><span class='pe-dot' style='background:{dot}'></span>
-    {'Scanning' if running else 'Waiting for data'} {esc(focus_label())} · last activity {esc(ago(last_activity))}</div>
-    <div class='pe-kpis'>
-      <div class='pe-kpi'><div class='l'>Profit</div>
-        <div class='v {"pe-win" if summary["net_pl"] > 0 else "pe-loss" if summary["net_pl"] < 0 else ""}'>{money(summary["net_pl"], signed=True)}</div></div>
-      <div class='pe-kpi'><div class='l'>Record</div><div class='v'>{esc(summary["record"])}</div></div>
-      <div class='pe-kpi'><div class='l'>Beat close</div>
-        <div class='v'>{(f"{clv_vals.mean():+.1f}¢") if len(clv_vals) else "—"}</div></div>
+    <div class='pe-head'>
+      <div class='pe-mark'>PM Edge<i>.</i></div>
+      <div class='pe-pill'><b style='background:{"var(--up)" if running else "var(--gold)"}'></b>{"Live" if running else "Idle"}</div>
     </div>
-    <div class='pe-status'>Tracking since {esc(start.astimezone(EASTERN).strftime("%b %-d") if start else "the beginning")}</div>
+    <div class='pe-lede'>Watching {esc(focus_label())}. Last scan {esc(ago(last_activity))}.</div>
+    <div class='pe-board'>
+      <div><div class='k'>Profit since {esc(since)}</div>
+        <div class='big num {tone(summary["net_pl"])}'>{money(summary["net_pl"], signed=True)}</div></div>
+      <div class='side'>
+        <div><div class='k'>Record</div><div class='v num'>{esc(summary["record"])}</div></div>
+        <div><div class='k'>Beat close</div><div class='v num {tone(clv_vals.mean() if len(clv_vals) else 0)}'>{(f"{clv_vals.mean():+.1f}¢") if len(clv_vals) else "—"}</div></div>
+      </div>
+    </div>
     """,
     unsafe_allow_html=True,
 )
 
 tab_picks, tab_bets, tab_results, tab_system = st.tabs(
-    [f"Picks ({len(picks)})", f"My bets ({len(open_bets)})", "Results", "System"]
+    [f"Picks {len(picks)}" if len(picks) else "Picks", "My bets", "Results", "System"]
 )
 
 # ------------------------------------------------------------------ picks --
 with tab_picks:
     if picks.empty:
-        empty("🧘", "No picks right now",
-              f"PM Edge only alerts when there's {MIN_EDGE:.0%}+ edge at the price you can actually buy. "
-              "Expect a few per week, mostly NCAAF Saturdays. You'll get a push notification.")
+        quiet("Nothing clears the bar right now",
+              f"A pick needs {MIN_EDGE:.0%} edge at the price you can buy today. "
+              f"Next scan around {next_scan()}. You'll get a push the moment one qualifies.")
     for row in picks.to_dict("records"):
         order = dashboard_data.size_signal(row) or {}
-        price = row.get("recommended_limit")
+        side = str(row.get("side") or "").upper()
         st.markdown(
             f"""
-            <div class='pe-card'>
-              <div class='row'>
-                <div>
-                  {side_tag(row.get('side'))}<span class='pe-tag'>{esc(row.get('sport_title') or 'Sports')}</span>
-                  <div class='pe-title' style='margin-top:.35rem'>{esc(row.get('market_title') or row.get('ticker'))}</div>
-                  <div class='pe-sub'>{esc(starts(row.get('commence_time')))}</div>
-                </div>
-                <div class='pe-big'>{cents(price)}</div>
+            <div class='slip'>
+              <div class='top'>
+                <div class='meta'><span class='side {side.lower()}'>Buy {esc(side)}</span><span>{esc(row.get('sport_title') or 'Sports')}</span></div>
+                <h4>{esc(row.get('market_title') or row.get('ticker'))}</h4>
+                <div class='meta' style='margin-top:.35rem'><span>{esc(starts(row.get('commence_time')))}</span></div>
               </div>
-              <div class='pe-stats'>
-                <div>Edge<b class='pe-win'>{pct(row.get('net_edge'), signed=True)}</b></div>
-                <div>True odds<b>{pct(row.get('fair_probability'))}</b></div>
-                <div>Max price<b>{cents(row.get('hard_max'))}</b></div>
-                <div>Stake<b>{f"{order.get('shares')} @ {money(order.get('max_loss'))}" if order else "—"}</b></div>
+              <div class='tear'></div>
+              <div class='bottom'>
+                <div class='price num'>{cents(row.get('recommended_limit'))}<small>per contract</small></div>
+                <dl>
+                  <dt>Edge</dt><dd class='up'>{pct(row.get('net_edge'), signed=True)}</dd>
+                  <dt>True odds</dt><dd>{pct(row.get('fair_probability'))}</dd>
+                  <dt>Pay up to</dt><dd>{cents(row.get('hard_max'))}</dd>
+                  <dt>Stake</dt><dd>{f"{order.get('shares')} for {money(order.get('max_loss'))}" if order else "—"}</dd>
+                </dl>
               </div>
             </div>
             """,
@@ -280,125 +348,90 @@ with tab_picks:
         )
         url = dashboard_data.approval_url_for_signal(row, base_url=app_root())
         if url:
-            st.link_button("Review & place bet", url, type="primary", width="stretch")
-        st.write("")
+            st.link_button("Review and place bet", url, type="primary", width="stretch")
 
 # --------------------------------------------------------------- my bets --
 with tab_bets:
-    st.markdown("##### Open")
+    st.markdown("<div class='section'>Open</div>", unsafe_allow_html=True)
     if open_bets.empty:
-        empty("📭", "No open bets", "Bets you place from a pick show up here until they settle.")
-    for row in open_bets.to_dict("records"):
-        st.markdown(
-            f"""
-            <div class='pe-card'><div class='row'>
-              <div>{side_tag(row.get('side'))}
-                <div class='pe-title' style='margin-top:.35rem'>{esc(row.get('market_title') or row.get('ticker'))}</div>
-                <div class='pe-sub'>{esc(starts(row.get('commence_time')))} · {esc(str(row.get('status') or '').replace('_', ' '))}</div>
-              </div>
-              <div style='text-align:right'><div class='pe-big'>{money(row.get('entry_cost'))}</div>
-                <div class='pe-sub'>{esc(row.get('filled_shares') or row.get('requested_shares') or '')} @ {cents(row.get('average_fill_price') or row.get('limit_price'))}</div></div>
-            </div></div>
-            """,
-            unsafe_allow_html=True,
-        )
+        quiet("No open bets", "Bets you place from a pick show up here until they settle.")
+    else:
+        st.markdown(rows_html(
+            (esc(r.get("market_title") or r.get("ticker")),
+             f"{esc(str(r.get('side') or '').upper())}, {esc(starts(r.get('commence_time')))}",
+             f"<span class='num'>{money(r.get('entry_cost'))}</span>", "")
+            for r in open_bets.to_dict("records")
+        ), unsafe_allow_html=True)
 
-    settled = orders[orders.get("status", pd.Series(dtype=str)).fillna("").astype(str)
-                     .str.startswith(("settled_", "closed_early_"))] if not orders.empty else orders
-    st.markdown("##### Settled")
+    st.markdown("<div class='section'>Settled</div>", unsafe_allow_html=True)
     if settled.empty:
-        st.caption("Nothing settled yet.")
+        st.markdown("<div class='pe-lede'>Nothing settled yet.</div>", unsafe_allow_html=True)
     else:
         view = settled.sort_values("trade_date", ascending=False).head(50)
-        st.dataframe(
-            pd.DataFrame({
-                "Date": view["trade_date"],
-                "Bet": view.get("market_title", view["ticker"]).fillna(view["ticker"]),
-                "Side": view["side"],
-                "Result": view["outcome"].fillna("").str.title(),
-                "P/L": pd.to_numeric(view["net_pl"], errors="coerce").round(2),
-            }),
-            hide_index=True, width="stretch",
-            column_config={"P/L": st.column_config.NumberColumn(format="$%.2f")},
-        )
+        st.markdown(rows_html(
+            (esc(r.get("market_title") or r.get("ticker")),
+             f"{esc(str(r.get('side') or '').upper())}, {esc(short_date(r.get('trade_date')))}, {esc(str(r.get('outcome') or '').title())}",
+             f"<span class='num'>{money(r.get('net_pl'), signed=True)}</span>", tone(r.get("net_pl")))
+            for r in view.to_dict("records")
+        ), unsafe_allow_html=True)
 
 # ---------------------------------------------------------------- results --
 with tab_results:
     n_clv = len(clv_vals)
     if n_clv < CLV_VERDICT_MIN:
-        verdict = ("⏳", "Too early to tell",
-                   f"{n_clv} of {CLV_VERDICT_MIN} alerts tracked. The real test is whether our price beats the "
-                   "closing price, not short-term wins and losses.")
+        verdict = ("Too early to tell",
+                   f"{n_clv} of {CLV_VERDICT_MIN} picks tracked. The test that matters is whether our price "
+                   "beats the last price before the game, not a few wins or losses.")
     elif clv_vals.mean() > 0.5:
-        verdict = ("✅", "The edge looks real",
-                   f"Our alerts beat the closing price by {clv_vals.mean():+.1f}¢ on average over {n_clv} alerts.")
+        verdict = ("The edge looks real",
+                   f"Our picks beat the closing price by {clv_vals.mean():+.1f}¢ on average across {n_clv} picks.")
     else:
-        verdict = ("⚠️", "No edge yet",
-                   f"Our alerts average {clv_vals.mean():+.1f}¢ vs the close over {n_clv} alerts. Keep stakes small.")
-    st.markdown(
-        f"<div class='pe-verdict'><b>{verdict[0]} {esc(verdict[1])}</b><div class='pe-sub'>{esc(verdict[2])}</div></div>",
-        unsafe_allow_html=True,
-    )
+        verdict = ("No edge yet",
+                   f"Our picks average {clv_vals.mean():+.1f}¢ against the close across {n_clv} picks. Keep stakes small.")
+    st.markdown(f"<div class='verdict'><strong>{esc(verdict[0])}</strong><p>{esc(verdict[1])}</p></div>",
+                unsafe_allow_html=True)
 
-    st.markdown(
-        f"""<div class='pe-kpis'>
-          <div class='pe-kpi'><div class='l'>Risked</div><div class='v'>{money(summary["risked"])}</div></div>
-          <div class='pe-kpi'><div class='l'>ROI</div><div class='v'>{pct(summary["roi"], signed=True)}</div></div>
-          <div class='pe-kpi'><div class='l'>Settled</div><div class='v'>{summary["settled"]}</div></div>
-        </div>""",
-        unsafe_allow_html=True,
-    )
+    st.markdown(rows_html([
+        ("Risked", "Total staked including fees", f"<span class='num'>{money(summary['risked'])}</span>", ""),
+        ("Return", "Profit divided by risked", f"<span class='num'>{pct(summary['roi'], signed=True)}</span>", tone(summary["roi"])),
+        ("Settled bets", "Graded wins and losses", f"<span class='num'>{summary['settled']}</span>", ""),
+    ]), unsafe_allow_html=True)
 
     if not settled.empty:
         curve = settled.copy()
         curve["when"] = pd.to_datetime(curve["settled_at"].fillna(curve["trade_date"]), errors="coerce", utc=True)
         curve = curve.dropna(subset=["when"]).sort_values("when")
         curve["Profit"] = pd.to_numeric(curve["net_pl"], errors="coerce").fillna(0).cumsum()
-        st.markdown("##### Profit over time")
-        st.line_chart(curve.set_index("when")["Profit"], height=220, color="#16a34a")
+        st.markdown("<div class='section'>Profit over time</div>", unsafe_allow_html=True)
+        st.line_chart(curve.set_index("when")["Profit"], height=200, color="#F2C14E")
 
-    if not settled.empty and "sport_title" in settled.columns:
-        by = dashboard_data.aggregate_performance(settled, "sport_title")
-        if not by.empty:
-            st.markdown("##### By sport")
-            st.dataframe(
-                by.rename(columns={"sport_title": "Sport", "bets": "Bets", "record": "Record",
-                                   "net_pl": "P/L", "roi": "ROI"})[["Sport", "Bets", "Record", "P/L", "ROI"]],
-                hide_index=True, width="stretch",
-                column_config={"P/L": st.column_config.NumberColumn(format="$%.2f"),
-                               "ROI": st.column_config.NumberColumn(format="percent")},
-            )
-    if settled.empty and n_clv == 0:
-        empty("📈", "Results start with your first pick", "Profit, record and closing-line value fill in here.")
+        if "sport_title" in settled.columns:
+            by = dashboard_data.aggregate_performance(settled, "sport_title")
+            if not by.empty:
+                st.markdown("<div class='section'>By sport</div>", unsafe_allow_html=True)
+                st.markdown(rows_html(
+                    (esc(r["sport_title"]), f"{esc(r['record'])} record",
+                     f"<span class='num'>{money(r['net_pl'], signed=True)}</span>", tone(r["net_pl"]))
+                    for r in by.to_dict("records")
+                ), unsafe_allow_html=True)
 
 # ----------------------------------------------------------------- system --
 with tab_system:
     k = kalshi_status()
     credits = (state.get("daily_usage") or {}).get("credits")
     breaker = bool((state.get("drawdown_circuit") or {}).get("active"))
-    rows = [
-        ("Kalshi account", "🟢 Connected" if k["connected"] else "🟠 Not connected"),
-        ("Scanner", ("🟢 Running" if running else "🟠 No activity in 3h") + f" · {ago(last_activity)}"),
-        ("Sports in focus", focus_label()),
-        ("Edge required", f"{MIN_EDGE:.0%}+ at the live price, after fees"),
-        ("Odds credits used today", f"{credits if credits is not None else 0} of {os.getenv('PM_EDGE_ODDS_DAILY_BUDGET', '14')}"),
-        ("Loss breaker", "🔴 Active — alerts paused" if breaker else "🟢 Clear"),
-    ]
-    st.markdown(
-        "<div class='pe-card'>" + "".join(
-            f"<div class='row' style='padding:.45rem 0;border-bottom:1px solid rgba(128,128,128,.15)'>"
-            f"<span class='pe-sub' style='margin:0'>{esc(label)}</span>"
-            f"<b style='text-align:right'>{esc(value)}</b></div>"
-            for label, value in rows
-        ) + "</div>",
-        unsafe_allow_html=True,
-    )
-    if k.get("error") and not k["connected"]:
-        st.caption(k["error"])
-    st.divider()
+    st.markdown(rows_html([
+        ("Kalshi account", esc(k["error"]) if not k["connected"] else "Read access working",
+         "Connected" if k["connected"] else "Not connected", "up" if k["connected"] else "down"),
+        ("Scanner", f"Every 30 minutes, last {esc(ago(last_activity))}",
+         "Running" if running else "Idle", "up" if running else ""),
+        ("Sports", "Where the odds credits go", esc(focus_label()).replace(" and ", ", "), ""),
+        ("Edge required", "At the live price, after Kalshi's fee", f"{MIN_EDGE:.0%}+", ""),
+        ("Odds credits today", "Free plan, about 16 a day",
+         f"<span class='num'>{credits if credits is not None else 0} / {os.getenv('PM_EDGE_ODDS_DAILY_BUDGET', '14')}</span>", ""),
+        ("Loss breaker", "Pauses alerts after a bad run", "Tripped" if breaker else "Clear", "down" if breaker else "up"),
+    ]), unsafe_allow_html=True)
     if st.button("Refresh data", width="stretch"):
         st.cache_data.clear()
         st.rerun()
-    st.page_link("pages/Kalshi_Connection_Check.py", label="Kalshi connection check", icon="🔌")
-    st.caption("Runs every 30 minutes on GitHub Actions. Alerts go to Pushover. "
-               "Old pre-reset history is kept in the ledgers and archive/ folder.")
+    st.page_link("pages/Kalshi_Connection_Check.py", label="Run a Kalshi connection check")
