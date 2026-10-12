@@ -138,7 +138,7 @@ jobs:
           PM_EDGE_POST_WAKE_MAX_ODDS_REFRESH_PER_RUN: "5"
           PM_EDGE_MORNING_LOOKAHEAD_AFTER_WAKE_HOURS: "4"
           PM_EDGE_OVERNIGHT_MISSED_RETENTION_DAYS: "14"
-        run: python pm_edge_runner_v28.py
+        run: python pm_edge_runner_v29.py
 
       # Whale Flow moved to the always-on Railway paper worker.
       # Keeping it out of this scheduled Actions job avoids duplicate signals
@@ -199,7 +199,7 @@ jobs:
           [ -f pm_edge_auto_ledger.csv ] && git add pm_edge_auto_ledger.csv
           [ -f pm_edge_signal_ledger.csv ] && git add pm_edge_signal_ledger.csv
           [ -f pm_edge_candidate_ledger.csv ] && git add pm_edge_candidate_ledger.csv
-          [ -f pm_edge_clv_ledger.csv ] && git add pm_edge_clv_ledger.csv
+          [ -f pm_edge_clv_ledger_v2.csv ] && git add pm_edge_clv_ledger_v2.csv
           [ -f pm_edge_fill_ledger.csv ] && git add pm_edge_fill_ledger.csv
           [ -f pm_edge_signal_outcomes.csv ] && git add pm_edge_signal_outcomes.csv
           [ -f .pm_edge_watch_state.json ] && git add .pm_edge_watch_state.json
@@ -215,13 +215,13 @@ jobs:
             # ledgers without replacing its backend-specific application code.
             git fetch origin railway/code-change-HB1cBE
             git worktree add /tmp/pm-edge-mobile origin/railway/code-change-HB1cBE
-            for file in pm_edge_auto_ledger.csv pm_edge_signal_ledger.csv pm_edge_candidate_ledger.csv pm_edge_clv_ledger.csv pm_edge_fill_ledger.csv pm_edge_signal_outcomes.csv pm_edge_whale_flow_ledger.csv .pm_edge_watch_state.json .pm_edge_whale_state.json; do
+            for file in pm_edge_auto_ledger.csv pm_edge_signal_ledger.csv pm_edge_candidate_ledger.csv pm_edge_clv_ledger_v2.csv pm_edge_fill_ledger.csv pm_edge_signal_outcomes.csv pm_edge_whale_flow_ledger.csv .pm_edge_watch_state.json .pm_edge_whale_state.json; do
               if [ -f "$file" ]; then
                 cp "$file" "/tmp/pm-edge-mobile/$file"
               fi
             done
             cd /tmp/pm-edge-mobile
-            for file in pm_edge_auto_ledger.csv pm_edge_signal_ledger.csv pm_edge_candidate_ledger.csv pm_edge_clv_ledger.csv pm_edge_fill_ledger.csv pm_edge_signal_outcomes.csv pm_edge_whale_flow_ledger.csv .pm_edge_watch_state.json .pm_edge_whale_state.json; do
+            for file in pm_edge_auto_ledger.csv pm_edge_signal_ledger.csv pm_edge_candidate_ledger.csv pm_edge_clv_ledger_v2.csv pm_edge_fill_ledger.csv pm_edge_signal_outcomes.csv pm_edge_whale_flow_ledger.csv .pm_edge_watch_state.json .pm_edge_whale_state.json; do
               [ -f "$file" ] && git add "$file"
             done
             if ! git diff --cached --quiet; then

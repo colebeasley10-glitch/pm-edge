@@ -138,8 +138,42 @@ def approval_booking(signal, kalshi):
         return None
 
 
+# The model projects FULL-GAME margin/total only. Half, quarter and team-total
+# markets (KXNCAAF1HSPREAD, KXNCAAF2HSPREAD, KXNCAAF4QSPREAD, ...) are different
+# bets and must never be priced with full-game probabilities.
+FULL_GAME_PREFIX={"TOTAL":"KXNCAAFTOTAL-","SPREAD":"KXNCAAFSPREAD-"}
+
+def full_game_side(signal,spec,ticker,home,away,home_spread):
+    """Return the Kalshi side (YES/NO) that equals the model's bet, else None.
+
+    Kalshi spread contracts read "TEAM wins by over X" and parse to
+    selection=TEAM, point=-X (TEAM laying X). So:
+      * model likes TEAM -X  -> TEAM contract, YES
+      * model likes TEAM +X  -> OPPONENT -X contract, NO
+    The sign of the line matters: "home +3" is NOT "home wins by over 3".
+    """
+    prefix=FULL_GAME_PREFIX.get(signal.get("kind"))
+    if not prefix or not str(ticker or "").upper().startswith(prefix): return None
+    if spec.point is None: return None
+    point=float(spec.point)
+    if signal["kind"]=="TOTAL":
+        if spec.market_type!="total": return None
+        if abs(point-float(signal["line"]))>.11: return None
+        return "YES" if signal["direction"]=="OVER" else "NO"
+    if spec.market_type!="spread" or home_spread is None: return None
+    selection=str(getattr(spec,"selection","") or "")
+    if not selection: return None
+    team=signal.get("team")
+    if team not in (home,away): return None
+    team_line=float(home_spread) if team==home else -float(home_spread)
+    opp=away if team==home else home
+    if team_in_blob(team,selection) and not team_in_blob(opp,selection):
+        return "YES" if abs(point-team_line)<=.11 else None
+    if team_in_blob(opp,selection) and not team_in_blob(team,selection):
+        return "NO" if abs(point-(-team_line))<=.11 else None
+    return None
+
 def match_kalshi(signal,markets,home,away,home_spread):
-    desired_team=signal.get("team")
     for m in markets:
         rule=inferred_sport_rule(m)
         if rule != ("exact","americanfootball_ncaaf"): continue
@@ -147,27 +181,8 @@ def match_kalshi(signal,markets,home,away,home_spread):
         if not (team_in_blob(home,blob) and team_in_blob(away,blob)): continue
         try: spec=parse_market(m)
         except Exception: continue
-        if signal["kind"]=="TOTAL":
-            if spec.market_type!="total" or spec.point is None: continue
-            if abs(float(spec.point)-float(signal["line"]))>.11: continue
-            kside="YES" if signal["direction"]=="OVER" else "NO"
-        else:
-            if spec.market_type!="spread" or spec.point is None: continue
-            if abs(abs(float(spec.point))-abs(float(home_spread)))>.11: continue
-            selection=str(getattr(spec,"selection","") or "")
-            # Kalshi spread contracts are typically "TEAM wins by over X".
-            if not selection:
-                selection=blob
-            contract_team_home=team_in_blob(home,selection)
-            contract_team_away=team_in_blob(away,selection)
-            if desired_team==home:
-                if contract_team_home: kside="YES"
-                elif contract_team_away: kside="NO"
-                else: continue
-            else:
-                if contract_team_away: kside="YES"
-                elif contract_team_home: kside="NO"
-                else: continue
+        kside=full_game_side(signal,spec,m.get("ticker"),home,away,home_spread)
+        if kside is None: continue
         ask=m.get("yes_ask") if kside=="YES" else m.get("no_ask")
         plan=price_plan(signal["prob"],ask)
         if not plan: continue
