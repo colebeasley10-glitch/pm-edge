@@ -58,6 +58,9 @@ jobs:
       - name: Run Commit 4 instrumentation tests
         run: python test_pm_edge_commit4.py
 
+      - name: Run strategy league tests
+        run: python test_league.py
+
       - name: Run v29 taker-gate self-test
         run: python pm_edge_runner_v29.py --self-test
 
