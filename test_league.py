@@ -64,6 +64,9 @@ def test_weather():
         def observed_extreme(self, *a, **k):
             return 70.4  # already 70 by midday
 
+        def remaining_extreme(self, *a, **k):
+            return 71.0, 1.0, 6  # models: rest of today peaks near 71
+
     priced = W().price_event(ev, NOW)
     probs = {m["yes_sub_title"]: p for m, p, _ in priced}
     assert len(probs) == 6

@@ -275,7 +275,34 @@ def kalshi_status():
         return {"connected": False, "error": f"{type(exc).__name__}: {exc}"}
 
 
+@st.cache_data(ttl=60, show_spinner=False)
+def load_league():
+    import json as _json
+    from pathlib import Path as _P
+    trades = pd.DataFrame()
+    status = {}
+    try:
+        if _P("league_trades.csv").exists():
+            trades = pd.read_csv("league_trades.csv")
+        if _P("league_status.json").exists():
+            status = _json.loads(_P("league_status.json").read_text())
+    except Exception:
+        pass
+    return trades, status
+
+
+LEAGUE_LABELS = {"weather": "Weather", "polymarket": "Polymarket", "books": "Sportsbooks",
+                 "sharp": "Sharp money", "crypto": "Crypto"}
+LEAGUE_HOW = {
+    "weather": "NWS-station forecasts vs temperature brackets",
+    "polymarket": "Same game cheaper on Kalshi than Polymarket",
+    "books": "Sportsbook consensus vs Kalshi (the original PM Edge)",
+    "sharp": "Follows big trades on Kalshi's tape",
+    "crypto": "BTC and ETH volatility model vs hourly markets",
+}
+
 data, state = load()
+league, league_status = load_league()
 signals, orders, clv = data["signals"], data["orders"], data["clv"]
 summary = dashboard_data.actual_summary(orders)
 picks = dashboard_data.new_signals(signals, orders)
@@ -292,28 +319,84 @@ running = last_activity is not None and (datetime.now(timezone.utc) - last_activ
 
 # ----------------------------------------------------------------- header --
 since = start.astimezone(EASTERN).strftime("%b %-d") if start else "the start"
+lg_status = league.get("status", pd.Series(dtype=str)).fillna("") if not league.empty else pd.Series(dtype=str)
+lg_pl = float(pd.to_numeric(league.get("pl"), errors="coerce").fillna(0).sum()) if not league.empty else 0.0
+lg_record = f"{int((lg_status == 'won').sum())}-{int((lg_status == 'lost').sum())}"
+lg_clv = pd.to_numeric(league.get("clv_cents"), errors="coerce").dropna() if not league.empty else pd.Series(dtype=float)
+lg_last = _when(league_status.get("ran_at"))
 st.markdown(
     f"""
     <div class='pe-head'>
       <div class='pe-mark'>PM Edge<i>.</i></div>
       <div class='pe-pill'><b style='background:{"var(--up)" if running else "var(--gold)"}'></b>{"Live" if running else "Idle"}</div>
     </div>
-    <div class='pe-lede'>Watching {esc(focus_label())}. Last scan {esc(ago(last_activity))}.</div>
+    <div class='pe-lede'>Paper trading all of Kalshi with five strategies. Last round {esc(ago(lg_last))}.</div>
     <div class='pe-board'>
-      <div><div class='k'>Profit since {esc(since)}</div>
-        <div class='big num {tone(summary["net_pl"])}'>{money(summary["net_pl"], signed=True)}</div></div>
+      <div><div class='k'>Paper profit since {esc(since)}</div>
+        <div class='big num {tone(lg_pl)}'>{money(lg_pl, signed=True)}</div></div>
       <div class='side'>
-        <div><div class='k'>Record</div><div class='v num'>{esc(summary["record"])}</div></div>
-        <div><div class='k'>Beat close</div><div class='v num {tone(clv_vals.mean() if len(clv_vals) else 0)}'>{(f"{clv_vals.mean():+.1f}¢") if len(clv_vals) else "—"}</div></div>
+        <div><div class='k'>Record</div><div class='v num'>{esc(lg_record)}</div></div>
+        <div><div class='k'>Beat close</div><div class='v num {tone(lg_clv.mean() if len(lg_clv) else 0)}'>{(f"{lg_clv.mean():+.1f}¢") if len(lg_clv) else "—"}</div></div>
       </div>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-tab_picks, tab_bets, tab_results, tab_system = st.tabs(
-    [f"Picks {len(picks)}" if len(picks) else "Picks", "My bets", "Results", "System"]
+tab_league, tab_picks, tab_bets, tab_results, tab_system = st.tabs(
+    ["League", f"Alerts {len(picks)}" if len(picks) else "Alerts", "My bets", "Results", "System"]
 )
+
+# ----------------------------------------------------------------- league --
+with tab_league:
+    if league.empty:
+        quiet("The league starts on the next round",
+              "Every 30 minutes each strategy looks across Kalshi for mispriced markets and takes $10 paper bets.")
+    else:
+        rows = []
+        for name in LEAGUE_LABELS:
+            g = league[league["strategy"] == name]
+            stt = g.get("status", pd.Series(dtype=str)).fillna("")
+            pl = float(pd.to_numeric(g.get("pl"), errors="coerce").fillna(0).sum()) if not g.empty else 0.0
+            clv_g = pd.to_numeric(g.get("clv_cents"), errors="coerce").dropna() if not g.empty else pd.Series(dtype=float)
+            rows.append((name, len(g), int((stt == "open").sum()), int((stt == "won").sum()), int((stt == "lost").sum()),
+                         pl, clv_g.mean() if len(clv_g) else None, len(clv_g)))
+        rows.sort(key=lambda r: (-(r[6] if r[6] is not None else -99), -r[5]))
+        st.markdown("<div class='section'>Standings</div>", unsafe_allow_html=True)
+        st.markdown(rows_html(
+            (esc(LEAGUE_LABELS[n]),
+             f"{w}-{l} record, {o} open" + (f", beats close by {c:+.1f}¢" if c is not None else "") +
+             f"<br>{esc(LEAGUE_HOW[n])}",
+             f"<span class='num'>{money(pl, signed=True)}</span>", tone(pl))
+            for n, total, o, w, l, pl, c, nc in rows
+        ), unsafe_allow_html=True)
+
+        recent = league.sort_values("opened_at", ascending=False).head(25)
+        st.markdown("<div class='section'>Latest paper picks</div>", unsafe_allow_html=True)
+
+        def _state(r):
+            stt = str(r.get("status") or "")
+            if stt == "open":
+                return "open", "", ""
+            if stt == "void":
+                return "void", "$0.00", ""
+            return stt, money(r.get("pl"), signed=True), tone(r.get("pl"))
+
+        items = []
+        for r in recent.to_dict("records"):
+            stt, val, tn = _state(r)
+            when = _when(r.get("opened_at"))
+            items.append((
+                f"{esc(str(r.get('side') or '').title())} on {esc(r.get('title') or r.get('ticker'))}",
+                f"{esc(LEAGUE_LABELS.get(r.get('strategy'), r.get('strategy')))}, bought at {cents(r.get('entry_price'))}"
+                f"{', ' + esc(ago(when)) if when else ''}<br>{esc(r.get('reason'))}",
+                f"<span class='num'>{val}</span>" if val else f"<span class='num'>{cents(r.get('entry_price'))}</span>",
+                tn,
+            ))
+        st.markdown(rows_html(items), unsafe_allow_html=True)
+        st.markdown("<div class='pe-lede'>Each pick is a $10 paper bet at the price you could buy right then, "
+                    "after Kalshi's fee. Beating the close means the price moved our way before the market shut, "
+                    "the best early sign a strategy is real.</div>", unsafe_allow_html=True)
 
 # ------------------------------------------------------------------ picks --
 with tab_picks:

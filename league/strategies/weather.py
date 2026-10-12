@@ -153,13 +153,46 @@ class Weather:
             return None
         return mean(vals), pstdev(vals)
 
-    def observed_extreme(self, station: str, day, kind: str, now: datetime) -> float | None:
-        """Max (or min) observed so far on the climate day (local standard time)."""
-        icao, _, _, tz = STATIONS[station]
-        zone = ZoneInfo(tz)
+    @staticmethod
+    def climate_window(station: str, day, now: datetime) -> tuple[datetime, datetime]:
+        """The NWS climate day runs midnight to midnight local STANDARD time."""
+        zone = ZoneInfo(STATIONS[station][3])
         local_now = now.astimezone(zone)
         std_offset = local_now.utcoffset() - (local_now.dst() or timedelta(0))
-        start = datetime(day.year, day.month, day.day, tzinfo=timezone(std_offset))
+        start = datetime(day.year, day.month, day.day, tzinfo=timezone(std_offset)).astimezone(timezone.utc)
+        return start, start + timedelta(hours=24)
+
+    def remaining_extreme(self, station: str, day, kind: str, now: datetime) -> tuple[float, float, int] | None:
+        """Per-model max/min over the hours left in the climate day: (mean, spread, hours left)."""
+        _, lat, lon, _ = STATIONS[station]
+        key = (station, "hourly")
+        if key not in self._fc:
+            r = self.s.get("https://api.open-meteo.com/v1/forecast", timeout=self.timeout, params={
+                "latitude": lat, "longitude": lon, "hourly": "temperature_2m", "temperature_unit": "fahrenheit",
+                "timezone": "GMT", "past_days": 1, "forecast_days": 2, "models": MODELS})
+            r.raise_for_status()
+            self._fc[key] = r.json().get("hourly") or {}
+        hourly = self._fc[key]
+        start, end = self.climate_window(station, day, now)
+        times = [datetime.fromisoformat(t).replace(tzinfo=timezone.utc) for t in hourly.get("time") or []]
+        idx = [i for i, t in enumerate(times) if max(now, start) <= t < end]
+        if not idx:
+            return None
+        per_model = []
+        for k, arr in hourly.items():
+            if not k.startswith("temperature_2m") or not isinstance(arr, list):
+                continue
+            vals = [arr[i] for i in idx if i < len(arr) and arr[i] is not None]
+            if len(vals) >= max(1, len(idx) // 2):
+                per_model.append(max(vals) if kind == "max" else min(vals))
+        if len(per_model) < 2:
+            return None
+        return mean(per_model), pstdev(per_model), len(idx)
+
+    def observed_extreme(self, station: str, day, kind: str, now: datetime) -> float | None:
+        """Max (or min) observed so far on the climate day (local standard time)."""
+        icao = STATIONS[station][0]
+        start, _ = self.climate_window(station, day, now)
         if now < start:
             return None
         r = self.s.get(f"https://api.weather.gov/stations/{icao}/observations", timeout=self.timeout,
@@ -197,10 +230,20 @@ class Weather:
         sigma = math.sqrt(spread ** 2 + lead_sigma(lead) ** 2)
         obs = None
         if lead == 0:
+            # Same day: what's already happened + what the models say for the hours left.
             try:
                 obs = self.observed_extreme(station, day, kind, now)
             except Exception:
                 obs = None
+            try:
+                rem = self.remaining_extreme(station, day, kind, now)
+            except Exception:
+                rem = None
+            if rem:
+                mu, spread, hours_left = rem
+                sigma = math.sqrt(spread ** 2 + 1.3 ** 2)
+            elif obs is not None:
+                mu, sigma = obs, 0.8   # day is essentially over
         out = []
         for m in ms:
             b = bucket(m)
@@ -208,8 +251,12 @@ class Weather:
                 continue
             p = bucket_prob(b[0], b[1], mu, sigma, obs, kind)
             p = min(0.97, max(0.03, p))  # never claim certainty from a forecast
-            note = (f"{STATIONS[station][0]} {'high' if kind == 'max' else 'low'} forecast "
-                    f"{mu:.1f}°F ±{sigma:.1f}" + (f", observed {obs:.0f}°F so far" if obs is not None else ""))
+            label = "high" if kind == "max" else "low"
+            if lead == 0 and obs is not None:
+                note = (f"{STATIONS[station][0]} {label} so far {obs:.0f}°F, rest of day "
+                        f"forecast {mu:.1f}°F ±{sigma:.1f}")
+            else:
+                note = f"{STATIONS[station][0]} {label} forecast {mu:.1f}°F ±{sigma:.1f}"
             out.append((m, p, note))
         return out
 

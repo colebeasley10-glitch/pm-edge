@@ -18,7 +18,7 @@ from league.book import Pick, f, parse_dt
 
 NAME = "polymarket"
 DIAG: dict = {}
-MIN_EDGE = 0.02
+MIN_EDGE = 0.015
 MAX_PICKS = 10
 MIN_LIQUIDITY = 5000.0
 MAX_POLY_SPREAD = 0.03
@@ -140,6 +140,8 @@ def match_game(k_event: dict, games: list[dict]) -> dict | None:
 def team_prob(k_market: dict, k_event: dict, game: dict) -> float | None:
     """Polymarket probability for the team this Kalshi market pays on."""
     label = str(k_market.get("yes_sub_title") or "")
+    if label.strip().lower() in {"tie", "draw"}:
+        return None
     ks = halves(k_event.get("title") or "") or []
     # which half of the Kalshi title is this market's team? (ticker suffix vs event code)
     code = str(k_market.get("ticker") or "").rsplit("-", 1)[-1]
