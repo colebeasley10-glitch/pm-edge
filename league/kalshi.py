@@ -55,6 +55,7 @@ class LeagueKalshi:
                 continue
             for raw in data.get("markets") or []:
                 m = normalize_market(raw)
+                m["expected_expiration_time"] = raw.get("expected_expiration_time")
                 out[m["ticker"]] = m
             time.sleep(0.05)
         return out

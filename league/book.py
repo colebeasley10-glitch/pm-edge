@@ -25,7 +25,7 @@ MAX_PRICE = 0.95
 FIELDS = [
     "trade_id", "strategy", "opened_at", "ticker", "event_ticker", "title", "category",
     "side", "entry_price", "contracts", "cost", "fee", "fair", "edge", "reason",
-    "close_time", "status", "result", "settled_at", "pl", "last_mid", "last_mid_at",
+    "close_time", "ends_at", "status", "result", "settled_at", "pl", "last_mid", "last_mid_at",
     "closing_mid", "clv_cents",
 ]
 
@@ -189,6 +189,7 @@ def open_trade(pick: Pick, rows: list[dict], *, now: datetime | None = None) -> 
         "edge": "" if pick.fair is None else round(net_edge(pick.fair, ask), 4),
         "reason": pick.reason[:240],
         "close_time": m.get("close_time") or "",
+        "ends_at": m.get("expected_expiration_time") or m.get("close_time") or "",
         "status": "open",
         "last_mid": "",
         "last_mid_at": "",
@@ -219,6 +220,8 @@ def update(rows: list[dict], fetch_markets, *, now: datetime | None = None) -> d
         m = markets.get(r["ticker"])
         if not m:
             continue
+        if m.get("expected_expiration_time"):
+            r["ends_at"] = m["expected_expiration_time"]
         result = str(m.get("result") or "").lower()
         status = str(m.get("status") or "").lower()
         close = parse_dt(r.get("close_time")) or parse_dt(m.get("close_time"))
