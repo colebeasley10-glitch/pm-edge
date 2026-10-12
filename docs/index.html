@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>PM Edge</title>
+  <meta name="apple-mobile-web-app-title" content="PM Edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0D1B2A">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    :root { color-scheme: dark; }
+    html, body { margin: 0; height: 100%; background: #0D1B2A; color: #EAF0F6;
+      font-family: -apple-system, system-ui, sans-serif; }
+    main { height: 100%; display: grid; place-items: center; text-align: center; padding: 0 24px; }
+    img { width: 96px; height: 96px; border-radius: 22px; }
+    p { color: #8DA0B5; font-size: 15px; margin: 18px 0 0; }
+    a { color: #F2C14E; }
+    .btn { display: inline-block; margin-top: 22px; padding: 14px 28px; border-radius: 12px;
+      background: #F2C14E; color: #1A1405; font-weight: 700; text-decoration: none; }
+    ol { text-align: left; color: #8DA0B5; font-size: 15px; line-height: 1.6; margin: 24px auto 0; max-width: 300px; }
+    ol b { color: #EAF0F6; }
+    #install { display: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <div>
+      <img src="icon-512.png" alt="">
+      <p id="opening">Opening PM Edge…<br><a class="go" href="#">Tap here if it doesn't open</a></p>
+      <div id="install">
+        <a class="btn go" href="#">Open PM Edge</a>
+        <ol>
+          <li>Tap the <b>Share</b> button in Safari</li>
+          <li>Choose <b>Add to Home Screen</b></li>
+          <li>Tap <b>Add</b>. The PM Edge icon opens the app from now on.</li>
+        </ol>
+      </div>
+    </div>
+  </main>
+  <script>
+    // The real app lives on Streamlit; this page only gives the home-screen icon.
+    var APP_URL = "__APP_URL__";
+    document.querySelectorAll(".go").forEach(function (a) { a.href = APP_URL; });
+    var fromHomeScreen = window.navigator.standalone === true ||
+      window.matchMedia("(display-mode: standalone)").matches || /[?&]go=1/.test(location.search);
+    if (fromHomeScreen) {
+      setTimeout(function () { location.replace(APP_URL); }, 250);
+    } else {
+      // In the browser: show how to add the icon instead of jumping away.
+      document.getElementById("opening").style.display = "none";
+      document.getElementById("install").style.display = "block";
+    }
+  </script>
+</body>
+</html>

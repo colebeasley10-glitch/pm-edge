@@ -22,7 +22,7 @@ import streamlit as st
 import dashboard_data
 from kalshi_readonly import KalshiReadOnlyClient
 
-st.set_page_config(page_title="PM Edge", page_icon="🎯", layout="centered",
+st.set_page_config(page_title="PM Edge", page_icon="assets/favicon.png", layout="centered",
                    initial_sidebar_state="collapsed")
 
 EASTERN = ZoneInfo("America/New_York")
