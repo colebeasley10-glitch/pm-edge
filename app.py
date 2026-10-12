@@ -363,8 +363,74 @@ with tab_league:
             clv_g = pd.to_numeric(g.get("clv_cents"), errors="coerce").dropna() if not g.empty else pd.Series(dtype=float)
             rows.append((name, len(g), int((stt == "open").sum()), int((stt == "won").sum()), int((stt == "lost").sum()),
                          pl, clv_g.mean() if len(clv_g) else None, len(clv_g)))
+        def _ends(r):
+            dt = _when(r.get("ends_at") or r.get("close_time"))
+            if not dt:
+                return "end time unknown"
+            secs = (dt - datetime.now(timezone.utc)).total_seconds()
+            day = dt.astimezone(EASTERN).strftime("%a")
+            if secs <= 0:
+                return "waiting on Kalshi to settle"
+            if secs < 3600:
+                return f"ends in {int(secs // 60)}m"
+            if secs < 36 * 3600:
+                return f"ends {day} {local_time(dt)}"
+            return f"ends {dt.astimezone(EASTERN).strftime('%b %-d')}"
+
+        def _pick_row(r):
+            strat = esc(LEAGUE_LABELS.get(r.get("strategy"), r.get("strategy")))
+            title = f"{esc(str(r.get('side') or '').title())} on {esc(r.get('title') or r.get('ticker'))}"
+            entry = _num(r.get("entry_price"))
+            stt = str(r.get("status") or "")
+            if stt == "open":
+                mark = _num(r.get("last_mid"))
+                contracts = _num(r.get("contracts")) or 0
+                if mark is not None and entry is not None:
+                    move = (mark - entry) * 100
+                    trend = "winning" if move > 0.4 else "losing" if move < -0.4 else "even"
+                    value = money(contracts * (mark - entry), signed=True)
+                    sub = (f"{strat}, bought {cents(entry)}, now {cents(mark)} ({trend}), {esc(_ends(r))}")
+                    return (title, sub, f"<span class='num'>{value}</span>", tone(move))
+                return (title, f"{strat}, bought {cents(entry)}, {esc(_ends(r))}",
+                        f"<span class='num'>{cents(entry)}</span>", "")
+            if stt == "void":
+                return (title, f"{strat}, market voided, stake returned", "<span class='num'>$0.00</span>", "")
+            word = "Won" if stt == "won" else "Lost"
+            clv = _num(r.get("clv_cents"))
+            sub = f"{word}. {strat}, bought {cents(entry)}" + (f", {clv:+.0f}¢ vs close" if clv is not None else "")
+            return (title, sub, f"<span class='num'>{money(r.get('pl'), signed=True)}</span>", tone(r.get("pl")))
+
+        live = league[league["status"].fillna("") == "open"].copy()
+        if not live.empty:
+            live["_end"] = pd.to_datetime(live.get("ends_at", live["close_time"]).fillna(live["close_time"]),
+                                          errors="coerce", utc=True)
+            live = live.sort_values("_end")
+        done = league[league["status"].fillna("").isin(["won", "lost", "void"])].copy()
+        if not done.empty:
+            done = done.sort_values("settled_at", ascending=False).head(30)
+
+        unreal = 0.0
+        for r in live.to_dict("records"):
+            mk, en = _num(r.get("last_mid")), _num(r.get("entry_price"))
+            if mk is not None and en is not None:
+                unreal += (_num(r.get("contracts")) or 0) * (mk - en)
+        st.markdown(f"<div class='section'>Live bets ({len(live)})</div>"
+                    + (f"<div class='pe-lede' style='margin:.2rem 0 0'>Worth {money(unreal, signed=True)} "
+                       "right now if they all sold at today's price. Updates every 30 minutes.</div>" if len(live) else ""),
+                    unsafe_allow_html=True)
+        if live.empty:
+            st.markdown("<div class='pe-lede'>No paper bets running right now.</div>", unsafe_allow_html=True)
+        else:
+            st.markdown(rows_html(_pick_row(r) for r in live.to_dict("records")), unsafe_allow_html=True)
+
+        st.markdown(f"<div class='section'>Finished ({len(done)})</div>", unsafe_allow_html=True)
+        if done.empty:
+            st.markdown("<div class='pe-lede'>Nothing settled yet. You'll get a push when bets finish.</div>",
+                        unsafe_allow_html=True)
+        else:
+            st.markdown(rows_html(_pick_row(r) for r in done.to_dict("records")), unsafe_allow_html=True)
         rows.sort(key=lambda r: (-(r[6] if r[6] is not None else -99), -r[5]))
-        st.markdown("<div class='section'>Standings</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section'>Strategy standings</div>", unsafe_allow_html=True)
         st.markdown(rows_html(
             (esc(LEAGUE_LABELS[n]),
              f"{w}-{l} record, {o} open" + (f", {c:+.1f}¢ vs close" if c is not None else "") +
@@ -373,29 +439,6 @@ with tab_league:
             for n, total, o, w, l, pl, c, nc in rows
         ), unsafe_allow_html=True)
 
-        recent = league.sort_values("opened_at", ascending=False).head(25)
-        st.markdown("<div class='section'>Latest paper picks</div>", unsafe_allow_html=True)
-
-        def _state(r):
-            stt = str(r.get("status") or "")
-            if stt == "open":
-                return "open", "", ""
-            if stt == "void":
-                return "void", "$0.00", ""
-            return stt, money(r.get("pl"), signed=True), tone(r.get("pl"))
-
-        items = []
-        for r in recent.to_dict("records"):
-            stt, val, tn = _state(r)
-            when = _when(r.get("opened_at"))
-            items.append((
-                f"{esc(str(r.get('side') or '').title())} on {esc(r.get('title') or r.get('ticker'))}",
-                f"{esc(LEAGUE_LABELS.get(r.get('strategy'), r.get('strategy')))}, bought at {cents(r.get('entry_price'))}"
-                f"{', ' + esc(ago(when)) if when else ''}<br>{esc(r.get('reason'))}",
-                f"<span class='num'>{val}</span>" if val else f"<span class='num'>{cents(r.get('entry_price'))}</span>",
-                tn,
-            ))
-        st.markdown(rows_html(items), unsafe_allow_html=True)
         st.markdown("<div class='pe-lede'>Each pick is a $10 paper bet at the price you could buy right then, "
                     "after Kalshi's fee. Beating the close means the price moved our way before the market shut, "
                     "the best early sign a strategy is real.</div>", unsafe_allow_html=True)

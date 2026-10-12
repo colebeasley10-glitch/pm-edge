@@ -46,10 +46,33 @@ def push(new_rows: list[dict]) -> None:
         print("LEAGUE_PUSH_ERROR", type(exc).__name__)
 
 
+def push_settled(rows: list[dict], before: set[str]) -> None:
+    """One push when paper bets finish: record and profit for that batch."""
+    done = [r for r in rows if r.get("trade_id") in before and r.get("status") in {"won", "lost"}]
+    user, token = os.getenv("PUSHOVER_USER_KEY"), os.getenv("PUSHOVER_APP_TOKEN")
+    if not done or not user or not token or os.getenv("LEAGUE_PUSH", "1") in {"0", "false", "off"}:
+        return
+    pl = sum(book.f(r.get("pl"), 0.0) or 0.0 for r in done)
+    w = sum(r["status"] == "won" for r in done)
+    lines = [f"{'✅' if r['status'] == 'won' else '❌'} {LABELS.get(r['strategy'], r['strategy'])}: "
+             f"{r['side']} {str(r.get('title') or r['ticker'])[:60]} {float(r.get('pl') or 0):+.2f}" for r in done[:8]]
+    payload = {"token": token, "user": user,
+               "title": f"{len(done)} paper bet{'s' if len(done) != 1 else ''} settled: {w}-{len(done) - w}, {pl:+.2f}",
+               "message": "\n".join(lines)[:1000]}
+    url = os.getenv("STREAMLIT_APP_URL", "").strip()
+    if url:
+        payload.update({"url": url, "url_title": "Open PM Edge"})
+    try:
+        requests.post("https://api.pushover.net/1/messages.json", data=payload, timeout=15)
+    except Exception as exc:
+        print("LEAGUE_PUSH_ERROR", type(exc).__name__)
+
+
 def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict:
     now = now or datetime.now(timezone.utc)
     kalshi = kalshi or LeagueKalshi()
     rows = book.load()
+    was_open = {r.get("trade_id") for r in rows if r.get("status") == "open"}
     status = {"ran_at": book.iso(now), "strategies": {}}
     try:
         status["update"] = book.update(rows, kalshi.markets, now=now)
@@ -84,6 +107,7 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
     status["standings"] = book.standings(rows)
     STATUS.write_text(json.dumps(status, indent=1, default=str))
     push(new_rows)
+    push_settled(rows, was_open)
     print("LEAGUE_ROUND", json.dumps({k: v for k, v in status.items() if k != "standings"}, default=str))
     return status
 
