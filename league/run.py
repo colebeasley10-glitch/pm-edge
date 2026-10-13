@@ -19,7 +19,7 @@ from league.strategies import books, crypto, polymarket, sharp, weather
 STATUS = Path(os.getenv("LEAGUE_STATUS_PATH", "league_status.json"))
 DAILY_CAP = int(os.getenv("LEAGUE_DAILY_CAP_PER_STRATEGY", "12"))
 # Per-strategy overrides of DAILY_CAP; env LEAGUE_DAILY_CAP_<NAME> (e.g. LEAGUE_DAILY_CAP_SHARP) wins.
-STRATEGY_CAPS = {"sharp": 35}
+STRATEGY_CAPS = {"sharp": 30}  # matches Live $1 Sharp's 30 bets/day so every paper pick gets a live copy
 # Benched strategies still run and report what they would have picked (status "shadow"),
 # but open no paper trades. Crypto benched 2026-10-13: 3-14, -30% ROI, -4.9c avg CLV.
 # Override with env LEAGUE_BENCHED (comma list; empty string un-benches everything).
