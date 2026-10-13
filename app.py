@@ -318,9 +318,14 @@ def _refresh_live_sharp() -> None:
     last_at = _when(last.get("checked_at"))
     if last_at and (datetime.now(timezone.utc) - last_at).total_seconds() < 5:
         return
-    from league import live_sharp as _ls
+    import importlib
+    from league import book as _book, live_sharp as _ls
     from league.kalshi import LeagueKalshi
     try:
+        # Streamlit Cloud reruns app.py on a code push but keeps old copies of imported
+        # modules; reload so the button always runs the newest league code.
+        importlib.reload(_book)
+        _ls = importlib.reload(_ls)
         out = _ls.refresh(_ls.load(), LeagueKalshi().markets)
     except Exception as exc:
         st.session_state["live_sharp_err"] = f"{type(exc).__name__}: {str(exc)[:160]}"
