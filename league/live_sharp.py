@@ -37,7 +37,7 @@ FIELDS = [
     "trade_id", "paper_trade_id", "client_order_id", "placed_at", "day", "ticker", "title", "side",
     "limit_price", "contracts_wanted", "status", "order_id", "filled", "avg_price", "cost", "fee",
     "close_time", "result", "settled_at", "pl", "paper_entry", "note",
-    "ends_at", "last_mid", "last_mid_at", "clv_cents",
+    "ends_at", "last_mid", "last_mid_at", "clv_cents", "event_ticker",
 ]
 
 
@@ -197,12 +197,13 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
         if p.get("trade_id") in seen:
             skip("already_placed")
             continue
-        # one real bet per market per day, even if Sharp keeps re-picking it
-        if any(r.get("ticker") == p.get("ticker") and r.get("status") not in {"error", "skipped", "no_fill"}
+        # one real bet per game per day: no re-buying the same market and no taking the other side
+        ev = book.event_of(p)
+        if any(book.event_of(r) == ev and r.get("status") not in {"error", "skipped", "no_fill"}
                and (r.get("status") == "open"
                     or now - (book.parse_dt(r.get("placed_at")) or now) < timedelta(hours=24))
                for r in rows):
-            skip("already_bet_market")
+            skip("already_bet_game")
             continue
         if n_orders >= max_orders():
             skip("daily_order_cap")
@@ -219,7 +220,7 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
         cid = f"{PREFIX}{day}-{p['trade_id']}"
         r = {
             "trade_id": cid, "paper_trade_id": p["trade_id"], "client_order_id": cid,
-            "placed_at": book.iso(now), "day": day, "ticker": p["ticker"], "title": p.get("title", ""),
+            "placed_at": book.iso(now), "day": day, "ticker": p["ticker"], "event_ticker": ev, "title": p.get("title", ""),
             "side": p["side"], "limit_price": round(price, 4), "contracts_wanted": count,
             "status": "submitted", "close_time": p.get("close_time", ""), "paper_entry": p.get("entry_price", ""),
         }

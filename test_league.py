@@ -147,12 +147,24 @@ def test_benched_strategy_opens_nothing():
         os.environ.pop("LEAGUE_BENCHED", None)
 
 
+def test_sharp_one_bet_per_game():
+    rows = []
+    m1 = dict(mk("KXATPMATCH-26OCT13WANPOH-WAN"), event_ticker="KXATPMATCH-26OCT13WANPOH")
+    m2 = dict(mk("KXATPMATCH-26OCT13WANPOH-POH"), event_ticker="KXATPMATCH-26OCT13WANPOH")
+    book.open_trade(book.Pick("sharp", m1, "YES", None, "big trade"), rows, now=NOW)
+    assert book.gate(book.Pick("sharp", m2, "YES", None, "big trade"), rows, now=NOW) == (False, "same_game")
+    # other strategies keep their old rules
+    assert book.gate(book.Pick("polymarket", m2, "YES", 0.6, "gap"), rows, now=NOW)[0]
+    assert book.event_of({"ticker": "KXNFLGAME-26OCT12BUFLAR-BUF"}) == "KXNFLGAME-26OCT12BUFLAR"
+
+
 if __name__ == "__main__":
     test_book()
     test_weather()
     test_polymarket()
     test_crypto()
     test_round()
+    test_sharp_one_bet_per_game()
     test_benched_strategy_opens_nothing()
     print("League tests: PASS")
 

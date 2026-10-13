@@ -342,6 +342,12 @@ def _ls_base_key() -> str:
         return ""
 
 
+def _refresh_all() -> None:
+    """One tap refreshes both the paper league bets and the real $1 bets."""
+    _refresh_live_bets()
+    _refresh_live_sharp()
+
+
 LEAGUE_LABELS = {"weather": "Weather", "polymarket": "Polymarket", "books": "Sportsbooks",
                  "sharp": "Sharp money", "crypto": "Crypto"}
 LEAGUE_HOW = {
@@ -532,7 +538,7 @@ with tab_live:
                     unsafe_allow_html=True)
         if opn or _ls_over:
             st.button("↻ Refresh live prices", key="refresh_live_sharp", width="stretch",
-                      on_click=_refresh_live_sharp)
+                      on_click=_refresh_all)
             if st.session_state.get("live_sharp_err"):
                 st.caption(f"Couldn't refresh: {st.session_state['live_sharp_err']}")
         if opn:
@@ -650,7 +656,7 @@ with tab_league:
                     unsafe_allow_html=True)
         if len(live) or _live_override:
             st.button("↻ Refresh live prices", key="refresh_live", width="stretch",
-                      on_click=_refresh_live_bets)
+                      on_click=_refresh_all)
             if st.session_state.get("league_live_error"):
                 st.caption(f"Couldn't refresh: {st.session_state['league_live_error']}")
         if live.empty:

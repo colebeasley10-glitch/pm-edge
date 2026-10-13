@@ -49,7 +49,8 @@ class FakeClient:
 
 
 def paper(i, price=0.50, side="YES"):
-    return {"trade_id": f"t{i:04d}", "strategy": "sharp", "ticker": f"KXT-{i}", "title": f"Game {i}",
+    return {"trade_id": f"t{i:04d}", "strategy": "sharp", "ticker": f"KXT-{i}", "event_ticker": f"KXGAME{i}",
+            "title": f"Game {i}",
             "side": side, "entry_price": price, "close_time": "2026-10-13T23:00:00Z"}
 
 
@@ -156,7 +157,10 @@ def test_one_real_bet_per_market():
     b = dict(paper(7), trade_id="t9999")   # same market re-picked later with a new paper id
     live_sharp.place([a], c, now=NOW, rows=rows)
     out = live_sharp.place([b], c, now=NOW + timedelta(hours=1), rows=rows)
-    assert out["skipped"] == {"already_bet_market": 1} and c.calls == 1
+    assert out["skipped"] == {"already_bet_game": 1} and c.calls == 1
+    opp = dict(paper(7), trade_id="t8888", ticker="KXT-7B", side="YES")   # the other player, same game
+    out = live_sharp.place([opp], c, now=NOW + timedelta(hours=2), rows=rows)
+    assert out["skipped"] == {"already_bet_game": 1} and c.calls == 1
 
 
 def test_paper_cap_does_not_block_live():

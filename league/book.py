@@ -132,6 +132,19 @@ def _trade_id(strategy: str, ticker: str, side: str, opened: datetime) -> str:
     return hashlib.sha1(f"{strategy}|{ticker}|{side}|{iso(opened)}".encode()).hexdigest()[:16]
 
 
+# Strategies limited to one bet per game (Kalshi event): no taking both sides of one match.
+ONE_PER_GAME = {"sharp"}
+
+
+def event_of(row_or_market: dict) -> str:
+    """Kalshi event ticker (the game); derived from the market ticker when missing."""
+    ev = str(row_or_market.get("event_ticker") or "")
+    if ev:
+        return ev
+    t = str(row_or_market.get("ticker") or "")
+    return t.rsplit("-", 1)[0] if "-" in t else t
+
+
 def gate(pick: Pick, rows: list[dict], *, now: datetime | None = None) -> tuple[bool, str]:
     """Shared rules every strategy must pass before a paper trade opens."""
     now = now or now_utc()
@@ -156,6 +169,13 @@ def gate(pick: Pick, rows: list[dict], *, now: datetime | None = None) -> tuple[
             return False, "edge_below_min"
         if pick.fair - ask > 0.30:
             return False, "implausible_edge"
+    if pick.strategy in ONE_PER_GAME:
+        ev = event_of(m)
+        for r in rows:
+            if r.get("strategy") != pick.strategy or event_of(r) != ev or r.get("ticker") == ticker:
+                continue
+            if r.get("status") == "open" or (now - (parse_dt(r.get("opened_at")) or now)) < timedelta(hours=24):
+                return False, "same_game"
     for r in rows:
         if r.get("ticker") != ticker:
             continue
