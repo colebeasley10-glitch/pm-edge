@@ -157,10 +157,10 @@ if __name__ == "__main__":
     print("League tests: PASS")
 
 
-def test_sharp_daily_cap_is_30_others_default(monkeypatch):
+def test_sharp_daily_cap_is_35_others_default(monkeypatch):
     from league import run
     monkeypatch.delenv("LEAGUE_DAILY_CAP_SHARP", raising=False)
-    assert run.daily_cap("sharp") == 30
+    assert run.daily_cap("sharp") == 35
     assert run.daily_cap("weather") == run.DAILY_CAP
     monkeypatch.setenv("LEAGUE_DAILY_CAP_SHARP", "5")
     assert run.daily_cap("sharp") == 5
