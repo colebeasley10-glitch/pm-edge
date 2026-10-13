@@ -427,11 +427,15 @@ with tab_live:
     st.markdown(
         "<div class='pe-lede'>" + ("<b>Live.</b> " if _ls_on else "<b>Off.</b> ")
         + "Every new Sharp pick is copied with a real Kalshi order: up to $1 of contracts per bet, "
-          "at most $30 and 30 bets per day (Eastern), bought only at the price the pick saw. "
+          "at most $30 and 30 bets per day (Eastern), separate from the paper limit, one bet per market, "
+          "bought only at the price the pick saw. "
           + ("" if _ls_on else "Turn it on with the LIVE_SHARP_ENABLED repo variable.")
         + "</div>", unsafe_allow_html=True)
-    if (league_status.get("live_sharp") or {}).get("error"):
-        st.caption(f"Last round: {league_status['live_sharp']['error']}")
+    _lsr = league_status.get("live_sharp") or {}
+    if _lsr.get("kalshi_ok") is False:
+        st.caption(f"⚠️ Kalshi key check failed last round: {_lsr.get('kalshi_error', '')}")
+    if _lsr.get("error"):
+        st.caption(f"Last round: {_lsr['error']}")
 
     def _live_row(r):
         title = f"{esc(str(r.get('side') or '').title())} on {esc(r.get('title') or r.get('ticker'))}"

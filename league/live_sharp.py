@@ -18,7 +18,7 @@ from __future__ import annotations
 import csv
 import math
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -195,6 +195,13 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
     for p in picks:
         if p.get("trade_id") in seen:
             skip("already_placed")
+            continue
+        # one real bet per market per day, even if Sharp keeps re-picking it
+        if any(r.get("ticker") == p.get("ticker") and r.get("status") not in {"error", "skipped", "no_fill"}
+               and (r.get("status") == "open"
+                    or now - (book.parse_dt(r.get("placed_at")) or now) < timedelta(hours=24))
+               for r in rows):
+            skip("already_bet_market")
             continue
         if n_orders >= max_orders():
             skip("daily_order_cap")

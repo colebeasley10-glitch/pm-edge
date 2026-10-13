@@ -44,6 +44,9 @@ class FakeClient:
     def get_fills(self, *, ticker=None, limit=100):
         return self.fills
 
+    def get_orders(self, *, limit=200):
+        return self.orders[:limit]
+
 
 def paper(i, price=0.50, side="YES"):
     return {"trade_id": f"t{i:04d}", "strategy": "sharp", "ticker": f"KXT-{i}", "title": f"Game {i}",
@@ -130,6 +133,46 @@ def test_round_places_only_when_enabled():
     paper_row = book.load()[-1]
     out = run.run_live_sharp([paper_row], FakeKalshi(), NOW, client=c)
     assert out["placed"] == 1 and c.orders[0]["price"] == 0.50 and c.orders[0]["count"] == 2
+
+
+def test_one_real_bet_per_market():
+    c, rows = FakeClient(), []
+    a = paper(7)
+    b = dict(paper(7), trade_id="t9999")   # same market re-picked later with a new paper id
+    live_sharp.place([a], c, now=NOW, rows=rows)
+    out = live_sharp.place([b], c, now=NOW + timedelta(hours=1), rows=rows)
+    assert out["skipped"] == {"already_bet_market": 1} and c.calls == 1
+
+
+def test_paper_cap_does_not_block_live():
+    class FakeKalshi:
+        def markets(self, tickers):
+            return {t: {"ticker": t, "yes_bid": 0.48, "yes_ask": 0.50, "no_bid": 0.50, "no_ask": 0.52,
+                        "status": "open", "close_time": "2026-10-13T23:00:00Z"} for t in tickers}
+
+    class Sharp:
+        NAME = "sharp"
+
+        @staticmethod
+        def run(kalshi, now, session=None):
+            m = dict(FakeKalshi().markets(["KXCAP-1"])["KXCAP-1"])
+            return [book.Pick("sharp", m, "YES", None, "big trade")]
+
+    os.environ["LEAGUE_DAILY_CAP_SHARP"] = "0"
+    os.environ["LIVE_SHARP_ENABLED"] = "1"
+    c = FakeClient()
+    orig = live_sharp.client_from_env, live_sharp.enabled
+    live_sharp.client_from_env, live_sharp.enabled = (lambda: c), (lambda: True)
+    try:
+        st = run.run_round(NOW, strategies=[Sharp], kalshi=FakeKalshi())
+    finally:
+        live_sharp.client_from_env, live_sharp.enabled = orig
+        os.environ.pop("LEAGUE_DAILY_CAP_SHARP")
+        os.environ.pop("LIVE_SHARP_ENABLED")
+    assert st["strategies"]["sharp"]["opened"] == 0 and st["strategies"]["sharp"]["skipped"] == {"daily_cap": 1}
+    ls = st["live_sharp"]
+    assert ls["kalshi_ok"] is True and ls["placed"] == 1, ls
+    assert not any(r["ticker"] == "KXCAP-1" for r in book.load())   # stays out of the paper ledger
 
 
 if __name__ == "__main__":

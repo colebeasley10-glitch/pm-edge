@@ -113,6 +113,13 @@ def run_live_sharp(new_sharp_rows: list[dict], kalshi, now: datetime, client=Non
         out["enabled"] = True
         try:
             client = client or live_sharp.client_from_env()
+            # read-only key check every round, so a bad key shows up before the first bet does
+            try:
+                client.get_orders(limit=1)
+                out["kalshi_ok"] = True
+            except Exception as exc:
+                out["kalshi_ok"] = False
+                out["kalshi_error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
             out.update(live_sharp.place(new_sharp_rows, client, now=now, rows=rows))
         except Exception as exc:
             out["error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
@@ -161,20 +168,25 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
                                 for pk in picks]
                 picks = []
             room = max(0, daily_cap(strat.NAME) - opened_today(rows, strat.NAME, now))
+            live_candidates = []
             for pk in picks:
-                if st["opened"] >= room:
-                    st["skipped"]["daily_cap"] = st["skipped"].get("daily_cap", 0) + 1
-                    continue
                 ok, why = book.gate(pk, rows, now=now)
                 if not ok:
                     st["skipped"][why] = st["skipped"].get(why, 0) + 1
                     continue
-                new_rows.append(book.open_trade(pk, rows, now=now))
+                if st["opened"] >= room:
+                    st["skipped"]["daily_cap"] = st["skipped"].get("daily_cap", 0) + 1
+                    if strat.NAME == "sharp":
+                        # the paper cap doesn't limit real bets; Live $1 has its own 30/day cap
+                        live_candidates.append(book.open_trade(pk, [], now=now))
+                    continue
+                row = book.open_trade(pk, rows, now=now)
+                new_rows.append(row)
+                live_candidates.append(row)
                 st["opened"] += 1
             if strat.NAME == "sharp":
                 # real $1 copies go out right away, before slower strategies run
-                status["live_sharp"] = run_live_sharp(new_rows[-st["opened"]:] if st["opened"] else [],
-                                                      kalshi, now)
+                status["live_sharp"] = run_live_sharp(live_candidates, kalshi, now)
         except Exception as exc:
             st["error"] = f"{type(exc).__name__}: {str(exc)[:200]}"
             traceback.print_exc()
