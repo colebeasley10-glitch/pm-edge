@@ -1,12 +1,12 @@
 {
- "ran_at": "2026-10-13T08:00:11.460662Z",
+ "ran_at": "2026-10-13T08:34:20.910354Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
    "opened": 0,
    "skipped": {},
    "diag": {
-    "events": 54,
+    "events": 48,
     "priced": 0,
     "skipped_far_from_market": 0,
     "skipped_same_day": 44,
@@ -21,26 +21,34 @@
    },
    "diag": {
     "poly_events": 600,
-    "poly_games": 233,
-    "kalshi_events": 1519,
-    "matched": 166,
-    "priced": 319,
+    "poly_games": 238,
+    "kalshi_events": 1518,
+    "matched": 171,
+    "priced": 328,
     "best_gaps": [
      [
-      0.375,
+      0.365,
       "KXR6GAME-26OCT131200GEEG2-GEE"
      ],
      [
       0.025,
-      "KXDOTA2GAME-26OCT130900THEPRAN-THE"
+      "KXUCLGAME-26OCT13SBHSLA-SLA"
      ],
      [
       0.025,
-      "KXCS2GAME-26OCT130700ILLBW-ILL"
+      "KXR6GAME-26OCT131200GEEG2-G2"
+     ],
+     [
+      0.025,
+      "KXFIFAWGAME-26OCT13SVNTUR-SVN"
      ],
      [
       0.015,
-      "KXR6GAME-26OCT131200GEEG2-G2"
+      "KXUFCFIGHT-26OCT13BULVIS-BUL"
+     ],
+     [
+      0.015,
+      "KXMLSGAME-26OCT14RSLSJ-RSL"
      ],
      [
       0.015,
@@ -48,15 +56,7 @@
      ],
      [
       0.015,
-      "KXDOTA2GAME-26OCT130900SHACH-CH"
-     ],
-     [
-      0.015,
       "KXCS2GAME-26OCT131000SSINSWAL-SSINS"
-     ],
-     [
-      0.015,
-      "KXBUNDESLIGA2GAME-26OCT16HOKBSC-HOK"
      ]
     ]
    }
@@ -68,82 +68,55 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 3,
-   "skipped": {
-    "already_holding": 1
-   }
-  },
-  "crypto": {
-   "picks_found": 4,
    "opened": 0,
    "skipped": {
     "daily_cap": 4
-   },
+   }
+  },
+  "crypto": {
+   "picks_found": 0,
+   "opened": 0,
+   "skipped": {},
    "diag": {
-    "markets_priced": 488,
+    "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.0031643883875919635,
-     "ETH-USD": 0.004579731933787544
+     "BTC-USD": 0.003164497734024148,
+     "ETH-USD": 0.004591633817644139
     },
-    "best": [
-     [
-      -0.77,
-      "KXETHD-26OCT1305-T2659.99"
-     ],
-     [
-      -0.77,
-      "KXETHD-26OCT1305-T2689.99"
-     ],
-     [
-      -0.76,
-      "KXETHD-26OCT1305-T2639.99"
-     ],
-     [
-      -0.76,
-      "KXETHD-26OCT1305-T2644.99"
-     ],
-     [
-      -0.76,
-      "KXETHD-26OCT1305-T2654.99"
-     ],
-     [
-      -0.76,
-      "KXETHD-26OCT1305-T2669.99"
-     ]
-    ]
+    "best": []
    }
   }
  },
  "update": {
-  "marked": 32,
-  "settled": 0
+  "marked": 29,
+  "settled": 7
  },
  "standings": [
   {
    "strategy": "sharp",
    "picks": 50,
-   "open": 13,
-   "won": 23,
-   "lost": 14,
-   "pl": 106.22,
-   "risked": 371.78000000000003,
-   "clv_sum": 102.5,
-   "clv_n": 32,
-   "roi": 0.28570660067782017,
-   "clv": 3.203125
+   "open": 7,
+   "won": 27,
+   "lost": 16,
+   "pl": 130.62000000000003,
+   "risked": 432.3800000000001,
+   "clv_sum": 125.0,
+   "clv_n": 38,
+   "roi": 0.3020953790647116,
+   "clv": 3.289473684210526
   },
   {
    "strategy": "crypto",
    "picks": 17,
-   "open": 3,
+   "open": 0,
    "won": 3,
-   "lost": 11,
-   "pl": -20.640000000000008,
-   "risked": 144.64000000000001,
-   "clv_sum": -120.0,
-   "clv_n": 14,
-   "roi": -0.14269911504424782,
-   "clv": -8.571428571428571
+   "lost": 14,
+   "pl": -52.19000000000001,
+   "risked": 176.19000000000003,
+   "clv_sum": -83.0,
+   "clv_n": 17,
+   "roi": -0.2962143140927408,
+   "clv": -4.882352941176471
   },
   {
    "strategy": "polymarket",
