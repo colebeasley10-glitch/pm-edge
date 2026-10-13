@@ -1,12 +1,12 @@
 {
- "ran_at": "2026-10-13T07:35:12.296295Z",
+ "ran_at": "2026-10-13T08:00:11.460662Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
    "opened": 0,
    "skipped": {},
    "diag": {
-    "events": 58,
+    "events": 54,
     "priced": 0,
     "skipped_far_from_market": 0,
     "skipped_same_day": 44,
@@ -21,17 +21,29 @@
    },
    "diag": {
     "poly_events": 600,
-    "poly_games": 238,
+    "poly_games": 233,
     "kalshi_events": 1519,
-    "matched": 169,
-    "priced": 321,
+    "matched": 166,
+    "priced": 319,
     "best_gaps": [
      [
-      0.395,
+      0.375,
       "KXR6GAME-26OCT131200GEEG2-GEE"
      ],
      [
       0.025,
+      "KXDOTA2GAME-26OCT130900THEPRAN-THE"
+     ],
+     [
+      0.025,
+      "KXCS2GAME-26OCT130700ILLBW-ILL"
+     ],
+     [
+      0.015,
+      "KXR6GAME-26OCT131200GEEG2-G2"
+     ],
+     [
+      0.015,
       "KXFIFAWGAME-26OCT13SRBFIN-FIN"
      ],
      [
@@ -40,23 +52,11 @@
      ],
      [
       0.015,
-      "KXCS2GAME-26OCT130700ILLBW-ILL"
+      "KXCS2GAME-26OCT131000SSINSWAL-SSINS"
      ],
      [
       0.015,
       "KXBUNDESLIGA2GAME-26OCT16HOKBSC-HOK"
-     ],
-     [
-      0.01,
-      "KXUECLGAME-26OCT15STTIBE-STT"
-     ],
-     [
-      0.01,
-      "KXFIFAWGAME-26OCT13UKRSVK-SVK"
-     ],
-     [
-      0.01,
-      "KXEGYPLGAME-26OCT13PETDEG-DEG"
      ]
     ]
    }
@@ -74,36 +74,63 @@
    }
   },
   "crypto": {
-   "picks_found": 0,
+   "picks_found": 4,
    "opened": 0,
-   "skipped": {},
+   "skipped": {
+    "daily_cap": 4
+   },
    "diag": {
-    "markets_priced": 0,
+    "markets_priced": 488,
     "vol": {
-     "BTC-USD": 0.0031711823317404045,
-     "ETH-USD": 0.004583517279003668
+     "BTC-USD": 0.0031643883875919635,
+     "ETH-USD": 0.004579731933787544
     },
-    "best": []
+    "best": [
+     [
+      -0.77,
+      "KXETHD-26OCT1305-T2659.99"
+     ],
+     [
+      -0.77,
+      "KXETHD-26OCT1305-T2689.99"
+     ],
+     [
+      -0.76,
+      "KXETHD-26OCT1305-T2639.99"
+     ],
+     [
+      -0.76,
+      "KXETHD-26OCT1305-T2644.99"
+     ],
+     [
+      -0.76,
+      "KXETHD-26OCT1305-T2654.99"
+     ],
+     [
+      -0.76,
+      "KXETHD-26OCT1305-T2669.99"
+     ]
+    ]
    }
   }
  },
  "update": {
-  "marked": 34,
+  "marked": 32,
   "settled": 0
  },
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 47,
-   "open": 12,
-   "won": 22,
-   "lost": 13,
-   "pl": 102.67,
-   "risked": 351.33000000000004,
-   "clv_sum": 79.5,
-   "clv_n": 30,
-   "roi": 0.29223237412119657,
-   "clv": 2.65
+   "picks": 50,
+   "open": 13,
+   "won": 23,
+   "lost": 14,
+   "pl": 106.22,
+   "risked": 371.78000000000003,
+   "clv_sum": 102.5,
+   "clv_n": 32,
+   "roi": 0.28570660067782017,
+   "clv": 3.203125
   },
   {
    "strategy": "crypto",
