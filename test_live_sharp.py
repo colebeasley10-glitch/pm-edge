@@ -135,6 +135,21 @@ def test_round_places_only_when_enabled():
     assert out["placed"] == 1 and c.orders[0]["price"] == 0.50 and c.orders[0]["count"] == 2
 
 
+def test_marks_open_bets_like_paper():
+    c, rows = FakeClient(), []
+    live_sharp.place([paper(50, 0.40)], c, now=NOW, rows=rows)
+    mk = {"KXT-50": {"status": "active", "yes_bid": 0.54, "yes_ask": 0.56, "no_bid": 0.44, "no_ask": 0.46,
+                     "expected_expiration_time": "2026-10-13T22:00:00Z"}}
+    live_sharp.settle(rows, lambda t: {k: mk[k] for k in t if k in mk}, now=NOW)
+    r = rows[0]
+    assert r["status"] == "open" and r["last_mid"] == 0.55 and r["ends_at"] == "2026-10-13T22:00:00Z"
+    out = live_sharp.refresh(rows, lambda t: {k: dict(mk[k], yes_bid=0.60, yes_ask=0.62) for k in t if k in mk}, now=NOW)
+    assert out["marked"] == 1 and out["rows"][0]["last_mid"] == 0.61 and rows[0]["last_mid"] == 0.55
+    mk["KXT-50"] = {"result": "yes", "status": "finalized"}
+    live_sharp.settle(rows, lambda t: {k: mk[k] for k in t if k in mk}, now=NOW)
+    assert r["status"] == "won" and r["clv_cents"] == 15.0
+
+
 def test_one_real_bet_per_market():
     c, rows = FakeClient(), []
     a = paper(7)

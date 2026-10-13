@@ -37,6 +37,7 @@ FIELDS = [
     "trade_id", "paper_trade_id", "client_order_id", "placed_at", "day", "ticker", "title", "side",
     "limit_price", "contracts_wanted", "status", "order_id", "filled", "avg_price", "cost", "fee",
     "close_time", "result", "settled_at", "pl", "paper_entry", "note",
+    "ends_at", "last_mid", "last_mid_at", "clv_cents",
 ]
 
 
@@ -261,6 +262,8 @@ def settle(rows: list[dict], fetch_markets, *, now: datetime | None = None) -> l
             continue
         result = str(m.get("result") or "").lower()
         status = str(m.get("status") or "").lower()
+        if m.get("expected_expiration_time"):
+            r["ends_at"] = m["expected_expiration_time"]
         cost = book.f(r.get("cost"), 0.0) or 0.0
         fee = book.f(r.get("fee"), 0.0) or 0.0
         if result in {"yes", "no"}:
@@ -268,11 +271,32 @@ def settle(rows: list[dict], fetch_markets, *, now: datetime | None = None) -> l
             n = book.f(r.get("filled"), 0.0) or 0.0
             r.update({"status": "won" if won else "lost", "result": result, "settled_at": book.iso(now),
                       "pl": round((n if won else 0.0) - cost - fee, 2)})
+            mark, avg = book.f(r.get("last_mid")), book.f(r.get("avg_price"))
+            if mark is not None and avg is not None:
+                r["clv_cents"] = round((mark - avg) * 100.0, 2)
             done.append(r)
         elif result in {"void", "voided", "all_no_void"} or status in {"voided", "canceled", "cancelled"}:
             r.update({"status": "void", "result": result or status, "settled_at": book.iso(now), "pl": 0.0})
             done.append(r)
+        else:
+            # still trading: mark to the current mid, same as the paper bets
+            close = book.parse_dt(r.get("close_time")) or book.parse_dt(m.get("close_time"))
+            mid = book.side_mid(m, r["side"])
+            if mid is not None and status in {"open", "active", ""} and (close is None or now < close):
+                r["last_mid"] = round(mid, 4)
+                r["last_mid_at"] = book.iso(now)
     return done
+
+
+def refresh(rows: list[dict], fetch_markets, *, now: datetime | None = None) -> dict:
+    """In-memory re-mark for the app's Refresh button; nothing is written."""
+    import copy
+    now = now or book.now_utc()
+    work = copy.deepcopy(rows)
+    n_open = sum(1 for r in work if r.get("status") == "open")
+    done = settle(work, fetch_markets, now=now)
+    marked = sum(1 for r in work if r.get("status") == "open" and r.get("last_mid_at") == book.iso(now))
+    return {"rows": work, "marked": marked, "settled": len(done), "open": n_open, "checked_at": book.iso(now)}
 
 
 def summary(rows: list[dict], now: datetime | None = None) -> dict:

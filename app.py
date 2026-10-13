@@ -312,6 +312,36 @@ def load_live_sharp():
     return rows, _ls.summary(rows)
 
 
+def _refresh_live_sharp() -> None:
+    """Button callback: current Kalshi prices for open real bets (read-only, in memory)."""
+    last = st.session_state.get("live_sharp_live") or {}
+    last_at = _when(last.get("checked_at"))
+    if last_at and (datetime.now(timezone.utc) - last_at).total_seconds() < 15:
+        return
+    from league import live_sharp as _ls
+    from league.kalshi import LeagueKalshi
+    try:
+        out = _ls.refresh(_ls.load(), LeagueKalshi().markets)
+    except Exception as exc:
+        st.session_state["live_sharp_err"] = f"{type(exc).__name__}: {str(exc)[:160]}"
+        return
+    st.session_state.pop("live_sharp_err", None)
+    if out["open"] and not (out["marked"] or out["settled"]):
+        st.session_state["live_sharp_err"] = "Kalshi didn't return prices just now. Try again in a minute."
+        return
+    st.session_state["live_sharp_live"] = {"rows": out["rows"], "checked_at": out["checked_at"],
+                                           "settled": out["settled"], "base": _ls_base_key()}
+
+
+def _ls_base_key() -> str:
+    from pathlib import Path as _P
+    from league import live_sharp as _ls
+    try:
+        return str(_P(_ls.LEDGER).stat().st_mtime)
+    except Exception:
+        return ""
+
+
 LEAGUE_LABELS = {"weather": "Weather", "polymarket": "Polymarket", "books": "Sportsbooks",
                  "sharp": "Sharp money", "crypto": "Crypto"}
 LEAGUE_HOW = {
@@ -408,6 +438,12 @@ tab_league, tab_live, tab_picks, tab_bets, tab_results, tab_system = st.tabs(
 # ---------------------------------------------------------- live $1 sharp --
 with tab_live:
     live_rows, ls = load_live_sharp()
+    _ls_over = st.session_state.get("live_sharp_live")
+    if _ls_over and _ls_over.get("base") == _ls_base_key():
+        live_rows = _ls_over["rows"]
+    else:
+        st.session_state.pop("live_sharp_live", None)
+        _ls_over = None
     st.markdown(
         f"""
         <div class='pe-board'>
@@ -449,9 +485,26 @@ with tab_live:
         slip = (f", {abs(avg - paper) * 100:.0f}¢ {'worse' if avg > paper else 'better'} than paper"
                 if avg is not None and paper is not None and abs(avg - paper) >= 0.005 else "")
         if stt == "open":
-            return (title, f"{esc(when)}, {buy}{slip}, pays {money(filled)} if it wins", cents(avg), "")
+            ends = _when(r.get("ends_at") or r.get("close_time"))
+            end_txt = ""
+            if ends:
+                secs = (ends - datetime.now(timezone.utc)).total_seconds()
+                end_txt = ("waiting on Kalshi to settle" if secs <= 0 else f"ends in {int(secs // 60)}m" if secs < 3600
+                           else f"ends {ends.astimezone(EASTERN).strftime('%a')} {local_time(ends)}" if secs < 36 * 3600
+                           else f"ends {ends.astimezone(EASTERN).strftime('%b %-d')}")
+            mark = _num(r.get("last_mid"))
+            if mark is not None and avg is not None:
+                move = (mark - avg) * 100
+                trend = "winning" if move > 0.4 else "losing" if move < -0.4 else "even"
+                return (title, f"now {cents(mark)} ({trend}), {esc(end_txt)}<br>{esc(when)}, {buy}{slip}, "
+                               f"pays {money(filled)} if it wins",
+                        f"<span class='num'>{money(filled * (mark - avg), signed=True)}</span>", tone(move))
+            return (title, f"{esc(end_txt or when)}<br>{esc(when)}, {buy}{slip}, pays {money(filled)} if it wins",
+                    f"<span class='num'>{cents(avg)}</span>", "")
         if stt in {"won", "lost"}:
-            return (title, f"{'Won' if stt == 'won' else 'Lost'}. {esc(when)}, {buy}{slip}",
+            clv = _num(r.get("clv_cents"))
+            return (title, f"{'Won' if stt == 'won' else 'Lost'}" + (f", {clv:+.0f}¢ vs close" if clv is not None else "")
+                    + f". {esc(when)}, {buy}{slip}",
                     f"<span class='num'>{money(r.get('pl'), signed=True)}</span>", tone(r.get("pl")))
         if stt == "void":
             return (title, f"Voided, refunded. {esc(when)}", "<span class='num'>$0.00</span>", "")
@@ -465,7 +518,23 @@ with tab_live:
         ordered = sorted(live_rows, key=lambda r: str(r.get("placed_at") or ""), reverse=True)
         opn = [r for r in ordered if r.get("status") == "open"]
         rest = [r for r in ordered if r.get("status") != "open"][:40]
-        st.markdown(f"<div class='section'>Open ({len(opn)})</div>", unsafe_allow_html=True)
+        unreal = sum((_num(r.get("filled")) or 0) * ((_num(r.get("last_mid")) or 0) - (_num(r.get("avg_price")) or 0))
+                     for r in opn if _num(r.get("last_mid")) is not None and _num(r.get("avg_price")) is not None)
+        if _ls_over:
+            as_of = f"Prices checked {ago(_ls_over['checked_at'])}"
+            if _ls_over.get("settled"):
+                as_of += f", {_ls_over['settled']} just settled (made official on the next round)"
+        else:
+            as_of = f"Prices from the last round, {ago(lg_last)}"
+        st.markdown(f"<div class='section'>Open ({len(opn)})</div>"
+                    + (f"<div class='pe-lede' style='margin:.2rem 0 0'>Worth {money(unreal, signed=True)} "
+                       f"right now if they all sold at today's price. {esc(as_of)}.</div>" if opn else ""),
+                    unsafe_allow_html=True)
+        if opn or _ls_over:
+            st.button("↻ Refresh live prices", key="refresh_live_sharp", width="stretch",
+                      on_click=_refresh_live_sharp)
+            if st.session_state.get("live_sharp_err"):
+                st.caption(f"Couldn't refresh: {st.session_state['live_sharp_err']}")
         if opn:
             st.markdown(rows_html(_live_row(r) for r in opn), unsafe_allow_html=True)
         else:
