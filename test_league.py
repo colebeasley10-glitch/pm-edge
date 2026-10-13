@@ -122,12 +122,38 @@ def test_round():
     assert st["strategies"]["fake"]["opened"] == 0  # already holding
 
 
+def test_benched_strategy_opens_nothing():
+    os.environ.pop("LEAGUE_BENCHED", None)
+    assert "crypto" in run.benched()
+
+    class FakeKalshi:
+        def markets(self, tickers):
+            return {t: mk(t) for t in tickers}
+
+    class C:
+        NAME = "crypto"
+
+        @staticmethod
+        def run(kalshi, now, session=None):
+            return [book.Pick("crypto", mk("KXBENCH-1"), "YES", 0.60, "would pick")]
+
+    st = run.run_round(NOW, strategies=[C], kalshi=FakeKalshi())["strategies"]["crypto"]
+    assert st["benched"] and st["opened"] == 0 and st["picks_found"] == 1
+    assert st["shadow"][0]["ticker"] == "KXBENCH-1"
+    os.environ["LEAGUE_BENCHED"] = ""
+    try:
+        assert run.benched() == set()
+    finally:
+        os.environ.pop("LEAGUE_BENCHED", None)
+
+
 if __name__ == "__main__":
     test_book()
     test_weather()
     test_polymarket()
     test_crypto()
     test_round()
+    test_benched_strategy_opens_nothing()
     print("League tests: PASS")
 
 
