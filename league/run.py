@@ -127,7 +127,7 @@ def run_live_sharp(new_sharp_rows: list[dict], kalshi, now: datetime, client=Non
     new = out.pop("new", [])
     if new:
         _pushover(f"💵 Live $1 Sharp: {len(new)} real bet{'s' if len(new) != 1 else ''} placed",
-                  [f"{r['side']} {str(r['title'] or r['ticker'])[:60]} — {int(float(r['filled']))} at "
+                  [f"{r['side']} {str(r['title'] or r['ticker'])[:60]} — {float(r['filled']):g} at "
                    f"{float(r['avg_price']) * 100:.0f}¢ (${float(r['cost']) + float(r['fee']):.2f})" for r in new]
                   + [f"Today: ${out.get('spent_today', 0):.2f} of ${live_sharp.daily_budget():.0f}"])
     if finished:

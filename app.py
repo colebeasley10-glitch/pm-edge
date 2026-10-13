@@ -316,7 +316,7 @@ def _refresh_live_sharp() -> None:
     """Button callback: current Kalshi prices for open real bets (read-only, in memory)."""
     last = st.session_state.get("live_sharp_live") or {}
     last_at = _when(last.get("checked_at"))
-    if last_at and (datetime.now(timezone.utc) - last_at).total_seconds() < 15:
+    if last_at and (datetime.now(timezone.utc) - last_at).total_seconds() < 5:
         return
     from league import live_sharp as _ls
     from league.kalshi import LeagueKalshi
@@ -326,11 +326,12 @@ def _refresh_live_sharp() -> None:
         st.session_state["live_sharp_err"] = f"{type(exc).__name__}: {str(exc)[:160]}"
         return
     st.session_state.pop("live_sharp_err", None)
-    if out["open"] and not (out["marked"] or out["settled"]):
-        st.session_state["live_sharp_err"] = "Kalshi didn't return prices just now. Try again in a minute."
+    if out["open"] and not out["found"]:
+        st.session_state["live_sharp_err"] = "Kalshi didn't answer just now. Try again in a minute."
         return
     st.session_state["live_sharp_live"] = {"rows": out["rows"], "checked_at": out["checked_at"],
-                                           "settled": out["settled"], "base": _ls_base_key()}
+                                           "settled": out["settled"], "marked": out["marked"],
+                                           "waiting": out["waiting"], "base": _ls_base_key()}
 
 
 def _ls_base_key() -> str:
@@ -447,6 +448,8 @@ with tab_live:
     _ls_over = st.session_state.get("live_sharp_live")
     if _ls_over and _ls_over.get("base") == _ls_base_key():
         live_rows = _ls_over["rows"]
+        from league import live_sharp as _ls_mod
+        ls = _ls_mod.summary(live_rows)
     else:
         st.session_state.pop("live_sharp_live", None)
         _ls_over = None
@@ -486,7 +489,7 @@ with tab_live:
         cost, fee = _num(r.get("cost")) or 0.0, _num(r.get("fee")) or 0.0
         placed = _when(r.get("placed_at"))
         when = placed.astimezone(EASTERN).strftime("%a ") + local_time(placed) if placed else ""
-        buy = f"{int(filled)} at {cents(avg)} = {money(cost + fee)} in" if filled else ""
+        buy = f"{filled:g} at {cents(avg)} = {money(cost + fee)} in" if filled else ""
         paper = _num(r.get("paper_entry"))
         slip = (f", {abs(avg - paper) * 100:.0f}¢ {'worse' if avg > paper else 'better'} than paper"
                 if avg is not None and paper is not None and abs(avg - paper) >= 0.005 else "")
@@ -498,6 +501,8 @@ with tab_live:
                 end_txt = ("waiting on Kalshi to settle" if secs <= 0 else f"ends in {int(secs // 60)}m" if secs < 3600
                            else f"ends {ends.astimezone(EASTERN).strftime('%a')} {local_time(ends)}" if secs < 36 * 3600
                            else f"ends {ends.astimezone(EASTERN).strftime('%b %-d')}")
+            if r.get("_market_status") and r.get("_market_status") not in {"open", "active", ""}:
+                end_txt = "match over, waiting on Kalshi to settle"
             mark = _num(r.get("last_mid"))
             if mark is not None and avg is not None:
                 move = (mark - avg) * 100
@@ -527,9 +532,14 @@ with tab_live:
         unreal = sum((_num(r.get("filled")) or 0) * ((_num(r.get("last_mid")) or 0) - (_num(r.get("avg_price")) or 0))
                      for r in opn if _num(r.get("last_mid")) is not None and _num(r.get("avg_price")) is not None)
         if _ls_over:
-            as_of = f"Prices checked {ago(_ls_over['checked_at'])}"
+            parts = []
+            if _ls_over.get("marked"):
+                parts.append(f"{_ls_over['marked']} updated")
+            if _ls_over.get("waiting"):
+                parts.append(f"{_ls_over['waiting']} not trading right now (match over or paused)")
             if _ls_over.get("settled"):
-                as_of += f", {_ls_over['settled']} just settled (made official on the next round)"
+                parts.append(f"{_ls_over['settled']} just settled (made official on the next round)")
+            as_of = f"Checked {ago(_ls_over['checked_at'])}" + (": " + ", ".join(parts) if parts else "")
         else:
             as_of = f"Prices from the last round, {ago(lg_last)}"
         st.markdown(f"<div class='section'>Open ({len(opn)})</div>"

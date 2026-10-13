@@ -263,6 +263,7 @@ def settle(rows: list[dict], fetch_markets, *, now: datetime | None = None) -> l
             continue
         result = str(m.get("result") or "").lower()
         status = str(m.get("status") or "").lower()
+        r["_market_status"] = status
         if m.get("expected_expiration_time"):
             r["ends_at"] = m["expected_expiration_time"]
         cost = book.f(r.get("cost"), 0.0) or 0.0
@@ -296,8 +297,13 @@ def refresh(rows: list[dict], fetch_markets, *, now: datetime | None = None) -> 
     work = copy.deepcopy(rows)
     n_open = sum(1 for r in work if r.get("status") == "open")
     done = settle(work, fetch_markets, now=now)
-    marked = sum(1 for r in work if r.get("status") == "open" and r.get("last_mid_at") == book.iso(now))
-    return {"rows": work, "marked": marked, "settled": len(done), "open": n_open, "checked_at": book.iso(now)}
+    stamp = book.iso(now)
+    opn = [r for r in work if r.get("status") == "open"]
+    marked = sum(1 for r in opn if r.get("last_mid_at") == stamp)
+    found = sum(1 for r in opn if r.get("_market_status") is not None) + len(done)
+    waiting = sum(1 for r in opn if r.get("_market_status") is not None and r.get("last_mid_at") != stamp)
+    return {"rows": work, "marked": marked, "settled": len(done), "open": n_open, "found": found,
+            "waiting": waiting, "checked_at": stamp}
 
 
 def summary(rows: list[dict], now: datetime | None = None) -> dict:

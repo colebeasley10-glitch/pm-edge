@@ -151,6 +151,15 @@ def test_marks_open_bets_like_paper():
     assert r["status"] == "won" and r["clv_cents"] == 15.0
 
 
+def test_refresh_counts_closed_matches_as_checked():
+    c, rows = FakeClient(), []
+    live_sharp.place([paper(60), paper(61)], c, now=NOW, rows=rows)
+    mk = {"KXT-60": {"status": "closed", "result": ""},
+          "KXT-61": {"status": "active", "yes_bid": 0.5, "yes_ask": 0.52, "no_bid": 0.48, "no_ask": 0.5}}
+    out = live_sharp.refresh(rows, lambda t: {k: mk[k] for k in t if k in mk}, now=NOW)
+    assert out["found"] == 2 and out["marked"] == 1 and out["waiting"] == 1
+
+
 def test_one_real_bet_per_market():
     c, rows = FakeClient(), []
     a = paper(7)
