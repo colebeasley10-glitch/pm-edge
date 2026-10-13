@@ -5,7 +5,10 @@ This module intentionally exposes only approval-gated order capabilities:
 * POST a new buy or position-reducing sell order through Kalshi's event-order endpoint.
 
 It contains no cancel, amend, decrease, transfer, withdrawal, or autonomous
-submission path. Callers must require an explicit user approval action.
+submission path. Callers must require an explicit user approval action, with one
+owner-approved exception: league/live_sharp.py places capped $1 Sharp copies on
+its own ($1/bet, $30/day, 30 orders/day, IOC only, off unless
+LIVE_SHARP_ENABLED=1).
 """
 from __future__ import annotations
 
@@ -128,6 +131,14 @@ class KalshiSubmitClient:
             params={"limit": max(1, min(int(limit), 200))},
         )
         rows = payload.get("market_positions", [])
+        return rows if isinstance(rows, list) else []
+
+    def get_fills(self, *, ticker: str | None = None, limit: int = 100) -> list[dict]:
+        params = {"limit": max(1, min(int(limit), 200))}
+        if ticker:
+            params["ticker"] = ticker
+        payload = self._request("GET", "/portfolio/fills", params=params)
+        rows = payload.get("fills", [])
         return rows if isinstance(rows, list) else []
 
     def find_order_by_client_id(self, client_order_id: str) -> dict | None:

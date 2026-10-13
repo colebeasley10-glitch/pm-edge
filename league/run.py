@@ -12,7 +12,7 @@ from pathlib import Path
 
 import requests
 
-from league import book
+from league import book, live_sharp
 from league.kalshi import LeagueKalshi
 from league.strategies import books, crypto, polymarket, sharp, weather
 
@@ -86,6 +86,55 @@ def push_settled(rows: list[dict], before: set[str]) -> None:
         print("LEAGUE_PUSH_ERROR", type(exc).__name__)
 
 
+def _pushover(title: str, lines: list[str]) -> None:
+    user, token = os.getenv("PUSHOVER_USER_KEY"), os.getenv("PUSHOVER_APP_TOKEN")
+    if not lines or not user or not token or os.getenv("LEAGUE_PUSH", "1") in {"0", "false", "off"}:
+        return
+    payload = {"token": token, "user": user, "title": title[:250], "message": "\n".join(lines)[:1000]}
+    url = os.getenv("STREAMLIT_APP_URL", "").strip()
+    if url:
+        payload.update({"url": url, "url_title": "Open PM Edge"})
+    try:
+        requests.post("https://api.pushover.net/1/messages.json", data=payload, timeout=15)
+    except Exception as exc:
+        print("LEAGUE_PUSH_ERROR", type(exc).__name__)
+
+
+def run_live_sharp(new_sharp_rows: list[dict], kalshi, now: datetime, client=None) -> dict:
+    """Settle real $1 Sharp bets, then copy this round's new Sharp picks with real orders."""
+    rows = live_sharp.load()
+    out: dict = {"enabled": False}
+    try:
+        finished = live_sharp.settle(rows, kalshi.markets, now=now) if rows else []
+    except Exception as exc:
+        finished = []
+        out["settle_error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
+    if client is not None or live_sharp.enabled():
+        out["enabled"] = True
+        try:
+            client = client or live_sharp.client_from_env()
+            out.update(live_sharp.place(new_sharp_rows, client, now=now, rows=rows))
+        except Exception as exc:
+            out["error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
+    live_sharp.save(rows)
+    new = out.pop("new", [])
+    if new:
+        _pushover(f"💵 Live $1 Sharp: {len(new)} real bet{'s' if len(new) != 1 else ''} placed",
+                  [f"{r['side']} {str(r['title'] or r['ticker'])[:60]} — {int(float(r['filled']))} at "
+                   f"{float(r['avg_price']) * 100:.0f}¢ (${float(r['cost']) + float(r['fee']):.2f})" for r in new]
+                  + [f"Today: ${out.get('spent_today', 0):.2f} of ${live_sharp.daily_budget():.0f}"])
+    if finished:
+        pl = sum(book.f(r.get("pl"), 0.0) or 0.0 for r in finished)
+        w = sum(r["status"] == "won" for r in finished)
+        _pushover(f"💵 Live $1 Sharp settled: {w}-{len(finished) - w}, {pl:+.2f} real",
+                  [f"{'✅' if r['status'] == 'won' else '❌' if r['status'] == 'lost' else '↩️'} "
+                   f"{r['side']} {str(r.get('title') or r['ticker'])[:60]} {float(r.get('pl') or 0):+.2f}"
+                   for r in finished[:8]])
+    out["settled"] = len(finished)
+    out["summary"] = live_sharp.summary(rows, now)
+    return out
+
+
 def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict:
     now = now or datetime.now(timezone.utc)
     kalshi = kalshi or LeagueKalshi()
@@ -111,7 +160,7 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
                                  "edge": None if pk.edge() is None else round(pk.edge(), 4)}
                                 for pk in picks]
                 picks = []
-            room =max(0, daily_cap(strat.NAME) - opened_today(rows, strat.NAME, now))
+            room = max(0, daily_cap(strat.NAME) - opened_today(rows, strat.NAME, now))
             for pk in picks:
                 if st["opened"] >= room:
                     st["skipped"]["daily_cap"] = st["skipped"].get("daily_cap", 0) + 1
@@ -122,6 +171,10 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
                     continue
                 new_rows.append(book.open_trade(pk, rows, now=now))
                 st["opened"] += 1
+            if strat.NAME == "sharp":
+                # real $1 copies go out right away, before slower strategies run
+                status["live_sharp"] = run_live_sharp(new_rows[-st["opened"]:] if st["opened"] else [],
+                                                      kalshi, now)
         except Exception as exc:
             st["error"] = f"{type(exc).__name__}: {str(exc)[:200]}"
             traceback.print_exc()

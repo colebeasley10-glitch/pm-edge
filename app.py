@@ -302,6 +302,16 @@ def load_league():
     return trades, status
 
 
+@st.cache_data(ttl=60, show_spinner=False)
+def load_live_sharp():
+    from league import live_sharp as _ls
+    try:
+        rows = _ls.load()
+    except Exception:
+        rows = []
+    return rows, _ls.summary(rows)
+
+
 LEAGUE_LABELS = {"weather": "Weather", "polymarket": "Polymarket", "books": "Sportsbooks",
                  "sharp": "Sharp money", "crypto": "Crypto"}
 LEAGUE_HOW = {
@@ -391,9 +401,78 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-tab_league, tab_picks, tab_bets, tab_results, tab_system = st.tabs(
-    ["League", f"Alerts {len(picks)}" if len(picks) else "Alerts", "My bets", "Results", "System"]
+tab_league, tab_live, tab_picks, tab_bets, tab_results, tab_system = st.tabs(
+    ["League", "Live $1", f"Alerts {len(picks)}" if len(picks) else "Alerts", "My bets", "Results", "System"]
 )
+
+# ---------------------------------------------------------- live $1 sharp --
+with tab_live:
+    live_rows, ls = load_live_sharp()
+    st.markdown(
+        f"""
+        <div class='pe-board'>
+          <div><div class='k'>Real profit, Live $1 Sharp</div>
+            <div class='big num {tone(ls["pl"])}'>{money(ls["pl"], signed=True)}</div>
+            <div class='k'>{money(ls["staked"])} settled, {ls["open"]} open</div></div>
+          <div class='side'>
+            <div><div class='k'>Record</div><div class='v num'>{ls["won"]}-{ls["lost"]}</div></div>
+            <div><div class='k'>ROI</div><div class='v num {tone(ls["roi"] or 0)}'>{pct(ls["roi"], signed=True)}</div></div>
+            <div><div class='k'>Today</div><div class='v num'>{money(ls["spent_today"])}<span class='k'> / {money(ls["budget"])}</span></div></div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    _ls_on = (league_status.get("live_sharp") or {}).get("enabled")
+    st.markdown(
+        "<div class='pe-lede'>" + ("<b>Live.</b> " if _ls_on else "<b>Off.</b> ")
+        + "Every new Sharp pick is copied with a real Kalshi order: up to $1 of contracts per bet, "
+          "at most $30 and 30 bets per day (Eastern), bought only at the price the pick saw. "
+          + ("" if _ls_on else "Turn it on with the LIVE_SHARP_ENABLED repo variable.")
+        + "</div>", unsafe_allow_html=True)
+    if (league_status.get("live_sharp") or {}).get("error"):
+        st.caption(f"Last round: {league_status['live_sharp']['error']}")
+
+    def _live_row(r):
+        title = f"{esc(str(r.get('side') or '').title())} on {esc(r.get('title') or r.get('ticker'))}"
+        stt = str(r.get("status") or "")
+        filled, avg = _num(r.get("filled")) or 0, _num(r.get("avg_price"))
+        cost, fee = _num(r.get("cost")) or 0.0, _num(r.get("fee")) or 0.0
+        placed = _when(r.get("placed_at"))
+        when = placed.astimezone(EASTERN).strftime("%a ") + local_time(placed) if placed else ""
+        buy = f"{int(filled)} at {cents(avg)} = {money(cost + fee)} in" if filled else ""
+        paper = _num(r.get("paper_entry"))
+        slip = (f", {abs(avg - paper) * 100:.0f}¢ {'worse' if avg > paper else 'better'} than paper"
+                if avg is not None and paper is not None and abs(avg - paper) >= 0.005 else "")
+        if stt == "open":
+            return (title, f"{esc(when)}, {buy}{slip}, pays {money(filled)} if it wins", cents(avg), "")
+        if stt in {"won", "lost"}:
+            return (title, f"{'Won' if stt == 'won' else 'Lost'}. {esc(when)}, {buy}{slip}",
+                    f"<span class='num'>{money(r.get('pl'), signed=True)}</span>", tone(r.get("pl")))
+        if stt == "void":
+            return (title, f"Voided, refunded. {esc(when)}", "<span class='num'>$0.00</span>", "")
+        if stt == "no_fill":
+            return (title, f"No fill. {esc(when)}, price moved past {cents(r.get('limit_price'))}", "—", "")
+        return (title, f"{esc(stt.replace('_', ' ').title())}. {esc(when)} {esc(r.get('note') or '')}", "—", "down")
+
+    if not live_rows:
+        quiet("No real bets yet", "The first one goes out on the next Sharp pick after it's turned on.")
+    else:
+        ordered = sorted(live_rows, key=lambda r: str(r.get("placed_at") or ""), reverse=True)
+        opn = [r for r in ordered if r.get("status") == "open"]
+        rest = [r for r in ordered if r.get("status") != "open"][:40]
+        st.markdown(f"<div class='section'>Open ({len(opn)})</div>", unsafe_allow_html=True)
+        if opn:
+            st.markdown(rows_html(_live_row(r) for r in opn), unsafe_allow_html=True)
+        else:
+            st.markdown("<div class='pe-lede'>Nothing open right now.</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='section'>Finished ({len(rest)})</div>", unsafe_allow_html=True)
+        if rest:
+            st.markdown(rows_html(_live_row(r) for r in rest), unsafe_allow_html=True)
+        if ls["no_fill"]:
+            st.markdown(f"<div class='pe-lede'>{ls['no_fill']} pick(s) didn't fill because the price moved "
+                        "before the order arrived. That's the gap between paper and real.</div>",
+                        unsafe_allow_html=True)
 
 # ----------------------------------------------------------------- league --
 with tab_league:

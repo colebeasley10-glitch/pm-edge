@@ -30,6 +30,11 @@ jobs:
           STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
           LEAGUE_PUSH: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}
           PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
+          # Live $1 Sharp (real money). Off until the repo variable LIVE_SHARP_ENABLED is "1"
+          # (Settings > Secrets and variables > Actions > Variables); only ever on main.
+          LIVE_SHARP_ENABLED: ${{ github.ref == 'refs/heads/main' && vars.LIVE_SHARP_ENABLED || '0' }}
+          KALSHI_WRITE_API_KEY_ID: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_API_KEY_ID || '' }}
+          KALSHI_WRITE_PRIVATE_KEY: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_PRIVATE_KEY || '' }}
         run: python -m league.run
       - name: Five-minute follow-up (tap-delay price + extra mark)
         continue-on-error: true
@@ -45,7 +50,7 @@ jobs:
         run: |
           git config user.name "pm-edge-bot"
           git config user.email "pm-edge-bot@users.noreply.github.com"
-          git add league_trades.csv league_status.json 2>/dev/null || true
+          for f in league_trades.csv league_status.json live_sharp_trades.csv; do if [ -f "$f" ]; then git add "$f"; fi; done
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "League round [skip ci]"
           for i in 1 2 3 4; do
