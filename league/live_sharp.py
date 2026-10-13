@@ -110,6 +110,9 @@ def _spent(rows: list[dict], day: str) -> tuple[float, int]:
     for r in rows:
         if r.get("day") != day or r.get("status") in {"skipped", "error"}:
             continue
+        # an order that never filled cost nothing and isn't a bet, so it doesn't use up the 30/day
+        if r.get("status") == "no_fill":
+            continue
         n += 1
         # until a fill is known, count the full order at its limit price
         if r.get("status") == "submitted":

@@ -204,6 +204,14 @@ def test_live_copies_only_paper_picks():
     assert not any(r["ticker"] == "KXCAP-1" for r in live_sharp.load())
 
 
+def test_no_fill_does_not_use_order_cap():
+    day = "20261013"
+    rows = [{"day": day, "status": "no_fill", "cost": 0, "fee": 0} for _ in range(5)]
+    rows.append({"day": day, "status": "won", "cost": 0.5, "fee": 0.02})
+    spent, n = live_sharp._spent(rows, day)
+    assert n == 1 and abs(spent - 0.52) < 1e-9
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_") and callable(fn):
