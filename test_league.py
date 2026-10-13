@@ -67,7 +67,13 @@ def test_weather():
         def remaining_extreme(self, *a, **k):
             return 71.0, 1.0, 6  # models: rest of today peaks near 71
 
-    priced = W().price_event(ev, NOW)
+    os.environ.pop("LEAGUE_WEATHER_SAME_DAY", None)
+    assert W().price_event(ev, NOW) == []          # same-day off by default (bad obs source)
+    os.environ["LEAGUE_WEATHER_SAME_DAY"] = "1"
+    try:
+        priced = W().price_event(ev, NOW)
+    finally:
+        os.environ.pop("LEAGUE_WEATHER_SAME_DAY", None)
     probs = {m["yes_sub_title"]: p for m, p, _ in priced}
     assert len(probs) == 6
     assert probs["68° or below"] == 0.03          # can't finish below what's already happened (clamped)

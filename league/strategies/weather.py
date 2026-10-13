@@ -11,6 +11,7 @@ Bracket probability: integer readings, so bucket [a, b] covers (a-0.5, b+0.5).
 from __future__ import annotations
 
 import math
+import os
 import re
 from datetime import datetime, timedelta, timezone
 from statistics import mean, pstdev
@@ -27,6 +28,18 @@ MAX_EDGE = 0.15          # bigger gaps mean the market knows something the model
 MAX_SIGMA = 3.2          # skip days the models can't agree on
 MAX_PICKS = 8
 MAX_PER_EVENT = 1
+
+
+def same_day_enabled() -> bool:
+    """Same-day markets are off by default.
+
+    NWS hourly observations understate the climate-report max/min that Kalshi
+    settles on (Oct 12, 2026: KAUS obs showed 91°F while Kalshi had already
+    priced the 92-93° bucket at $1.00), so same-day picks were built on a bad
+    "already observed" reading. Set LEAGUE_WEATHER_SAME_DAY=1 to turn them back
+    on once the observation source matches the CLI report.
+    """
+    return os.environ.get("LEAGUE_WEATHER_SAME_DAY", "0").strip().lower() in ("1", "true", "yes")
 
 # CLI climate-report site -> (ICAO station, lat, lon, IANA tz)
 STATIONS = {
@@ -225,6 +238,9 @@ class Weather:
         lead = (day - now.astimezone(tz).date()).days
         if lead < 0 or lead > 2:
             return []
+        if lead == 0 and not same_day_enabled():
+            DIAG["skipped_same_day"] = DIAG.get("skipped_same_day", 0) + 1
+            return []
         fc = self.forecast(station, day, kind)
         if not fc:
             return []
@@ -267,7 +283,7 @@ class Weather:
 
 def run(kalshi, now: datetime, session=None) -> list[Pick]:
     DIAG.clear()
-    DIAG.update({"events": 0, "priced": 0, "skipped_far_from_market": 0, "samples": []})
+    DIAG.update({"events": 0, "priced": 0, "skipped_far_from_market": 0, "skipped_same_day": 0, "samples": []})
     wx = Weather(session)
     series = [s.get("ticker") for s in kalshi.series("Climate and Weather")]
     series = [s for s in series if s and variable_for(s) and re.match(r"^KX(HIGH|LOW)", s)]
