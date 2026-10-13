@@ -42,8 +42,10 @@ LABELS = {"weather": "Weather", "polymarket": "Polymarket", "books": "Sportsbook
 
 
 def opened_today(rows: list[dict], strategy: str, now: datetime) -> int:
+    # Eastern day, same as Live $1's daily cap, so both books reset together at midnight ET
+    today = live_sharp.et_day(now)
     return sum(1 for r in rows if r.get("strategy") == strategy
-               and (book.parse_dt(r.get("opened_at")) or now).date() == now.date())
+               and live_sharp.et_day(book.parse_dt(r.get("opened_at")) or now) == today)
 
 
 def push(new_rows: list[dict]) -> None:
@@ -176,9 +178,8 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
                     continue
                 if st["opened"] >= room:
                     st["skipped"]["daily_cap"] = st["skipped"].get("daily_cap", 0) + 1
-                    if strat.NAME == "sharp":
-                        # the paper cap doesn't limit real bets; Live $1 has its own 30/day cap
-                        live_candidates.append(book.open_trade(pk, [], now=now))
+                    # Live $1 copies only picks the paper book actually takes, so the
+                    # real-money results track the same bets as paper Sharp.
                     continue
                 row = book.open_trade(pk, rows, now=now)
                 new_rows.append(row)

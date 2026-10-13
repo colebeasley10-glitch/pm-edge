@@ -172,7 +172,7 @@ def test_one_real_bet_per_market():
     assert out["skipped"] == {"already_bet_game": 1} and c.calls == 1
 
 
-def test_paper_cap_does_not_block_live():
+def test_live_copies_only_paper_picks():
     class FakeKalshi:
         def markets(self, tickers):
             return {t: {"ticker": t, "yes_bid": 0.48, "yes_ask": 0.50, "no_bid": 0.50, "no_ask": 0.52,
@@ -199,8 +199,9 @@ def test_paper_cap_does_not_block_live():
         os.environ.pop("LIVE_SHARP_ENABLED")
     assert st["strategies"]["sharp"]["opened"] == 0 and st["strategies"]["sharp"]["skipped"] == {"daily_cap": 1}
     ls = st["live_sharp"]
-    assert ls["kalshi_ok"] is True and ls["placed"] == 1, ls
-    assert not any(r["ticker"] == "KXCAP-1" for r in book.load())   # stays out of the paper ledger
+    assert ls["kalshi_ok"] is True and not ls.get("placed"), ls     # over the paper cap → no real bet
+    assert not any(r["ticker"] == "KXCAP-1" for r in book.load())
+    assert not any(r["ticker"] == "KXCAP-1" for r in live_sharp.load())
 
 
 if __name__ == "__main__":
