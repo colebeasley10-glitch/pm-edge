@@ -91,7 +91,17 @@ st.markdown(
     .pe-board .k { color:var(--muted); font-size:.82rem; }
     .pe-board .big { font-size:2.4rem; font-weight:800; line-height:1.05; margin-top:.15rem; }
     .pe-board .side { display:flex; gap:1.25rem; text-align:right; }
-    .pe-board .side .v { font-size:1.2rem; font-weight:700; margin-top:.1rem; }
+    .pe-board .side .v { font-size:1.2rem; font-weight:700; margin-top:.1rem; white-space:nowrap; }
+    .pe-board .k { white-space:nowrap; }
+    /* phones: big number on top, stats in an even row underneath so nothing spills out of the card */
+    @media (max-width:600px) {
+      .pe-board { display:block; padding:1rem; }
+      .pe-board .big { font-size:2.2rem; }
+      .pe-board .side { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:.75rem;
+                        text-align:left; margin-top:.9rem; padding-top:.85rem; border-top:1px solid var(--line); }
+      .pe-board .side .v { font-size:1.15rem; }
+      .pe-board .side .k { font-size:.78rem; }
+    }
     .up { color:var(--up); } .down { color:var(--down); }
     /* tabs */
     .stTabs [data-baseweb="tab-list"] { gap:1.4rem; border-bottom:1px solid var(--line); margin-top:1.1rem; }
