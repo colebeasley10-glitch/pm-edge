@@ -28,6 +28,24 @@ MAX_EDGE = 0.15          # bigger gaps mean the market knows something the model
 MAX_SIGMA = 3.2          # skip days the models can't agree on
 MAX_PICKS = 8
 MAX_PER_EVENT = 1
+# YES on a narrow "between" bracket (e.g. 64° to 65°) is off: the forecast's ±2-3°F spread
+# is wider than the bracket, so these were cheap longshots that lost the full stake
+# (0-4, -$42 through Oct 13, 2026). NO on brackets and both sides of the tails still run.
+# Set LEAGUE_WEATHER_YES_BRACKETS=1 to turn them back on.
+
+
+def yes_brackets_enabled() -> bool:
+    return os.environ.get("LEAGUE_WEATHER_YES_BRACKETS", "0").strip().lower() in ("1", "true", "yes")
+
+
+def closing_cutoff(event_ticker: str) -> datetime | None:
+    """When the weather 'closing line' is taken: midnight Eastern standard time (05:00 UTC)
+    on the event day, which is before any US station's climate day begins. Marks after that
+    track the observed temperature, so they say who won, not whether the price was good."""
+    day = event_date(event_ticker)
+    if day is None:
+        return None
+    return datetime(day.year, day.month, day.day, 5, tzinfo=timezone.utc)
 
 
 def same_day_enabled() -> bool:
@@ -303,7 +321,11 @@ def run(kalshi, now: datetime, session=None) -> list[Pick]:
                                                          for m, p, _ in priced]})
             best = []
             for m, p, note in priced:
+                narrow = str(m.get("strike_type") or "").lower() == "between"
                 for side, fair in (("YES", p), ("NO", 1.0 - p)):
+                    if side == "YES" and narrow and not yes_brackets_enabled():
+                        DIAG["skipped_yes_bracket"] = DIAG.get("skipped_yes_bracket", 0) + 1
+                        continue
                     pk = Pick(NAME, m, side, fair, note, category="Weather", min_edge=MIN_EDGE,
                               extra={"title": f"{ev.get('title')} — {m.get('yes_sub_title')}"})
                     e = pk.edge()

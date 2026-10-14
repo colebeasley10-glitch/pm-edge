@@ -194,3 +194,48 @@ def test_sharp_skips_markets_that_settle_far_out():
     assert not sharp.settles_soon(election, now)
     assert not sharp.settles_soon(fed, now)
     assert not sharp.settles_soon({}, now)
+
+
+def test_weather_skips_yes_on_narrow_brackets(monkeypatch):
+    from datetime import datetime, timezone
+    from league.strategies import weather
+    monkeypatch.delenv("LEAGUE_WEATHER_YES_BRACKETS", raising=False)
+    now = datetime(2026, 10, 14, 12, tzinfo=timezone.utc)
+    m = {"ticker": "KXHIGHNY-26OCT15-B64.5", "strike_type": "between", "floor_strike": 64, "cap_strike": 65,
+         "status": "active", "yes_bid_dollars": "0.08", "yes_ask_dollars": "0.10",
+         "no_bid_dollars": "0.90", "no_ask_dollars": "0.92", "close_time": "2026-10-16T04:00:00Z"}
+
+    class FakeWx:
+        def __init__(self, *_a, **_k):
+            pass
+
+        def price_event(self, ev, now):
+            return [(m, 0.30, "test")]  # model says YES is worth 30c vs a 10c ask
+
+    class FakeKalshi:
+        def series(self, _c):
+            return [{"ticker": "KXHIGHNY"}]
+
+        def open_events(self, _s, limit=3):
+            return [{"event_ticker": "KXHIGHNY-26OCT15", "title": "NYC high"}]
+
+    monkeypatch.setattr(weather, "Weather", FakeWx)
+    picks = weather.run(FakeKalshi(), now)
+    assert all(p.side != "YES" for p in picks)
+    assert weather.DIAG.get("skipped_yes_bracket", 0) >= 1
+
+
+def test_weather_closing_mark_freezes_at_day_start():
+    from datetime import datetime, timezone
+    from league import book
+    row = {"strategy": "weather", "event_ticker": "KXHIGHNY-26OCT15", "ticker": "KXHIGHNY-26OCT15-T70",
+           "side": "NO", "status": "open", "entry_price": "0.60", "contracts": "16", "cost": "9.6", "fee": "0.27",
+           "last_mid": "0.65", "last_mid_at": "2026-10-15T03:00:00Z", "close_time": "2026-10-16T04:00:00Z"}
+    assert book.mark_cutoff(row) == datetime(2026, 10, 15, 5, tzinfo=timezone.utc)
+    late = datetime(2026, 10, 15, 18, tzinfo=timezone.utc)
+    mkt = {"ticker": row["ticker"], "status": "active", "no_bid_dollars": "0.98", "no_ask_dollars": "0.99"}
+    book.update([row], lambda t: {row["ticker"]: mkt}, now=late)
+    assert row["last_mid"] == "0.65"  # not moved after the cutoff
+    settled = dict(mkt, result="no", status="finalized")
+    book.update([row], lambda t: {row["ticker"]: settled}, now=late)
+    assert row["status"] == "won" and row["clv_cents"] == 5.0

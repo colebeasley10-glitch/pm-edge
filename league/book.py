@@ -227,6 +227,15 @@ def side_mid(market: dict, side: str) -> float | None:
     return (bid + ask) / 2.0
 
 
+def mark_cutoff(row: dict) -> datetime | None:
+    """Time after which a row's mark stops moving, so last_mid is a real closing line.
+    Weather: the start of the temperature day (marks after that just track observations)."""
+    if row.get("strategy") == "weather":
+        from league.strategies.weather import closing_cutoff
+        return closing_cutoff(row.get("event_ticker") or "")
+    return None
+
+
 def update(rows: list[dict], fetch_markets, *, now: datetime | None = None) -> dict:
     """Mark open trades to market and settle finished ones.
 
@@ -257,6 +266,9 @@ def update(rows: list[dict], fetch_markets, *, now: datetime | None = None) -> d
             r["settled_at"] = iso(now)
             r["pl"] = round((contracts * 1.0 if won else 0.0) - cost - fee, 2)
             closing = f(r.get("last_mid"))
+            cut, at = mark_cutoff(r), parse_dt(r.get("last_mid_at"))
+            if cut is not None and (at is None or at >= cut):
+                closing = None  # only a mark from before the cutoff counts as a closing line
             if closing is not None:
                 r["closing_mid"] = round(closing, 4)
                 r["clv_cents"] = round((closing - (f(r.get("entry_price"), 0.0) or 0.0)) * 100.0, 2)
@@ -270,6 +282,8 @@ def update(rows: list[dict], fetch_markets, *, now: datetime | None = None) -> d
             settled += 1
             continue
         # still trading: keep the latest pre-close mark as the closing line
+        if mark_cutoff(r) is not None and now >= mark_cutoff(r):
+            continue  # past this strategy's closing-line time: freeze the mark
         if close is None or now < close:
             mid = side_mid(m, r["side"])
             if mid is not None and status in {"open", "active", ""}:
