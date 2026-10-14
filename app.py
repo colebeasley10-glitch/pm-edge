@@ -787,6 +787,20 @@ with tab_live:
         else:
             st.markdown("<div class='pe-lede'>Nothing open right now.</div>", unsafe_allow_html=True)
         from league import live_sharp as _ls_daily
+        _sports = _ls_daily.by_sport(live_rows)
+        if _sports:
+            st.markdown("<div class='section'><span>By sport</span></div>", unsafe_allow_html=True)
+            def _sport_row(g):
+                if g["bets"]:
+                    roi = f", {pct(g['roi'], signed=True)} ROI" if g["roi"] is not None else ""
+                    detail = f"{g['won']}-{g['lost']}{roi} on {money(g['staked'])}"
+                else:
+                    detail = "nothing settled yet"
+                if g["open"]:
+                    detail += f", {g['open']} open"
+                return (esc(g["group"]), detail,
+                        f"<span class='num'>{money(g['pl'], signed=True)}</span>", tone(g["pl"]))
+            st.markdown(rows_html(_sport_row(g) for g in _sports), unsafe_allow_html=True)
         _days = _ls_daily.daily(live_rows)
         if _days:
             st.markdown("<div class='section'><span>By day</span></div>", unsafe_allow_html=True)

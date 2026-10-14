@@ -448,3 +448,30 @@ def daily(rows: list[dict]) -> list[dict]:
         d["total"] = round(total, 2)
         out.append(d)
     return out
+
+
+def by_sport(rows: list[dict]) -> list[dict]:
+    """Real-money bets grouped by sport (same labels as the paper "Sharp by market"),
+    biggest group first: record, P/L, ROI on settled bets, plus how many are still open."""
+    from league.scorecard import market_group
+    groups: dict[str, dict] = {}
+    for r in rows:
+        st = r.get("status")
+        if st not in {"won", "lost", "open"}:
+            continue
+        name = market_group(r.get("event_ticker") or r.get("ticker") or "")
+        g = groups.setdefault(name, {"group": name, "won": 0, "lost": 0, "open": 0, "pl": 0.0, "staked": 0.0})
+        if st == "open":
+            g["open"] += 1
+            continue
+        g[st] += 1
+        g["pl"] += book.f(r.get("pl"), 0.0) or 0.0
+        g["staked"] += (book.f(r.get("cost"), 0.0) or 0.0) + (book.f(r.get("fee"), 0.0) or 0.0)
+    out = []
+    for g in groups.values():
+        g["bets"] = g["won"] + g["lost"]
+        g["pl"] = round(g["pl"], 2)
+        g["staked"] = round(g["staked"], 2)
+        g["roi"] = g["pl"] / g["staked"] if g["staked"] else None
+        out.append(g)
+    return sorted(out, key=lambda g: (-g["bets"], -g["open"], g["group"]))

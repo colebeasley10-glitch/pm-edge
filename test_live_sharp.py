@@ -295,3 +295,17 @@ def test_ignores_other_side_and_earlier_sells():
     c.fills.append(_sell("KXT-73", "NO", n, 0.70))
     c.fills.append(_sell("KXT-73", "YES", n, 0.70, when="2020-01-01T00:00:00Z"))
     assert live_sharp.sync_sells(rows, c, now=NOW) == [] and rows[0]["status"] == "open" and not rows[0].get("sold")
+
+
+def test_by_sport_groups_live_bets():
+    from league import live_sharp
+    rows = [
+        {"status": "won", "event_ticker": "KXATPMATCH-26OCT13A", "pl": "0.40", "cost": "0.58", "fee": "0.02"},
+        {"status": "lost", "event_ticker": "", "ticker": "KXWTAMATCH-26OCT13B-X", "pl": "-0.62", "cost": "0.60", "fee": "0.02"},
+        {"status": "open", "event_ticker": "KXUCLGAME-26OCT14ASKLFC", "cost": "0.72", "fee": "0.01"},
+        {"status": "no_fill", "event_ticker": "KXNFLGAME-26OCT19X"},
+    ]
+    out = {g["group"]: g for g in live_sharp.by_sport(rows)}
+    assert set(out) == {"Tennis", "Soccer"}
+    assert (out["Tennis"]["won"], out["Tennis"]["lost"], out["Tennis"]["pl"]) == (1, 1, -0.22)
+    assert out["Soccer"]["open"] == 1 and out["Soccer"]["bets"] == 0 and out["Soccer"]["roi"] is None
