@@ -155,6 +155,10 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
     was_open = {r.get("trade_id") for r in rows if r.get("status") == "open"}
     status = {"ran_at": book.iso(now), "strategies": {}}
     try:
+        status["nightly_sent"] = json.loads(STATUS.read_text()).get("nightly_sent") if STATUS.exists() else None
+    except Exception:
+        status["nightly_sent"] = None
+    try:
         status["update"] = book.update(rows, kalshi.markets, now=now)
     except Exception as exc:
         status["update"] = {"error": f"{type(exc).__name__}: {exc}"}
@@ -200,6 +204,13 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
         status["strategies"][strat.NAME] = st
     book.save(rows)
     status["standings"] = book.standings(rows)
+    try:
+        from league import nightly
+        sent_day = nightly.maybe_send(now, status.get("nightly_sent"), rows, live_sharp.load(), _pushover)
+        if sent_day:
+            status["nightly_sent"] = sent_day
+    except Exception as exc:
+        status["nightly_error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
     STATUS.write_text(json.dumps(status, indent=1, default=str))
     push(new_rows)
     push_settled(rows, was_open)
