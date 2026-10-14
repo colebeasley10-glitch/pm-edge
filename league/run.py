@@ -20,7 +20,7 @@ STATUS = Path(os.getenv("LEAGUE_STATUS_PATH", "league_status.json"))
 DAILY_CAP = int(os.getenv("LEAGUE_DAILY_CAP_PER_STRATEGY", "12"))
 # Per-strategy overrides of DAILY_CAP; env LEAGUE_DAILY_CAP_<NAME> (e.g. LEAGUE_DAILY_CAP_SHARP) wins.
 UNCAPPED = 10**9
-# Sharp has no bet-count cap: Live $1 Sharp is limited only by its $30/day spend, and it
+# Sharp has no bet-count cap: Live $1 Sharp is limited only by its $50/day spend, and it
 # copies every paper pick until that budget runs out.
 STRATEGY_CAPS = {"sharp": UNCAPPED}
 # Benched strategies still run and report what they would have picked (status "shadow"),

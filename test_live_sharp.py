@@ -69,7 +69,7 @@ def test_size():
 def test_env_cannot_raise_caps():
     os.environ.update({"LIVE_SHARP_MAX_PER_BET": "50", "LIVE_SHARP_DAILY_BUDGET": "1000",})
     try:
-        assert live_sharp.per_bet() == 1.0 and live_sharp.daily_budget() == 30.0
+        assert live_sharp.per_bet() == 1.0 and live_sharp.daily_budget() == 50.0
     finally:
         for k in ("LIVE_SHARP_MAX_PER_BET", "LIVE_SHARP_DAILY_BUDGET"):
             os.environ.pop(k)
@@ -77,18 +77,18 @@ def test_env_cannot_raise_caps():
 
 def test_daily_budget_and_order_cap():
     c, rows = FakeClient(), []
-    out = live_sharp.place([paper(i) for i in range(40)], c, now=NOW, rows=rows)
+    out = live_sharp.place([paper(i) for i in range(60)], c, now=NOW, rows=rows)
     spent = sum(float(r["cost"]) + float(r["fee"]) for r in rows)
-    assert spent <= 30.0 + 1e-9, spent
+    assert spent <= 50.0 + 1e-9, spent
     assert all(o["count"] * o["price"] <= 1.0 + 1e-9 for o in c.orders)
-    assert out["skipped"].get("daily_budget", 0) == 40 - out["placed"]
+    assert out["skipped"].get("daily_budget", 0) == 60 - out["placed"]
     # next Eastern day the budget resets
     out2 = live_sharp.place([paper(100)], c, now=NOW + timedelta(days=1), rows=rows)
     assert out2["placed"] == 1
 
 
 def test_kalshi_history_counts_toward_budget():
-    c = FakeClient(prior_spend=29.80)   # e.g. a ledger commit was lost
+    c = FakeClient(prior_spend=49.80)   # e.g. a ledger commit was lost
     out = live_sharp.place([paper(1)], c, now=NOW, rows=[])
     assert out["placed"] == 0 and out["skipped"] == {"daily_budget": 1}
 

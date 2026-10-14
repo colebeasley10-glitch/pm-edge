@@ -4,7 +4,7 @@ Sent by the first league round at or after 11pm Eastern (or, if GitHub skipped
 those runs, the first round before 6am for the day before). It covers:
 
 * Live $1 Sharp: orders sent, filled, missed (price moved), blocked by Kalshi,
-  bets settled that day and their profit, spend vs the $30 budget, all-time P/L;
+  bets settled that day and their profit, spend vs the $50 budget, all-time P/L;
 * Paper: picks opened and bets settled that day per strategy, Sharp all-time;
 * a warning when the Odds API is out of credits (Sportsbooks can't price anything).
 """
