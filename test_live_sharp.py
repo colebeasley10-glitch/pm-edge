@@ -14,6 +14,9 @@ for k in ("LIVE_SHARP_ENABLED", "LIVE_SHARP_MAX_PER_BET", "LIVE_SHARP_DAILY_BUDG
 
 from league import book, live_sharp, run  # noqa: E402
 
+# LEDGER is read at import; another test file may have imported live_sharp first.
+live_sharp.LEDGER = tmp / "live.csv"
+
 NOW = datetime(2026, 10, 13, 16, 0, tzinfo=timezone.utc)  # noon Eastern
 
 

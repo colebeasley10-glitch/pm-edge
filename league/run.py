@@ -25,8 +25,9 @@ UNCAPPED = 10**9
 STRATEGY_CAPS = {"sharp": UNCAPPED}
 # Benched strategies still run and report what they would have picked (status "shadow"),
 # but open no paper trades. Crypto benched 2026-10-13: 3-14, -30% ROI, -4.9c avg CLV.
+# Polymarket benched 2026-10-13: 0-7, -$70.57.
 # Override with env LEAGUE_BENCHED (comma list; empty string un-benches everything).
-BENCHED = {"crypto"}
+BENCHED = {"crypto", "polymarket"}
 
 
 def benched() -> set[str]:

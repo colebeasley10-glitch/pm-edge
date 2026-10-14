@@ -132,8 +132,10 @@ def _trade_id(strategy: str, ticker: str, side: str, opened: datetime) -> str:
     return hashlib.sha1(f"{strategy}|{ticker}|{side}|{iso(opened)}".encode()).hexdigest()[:16]
 
 
-# Strategies limited to one bet per game (Kalshi event): no taking both sides of one match.
-ONE_PER_GAME = {"sharp"}
+# Strategies limited to one bet per game (Kalshi event): no taking both sides of one match,
+# and no doubling up on one result worded two ways ("A wins" + "B does not win").
+# Weather and crypto are left out: their events are price/temperature brackets, not games.
+ONE_PER_GAME = {"sharp", "polymarket", "books"}
 
 
 def event_of(row_or_market: dict) -> str:

@@ -8,6 +8,7 @@ from pathlib import Path
 tmp = Path(tempfile.mkdtemp())
 os.environ["LEAGUE_LEDGER_PATH"] = str(tmp / "league.csv")
 os.environ["LEAGUE_STATUS_PATH"] = str(tmp / "status.json")
+os.environ["LIVE_SHARP_LEDGER_PATH"] = str(tmp / "live.csv")
 os.environ["LEAGUE_PUSH"] = "0"
 
 from league import book, run  # noqa: E402
@@ -124,7 +125,7 @@ def test_round():
 
 def test_benched_strategy_opens_nothing():
     os.environ.pop("LEAGUE_BENCHED", None)
-    assert "crypto" in run.benched()
+    assert {"crypto", "polymarket"} <= run.benched()
 
     class FakeKalshi:
         def markets(self, tickers):
@@ -153,8 +154,12 @@ def test_sharp_one_bet_per_game():
     m2 = dict(mk("KXATPMATCH-26OCT13WANPOH-POH"), event_ticker="KXATPMATCH-26OCT13WANPOH")
     book.open_trade(book.Pick("sharp", m1, "YES", None, "big trade"), rows, now=NOW)
     assert book.gate(book.Pick("sharp", m2, "YES", None, "big trade"), rows, now=NOW) == (False, "same_game")
-    # other strategies keep their old rules
+    # the rule is per strategy: Sharp holding a game doesn't block Polymarket
     assert book.gate(book.Pick("polymarket", m2, "YES", 0.6, "gap"), rows, now=NOW)[0]
+    # Polymarket can't double up on one result worded two ways (A wins YES + B wins NO)
+    prow = []
+    book.open_trade(book.Pick("polymarket", m1, "YES", 0.6, "gap"), prow, now=NOW)
+    assert book.gate(book.Pick("polymarket", m2, "NO", None, "gap"), prow, now=NOW) == (False, "same_game")
     assert book.event_of({"ticker": "KXNFLGAME-26OCT12BUFLAR-BUF"}) == "KXNFLGAME-26OCT12BUFLAR"
 
 
