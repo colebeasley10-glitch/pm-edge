@@ -103,6 +103,22 @@ st.markdown(
     .pe-hero .bar .lab { display:flex; justify-content:space-between; font-size:.8rem; color:var(--soft); }
     .pe-hero .bar .track { height:6px; border-radius:3px; background:var(--line); overflow:hidden; }
     .pe-hero .bar .fill { height:6px; border-radius:3px; background:linear-gradient(90deg, var(--up), var(--gold)); }
+    /* open vs settled split */
+    .pe-split { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:.6rem; margin:.2rem 0 .4rem; }
+    .pe-split .box { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:.8rem .9rem;
+                     display:flex; flex-direction:column; gap:.45rem; min-width:0; }
+    .pe-split .hd { display:flex; justify-content:space-between; align-items:center; }
+    .pe-split .cnt { font-family:'Barlow Condensed', sans-serif !important; font-weight:700; font-size:.95rem; color:var(--soft);
+                     background:var(--panel2); border:1px solid var(--line); border-radius:999px; padding:0 .5rem; }
+    .pe-split .amt { font-family:'Barlow Condensed', sans-serif !important; font-weight:800; font-size:2rem; line-height:1; }
+    .pe-split .cap { font-size:.7rem; color:var(--muted); margin-top:-.25rem; }
+    .pe-split dl { display:grid; grid-template-columns:1fr auto; row-gap:.2rem; column-gap:.5rem; margin:.15rem 0 0;
+                   padding-top:.5rem; border-top:1px solid var(--line); font-size:.78rem; }
+    .pe-split dt { color:var(--muted); } .pe-split dd { margin:0; text-align:right; font-weight:700; color:var(--soft);
+                   font-family:'Barlow Condensed', sans-serif !important; font-size:.95rem; }
+    .pe-total { display:flex; justify-content:space-between; align-items:baseline; background:var(--panel2); border:1px solid var(--line);
+                border-radius:12px; padding:.55rem .9rem; margin:0 0 .6rem; font-size:.8rem; color:var(--soft); }
+    .pe-total b { font-family:'Barlow Condensed', sans-serif !important; font-size:1.15rem; }
     /* older board (scorecards) keeps working, restyled */
     .pe-board { background:var(--panel); border:1px solid var(--line); border-radius:18px;
                 padding:1rem 1.1rem; display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; }
@@ -500,6 +516,28 @@ def bet_card(r, game, *, n, entry, mark, extra: str = "") -> str:
             f"<div class='pr'><div class='ps'>{esc(price)}</div>{value}</div></div></div>")
 
 
+def pl_split(*, open_n, open_pl, at_risk, payout, done_n, done_pl, record, today_pl, label="") -> str:
+    """Two boxes, open vs settled, and the combined total underneath."""
+    total = (open_pl or 0) + (done_pl or 0)
+    return f"""
+    <div class='pe-split'>
+      <div class='box'>
+        <div class='hd'><span class='k'>Open bets</span><span class='cnt'>{open_n}</span></div>
+        <div class='amt {tone(open_pl)}'>{money(open_pl, signed=True)}</div>
+        <div class='cap'>if sold at today's price</div>
+        <dl><dt>At risk</dt><dd>{money(at_risk)}</dd><dt>Pays if all win</dt><dd>{money(payout)}</dd></dl>
+      </div>
+      <div class='box'>
+        <div class='hd'><span class='k'>Settled</span><span class='cnt'>{done_n}</span></div>
+        <div class='amt {tone(done_pl)}'>{money(done_pl, signed=True)}</div>
+        <div class='cap'>banked profit</div>
+        <dl><dt>Record</dt><dd>{esc(record)}</dd><dt>Today</dt><dd class='{tone(today_pl)}'>{money(today_pl, signed=True)}</dd></dl>
+      </div>
+    </div>
+    <div class='pe-total'><span>{esc(label or "Total if everything closed now")}</span><b class='{tone(total)}'>{money(total, signed=True)}</b></div>
+    """
+
+
 def cards_html(items) -> str:
     return "<div class='cards'>" + "".join(items) + "</div>"
 
@@ -610,6 +648,11 @@ with tab_live:
     for _r in live_rows:
         if _r.get("status") == "open" and _num(_r.get("last_mid")) is not None and _num(_r.get("avg_price")) is not None:
             _open_now += (_num(_r.get("filled")) or 0) * (_num(_r.get("last_mid")) - _num(_r.get("avg_price")))
+    _today = datetime.now(EASTERN).date()
+    _risk = sum((_num(_r.get("cost")) or 0) + (_num(_r.get("fee")) or 0) for _r in live_rows if _r.get("status") == "open")
+    _pays = sum(_num(_r.get("filled")) or 0 for _r in live_rows if _r.get("status") == "open")
+    _today_pl = sum(_num(_r.get("pl")) or 0 for _r in live_rows if _r.get("status") in {"won", "lost"}
+                    and _when(_r.get("settled_at")) and _when(_r.get("settled_at")).astimezone(EASTERN).date() == _today)
     _sharp = league[league["strategy"] == "sharp"] if not league.empty and "strategy" in league else pd.DataFrame()
     _sharp_pl = float(pd.to_numeric(_sharp.get("pl"), errors="coerce").fillna(0).sum()) if not _sharp.empty else 0.0
     _budget = float(ls["budget"] or 0)
@@ -620,8 +663,6 @@ with tab_live:
           <div class='top'>
             <div><div class='k'>Live $1 Sharp · real money</div>
               <div class='big {tone(ls["pl"])}'>{money(ls["pl"], signed=True)}</div></div>
-            <div><div class='k' style='text-align:right'>Open now · {ls["open"]}</div>
-              <div class='mid {tone(_open_now)}'>{money(_open_now, signed=True)}</div></div>
           </div>
           <div class='stats'>
             <div class='stat'><div class='k'>Record</div><div class='v'>{ls["won"]}–{ls["lost"]}</div></div>
@@ -636,6 +677,9 @@ with tab_live:
         """,
         unsafe_allow_html=True,
     )
+    st.markdown(pl_split(open_n=ls["open"], open_pl=_open_now, at_risk=_risk, payout=_pays,
+                         done_n=ls["won"] + ls["lost"], done_pl=ls["pl"], record=f'{ls["won"]}–{ls["lost"]}',
+                         today_pl=_today_pl), unsafe_allow_html=True)
     _ls_on = (league_status.get("live_sharp") or {}).get("enabled")
     st.markdown(
         "<div class='pe-lede' style='font-size:.8rem'>" + ("" if _ls_on else "<b>Off.</b> ")
@@ -762,6 +806,22 @@ with tab_league:
         """,
         unsafe_allow_html=True,
     )
+    if not league.empty:
+        _st = league.get("status", pd.Series(dtype=str)).fillna("")
+        _o = league[_st == "open"]
+        _d = league[_st.isin(["won", "lost"])]
+        _num_s = lambda df, c: pd.to_numeric(df.get(c), errors="coerce").fillna(0) if not df.empty and c in df else pd.Series(dtype=float)
+        _mark = pd.to_numeric(_o.get("last_mid"), errors="coerce") if not _o.empty else pd.Series(dtype=float)
+        _ent = pd.to_numeric(_o.get("entry_price"), errors="coerce") if not _o.empty else pd.Series(dtype=float)
+        _ctr = _num_s(_o, "contracts")
+        _opl = float(((_mark - _ent) * _ctr).dropna().sum()) if not _o.empty else 0.0
+        _sat = pd.to_datetime(_d.get("settled_at"), errors="coerce", utc=True) if not _d.empty else pd.Series(dtype="datetime64[ns, UTC]")
+        _tod = float(_num_s(_d, "pl")[_sat.dt.tz_convert(EASTERN).dt.date == datetime.now(EASTERN).date()].sum()) if not _d.empty else 0.0
+        st.markdown(pl_split(open_n=len(_o), open_pl=_opl,
+                             at_risk=float(_num_s(_o, "cost").sum() + _num_s(_o, "fee").sum()), payout=float(_ctr.sum()),
+                             done_n=len(_d), done_pl=float(_num_s(_d, "pl").sum()),
+                             record=f"{int((_st == 'won').sum())}–{int((_st == 'lost').sum())}", today_pl=_tod,
+                             label="Paper total if everything closed now"), unsafe_allow_html=True)
     if league.empty:
         quiet("The league starts on the next round",
               "Every 30 minutes each strategy looks across Kalshi for mispriced markets and takes $10 paper bets.")
@@ -859,8 +919,7 @@ with tab_league:
         else:
             as_of = f"Prices from the last round, {ago(lg_last)}"
         st.markdown(f"<div class='section'><span>Paper bets running<span class='n'>{len(live)}</span></span></div>"
-                    + (f"<div class='pe-lede' style='margin:.2rem 0 0;font-size:.8rem'>Worth {money(unreal, signed=True)} "
-                       f"at today's prices. {esc(as_of)}.</div>"
+                    + (f"<div class='pe-lede' style='margin:.2rem 0 0;font-size:.8rem'>{esc(as_of)}.</div>"
                        if len(live) else ""),
                     unsafe_allow_html=True)
         if len(live) or _live_override:
