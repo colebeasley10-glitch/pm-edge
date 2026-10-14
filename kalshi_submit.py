@@ -12,6 +12,8 @@ LIVE_SHARP_ENABLED=1).
 """
 from __future__ import annotations
 
+import math
+
 import base64
 import os
 import time
@@ -172,6 +174,37 @@ class KalshiSubmitClient:
                 continue
             if count > 0 and 0 < price < 1:
                 total += count * price
+        return total
+
+    def committed_cost_for_prefix(self, client_id_prefix: str, fee_rate: float = 0.07) -> float:
+        """Money actually committed today by orders matching a prefix, fees included.
+
+        Finished orders (canceled/executed) count only the contracts that filled, so an
+        immediate-or-cancel order that missed costs nothing. Anything still live or with an
+        unknown status counts in full at its limit price, so this never undercounts.
+        """
+        total = 0.0
+        prefix = str(client_id_prefix)
+        for row in self.get_orders(limit=200):
+            if not str(row.get("client_order_id") or "").startswith(prefix):
+                continue
+            try:
+                initial = float(row.get("initial_count_fp") or row.get("initial_count") or row.get("count") or 0)
+                fill_raw = row.get("fill_count_fp") if row.get("fill_count_fp") is not None else row.get("fill_count")
+                filled = None if fill_raw is None else float(fill_raw)
+            except (TypeError, ValueError):
+                continue
+            status = str(row.get("status") or "").lower()
+            done = status in {"canceled", "cancelled", "executed", "filled"}
+            count = filled if (done and filled is not None) else initial
+            outcome = str(row.get("outcome_side") or row.get("side") or "").lower()
+            try:
+                price = float(row.get("yes_price_dollars") or 0) if outcome == "yes" else float(row.get("no_price_dollars") or 0)
+            except (TypeError, ValueError):
+                continue
+            if count > 0 and 0 < price < 1:
+                fee = math.ceil(fee_rate * count * price * (1.0 - price) * 100.0 - 1e-9) / 100.0
+                total += count * price + fee
         return total
 
     def create_buy_order(

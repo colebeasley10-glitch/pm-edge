@@ -181,8 +181,9 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
 
     spent, n_orders = _spent(rows, day)
     try:
-        # Kalshi's record of what we've already sent today; trust whichever is higher.
-        spent = max(spent, client.submitted_cost_for_prefix(f"{PREFIX}{day}-"))
+        # Kalshi's record of what today's orders actually cost (filled contracts + fees; an
+        # order that missed costs nothing); trust whichever is higher.
+        spent = max(spent, client.committed_cost_for_prefix(f"{PREFIX}{day}-"))
     except Exception as exc:
         out["skipped"]["kalshi_unreachable"] = len(picks)
         out["error"] = f"{type(exc).__name__}: {str(exc)[:120]}"

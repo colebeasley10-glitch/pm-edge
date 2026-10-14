@@ -150,6 +150,16 @@ def main() -> None:
 
     assert client.submitted_cost_for_prefix("pmedge-20260917-") == 2.5
     assert client.find_order_by_client_id("pmedge-20260917-old") is not None
+    # committed cost: an IOC that missed costs nothing, a partial fill counts only what filled
+    session.orders = [
+        {"client_order_id": "pmls-1-a", "status": "canceled", "initial_count_fp": "2.00",
+         "fill_count_fp": "0.00", "outcome_side": "yes", "yes_price_dollars": "0.500000"},
+        {"client_order_id": "pmls-1-b", "status": "canceled", "initial_count_fp": "4.00",
+         "fill_count_fp": "1.00", "outcome_side": "no", "no_price_dollars": "0.200000"},
+        {"client_order_id": "pmls-1-c", "status": "resting", "initial_count_fp": "1.00",
+         "fill_count_fp": "0.00", "outcome_side": "yes", "yes_price_dollars": "0.900000"},
+    ]
+    assert abs(client.committed_cost_for_prefix("pmls-1-") - (0.20 + 0.02 + 0.90 + 0.01)) < 1e-9
 
     for forbidden in ("cancel_order", "amend_order", "decrease_order", "transfer", "withdraw"):
         assert not hasattr(client, forbidden), forbidden

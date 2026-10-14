@@ -22,8 +22,8 @@ class FakeClient:
         self.orders, self.fills, self.calls = [], [], 0
         self.fill_ratio, self.prior_spend = fill_ratio, prior_spend
 
-    def submitted_cost_for_prefix(self, prefix):
-        return self.prior_spend + sum(o["count"] * o["price"] for o in self.orders
+    def committed_cost_for_prefix(self, prefix):
+        return self.prior_spend + sum(float(o["fill_count_fp"]) * o["price"] for o in self.orders
                                       if o["client_order_id"].startswith(prefix))
 
     def find_order_by_client_id(self, cid):
@@ -88,6 +88,12 @@ def test_kalshi_history_counts_toward_budget():
     c = FakeClient(prior_spend=29.80)   # e.g. a ledger commit was lost
     out = live_sharp.place([paper(1)], c, now=NOW, rows=[])
     assert out["placed"] == 0 and out["skipped"] == {"daily_budget": 1}
+
+
+def test_missed_orders_do_not_use_budget():
+    c, rows = FakeClient(fill_ratio=0), []
+    out = live_sharp.place([paper(i) for i in range(60)], c, now=NOW, rows=rows)
+    assert out["placed"] == 60 and out["filled"] == 0 and out["spent_today"] == 0.0
 
 
 def test_idempotent_and_no_fill():
