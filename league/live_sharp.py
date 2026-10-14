@@ -292,6 +292,10 @@ def sync_sells(rows: list[dict], client, *, now: datetime | None = None) -> list
         groups.setdefault((r["ticker"], r["side"]), []).append(r)
     done = []
     fills_by_ticker: dict[str, list[dict]] = {}
+    # Our own buy orders are never cash-outs. A NO buy goes to Kalshi as an ask on the YES
+    # book, and its fill can come back looking like a sell, which used to "cash out" every
+    # NO bet a couple of minutes after it was placed, at its own entry price.
+    own_orders = {str(r.get("order_id")) for r in rows if r.get("order_id")}
     for (ticker, side), group in groups.items():
         if ticker not in fills_by_ticker:
             try:
@@ -303,6 +307,8 @@ def sync_sells(rows: list[dict], client, *, now: datetime | None = None) -> list
         sells = []
         for fl in fills_by_ticker[ticker]:
             if fl.get("ticker") and fl.get("ticker") != ticker:
+                continue
+            if fl.get("order_id") and str(fl.get("order_id")) in own_orders:
                 continue
             if str(fl.get("action") or "").lower() != "sell" or str(fl.get("side") or "").upper() != side:
                 continue

@@ -322,3 +322,19 @@ def test_skips_thin_flow(monkeypatch):
     monkeypatch.setenv("LIVE_SHARP_MIN_TRADES", "0")
     out = live_sharp.place([paper(4, trades=2)], c, now=NOW, rows=[])
     assert out["placed"] == 1
+
+
+def test_own_no_buy_fill_is_not_a_cash_out():
+    # Kalshi reports a NO buy (sent as an ask on the YES book) like a sell; it must not close the bet
+    c, rows = FakeClient(), []
+    live_sharp.place([paper(74, 0.40, "NO")], c, now=NOW, rows=rows)
+    r = rows[0]
+    assert r["status"] == "open"
+    n = float(r["filled"])
+    own = _sell("KXT-74", "NO", n, 0.40)
+    own["order_id"] = r["order_id"]
+    c.fills.append(own)
+    assert live_sharp.sync_sells(rows, c, now=NOW) == [] and r["status"] == "open" and not r.get("sold")
+    # a real manual sale of the same bet still counts
+    c.fills.append(_sell("KXT-74", "NO", n, 0.55))
+    assert len(live_sharp.sync_sells(rows, c, now=NOW)) == 1 and r["result"] == "sold"
