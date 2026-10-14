@@ -362,6 +362,25 @@ def live_scores(keys: tuple) -> dict:
         return {}
 
 
+def _score_line(g):
+    """Kalshi-style game line: LIVE  DEL 23  26 MTU  Q4 · 12:35 (our side in bold)."""
+    def side(code, score, who):
+        code = f"<b>{esc(code)}</b>" if g.get("mine") == who else esc(code)
+        return code, f"<b class='num'>{esc(score)}</b>"
+    ac, as_ = side(g["away"], g["away_score"], "away")
+    hc, hs = side(g["home"], g["home_score"], "home")
+    detail = esc(str(g.get("detail") or "").replace(" - ", " · "))
+    if g.get("state") == "in":
+        tag = "<span class='sc-live'>● LIVE</span>"
+        return f"<div class='sc'>{tag} {ac} {as_}&nbsp; {hs} {hc} <span class='sc-d'>{detail}</span></div>"
+    if g.get("state") == "post":
+        return (f"<div class='sc'><span class='sc-fin'>FINAL</span> {ac} {as_}&nbsp; {hs} {hc}"
+                f" <span class='sc-d'>{detail if detail not in {'Final', 'FT'} else ''}</span></div>")
+    from league import scores as _scores
+    st_lbl = _scores.start_label(g)
+    return f"<div class='sc'>{ac} vs {hc} <span class='sc-d'>{esc('Starts ' + st_lbl if st_lbl else detail)}</span></div>"
+
+
 def _refresh_all() -> None:
     """One tap refreshes both the paper league bets and the real $1 bets."""
     _refresh_live_bets()
@@ -501,24 +520,6 @@ with tab_live:
         st.caption(f"⚠️ Kalshi key check failed last round: {_lsr.get('kalshi_error', '')}")
     if _lsr.get("error"):
         st.caption(f"Last round: {_lsr['error']}")
-
-    def _score_line(g):
-        """Kalshi-style game line: LIVE  DEL 23  26 MTU  Q4 · 12:35 (our side in bold)."""
-        def side(code, score, who):
-            code = f"<b>{esc(code)}</b>" if g.get("mine") == who else esc(code)
-            return code, f"<b class='num'>{esc(score)}</b>"
-        ac, as_ = side(g["away"], g["away_score"], "away")
-        hc, hs = side(g["home"], g["home_score"], "home")
-        detail = esc(str(g.get("detail") or "").replace(" - ", " · "))
-        if g.get("state") == "in":
-            tag = "<span class='sc-live'>● LIVE</span>"
-            return f"<div class='sc'>{tag} {ac} {as_}&nbsp; {hs} {hc} <span class='sc-d'>{detail}</span></div>"
-        if g.get("state") == "post":
-            return (f"<div class='sc'><span class='sc-fin'>FINAL</span> {ac} {as_}&nbsp; {hs} {hc}"
-                    f" <span class='sc-d'>{detail if detail not in {'Final', 'FT'} else ''}</span></div>")
-        from league import scores as _scores
-        st_lbl = _scores.start_label(g)
-        return f"<div class='sc'>{ac} vs {hc} <span class='sc-d'>{esc('Starts ' + st_lbl if st_lbl else detail)}</span></div>"
 
     def _live_row(r):
         title = f"{esc(str(r.get('side') or '').title())} on {esc(r.get('title') or r.get('ticker'))}"
@@ -667,6 +668,10 @@ with tab_league:
             title = f"{esc(str(r.get('side') or '').title())} on {esc(r.get('title') or r.get('ticker'))}"
             entry = _num(r.get("entry_price"))
             stt = str(r.get("status") or "")
+            game = _paper_games.get(str(r.get("ticker") or "")) if stt == "open" else None
+            if game:
+                strat = f"{title}<br>{strat}"
+                title = f"{esc(game['away_name'])} vs {esc(game['home_name'])}{_score_line(game)}"
             if stt == "open":
                 mark = _num(r.get("last_mid"))
                 contracts = _num(r.get("contracts")) or 0
@@ -688,6 +693,8 @@ with tab_league:
             return (title, sub, f"<span class='num'>{money(r.get('pl'), signed=True)}</span>", tone(r.get("pl")))
 
         live = league[league["status"].fillna("") == "open"].copy()
+        _paper_games = live_scores(tuple(sorted({(str(r.get("ticker") or ""), str(r.get("title") or ""))
+                                                 for r in live.to_dict("records")}))) if not live.empty else {}
         if not live.empty:
             live["_end"] = pd.to_datetime(live.get("ends_at", live["close_time"]).fillna(live["close_time"]),
                                           errors="coerce", utc=True)

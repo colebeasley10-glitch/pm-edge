@@ -39,6 +39,13 @@ LEAGUES = {
     "BUNDESLIGA": "soccer/ger.1",
     "LIGUE1": "soccer/fra.1",
     "MLS": "soccer/usa.1",
+    "EFLCH": "soccer/eng.2",
+    "EFLL1": "soccer/eng.3",
+    "EFLL2": "soccer/eng.4",
+    "SAUDIPL": "soccer/ksa.1",
+    "LIGAMX": "soccer/mex.1",
+    "EREDIVISIE": "soccer/ned.1",
+    "LIGAPORTUGAL": "soccer/por.1",
 }
 
 # Kalshi team codes that differ from ESPN's abbreviation (Kalshi -> ESPN).
@@ -82,7 +89,11 @@ def norm(text: str) -> str:
 
 
 def _team_from_title(title: str) -> str:
-    """'Jacksonville St. wins' -> 'jacksonville state'; '' when the title isn't 'X wins'."""
+    """'Jacksonville St. wins' -> 'jacksonville state'; '' when the title isn't 'X wins'.
+
+    Paper titles can lead with the matchup ('Mugla vs Bursa: Bursa wins'), so that is dropped.
+    """
+    title = str(title or "").rsplit(": ", 1)[-1]
     m = re.match(r"^(?:yes\s+|no\s+)?(.+?)\s+wins(?:\s+(?:1st half|2nd half|by .*))?\??$", str(title or "").strip(), re.I)
     return norm(m.group(1)) if m else ""
 

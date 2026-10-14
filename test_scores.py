@@ -53,6 +53,15 @@ def test_match_totals_and_aliases():
     assert g and g["state"] == "post" and g["mine"] == "home"
 
 
+def test_matchup_prefixed_title():
+    ev = [event(team("MUG", "Mugla", "Spor"), team("BUR", "Bursa", "Spor"), 0, 1, detail="67'")]
+    g = scores.match("KXEFLL1GAME-26OCT17MKDLUT-LUT", "Milton Keynes vs Luton: Luton wins", ev)
+    assert g is None
+    g = scores.match("KXTFF1LIGGAME-26OCT15MUGBUR-BUR", "Mugla vs Bursa: Bursa wins", ev)
+    assert g and g["mine"] == "home"
+    assert scores.league_path("KXEFLL1GAME-26OCT17MKDLUT-LUT") == "soccer/eng.3"
+
+
 def test_no_match_returns_none():
     assert scores.match("KXNCAAFGAME-26OCT13ABCXYZ-ABC", "Nobody wins", CFB) is None
 
