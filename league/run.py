@@ -110,10 +110,17 @@ def run_live_sharp(new_sharp_rows: list[dict], kalshi, now: datetime, client=Non
     """Settle real $1 Sharp bets, then copy this round's new Sharp picks with real orders."""
     rows = live_sharp.load()
     out: dict = {"enabled": False}
+    finished: list[dict] = []
+    if rows and (client is not None or live_sharp.enabled()):
+        # manual cash-outs on Kalshi first, so a sold bet isn't also settled as if held
+        try:
+            client = client or live_sharp.client_from_env()
+            finished += live_sharp.sync_sells(rows, client, now=now)
+        except Exception as exc:
+            out["sell_sync_error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
     try:
-        finished = live_sharp.settle(rows, kalshi.markets, now=now) if rows else []
+        finished += live_sharp.settle(rows, kalshi.markets, now=now) if rows else []
     except Exception as exc:
-        finished = []
         out["settle_error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
     if client is not None or live_sharp.enabled():
         out["enabled"] = True
@@ -142,6 +149,7 @@ def run_live_sharp(new_sharp_rows: list[dict], kalshi, now: datetime, client=Non
         _pushover(f"💵 Live $1 Sharp settled: {w}-{len(finished) - w}, {pl:+.2f} real",
                   [f"{'✅' if r['status'] == 'won' else '❌' if r['status'] == 'lost' else '↩️'} "
                    f"{r['side']} {str(r.get('title') or r['ticker'])[:60]} {float(r.get('pl') or 0):+.2f}"
+                   + (f" ({r['note']})" if r.get("result") == "sold" else "")
                    for r in finished[:8]])
     out["settled"] = len(finished)
     out["summary"] = live_sharp.summary(rows, now)

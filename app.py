@@ -647,10 +647,14 @@ with tab_live:
     _open_now = 0.0
     for _r in live_rows:
         if _r.get("status") == "open" and _num(_r.get("last_mid")) is not None and _num(_r.get("avg_price")) is not None:
-            _open_now += (_num(_r.get("filled")) or 0) * (_num(_r.get("last_mid")) - _num(_r.get("avg_price")))
+            _held = (_num(_r.get("filled")) or 0) - (_num(_r.get("sold")) or 0)
+            _open_now += _held * (_num(_r.get("last_mid")) - _num(_r.get("avg_price")))
+            if _num(_r.get("sold")):
+                _open_now += ((_num(_r.get("sale_proceeds")) or 0) - (_num(_r.get("sale_fee")) or 0)
+                              - (_num(_r.get("sold")) or 0) * _num(_r.get("avg_price")))
     _today = datetime.now(EASTERN).date()
     _risk = sum((_num(_r.get("cost")) or 0) + (_num(_r.get("fee")) or 0) for _r in live_rows if _r.get("status") == "open")
-    _pays = sum(_num(_r.get("filled")) or 0 for _r in live_rows if _r.get("status") == "open")
+    _pays = sum((_num(_r.get("filled")) or 0) - (_num(_r.get("sold")) or 0) for _r in live_rows if _r.get("status") == "open")
     _today_pl = sum(_num(_r.get("pl")) or 0 for _r in live_rows if _r.get("status") in {"won", "lost"}
                     and _when(_r.get("settled_at")) and _when(_r.get("settled_at")).astimezone(EASTERN).date() == _today)
     _sharp = league[league["strategy"] == "sharp"] if not league.empty and "strategy" in league else pd.DataFrame()
@@ -732,6 +736,9 @@ with tab_live:
                     f"<span class='num'>{cents(avg)}</span>", "")
         if stt in {"won", "lost"}:
             clv = _num(r.get("clv_cents"))
+            if r.get("result") == "sold":
+                return (title, f"Cashed out{' (' + esc(r.get('note')) + ')' if r.get('note') else ''}. {esc(when)}, {buy}{slip}",
+                        f"<span class='num'>{money(r.get('pl'), signed=True)}</span>", tone(r.get("pl")))
             return (title, f"{'Won' if stt == 'won' else 'Lost'}" + (f", {clv:+.0f}¢ vs close" if clv is not None else "")
                     + f". {esc(when)}, {buy}{slip}",
                     f"<span class='num'>{money(r.get('pl'), signed=True)}</span>", tone(r.get("pl")))

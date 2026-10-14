@@ -241,3 +241,57 @@ def test_daily_breakdown():
     d = out["20261013"]
     assert (d["won"], d["lost"], d["pl"], d["total"]) == (0, 1, -0.62, -0.14)
     assert (d["orders"], d["filled"], d["missed"], d["blocked"]) == (4, 2, 1, 1)
+
+
+def _sell(ticker, side, count, price, when="2026-10-13T20:00:00Z", fee="0.01"):
+    key = "yes_price_dollars" if side == "YES" else "no_price_dollars"
+    return {"ticker": ticker, "action": "sell", "side": side.lower(), "count_fp": str(count),
+            key: str(price), "fee_cost": fee, "created_time": when}
+
+
+def test_cash_out_counts_real_proceeds():
+    c, rows = FakeClient(), []
+    live_sharp.place([paper(70, 0.40, "YES")], c, now=NOW, rows=rows)
+    r = rows[0]
+    n = float(r["filled"])
+    c.fills.append(_sell("KXT-70", "YES", n, 0.55))
+    done = live_sharp.sync_sells(rows, c, now=NOW)
+    assert done == [r] and r["status"] == "won" and r["result"] == "sold"
+    expect = round(n * 0.55 - 0.01 - float(r["cost"]) - float(r["fee"]), 2)
+    assert float(r["pl"]) == expect and "55¢" in r["note"]
+    # a sold bet is finished: settlement later doesn't touch it, and it isn't counted twice
+    assert live_sharp.sync_sells(rows, c, now=NOW) == []
+    mk = {"KXT-70": {"result": "no", "status": "finalized"}}
+    assert live_sharp.settle(rows, lambda t: {k: mk[k] for k in t if k in mk}, now=NOW) == []
+    assert float(r["pl"]) == expect and live_sharp.summary(rows, NOW)["won"] == 1
+
+
+def test_cash_out_at_a_loss_is_a_loss():
+    c, rows = FakeClient(), []
+    live_sharp.place([paper(71, 0.40, "NO")], c, now=NOW, rows=rows)
+    c.fills.append(_sell("KXT-71", "NO", float(rows[0]["filled"]), 0.30))
+    live_sharp.sync_sells(rows, c, now=NOW)
+    assert rows[0]["status"] == "lost" and float(rows[0]["pl"]) < 0
+
+
+def test_partial_cash_out_then_settle():
+    c, rows = FakeClient(), []
+    live_sharp.place([paper(72, 0.40, "YES")], c, now=NOW, rows=rows)
+    r = rows[0]
+    n = float(r["filled"])
+    assert n >= 2
+    c.fills.append(_sell("KXT-72", "YES", 1, 0.60))
+    assert live_sharp.sync_sells(rows, c, now=NOW) == [] and r["status"] == "open" and float(r["sold"]) == 1
+    mk = {"KXT-72": {"result": "yes", "status": "finalized"}}
+    live_sharp.settle(rows, lambda t: {k: mk[k] for k in t if k in mk}, now=NOW)
+    assert r["status"] == "won"
+    assert abs(float(r["pl"]) - round((n - 1) + 0.60 - 0.01 - float(r["cost"]) - float(r["fee"]), 2)) < 1e-9
+
+
+def test_ignores_other_side_and_earlier_sells():
+    c, rows = FakeClient(), []
+    live_sharp.place([paper(73, 0.40, "YES")], c, now=NOW, rows=rows)
+    n = float(rows[0]["filled"])
+    c.fills.append(_sell("KXT-73", "NO", n, 0.70))
+    c.fills.append(_sell("KXT-73", "YES", n, 0.70, when="2020-01-01T00:00:00Z"))
+    assert live_sharp.sync_sells(rows, c, now=NOW) == [] and rows[0]["status"] == "open" and not rows[0].get("sold")

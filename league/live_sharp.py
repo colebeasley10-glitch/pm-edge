@@ -37,6 +37,7 @@ FIELDS = [
     "limit_price", "contracts_wanted", "status", "order_id", "filled", "avg_price", "cost", "fee",
     "close_time", "result", "settled_at", "pl", "paper_entry", "note",
     "ends_at", "last_mid", "last_mid_at", "clv_cents", "event_ticker",
+    "sold", "sale_proceeds", "sale_fee",
 ]
 
 
@@ -246,6 +247,91 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
     return out
 
 
+def _fill_price(fl: dict, side: str) -> float | None:
+    p = book.f(fl.get("yes_price_dollars" if side == "YES" else "no_price_dollars"))
+    if p is None:
+        legacy = book.f(fl.get("yes_price" if side == "YES" else "no_price"))
+        p = legacy / 100.0 if legacy is not None and legacy > 1 else legacy
+    return p
+
+
+def sync_sells(rows: list[dict], client, *, now: datetime | None = None) -> list[dict]:
+    """Pick up manual cash-outs: sells on Kalshi of a ticker/side we hold an open live bet on.
+
+    Sells are matched to open bets on the same ticker and side, oldest bet first, and only
+    sells made after that bet was placed. A bet sold out completely finishes right away
+    (won if the sale beat cost + fees, lost otherwise, result "sold"); a partial sale is
+    remembered and added to the P/L when the market settles. Returns the bets that just finished.
+    """
+    now = now or book.now_utc()
+    open_rows = [r for r in rows if r.get("status") == "open"]
+    groups: dict[tuple[str, str], list[dict]] = {}
+    for r in open_rows:
+        groups.setdefault((r["ticker"], r["side"]), []).append(r)
+    done = []
+    fills_by_ticker: dict[str, list[dict]] = {}
+    for (ticker, side), group in groups.items():
+        if ticker not in fills_by_ticker:
+            try:
+                fills_by_ticker[ticker] = client.get_fills(ticker=ticker, limit=200)
+            except Exception:
+                fills_by_ticker[ticker] = []
+        group.sort(key=lambda r: str(r.get("placed_at") or ""))
+        first = book.parse_dt(group[0].get("placed_at"))
+        sells = []
+        for fl in fills_by_ticker[ticker]:
+            if fl.get("ticker") and fl.get("ticker") != ticker:
+                continue
+            if str(fl.get("action") or "").lower() != "sell" or str(fl.get("side") or "").upper() != side:
+                continue
+            when = book.parse_dt(fl.get("created_time"))
+            if first and when and when < first:
+                continue
+            c = book.f(fl.get("count_fp") if fl.get("count_fp") is not None else fl.get("count"), 0.0) or 0.0
+            p = _fill_price(fl, side)
+            if c > 0 and p is not None:
+                sells.append((when, c, p, book.f(fl.get("fee_cost"))))
+        sells.sort(key=lambda x: x[0] or now)
+        # hand sold contracts to the bets oldest-first, never more than each bet holds
+        pool = list(sells)
+        for r in group:
+            placed = book.parse_dt(r.get("placed_at"))
+            held = book.f(r.get("filled"), 0.0) or 0.0
+            n = proceeds = fee = 0.0
+            last = None
+            while pool and n < held - 1e-9:
+                when, c, p, fc = pool[0]
+                if placed and when and when < placed:
+                    pool.pop(0)
+                    continue
+                take = min(c, held - n)
+                share = take / c
+                n += take
+                proceeds += take * p
+                fee += (fc * share) if fc is not None else book.taker_fee(p, max(1, int(round(take))))
+                last = when
+                if take >= c - 1e-9:
+                    pool.pop(0)
+                else:
+                    pool[0] = (when, c - take, p, (fc * (1 - share)) if fc is not None else None)
+            if n <= 0:
+                continue
+            r.update({"sold": round(n, 2), "sale_proceeds": round(proceeds, 4), "sale_fee": round(fee, 4)})
+            if n >= held - 1e-9:
+                cost = book.f(r.get("cost"), 0.0) or 0.0
+                buy_fee = book.f(r.get("fee"), 0.0) or 0.0
+                pl = round(proceeds - fee - cost - buy_fee, 2)
+                avg_sale = proceeds / n
+                r.update({"status": "won" if pl > 0 else "lost", "result": "sold",
+                          "settled_at": book.iso(last or now), "pl": pl,
+                          "note": f"cashed out at {avg_sale * 100:.0f}¢"})
+                avg = book.f(r.get("avg_price"))
+                if avg is not None:
+                    r["clv_cents"] = round((avg_sale - avg) * 100.0, 2)
+                done.append(r)
+    return done
+
+
 def settle(rows: list[dict], fetch_markets, *, now: datetime | None = None) -> list[dict]:
     """Settle open live bets from Kalshi's market result. Returns the rows that just finished."""
     now = now or book.now_utc()
@@ -268,8 +354,11 @@ def settle(rows: list[dict], fetch_markets, *, now: datetime | None = None) -> l
         if result in {"yes", "no"}:
             won = (result == "yes") == (r["side"] == "YES")
             n = book.f(r.get("filled"), 0.0) or 0.0
+            # contracts already cashed out don't pay at settlement; their sale does
+            sold = min(n, book.f(r.get("sold"), 0.0) or 0.0)
+            sale = (book.f(r.get("sale_proceeds"), 0.0) or 0.0) - (book.f(r.get("sale_fee"), 0.0) or 0.0)
             r.update({"status": "won" if won else "lost", "result": result, "settled_at": book.iso(now),
-                      "pl": round((n if won else 0.0) - cost - fee, 2)})
+                      "pl": round(((n - sold) if won else 0.0) + sale - cost - fee, 2)})
             mark, avg = book.f(r.get("last_mid")), book.f(r.get("avg_price"))
             if mark is not None and avg is not None:
                 r["clv_cents"] = round((mark - avg) * 100.0, 2)
