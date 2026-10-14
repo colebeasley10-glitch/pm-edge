@@ -133,6 +133,10 @@ st.markdown(
     .row-list .t { font-weight:600; font-size:.95rem; line-height:1.3; }
     .row-list .s { color:var(--muted); font-size:.8rem; margin-top:.15rem; }
     .row-list .v { font-weight:700; text-align:right; white-space:nowrap; }
+    .row-list .sc { font-weight:500; font-size:.85rem; margin-top:.25rem; color:var(--text, inherit); }
+    .row-list .sc .sc-live { color:var(--down); font-weight:800; letter-spacing:.06em; margin-right:.35rem; }
+    .row-list .sc .sc-fin { color:var(--muted); font-weight:800; letter-spacing:.06em; margin-right:.35rem; }
+    .row-list .sc .sc-d { color:var(--muted); margin-left:.4rem; }
     .section { font-size:.95rem; font-weight:700; margin:1.3rem 0 .1rem; }
     .quiet { text-align:center; padding:2.6rem 1.2rem; color:var(--muted); line-height:1.5; }
     .quiet strong { display:block; color:var(--text); font-size:1.1rem; font-weight:700; margin-bottom:.35rem; }
@@ -348,10 +352,21 @@ def _ls_base_key() -> str:
         return ""
 
 
+@st.cache_data(ttl=30, show_spinner=False)
+def live_scores(keys: tuple) -> dict:
+    """ESPN score/clock for open real bets, keyed by Kalshi ticker; {} if ESPN is unreachable."""
+    from league import scores as _scores
+    try:
+        return _scores.for_bets([{"ticker": t, "title": ti} for t, ti in keys])
+    except Exception:
+        return {}
+
+
 def _refresh_all() -> None:
     """One tap refreshes both the paper league bets and the real $1 bets."""
     _refresh_live_bets()
     _refresh_live_sharp()
+    live_scores.clear()
 
 
 LEAGUE_LABELS = {"weather": "Weather", "polymarket": "Polymarket", "books": "Sportsbooks",
@@ -487,7 +502,35 @@ with tab_live:
     if _lsr.get("error"):
         st.caption(f"Last round: {_lsr['error']}")
 
+    def _score_line(g):
+        """Kalshi-style game line: LIVE  DEL 23  26 MTU  Q4 · 12:35 (our side in bold)."""
+        def side(code, score, who):
+            code = f"<b>{esc(code)}</b>" if g.get("mine") == who else esc(code)
+            return code, f"<b class='num'>{esc(score)}</b>"
+        ac, as_ = side(g["away"], g["away_score"], "away")
+        hc, hs = side(g["home"], g["home_score"], "home")
+        detail = esc(str(g.get("detail") or "").replace(" - ", " · "))
+        if g.get("state") == "in":
+            tag = "<span class='sc-live'>● LIVE</span>"
+            return f"<div class='sc'>{tag} {ac} {as_}&nbsp; {hs} {hc} <span class='sc-d'>{detail}</span></div>"
+        if g.get("state") == "post":
+            return (f"<div class='sc'><span class='sc-fin'>FINAL</span> {ac} {as_}&nbsp; {hs} {hc}"
+                    f" <span class='sc-d'>{detail if detail not in {'Final', 'FT'} else ''}</span></div>")
+        from league import scores as _scores
+        st_lbl = _scores.start_label(g)
+        return f"<div class='sc'>{ac} vs {hc} <span class='sc-d'>{esc('Starts ' + st_lbl if st_lbl else detail)}</span></div>"
+
     def _live_row(r):
+        title = f"{esc(str(r.get('side') or '').title())} on {esc(r.get('title') or r.get('ticker'))}"
+        game = _games.get(str(r.get("ticker") or "")) if r.get("status") == "open" else None
+        if game:
+            pick = title
+            title = f"{esc(game['away_name'])} vs {esc(game['home_name'])}{_score_line(game)}"
+            row = _live_row_body(r, pick)
+            return (title, f"{pick}<br>{row[1]}", row[2], row[3])
+        return _live_row_body(r, None)
+
+    def _live_row_body(r, _pick):
         title = f"{esc(str(r.get('side') or '').title())} on {esc(r.get('title') or r.get('ticker'))}"
         stt = str(r.get("status") or "")
         filled, avg = _num(r.get("filled")) or 0, _num(r.get("avg_price"))
@@ -534,6 +577,7 @@ with tab_live:
         ordered = sorted(live_rows, key=lambda r: str(r.get("placed_at") or ""), reverse=True)
         opn = [r for r in ordered if r.get("status") == "open"]
         rest = [r for r in ordered if r.get("status") != "open"][:40]
+        _games = live_scores(tuple(sorted({(str(r.get("ticker") or ""), str(r.get("title") or "")) for r in opn})))
         unreal = sum((_num(r.get("filled")) or 0) * ((_num(r.get("last_mid")) or 0) - (_num(r.get("avg_price")) or 0))
                      for r in opn if _num(r.get("last_mid")) is not None and _num(r.get("avg_price")) is not None)
         if _ls_over:
