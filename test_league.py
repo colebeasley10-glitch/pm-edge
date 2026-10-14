@@ -181,3 +181,16 @@ def test_sharp_daily_cap_matches_live_others_default(monkeypatch):
     assert run.daily_cap("weather") == run.DAILY_CAP
     monkeypatch.setenv("LEAGUE_DAILY_CAP_SHARP", "5")
     assert run.daily_cap("sharp") == 5
+
+
+def test_sharp_skips_markets_that_settle_far_out():
+    from datetime import datetime, timezone
+    from league.strategies import sharp
+    now = datetime(2026, 10, 14, 12, tzinfo=timezone.utc)
+    game = {"expected_expiration_time": "2026-10-14T22:00:00Z", "close_time": "2026-10-28T10:00:00Z"}
+    election = {"expected_expiration_time": "2027-02-26T15:00:00Z", "close_time": "2027-11-28T15:00:00Z"}
+    fed = {"close_time": "2026-10-28T17:59:00Z"}
+    assert sharp.settles_soon(game, now)
+    assert not sharp.settles_soon(election, now)
+    assert not sharp.settles_soon(fed, now)
+    assert not sharp.settles_soon({}, now)
