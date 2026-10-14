@@ -320,3 +320,42 @@ def client_from_env():
     import kalshi_submit
     c = kalshi_submit.KalshiSubmitClient.from_env()
     return c
+
+
+def daily(rows: list[dict]) -> list[dict]:
+    """Per Eastern day, oldest first: bets settled that day (record, P/L, ROI, running total)
+    and orders sent that day (filled, missed because the price moved, blocked by Kalshi)."""
+    days: dict[str, dict] = {}
+
+    def row(day: str) -> dict:
+        return days.setdefault(day, {"day": day, "won": 0, "lost": 0, "pl": 0.0, "staked": 0.0,
+                                     "orders": 0, "filled": 0, "missed": 0, "blocked": 0})
+
+    for r in rows:
+        st = r.get("status")
+        if st in {"won", "lost"}:
+            when = book.parse_dt(r.get("settled_at"))
+            if when:
+                d = row(et_day(when))
+                d[st] += 1
+                d["pl"] += book.f(r.get("pl"), 0.0) or 0.0
+                d["staked"] += (book.f(r.get("cost"), 0.0) or 0.0) + (book.f(r.get("fee"), 0.0) or 0.0)
+        if r.get("day") and st != "skipped":
+            d = row(str(r["day"]))
+            d["orders"] += 1
+            if st == "no_fill":
+                d["missed"] += 1
+            elif st == "error":
+                if "not_currently_allowed" in str(r.get("note") or ""):
+                    d["blocked"] += 1
+            elif st != "submitted":
+                d["filled"] += 1
+    out, total = [], 0.0
+    for day in sorted(days):
+        d = days[day]
+        total += d["pl"]
+        d["pl"] = round(d["pl"], 2)
+        d["roi"] = d["pl"] / d["staked"] if d["staked"] else None
+        d["total"] = round(total, 2)
+        out.append(d)
+    return out

@@ -225,3 +225,19 @@ if __name__ == "__main__":
         if name.startswith("test_") and callable(fn):
             fn()
     print("Live $1 Sharp tests: PASS")
+
+
+def test_daily_breakdown():
+    rows = [
+        {"day": "20261012", "status": "won", "cost": "0.50", "fee": "0.02", "pl": "0.48", "settled_at": "2026-10-13T01:00:00Z"},
+        {"day": "20261013", "status": "lost", "cost": "0.60", "fee": "0.02", "pl": "-0.62", "settled_at": "2026-10-13T20:00:00Z"},
+        {"day": "20261013", "status": "no_fill"},
+        {"day": "20261013", "status": "error", "note": "Trading_is_not_currently_allowed_in_Washington"},
+        {"day": "20261013", "status": "open", "cost": "0.81", "fee": "0.01"},
+    ]
+    out = {d["day"]: d for d in live_sharp.daily(rows)}
+    # 01:00Z Oct 13 is 9pm Oct 12 Eastern
+    assert out["20261012"]["won"] == 1 and out["20261012"]["pl"] == 0.48 and out["20261012"]["filled"] == 1
+    d = out["20261013"]
+    assert (d["won"], d["lost"], d["pl"], d["total"]) == (0, 1, -0.62, -0.14)
+    assert (d["orders"], d["filled"], d["missed"], d["blocked"]) == (4, 2, 1, 1)

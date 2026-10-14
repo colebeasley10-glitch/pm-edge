@@ -779,6 +779,20 @@ with tab_live:
             st.markdown(cards_html(_live_card(r) for r in opn), unsafe_allow_html=True)
         else:
             st.markdown("<div class='pe-lede'>Nothing open right now.</div>", unsafe_allow_html=True)
+        from league import live_sharp as _ls_daily
+        _days = _ls_daily.daily(live_rows)
+        if _days:
+            st.markdown("<div class='section'><span>By day</span></div>", unsafe_allow_html=True)
+            def _day_row(d):
+                dt = datetime.strptime(d["day"], "%Y%m%d")
+                rec = f"{d['won']}-{d['lost']}" if d["won"] + d["lost"] else "nothing settled"
+                roi = f", {pct(d['roi'], signed=True)} ROI" if d["roi"] is not None else ""
+                orders = (f"<br>{d['orders']} orders: {d['filled']} filled, {d['missed']} missed"
+                          + (f", {d['blocked']} blocked" if d["blocked"] else "")) if d["orders"] else ""
+                return (esc(dt.strftime("%a %b %-d")),
+                        f"{rec}{roi}, running total {money(d['total'], signed=True)}{orders}",
+                        f"<span class='num'>{money(d['pl'], signed=True)}</span>", tone(d["pl"]))
+            st.markdown(rows_html(_day_row(d) for d in reversed(_days)), unsafe_allow_html=True)
         st.markdown(f"<div class='section'><span>Finished<span class='n'>{len(rest)}</span></span></div>", unsafe_allow_html=True)
         if rest:
             st.markdown(rows_html(_live_row(r) for r in rest), unsafe_allow_html=True)
