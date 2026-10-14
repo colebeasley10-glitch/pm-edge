@@ -110,6 +110,26 @@ def _names(team: dict) -> set[str]:
                         ("displayName", "shortDisplayName", "location", "name", "nickname")) if n}
 
 
+def _lum(hex6: str) -> float | None:
+    h = str(hex6 or "").lstrip("#")
+    if not re.fullmatch(r"[0-9a-fA-F]{6}", h):
+        return None
+    r, g, b = (int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
+    lin = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in (r, g, b)]
+    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+
+def team_color(team: dict, fallback: str = "#8796AD") -> str:
+    """The team's color, readable on a dark background: its main color unless that is near-black
+    navy or too close to white, then its alternate color, else a neutral grey."""
+    for key in ("color", "alternateColor"):
+        c = str(team.get(key) or "").lstrip("#")
+        lum = _lum(c)
+        if lum is not None and 0.045 <= lum <= 0.85:
+            return "#" + c.upper()
+    return fallback
+
+
 def _game(ev: dict) -> dict | None:
     comp = (ev.get("competitions") or [{}])[0]
     teams = comp.get("competitors") or []
@@ -175,6 +195,8 @@ def match(ticker: str, title: str, events: list[dict]) -> dict | None:
         "home": h.get("abbreviation") or h.get("shortDisplayName") or "",
         "away_name": a.get("location") or a.get("shortDisplayName") or a.get("displayName") or "",
         "home_name": h.get("location") or h.get("shortDisplayName") or h.get("displayName") or "",
+        "away_color": team_color(a),
+        "home_color": team_color(h),
         "away_score": str(g["away"].get("score") or "0"),
         "home_score": str(g["home"].get("score") or "0"),
         "mine": mine,
@@ -211,6 +233,27 @@ def for_bets(rows: list[dict], fetch: Callable[[str, date], list[dict]] | None =
         if g:
             out[t] = g
     return out
+
+
+TAGS = [("NCAAF", "NCAAF"), ("NFL", "NFL"), ("WNBA", "WNBA"), ("NCAAMB", "NCAAB"), ("NCAAWB", "NCAAW"),
+        ("NBA", "NBA"), ("MLB", "MLB"), ("NHL", "NHL"), ("UCL", "UCL"), ("UEL", "UEL"), ("EPL", "EPL"),
+        ("LALIGA", "LA LIGA"), ("SERIEA", "SERIE A"), ("BUNDESLIGA", "BUNDESLIGA"), ("LIGUE1", "LIGUE 1"),
+        ("MLS", "MLS"), ("ATP", "ATP"), ("WTA", "WTA"), ("ITFW", "ITF"), ("ITF", "ITF"),
+        ("HIGH", "WEATHER"), ("LOW", "WEATHER"), ("BTC", "CRYPTO"), ("ETH", "CRYPTO"),
+        ("CS2", "ESPORTS"), ("DOTA", "ESPORTS"), ("LOL", "ESPORTS"), ("VALORANT", "ESPORTS"),
+        ("T20", "CRICKET"), ("ODI", "CRICKET"), ("TEST", "CRICKET"), ("UFC", "UFC"), ("PGA", "GOLF")]
+
+
+def league_tag(ticker: str) -> str:
+    """Short label for a market's league ('KXNCAAFGAME-…' -> 'NCAAF'); soccer and others fall back."""
+    series = str(ticker or "").split("-", 1)[0].upper()
+    series = series[2:] if series.startswith("KX") else series
+    for key, tag in TAGS:
+        if series.startswith(key):
+            return tag
+    if league_path(ticker or "") and "soccer" in (league_path(ticker) or ""):
+        return "SOCCER"
+    return "SOCCER" if series.endswith("GAME") else series[:8]
 
 
 def start_label(g: dict) -> str:

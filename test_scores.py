@@ -83,3 +83,20 @@ def test_fetch_errors_are_quiet():
     def boom(*a, **k):
         raise OSError("offline")
     assert scores.fetch_events("football/nfl", date(2026, 10, 13), get=boom) == []
+
+
+def test_team_colors_readable_on_dark():
+    assert scores.team_color({"color": "CC0000"}) == "#CC0000"
+    # near-black navy falls back to the alternate color
+    assert scores.team_color({"color": "081E3F", "alternateColor": "B6862C"}) == "#B6862C"
+    assert scores.team_color({"color": "000000", "alternateColor": "000000"}) == "#8796AD"
+    assert scores.team_color({}) == "#8796AD"
+
+
+def test_league_tags():
+    assert scores.league_tag("KXNCAAFGAME-26OCT13DELMTU-MTU") == "NCAAF"
+    assert scores.league_tag("KXATPCHALLENGERMATCH-26OCT13VILZAR-VIL") == "ATP"
+    assert scores.league_tag("KXITFWMATCH-26OCT13BAYXUX-BAY") == "ITF"
+    assert scores.league_tag("KXHIGHNY-26OCT14-B71.5") == "WEATHER"
+    assert scores.league_tag("KXUCLGAME-26OCT14MCIPSG-MCI") == "UCL"
+    assert scores.league_tag("KXSAUDIPLGAME-26OCT15AASALN-AAS") == "SOCCER"

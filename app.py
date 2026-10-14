@@ -13,6 +13,7 @@ import html
 import io
 import math
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
@@ -63,53 +64,98 @@ _seed_env_from_secrets()
 st.markdown(
     """
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
     :root {
-      --bg:#0D1B2A; --panel:#14263A; --line:#24394F; --text:#EAF0F6; --muted:#8DA0B5;
-      --gold:#F2C14E; --up:#4CC38A; --down:#F26D5B;
+      --bg:#0A0F18; --panel:#111A27; --panel2:#0E1622; --deep:#070C14; --line:#1E2A3B; --text:#F2F5FA; --soft:#C3CCDA;
+      --muted:#8796AD; --gold:#F2C14E; --up:#2BE07A; --down:#FF5A5F; --hero:#17304F;
     }
-    html, body, .stApp, .stApp p, .stApp span, .stApp div, .stApp button, .stApp label {
-      font-family:'Archivo', system-ui, sans-serif !important;
+    html, body, .stApp, .stApp p, .stApp span, .stApp div, .stApp button, .stApp label, .stApp li {
+      font-family:'Barlow', system-ui, sans-serif !important;
     }
-    .stApp { background:var(--bg); color:var(--text); }
-    [data-testid="stHeader"] { background:transparent; }
-    [data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stDecoration"] { display:none; }
-    .block-container { padding-top:4.25rem; padding-bottom:4rem; max-width:640px; }
-    .num { font-stretch:125%; font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+    .stApp { background:radial-gradient(130% 45% at 50% 0%, #13233A 0%, var(--bg) 60%) fixed; color:var(--text); }
+    /* hide Streamlit's own chrome: toolbar, menu, footer, deploy and status badges */
+    [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"],
+    #MainMenu, footer, [data-testid="stSidebar"], [data-testid="collapsedControl"],
+    [class*="viewerBadge"], [data-testid="stAppDeployButton"], [data-testid="manage-app-button"] { display:none !important; }
+    .block-container { padding-top:1.4rem; padding-bottom:4rem; max-width:640px; }
+    .num { font-family:'Barlow Condensed', sans-serif !important; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:.01em; }
+    .up { color:var(--up); } .down { color:var(--down); }
     /* header */
-    .pe-head { display:flex; align-items:center; justify-content:space-between; }
-    .pe-mark { font-stretch:125%; font-weight:800; font-size:1.45rem; letter-spacing:-.02em; }
+    .pe-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
+    .pe-mark { font-family:'Barlow Condensed', sans-serif !important; font-weight:800; font-size:1.75rem; letter-spacing:.04em; }
     .pe-mark i { font-style:normal; color:var(--gold); }
-    .pe-pill { font-size:.8rem; font-weight:600; padding:.3rem .7rem; border-radius:999px;
-               background:var(--panel); border:1px solid var(--line); }
-    .pe-pill b { display:inline-block; width:.5rem; height:.5rem; border-radius:50%; margin-right:.4rem; }
-    .pe-lede { color:var(--muted); font-size:.92rem; margin:.5rem 0 1.1rem; line-height:1.45; }
-    /* scoreboard */
+    .pe-pill { font-size:.8rem; font-weight:700; padding:.38rem .75rem; border-radius:999px; }
+    .pe-pill.on { color:var(--up); background:rgba(43,224,122,.12); }
+    .pe-pill.off { color:var(--gold); background:rgba(242,193,78,.12); }
+    .pe-lede { color:var(--muted); font-size:.9rem; margin:.5rem 0 1rem; line-height:1.45; }
+    .k { color:var(--muted); font-size:.68rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; white-space:nowrap; }
+    /* hero card */
+    .pe-hero { background:linear-gradient(140deg, var(--hero) 0%, var(--panel) 65%); border:1px solid #22385A;
+               border-radius:20px; padding:1rem; display:flex; flex-direction:column; gap:.9rem; margin:.3rem 0 .6rem; }
+    .pe-hero .top { display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; }
+    .pe-hero .big { font-family:'Barlow Condensed', sans-serif !important; font-weight:800; font-size:3rem; line-height:1; margin-top:.35rem; }
+    .pe-hero .mid { font-family:'Barlow Condensed', sans-serif !important; font-weight:700; font-size:1.4rem; margin-top:.25rem; text-align:right; }
+    .pe-hero .stats { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:.5rem; }
+    .pe-hero .stat { background:rgba(7,12,20,.55); border-radius:12px; padding:.5rem .65rem; min-width:0; }
+    .pe-hero .stat .v { font-family:'Barlow Condensed', sans-serif !important; font-weight:700; font-size:1.25rem; margin-top:.1rem; white-space:nowrap; }
+    .pe-hero .bar { display:flex; flex-direction:column; gap:.35rem; }
+    .pe-hero .bar .lab { display:flex; justify-content:space-between; font-size:.8rem; color:var(--soft); }
+    .pe-hero .bar .track { height:6px; border-radius:3px; background:var(--line); overflow:hidden; }
+    .pe-hero .bar .fill { height:6px; border-radius:3px; background:linear-gradient(90deg, var(--up), var(--gold)); }
+    /* older board (scorecards) keeps working, restyled */
     .pe-board { background:var(--panel); border:1px solid var(--line); border-radius:18px;
-                padding:1rem 1.15rem; display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; }
-    .pe-board .k { color:var(--muted); font-size:.82rem; }
-    .pe-board .big { font-size:2.4rem; font-weight:800; line-height:1.05; margin-top:.15rem; }
+                padding:1rem 1.1rem; display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; }
+    .pe-board .k { font-size:.68rem; }
+    .pe-board .big { font-family:'Barlow Condensed', sans-serif !important; font-size:2.4rem; font-weight:800; line-height:1.05; margin-top:.2rem; }
     .pe-board .side { display:flex; gap:1.25rem; text-align:right; }
-    .pe-board .side .v { font-size:1.2rem; font-weight:700; margin-top:.1rem; white-space:nowrap; }
-    .pe-board .k { white-space:nowrap; }
-    /* phones: big number on top, stats in an even row underneath so nothing spills out of the card */
+    .pe-board .side .v { font-family:'Barlow Condensed', sans-serif !important; font-size:1.3rem; font-weight:700; margin-top:.1rem; white-space:nowrap; }
     @media (max-width:600px) {
       .pe-board { display:block; padding:1rem; }
-      .pe-board .big { font-size:2.2rem; }
       .pe-board .side { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:.75rem;
                         text-align:left; margin-top:.9rem; padding-top:.85rem; border-top:1px solid var(--line); }
-      .pe-board .side .v { font-size:1.15rem; }
-      .pe-board .side .k { font-size:.78rem; }
+      .pe-hero .big { font-size:2.6rem; }
     }
-    .up { color:var(--up); } .down { color:var(--down); }
-    /* tabs */
-    .stTabs [data-baseweb="tab-list"] { gap:1.4rem; border-bottom:1px solid var(--line); margin-top:1.1rem; }
-    .stTabs [data-baseweb="tab"] { padding:.6rem 0; color:var(--muted); }
-    .stTabs [aria-selected="true"] { color:var(--text) !important; }
-    .stTabs [data-baseweb="tab-highlight"] { background:var(--gold) !important; }
-    .stTabs [data-baseweb="tab-border"] { display:none; }
-    /* bet slip */
+    /* tabs as pills (covers both Streamlit tab DOMs: baseweb and react-aria) */
+    .stTabs [role="tablist"] { gap:.5rem !important; border-bottom:0 !important; margin:.2rem 0 .5rem; overflow-x:auto;
+                               scrollbar-width:none; box-shadow:none !important; }
+    .stTabs [role="tablist"]::-webkit-scrollbar { display:none; }
+    .stTabs [role="tab"] { height:2.3rem !important; padding:0 1rem !important; border-radius:999px !important;
+                           border:1px solid var(--line) !important; background:var(--panel2) !important; color:var(--soft) !important;
+                           white-space:nowrap; flex:none; display:flex; align-items:center; }
+    .stTabs [role="tab"] p { font-weight:600 !important; font-size:.88rem !important; color:var(--soft) !important; }
+    .stTabs [role="tab"][aria-selected="true"] { background:var(--up) !important; border-color:var(--up) !important; }
+    .stTabs [role="tab"][aria-selected="true"] p { color:#06140C !important; }
+    .stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"], .stTabs .react-aria-SelectionIndicator { display:none !important; }
+    .stTabs [role="tablist"] + div, .stTabs [data-baseweb="tab-border"] { border:0 !important; }
+    /* section headers */
+    .section { font-family:'Barlow Condensed', sans-serif !important; font-weight:700; font-size:1.08rem; letter-spacing:.06em;
+               text-transform:uppercase; margin:1.3rem 0 .1rem; display:flex; justify-content:space-between; align-items:baseline; }
+    .section .n { color:var(--muted); margin-left:.35rem; }
+    /* bet cards */
+    .cards { display:flex; flex-direction:column; gap:.6rem; margin:.6rem 0 1rem; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:.65rem; display:flex; gap:.75rem; align-items:stretch; }
+    .bug { width:7.4rem; flex:none; background:var(--deep); border:1px solid #182334; border-radius:11px; padding:.45rem .6rem;
+           display:flex; flex-direction:column; gap:.18rem; justify-content:center; }
+    .bug .tr { display:flex; justify-content:space-between; align-items:center; font-family:'Barlow Condensed', sans-serif !important;
+               font-weight:700; font-size:1.05rem; color:#7F8DA3; letter-spacing:.02em; line-height:1.15; }
+    .bug .tr.me { color:#FFFFFF; }
+    .bug .tn { display:flex; align-items:center; gap:.38rem; min-width:0; overflow:hidden; white-space:nowrap; }
+    .bug .sw { width:4px; height:.9rem; border-radius:2px; flex:none; }
+    .bug .cl { font-size:.62rem; font-weight:700; letter-spacing:.1em; color:var(--muted); border-top:1px solid #182334;
+               padding-top:.25rem; margin-top:.1rem; display:flex; justify-content:space-between; text-transform:uppercase; }
+    .bug .lv { color:var(--down); }
+    .bug.tag { align-items:flex-start; }
+    .bug.tag .big { font-family:'Barlow Condensed', sans-serif !important; font-weight:700; font-size:1rem; color:#FFFFFF; }
+    .card .info { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:space-between; gap:.2rem; padding:.1rem .1rem .1rem 0; }
+    .card .lg { font-size:.62rem; font-weight:700; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; }
+    .card .pn { font-weight:700; font-size:.98rem; color:var(--text); line-height:1.25; }
+    .card .dot { width:.5rem; height:.5rem; border-radius:50%; display:inline-block; margin-right:.4rem; vertical-align:middle; }
+    .card .pr { display:flex; justify-content:space-between; align-items:flex-end; gap:.6rem; }
+    .card .ps { font-size:.78rem; color:var(--muted); line-height:1.35; }
+    .card .pv { font-family:'Barlow Condensed', sans-serif !important; font-weight:800; font-size:1.35rem; line-height:1; white-space:nowrap; text-align:right; }
+    .card .pv small { display:block; font-family:'Barlow', sans-serif !important; font-weight:600; font-size:.66rem; color:var(--muted); margin-top:.2rem; letter-spacing:.04em; }
+    /* bet slip (alerts tab) */
     .slip { background:var(--panel); border:1px solid var(--line); border-radius:18px; margin:1rem 0 .55rem; position:relative; }
     .slip .top { padding:1rem 1.15rem .9rem; }
     .slip .meta { display:flex; justify-content:space-between; color:var(--muted); font-size:.8rem; }
@@ -117,35 +163,28 @@ st.markdown(
     .slip .side.yes { color:var(--up); } .slip .side.no { color:var(--down); }
     .slip h4 { font-size:1.08rem; font-weight:650; line-height:1.3; margin:.45rem 0 0; padding:0 !important; color:var(--text); }
     .slip .tear { border-top:1.5px dashed var(--line); margin:0 .9rem; position:relative; }
-    .slip .tear:before, .slip .tear:after { content:""; position:absolute; top:-10px; width:20px; height:20px;
-        border-radius:50%; background:var(--bg); border:1px solid var(--line); }
-    .slip .tear:before { left:-1.55rem; clip-path:inset(0 0 0 50%); }
-    .slip .tear:after { right:-1.55rem; clip-path:inset(0 50% 0 0); }
     .slip .bottom { padding:.9rem 1.15rem 1rem; display:grid; grid-template-columns:auto 1fr; gap:1.2rem; align-items:center; }
-    .slip .price { font-size:2.6rem; font-weight:800; color:var(--gold); line-height:1; }
-    .slip .price small { display:block; font-size:.75rem; font-weight:500; color:var(--muted); font-stretch:100%; margin-top:.3rem; }
+    .slip .price { font-family:'Barlow Condensed', sans-serif !important; font-size:2.6rem; font-weight:800; color:var(--up); line-height:1; }
+    .slip .price small { display:block; font-family:'Barlow', sans-serif !important; font-size:.75rem; font-weight:500; color:var(--muted); margin-top:.3rem; }
     .slip dl { display:grid; grid-template-columns:1fr auto; row-gap:.28rem; column-gap:.75rem; margin:0; font-size:.88rem; }
     .slip dt { color:var(--muted); } .slip dd { margin:0; text-align:right; font-weight:650; }
-    /* lists */
-    .row-list { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:.2rem 1.1rem; margin:.6rem 0 1rem; }
+    /* lists (finished bets, standings) */
+    .row-list { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:.15rem 1rem; margin:.6rem 0 1rem; }
     .row-list .r { display:flex; justify-content:space-between; gap:1rem; padding:.75rem 0; border-bottom:1px solid var(--line); }
     .row-list .r:last-child { border-bottom:0; }
     .row-list .t { font-weight:600; font-size:.95rem; line-height:1.3; }
-    .row-list .s { color:var(--muted); font-size:.8rem; margin-top:.15rem; }
-    .row-list .v { font-weight:700; text-align:right; white-space:nowrap; }
-    .row-list .sc { font-weight:500; font-size:.85rem; margin-top:.25rem; color:var(--text, inherit); }
-    .row-list .sc .sc-live { color:var(--down); font-weight:800; letter-spacing:.06em; margin-right:.35rem; }
-    .row-list .sc .sc-fin { color:var(--muted); font-weight:800; letter-spacing:.06em; margin-right:.35rem; }
-    .row-list .sc .sc-d { color:var(--muted); margin-left:.4rem; }
-    .section { font-size:.95rem; font-weight:700; margin:1.3rem 0 .1rem; }
+    .row-list .s { color:var(--muted); font-size:.8rem; margin-top:.15rem; overflow-wrap:anywhere; }
+    .row-list .v { font-family:'Barlow Condensed', sans-serif !important; font-weight:700; font-size:1.1rem; text-align:right; white-space:nowrap; }
     .quiet { text-align:center; padding:2.6rem 1.2rem; color:var(--muted); line-height:1.5; }
     .quiet strong { display:block; color:var(--text); font-size:1.1rem; font-weight:700; margin-bottom:.35rem; }
-    .verdict { border-left:3px solid var(--gold); padding:.2rem 0 .2rem 1rem; margin:1.2rem 0 1rem; }
-    .verdict strong { font-size:1.15rem; }
+    .verdict { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:.8rem 1rem; margin:1.2rem 0 1rem; }
+    .verdict strong { font-size:1.1rem; }
     .verdict p { color:var(--muted); margin:.3rem 0 0; font-size:.9rem; line-height:1.45; }
-    .stButton button, .stLinkButton a { border-radius:12px !important; font-weight:700 !important; padding:.65rem 1rem !important; }
+    .stButton button, .stLinkButton a { border-radius:999px !important; font-weight:700 !important; padding:.6rem 1rem !important;
+                                        background:var(--panel2) !important; border:1px solid var(--line) !important; color:var(--soft) !important; }
+    .stButton button:hover { border-color:var(--up) !important; color:var(--text) !important; }
     .stLinkButton a[kind="primary"], .stLinkButton a[data-testid="stBaseLinkButton-primary"] {
-      background:var(--gold) !important; color:#1A1405 !important; border:0 !important; }
+      background:var(--up) !important; color:#06140C !important; border:0 !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -381,6 +420,90 @@ def _score_line(g):
     return f"<div class='sc'>{ac} vs {hc} <span class='sc-d'>{esc('Starts ' + st_lbl if st_lbl else detail)}</span></div>"
 
 
+def _clock(g):
+    """(left, right) for the bottom line of a score box: ('● Q4', '12:35'), ('● HALF', ''), ('FINAL', ''), ('WED', '6 PM')."""
+    d = str(g.get("detail") or "")
+    if g.get("state") == "in":
+        if "half" in d.lower():
+            return "<span class='lv'>● HALF</span>", ""
+        left, _, right = d.partition(" - ")
+        return f"<span class='lv'>● {esc(left.strip())}</span>", esc(right.strip())
+    if g.get("state") == "post":
+        return "FINAL", ""
+    from league import scores as _scores
+    try:
+        dt = datetime.fromisoformat(str(g.get("start")).replace("Z", "+00:00")).astimezone(EASTERN)
+        today = datetime.now(EASTERN).date()
+        day = "TODAY" if dt.date() == today else dt.strftime("%a").upper()
+        return day, _scores.start_label(g)
+    except Exception:
+        return esc(d), ""
+
+
+def _end_short(r) -> str:
+    dt = _when(r.get("ends_at") or r.get("close_time"))
+    if not dt:
+        return ""
+    secs = (dt - datetime.now(timezone.utc)).total_seconds()
+    if secs <= 0:
+        return "SETTLING"
+    if secs < 3600:
+        return f"ENDS {int(secs // 60)}M"
+    if secs < 36 * 3600:
+        return "ENDS " + local_time(dt).upper()
+    return "ENDS " + dt.astimezone(EASTERN).strftime("%b %-d").upper()
+
+
+def bet_card(r, game, *, n, entry, mark, extra: str = "") -> str:
+    """One open bet as a sportsbook card: score box (or league box) on the left, the pick and P/L on the right."""
+    from league import scores as _scores
+    ticker = str(r.get("ticker") or "")
+    tag = _scores.league_tag(ticker)
+    raw = str(r.get("title") or ticker)
+    raw = raw.rsplit(": ", 1)[-1] if " vs" in raw.split(": ", 1)[0] else raw
+    mine = (game or {}).get("mine")
+    if str(r.get("side") or "").upper() == "NO":
+        mine = None  # betting against a team: don't mark either side as ours
+    raw = raw[:-5] if raw.endswith(" wins") else raw
+    wx = re.match(r"^(Highest|Lowest) temperature in (.+?) on .+?\?\s*[—-]\s*(.+)$", raw)
+    if wx:
+        raw = f"{wx.group(2)} {'high' if wx.group(1) == 'Highest' else 'low'} · {wx.group(3)}"
+    if game and mine:
+        name = esc(game[f"{mine}_name"])
+        dot = f"<span class='dot' style='background:{esc(game[mine + '_color'])}'></span>"
+    else:
+        name, dot = esc(raw), ""
+    if str(r.get("side") or "").upper() == "NO":
+        name = f"No · {name}"
+    if game:
+        def tr(who):
+            me = " me" if mine == who else ""
+            return (f"<div class='tr{me}'><span class='tn'><span class='sw' style='background:{esc(game[who + '_color'])}'></span>"
+                    f"{esc(game[who])}</span><span>{esc(game[who + '_score']) if game.get('state') != 'pre' else '–'}</span></div>")
+        left, right = _clock(game)
+        box = f"<div class='bug'>{tr('away')}{tr('home')}<div class='cl'><span>{left}</span><span>{right}</span></div></div>"
+    else:
+        box = (f"<div class='bug tag'><div class='big'>{esc(tag)}</div>"
+               f"<div class='cl' style='width:100%'><span>{esc(_end_short(r))}</span><span></span></div></div>")
+    n = n or 0
+    if mark is not None and entry is not None:
+        pnl = n * (mark - entry)
+        move = (mark - entry) * 100
+        word = "WINNING" if move > 0.4 else "LOSING" if move < -0.4 else "EVEN"
+        price = f"{n:g} @ {cents(entry)} → {cents(mark)} · pays {money(n)}"
+        value = f"<div class='pv {tone(move)}'>{money(pnl, signed=True)}<small>{word}</small></div>"
+    else:
+        price = f"{n:g} @ {cents(entry)} · pays {money(n)}"
+        value = f"<div class='pv'>{cents(entry)}<small>ENTRY</small></div>"
+    lg = esc(tag) + (f" · {extra}" if extra and extra.upper() != tag.upper() else "")
+    return (f"<div class='card'>{box}<div class='info'><div class='lg'>{lg}</div><div class='pn'>{dot}{name}</div>"
+            f"<div class='pr'><div class='ps'>{esc(price)}</div>{value}</div></div></div>")
+
+
+def cards_html(items) -> str:
+    return "<div class='cards'>" + "".join(items) + "</div>"
+
+
 def _refresh_all() -> None:
     """One tap refreshes both the paper league bets and the real $1 bets."""
     _refresh_live_bets()
@@ -461,24 +584,15 @@ if lg_last is not None and (datetime.now(timezone.utc) - lg_last).total_seconds(
 st.markdown(
     f"""
     <div class='pe-head'>
-      <div class='pe-mark'>PM Edge<i>.</i></div>
-      <div class='pe-pill'><b style='background:{"var(--up)" if running else "var(--gold)"}'></b>{"Live" if running else "Idle"}</div>
-    </div>
-    <div class='pe-lede'>Paper trading all of Kalshi with five strategies. Last round {esc(ago(lg_last))}.</div>
-    <div class='pe-board'>
-      <div><div class='k'>Paper profit since {esc(since)}</div>
-        <div class='big num {tone(lg_pl)}'>{money(lg_pl, signed=True)}</div></div>
-      <div class='side'>
-        <div><div class='k'>Record</div><div class='v num'>{esc(lg_record)}</div></div>
-        <div><div class='k'>Beat close</div><div class='v num {tone(lg_clv.mean() if len(lg_clv) else 0)}'>{(f"{lg_clv.mean():+.1f}¢") if len(lg_clv) else "—"}</div></div>
-      </div>
+      <div class='pe-mark'>PM<i>EDGE</i></div>
+      <div class='pe-pill {"on" if running else "off"}'>● {"Live" if running else "Idle"}{(" · " + esc(local_time(lg_last))) if lg_last else ""}</div>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-tab_league, tab_live, tab_picks, tab_bets, tab_results, tab_system = st.tabs(
-    ["League", "Live $1", f"Alerts {len(picks)}" if len(picks) else "Alerts", "My bets", "Results", "System"]
+tab_live, tab_league, tab_picks, tab_bets, tab_results, tab_system = st.tabs(
+    ["Live $1", "Paper", f"Alerts {len(picks)}" if len(picks) else "Alerts", "My bets", "Results", "System"]
 )
 
 # ---------------------------------------------------------- live $1 sharp --
@@ -492,16 +606,31 @@ with tab_live:
     else:
         st.session_state.pop("live_sharp_live", None)
         _ls_over = None
+    _open_now = 0.0
+    for _r in live_rows:
+        if _r.get("status") == "open" and _num(_r.get("last_mid")) is not None and _num(_r.get("avg_price")) is not None:
+            _open_now += (_num(_r.get("filled")) or 0) * (_num(_r.get("last_mid")) - _num(_r.get("avg_price")))
+    _sharp = league[league["strategy"] == "sharp"] if not league.empty and "strategy" in league else pd.DataFrame()
+    _sharp_pl = float(pd.to_numeric(_sharp.get("pl"), errors="coerce").fillna(0).sum()) if not _sharp.empty else 0.0
+    _budget = float(ls["budget"] or 0)
+    _fill = max(0.0, min(100.0, 100.0 * float(ls["spent_today"] or 0) / _budget)) if _budget else 0.0
     st.markdown(
         f"""
-        <div class='pe-board'>
-          <div><div class='k'>Real profit, Live $1 Sharp</div>
-            <div class='big num {tone(ls["pl"])}'>{money(ls["pl"], signed=True)}</div>
-            <div class='k'>{money(ls["staked"])} settled, {ls["open"]} open</div></div>
-          <div class='side'>
-            <div><div class='k'>Record</div><div class='v num'>{ls["won"]}-{ls["lost"]}</div></div>
-            <div><div class='k'>ROI</div><div class='v num {tone(ls["roi"] or 0)}'>{pct(ls["roi"], signed=True)}</div></div>
-            <div><div class='k'>Today</div><div class='v num'>{money(ls["spent_today"])}<span class='k'> / {money(ls["budget"])}</span></div></div>
+        <div class='pe-hero'>
+          <div class='top'>
+            <div><div class='k'>Live $1 Sharp · real money</div>
+              <div class='big {tone(ls["pl"])}'>{money(ls["pl"], signed=True)}</div></div>
+            <div><div class='k' style='text-align:right'>Open now · {ls["open"]}</div>
+              <div class='mid {tone(_open_now)}'>{money(_open_now, signed=True)}</div></div>
+          </div>
+          <div class='stats'>
+            <div class='stat'><div class='k'>Record</div><div class='v'>{ls["won"]}–{ls["lost"]}</div></div>
+            <div class='stat'><div class='k'>ROI</div><div class='v {tone(ls["roi"] or 0)}'>{pct(ls["roi"], signed=True)}</div></div>
+            <div class='stat'><div class='k'>Paper Sharp</div><div class='v {tone(_sharp_pl)}'>{money(_sharp_pl, signed=True)}</div></div>
+          </div>
+          <div class='bar'>
+            <div class='lab'><span>Today's budget</span><span><b style='color:var(--text)'>{money(ls["spent_today"])}</b> of {money(ls["budget"])}</span></div>
+            <div class='track'><div class='fill' style='width:{_fill:.0f}%'></div></div>
           </div>
         </div>
         """,
@@ -509,11 +638,10 @@ with tab_live:
     )
     _ls_on = (league_status.get("live_sharp") or {}).get("enabled")
     st.markdown(
-        "<div class='pe-lede'>" + ("<b>Live.</b> " if _ls_on else "<b>Off.</b> ")
-        + "Every new Sharp pick is copied with a real Kalshi order: up to $1 of contracts per bet, "
-          "at most $30 per day (Eastern, no limit on bet count), separate from the paper limit, one bet per market, "
-          "bought only at the price the pick saw. "
-          + ("" if _ls_on else "Turn it on with the LIVE_SHARP_ENABLED repo variable.")
+        "<div class='pe-lede' style='font-size:.8rem'>" + ("" if _ls_on else "<b>Off.</b> ")
+        + "Copies every Sharp pick with a real Kalshi order · $1 per bet · $30/day cap · "
+          "buys only at the price the pick saw."
+        + ("" if _ls_on else " Turn it on with the LIVE_SHARP_ENABLED repo variable.")
         + "</div>", unsafe_allow_html=True)
     _lsr = league_status.get("live_sharp") or {}
     if _lsr.get("kalshi_ok") is False:
@@ -521,14 +649,11 @@ with tab_live:
     if _lsr.get("error"):
         st.caption(f"Last round: {_lsr['error']}")
 
+    def _live_card(r):
+        return bet_card(r, _games.get(str(r.get("ticker") or "")), n=_num(r.get("filled")),
+                        entry=_num(r.get("avg_price")), mark=_num(r.get("last_mid")))
+
     def _live_row(r):
-        title = f"{esc(str(r.get('side') or '').title())} on {esc(r.get('title') or r.get('ticker'))}"
-        game = _games.get(str(r.get("ticker") or "")) if r.get("status") == "open" else None
-        if game:
-            pick = title
-            title = f"{esc(game['away_name'])} vs {esc(game['home_name'])}{_score_line(game)}"
-            row = _live_row_body(r, pick)
-            return (title, f"{pick}<br>{row[1]}", row[2], row[3])
         return _live_row_body(r, None)
 
     def _live_row_body(r, _pick):
@@ -570,7 +695,13 @@ with tab_live:
             return (title, f"Voided, refunded. {esc(when)}", "<span class='num'>$0.00</span>", "")
         if stt == "no_fill":
             return (title, f"No fill. {esc(when)}, price moved past {cents(r.get('limit_price'))}", "—", "")
-        return (title, f"{esc(stt.replace('_', ' ').title())}. {esc(when)} {esc(r.get('note') or '')}", "—", "down")
+        note = str(r.get("note") or "")
+        m = re.search(r"Trading_is_not_currently_allowed_in_(\w+?)_on_markets", note)
+        if m:
+            note = f"Kalshi blocked it: sports trading isn't allowed from the server's location ({m.group(1)})"
+        elif len(note) > 90:
+            note = note[:90] + "…"
+        return (title, f"{esc(stt.replace('_', ' ').title())}. {esc(when)} {esc(note)}", "—", "down")
 
     if not live_rows:
         quiet("No real bets yet", "The first one goes out on the next Sharp pick after it's turned on.")
@@ -592,9 +723,8 @@ with tab_live:
             as_of = f"Checked {ago(_ls_over['checked_at'])}" + (": " + ", ".join(parts) if parts else "")
         else:
             as_of = f"Prices from the last round, {ago(lg_last)}"
-        st.markdown(f"<div class='section'>Open ({len(opn)})</div>"
-                    + (f"<div class='pe-lede' style='margin:.2rem 0 0'>Worth {money(unreal, signed=True)} "
-                       f"right now if they all sold at today's price. {esc(as_of)}.</div>" if opn else ""),
+        st.markdown(f"<div class='section'><span>On the board<span class='n'>{len(opn)}</span></span></div>"
+                    + (f"<div class='pe-lede' style='margin:.2rem 0 0;font-size:.8rem'>{esc(as_of)}.</div>" if opn else ""),
                     unsafe_allow_html=True)
         if opn or _ls_over:
             st.button("↻ Refresh live prices", key="refresh_live_sharp", width="stretch",
@@ -602,10 +732,10 @@ with tab_live:
             if st.session_state.get("live_sharp_err"):
                 st.caption(f"Couldn't refresh: {st.session_state['live_sharp_err']}")
         if opn:
-            st.markdown(rows_html(_live_row(r) for r in opn), unsafe_allow_html=True)
+            st.markdown(cards_html(_live_card(r) for r in opn), unsafe_allow_html=True)
         else:
             st.markdown("<div class='pe-lede'>Nothing open right now.</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='section'>Finished ({len(rest)})</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='section'><span>Finished<span class='n'>{len(rest)}</span></span></div>", unsafe_allow_html=True)
         if rest:
             st.markdown(rows_html(_live_row(r) for r in rest), unsafe_allow_html=True)
         if ls["no_fill"]:
@@ -615,6 +745,23 @@ with tab_live:
 
 # ----------------------------------------------------------------- league --
 with tab_league:
+    _clv_mean = lg_clv.mean() if len(lg_clv) else None
+    st.markdown(
+        f"""
+        <div class='pe-hero'>
+          <div class='top'>
+            <div><div class='k'>Paper league · since {esc(since)}</div>
+              <div class='big {tone(lg_pl)}'>{money(lg_pl, signed=True)}</div></div>
+          </div>
+          <div class='stats'>
+            <div class='stat'><div class='k'>Record</div><div class='v'>{esc(lg_record).replace("-", "–")}</div></div>
+            <div class='stat'><div class='k'>Beat close</div><div class='v {tone(_clv_mean or 0)}'>{(f"{_clv_mean:+.1f}¢") if _clv_mean is not None else "—"}</div></div>
+            <div class='stat'><div class='k'>Last round</div><div class='v'>{esc(local_time(lg_last)) if lg_last else "—"}</div></div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     if league.empty:
         quiet("The league starts on the next round",
               "Every 30 minutes each strategy looks across Kalshi for mispriced markets and takes $10 paper bets.")
@@ -668,10 +815,6 @@ with tab_league:
             title = f"{esc(str(r.get('side') or '').title())} on {esc(r.get('title') or r.get('ticker'))}"
             entry = _num(r.get("entry_price"))
             stt = str(r.get("status") or "")
-            game = _paper_games.get(str(r.get("ticker") or "")) if stt == "open" else None
-            if game:
-                strat = f"{title}<br>{strat}"
-                title = f"{esc(game['away_name'])} vs {esc(game['home_name'])}{_score_line(game)}"
             if stt == "open":
                 mark = _num(r.get("last_mid"))
                 contracts = _num(r.get("contracts")) or 0
@@ -715,9 +858,9 @@ with tab_league:
                 as_of += f", {n} just settled (made official on the next round)"
         else:
             as_of = f"Prices from the last round, {ago(lg_last)}"
-        st.markdown(f"<div class='section'>Live bets ({len(live)})</div>"
-                    + (f"<div class='pe-lede' style='margin:.2rem 0 0'>Worth {money(unreal, signed=True)} "
-                       f"right now if they all sold at today's price. {esc(as_of)}.</div>"
+        st.markdown(f"<div class='section'><span>Paper bets running<span class='n'>{len(live)}</span></span></div>"
+                    + (f"<div class='pe-lede' style='margin:.2rem 0 0;font-size:.8rem'>Worth {money(unreal, signed=True)} "
+                       f"at today's prices. {esc(as_of)}.</div>"
                        if len(live) else ""),
                     unsafe_allow_html=True)
         if len(live) or _live_override:
@@ -728,9 +871,13 @@ with tab_league:
         if live.empty:
             st.markdown("<div class='pe-lede'>No paper bets running right now.</div>", unsafe_allow_html=True)
         else:
-            st.markdown(rows_html(_pick_row(r) for r in live.to_dict("records")), unsafe_allow_html=True)
+            st.markdown(cards_html(
+                bet_card(r, _paper_games.get(str(r.get("ticker") or "")), n=_num(r.get("contracts")),
+                         entry=_num(r.get("entry_price")), mark=_num(r.get("last_mid")),
+                         extra=esc(LEAGUE_LABELS.get(r.get("strategy"), r.get("strategy"))))
+                for r in live.to_dict("records")), unsafe_allow_html=True)
 
-        st.markdown(f"<div class='section'>Finished ({len(done)})</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='section'><span>Finished<span class='n'>{len(done)}</span></span></div>", unsafe_allow_html=True)
         if done.empty:
             st.markdown("<div class='pe-lede'>Nothing settled yet. You'll get a push when bets finish.</div>",
                         unsafe_allow_html=True)
