@@ -3,7 +3,7 @@
 Real money, so every limit is enforced here in code, not just in config:
 
 * at most $1.00 of contracts per bet (fee on top, a few cents);
-* at most $30.00 spent per Eastern day, fees included, and at most 30 orders;
+* at most $30.00 spent per Eastern day, fees included (no limit on the number of bets);
 * the daily spend is the larger of this ledger and Kalshi's own order history,
   so a lost ledger commit can't double the budget;
 * orders are immediate-or-cancel at the price the paper pick saw, so we never
@@ -31,7 +31,6 @@ PREFIX = "pmls-"
 # Hard ceilings. Env can lower these, never raise them.
 CEIL_PER_BET = 1.00
 CEIL_DAILY = 30.00
-CEIL_ORDERS = 30
 
 FIELDS = [
     "trade_id", "paper_trade_id", "client_order_id", "placed_at", "day", "ticker", "title", "side",
@@ -56,9 +55,6 @@ def per_bet() -> float:
 def daily_budget() -> float:
     return _env_float("LIVE_SHARP_DAILY_BUDGET", CEIL_DAILY, CEIL_DAILY)
 
-
-def max_orders() -> int:
-    return int(_env_float("LIVE_SHARP_MAX_ORDERS", CEIL_ORDERS, CEIL_ORDERS))
 
 
 def enabled() -> bool:
@@ -110,7 +106,7 @@ def _spent(rows: list[dict], day: str) -> tuple[float, int]:
     for r in rows:
         if r.get("day") != day or r.get("status") in {"skipped", "error"}:
             continue
-        # an order that never filled cost nothing and isn't a bet, so it doesn't use up the 30/day
+        # an order that never filled cost nothing and isn't a bet, so it doesn't count toward today's orders
         if r.get("status") == "no_fill":
             continue
         n += 1
@@ -207,9 +203,6 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
                     or now - (book.parse_dt(r.get("placed_at")) or now) < timedelta(hours=24))
                for r in rows):
             skip("already_bet_game")
-            continue
-        if n_orders >= max_orders():
-            skip("daily_order_cap")
             continue
         room = daily_budget() - spent
         price = book.f(p.get("entry_price"))

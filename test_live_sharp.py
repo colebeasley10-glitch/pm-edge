@@ -64,11 +64,11 @@ def test_size():
 
 
 def test_env_cannot_raise_caps():
-    os.environ.update({"LIVE_SHARP_MAX_PER_BET": "50", "LIVE_SHARP_DAILY_BUDGET": "1000", "LIVE_SHARP_MAX_ORDERS": "500"})
+    os.environ.update({"LIVE_SHARP_MAX_PER_BET": "50", "LIVE_SHARP_DAILY_BUDGET": "1000",})
     try:
-        assert live_sharp.per_bet() == 1.0 and live_sharp.daily_budget() == 30.0 and live_sharp.max_orders() == 30
+        assert live_sharp.per_bet() == 1.0 and live_sharp.daily_budget() == 30.0
     finally:
-        for k in ("LIVE_SHARP_MAX_PER_BET", "LIVE_SHARP_DAILY_BUDGET", "LIVE_SHARP_MAX_ORDERS"):
+        for k in ("LIVE_SHARP_MAX_PER_BET", "LIVE_SHARP_DAILY_BUDGET"):
             os.environ.pop(k)
 
 
@@ -77,9 +77,8 @@ def test_daily_budget_and_order_cap():
     out = live_sharp.place([paper(i) for i in range(40)], c, now=NOW, rows=rows)
     spent = sum(float(r["cost"]) + float(r["fee"]) for r in rows)
     assert spent <= 30.0 + 1e-9, spent
-    assert out["placed"] <= 30 and len(c.orders) <= 30
     assert all(o["count"] * o["price"] <= 1.0 + 1e-9 for o in c.orders)
-    assert out["skipped"].get("daily_budget", 0) + out["skipped"].get("daily_order_cap", 0) == 40 - out["placed"]
+    assert out["skipped"].get("daily_budget", 0) == 40 - out["placed"]
     # next Eastern day the budget resets
     out2 = live_sharp.place([paper(100)], c, now=NOW + timedelta(days=1), rows=rows)
     assert out2["placed"] == 1

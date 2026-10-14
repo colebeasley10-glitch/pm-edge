@@ -477,7 +477,7 @@ with tab_live:
     st.markdown(
         "<div class='pe-lede'>" + ("<b>Live.</b> " if _ls_on else "<b>Off.</b> ")
         + "Every new Sharp pick is copied with a real Kalshi order: up to $1 of contracts per bet, "
-          "at most $30 and 30 bets per day (Eastern), separate from the paper limit, one bet per market, "
+          "at most $30 per day (Eastern, no limit on bet count), separate from the paper limit, one bet per market, "
           "bought only at the price the pick saw. "
           + ("" if _ls_on else "Turn it on with the LIVE_SHARP_ENABLED repo variable.")
         + "</div>", unsafe_allow_html=True)
