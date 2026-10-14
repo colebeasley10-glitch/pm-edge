@@ -51,9 +51,9 @@ class FakeClient:
         return self.orders[:limit]
 
 
-def paper(i, price=0.50, side="YES"):
+def paper(i, price=0.50, side="YES", trades=50):
     return {"trade_id": f"t{i:04d}", "strategy": "sharp", "ticker": f"KXT-{i}", "event_ticker": f"KXGAME{i}",
-            "title": f"Game {i}",
+            "title": f"Game {i}", "reason": f"$5,000 bet {side} at {price * 100:.0f}¢ ({trades} trades)",
             "side": side, "entry_price": price, "close_time": "2026-10-13T23:00:00Z"}
 
 
@@ -134,7 +134,7 @@ def test_round_places_only_when_enabled():
         @staticmethod
         def run(kalshi, now, session=None):
             m = FakeKalshi().markets(["KXR-1"])["KXR-1"]
-            return [book.Pick("sharp", m, "YES", None, "big trade")]
+            return [book.Pick("sharp", m, "YES", None, "$9,000 bet YES at 50¢ (40 trades)")]
 
     st = run.run_round(NOW, strategies=[Sharp], kalshi=FakeKalshi())
     assert st["live_sharp"]["enabled"] is False and not live_sharp.LEDGER.exists()
@@ -192,7 +192,7 @@ def test_live_copies_only_paper_picks():
         @staticmethod
         def run(kalshi, now, session=None):
             m = dict(FakeKalshi().markets(["KXCAP-1"])["KXCAP-1"])
-            return [book.Pick("sharp", m, "YES", None, "big trade")]
+            return [book.Pick("sharp", m, "YES", None, "$9,000 bet YES at 50¢ (40 trades)")]
 
     os.environ["LEAGUE_DAILY_CAP_SHARP"] = "0"
     os.environ["LIVE_SHARP_ENABLED"] = "1"
@@ -309,3 +309,16 @@ def test_by_sport_groups_live_bets():
     assert set(out) == {"Tennis", "Soccer"}
     assert (out["Tennis"]["won"], out["Tennis"]["lost"], out["Tennis"]["pl"]) == (1, 1, -0.22)
     assert out["Soccer"]["open"] == 1 and out["Soccer"]["bets"] == 0 and out["Soccer"]["roi"] is None
+
+
+def test_skips_thin_flow(monkeypatch):
+    from league import live_sharp
+    assert live_sharp.flow_trades({"reason": "$1,922 bet YES at 72¢ (6 trades)"}) == 6
+    assert live_sharp.flow_trades({"reason": "$90 bet NO at 40¢ (1 trade)"}) == 1
+    assert live_sharp.flow_trades({"reason": ""}) is None
+    c = FakeClient()
+    out = live_sharp.place([paper(1, trades=6), paper(2, trades=20), paper(3, trades=300)], c, now=NOW, rows=[])
+    assert out["skipped"].get("thin_flow") == 1 and out["placed"] == 2
+    monkeypatch.setenv("LIVE_SHARP_MIN_TRADES", "0")
+    out = live_sharp.place([paper(4, trades=2)], c, now=NOW, rows=[])
+    assert out["placed"] == 1

@@ -9,7 +9,11 @@ Real money, so every limit is enforced here in code, not just in config:
 * orders are immediate-or-cancel at the price the paper pick saw, so we never
   chase a moved market and nothing rests on the book;
 * client_order_id is derived from the paper trade id, so a retried round
-  can't place the same bet twice.
+  can't place the same bet twice;
+* only picks copying a crowd of at least LIVE_SHARP_MIN_TRADES trades (default 20) go out.
+  On paper, Sharp picks built on fewer trades lost money every day (-22% ROI vs +22%
+  for 20+ through Oct 14), so real money skips them. Paper Sharp still takes them all,
+  which keeps the comparison running.
 
 Off unless LIVE_SHARP_ENABLED=1 and Kalshi write keys are present.
 """
@@ -18,6 +22,7 @@ from __future__ import annotations
 import csv
 import math
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -56,6 +61,19 @@ def per_bet() -> float:
 def daily_budget() -> float:
     return _env_float("LIVE_SHARP_DAILY_BUDGET", CEIL_DAILY, CEIL_DAILY)
 
+
+
+def min_trades() -> int:
+    try:
+        return max(0, int(os.getenv("LIVE_SHARP_MIN_TRADES", "20")))
+    except ValueError:
+        return 20
+
+
+def flow_trades(pick: dict) -> int | None:
+    """How many trades the Sharp pick copied, read from its reason ("$4,044 bet YES at 60¢ (63 trades)")."""
+    m = re.search(r"\((\d+) trades?\)", str(pick.get("reason") or ""))
+    return int(m.group(1)) if m else None
 
 
 def enabled() -> bool:
@@ -197,6 +215,10 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
     for p in picks:
         if p.get("trade_id") in seen:
             skip("already_placed")
+            continue
+        n_tr = flow_trades(p)
+        if min_trades() and (n_tr is None or n_tr < min_trades()):
+            skip("thin_flow")
             continue
         # one real bet per game per day: no re-buying the same market and no taking the other side
         ev = book.event_of(p)
