@@ -308,4 +308,10 @@ def main():
             mark(state,key,s["line"],s["prob"],now,k); sent+=1
     save_state(state)
     if not priced: print("No NCAA beta bet cleared both model and Kalshi-price thresholds.")
-if __name__=="__main__": main()
+if __name__=="__main__":
+    try:
+        main()
+    except Exception as exc:
+        # surface the reason as a GitHub annotation so it shows on the run page
+        print(f"::error title=NCAA beta failed::{type(exc).__name__}: {str(exc)[:400]}")
+        raise
