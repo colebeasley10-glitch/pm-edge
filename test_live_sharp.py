@@ -338,3 +338,23 @@ def test_own_no_buy_fill_is_not_a_cash_out():
     # a real manual sale of the same bet still counts
     c.fills.append(_sell("KXT-74", "NO", n, 0.55))
     assert len(live_sharp.sync_sells(rows, c, now=NOW)) == 1 and r["result"] == "sold"
+
+
+def test_vs_paper_compares_same_window():
+    from league import live_sharp
+    live = [
+        {"paper_trade_id": "a", "placed_at": "2026-10-13T15:00:00Z", "status": "won", "pl": "0.40", "cost": "0.58", "fee": "0.02"},
+        {"paper_trade_id": "b", "placed_at": "2026-10-13T16:00:00Z", "status": "no_fill", "pl": "0"},
+    ]
+    paper = [
+        {"trade_id": "old", "strategy": "sharp", "opened_at": "2026-10-12T15:00:00Z", "status": "won", "pl": "9", "cost": "10", "fee": "0"},
+        {"trade_id": "a", "strategy": "sharp", "opened_at": "2026-10-13T15:00:00Z", "status": "won", "pl": "4", "cost": "5.8", "fee": "0.2"},
+        {"trade_id": "b", "strategy": "sharp", "opened_at": "2026-10-13T16:00:00Z", "status": "lost", "pl": "-6", "cost": "6", "fee": "0"},
+        {"trade_id": "c", "strategy": "weather", "opened_at": "2026-10-13T16:00:00Z", "status": "won", "pl": "5", "cost": "5", "fee": "0"},
+    ]
+    out = live_sharp.vs_paper(live, paper)
+    assert out["paper"]["bets"] == 2 and out["paper"]["pl"] == -2.0  # the pre-live "old" bet is left out
+    assert (out["paper_copied"]["won"], out["paper_copied"]["pl"]) == (1, 4.0)
+    assert (out["live"]["won"], out["live"]["pl"], out["live"]["staked"]) == (1, 0.4, 0.6)
+    assert (out["paper_missed"]["lost"], out["paper_missed"]["pl"]) == (1, -6.0)
+    assert live_sharp.vs_paper([], paper) is None

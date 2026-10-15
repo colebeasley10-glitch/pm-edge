@@ -657,8 +657,11 @@ with tab_live:
     _pays = sum((_num(_r.get("filled")) or 0) - (_num(_r.get("sold")) or 0) for _r in live_rows if _r.get("status") == "open")
     _today_pl = sum(_num(_r.get("pl")) or 0 for _r in live_rows if _r.get("status") in {"won", "lost"}
                     and _when(_r.get("settled_at")) and _when(_r.get("settled_at")).astimezone(EASTERN).date() == _today)
-    _sharp = league[league["strategy"] == "sharp"] if not league.empty and "strategy" in league else pd.DataFrame()
-    _sharp_pl = float(pd.to_numeric(_sharp.get("pl"), errors="coerce").fillna(0).sum()) if not _sharp.empty else 0.0
+    from league import live_sharp as _ls_cmp
+    # paper over the same window as live, so the two are comparable (paper's all-time record
+    # includes the days before live started)
+    _vs = _ls_cmp.vs_paper(live_rows, league.to_dict("records") if not league.empty else [])
+    _sharp_roi = _vs["paper"]["roi"] if _vs else None
     _budget = float(ls["budget"] or 0)
     _fill = max(0.0, min(100.0, 100.0 * float(ls["spent_today"] or 0) / _budget)) if _budget else 0.0
     st.markdown(
@@ -671,7 +674,7 @@ with tab_live:
           <div class='stats'>
             <div class='stat'><div class='k'>Record</div><div class='v'>{ls["won"]}–{ls["lost"]}</div></div>
             <div class='stat'><div class='k'>ROI</div><div class='v {tone(ls["roi"] or 0)}'>{pct(ls["roi"], signed=True)}</div></div>
-            <div class='stat'><div class='k'>Paper Sharp</div><div class='v {tone(_sharp_pl)}'>{money(_sharp_pl, signed=True)}</div></div>
+            <div class='stat'><div class='k'>Paper, same days</div><div class='v {tone(_sharp_roi or 0)}'>{pct(_sharp_roi, signed=True) if _sharp_roi is not None else "—"}</div></div>
           </div>
           <div class='bar'>
             <div class='lab'><span>Today's budget</span><span><b style='color:var(--text)'>{money(ls["spent_today"])}</b> of {money(ls["budget"])}</span></div>
@@ -786,6 +789,24 @@ with tab_live:
             st.markdown(cards_html(_live_card(r) for r in opn), unsafe_allow_html=True)
         else:
             st.markdown("<div class='pe-lede'>Nothing open right now.</div>", unsafe_allow_html=True)
+        if _vs and _vs["paper"]["bets"]:
+            _since = _when(_vs["since"])
+            _since_txt = _since.astimezone(EASTERN).strftime("%b %-d") if _since else "live started"
+            st.markdown(f"<div class='section'><span>Live vs paper since {esc(_since_txt)}</span></div>",
+                        unsafe_allow_html=True)
+            def _vs_row(g, note):
+                return (esc(g["group"]), f"{g['won']}-{g['lost']} · {esc(note)}",
+                        f"<span class='num'>{pct(g['roi'], signed=True) if g['roi'] is not None else '—'}</span>",
+                        tone(g["roi"] or 0))
+            st.markdown(rows_html([
+                _vs_row(_vs["live"], "Your real $1 bets"),
+                _vs_row(_vs["paper_copied"], "The same picks on paper. Should track the live row closely"),
+                _vs_row(_vs["paper_missed"], "Picks live couldn't place: no fill, blocked or skipped"),
+                _vs_row(_vs["paper"], "Every paper Sharp pick since live started"),
+            ]), unsafe_allow_html=True)
+            st.markdown("<div class='pe-lede' style='font-size:.8rem'>If live and paper-same-bets match, "
+                        "execution is fine and any gap with paper is which picks got placed, not how.</div>",
+                        unsafe_allow_html=True)
         from league import live_sharp as _ls_daily
         _sports = _ls_daily.by_sport(live_rows)
         if _sports:

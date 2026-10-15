@@ -503,3 +503,56 @@ def by_sport(rows: list[dict]) -> list[dict]:
         g["roi"] = g["pl"] / g["staked"] if g["staked"] else None
         out.append(g)
     return sorted(out, key=lambda g: (-g["bets"], -g["open"], g["group"]))
+
+
+def vs_paper(rows: list[dict], paper_rows: list[dict]) -> dict | None:
+    """Live vs paper Sharp over the same window: since the first live order.
+
+    Paper's all-time record includes days before live existed, so comparing live to it
+    makes live look worse than it is. Splits paper's settled Sharp bets since live started
+    into the ones live copied and the ones it couldn't (no fill, blocked, skipped), and puts
+    the live result on the copied ones beside them. ROI is P/L over stake incl. fees.
+    """
+    starts = [str(r.get("placed_at")) for r in rows if r.get("placed_at")]
+    if not starts:
+        return None
+    start = min(starts)
+    copied = {str(r.get("paper_trade_id")): r for r in rows
+              if r.get("status") in {"won", "lost", "open"} and r.get("paper_trade_id")}
+
+    def group(name):
+        return {"group": name, "won": 0, "lost": 0, "pl": 0.0, "staked": 0.0}
+
+    out = {"since": start, "paper": group("Paper, all picks"), "paper_copied": group("Paper, same bets"),
+           "live": group("Live, same bets"), "paper_missed": group("Paper, bets live couldn't place")}
+
+    def add(g, status, pl, staked):
+        g[status] += 1
+        g["pl"] += pl
+        g["staked"] += staked
+
+    for p in paper_rows:
+        opened = p.get("opened_at")
+        if p.get("strategy") != "sharp" or not isinstance(opened, str) or opened < start:
+            continue
+        st = p.get("status")
+        if st not in {"won", "lost"}:
+            continue
+        pl = book.f(p.get("pl"), 0.0) or 0.0
+        staked = (book.f(p.get("cost"), 0.0) or 0.0) + (book.f(p.get("fee"), 0.0) or 0.0)
+        add(out["paper"], st, pl, staked)
+        live = copied.get(str(p.get("trade_id")))
+        if live is None:
+            add(out["paper_missed"], st, pl, staked)
+            continue
+        add(out["paper_copied"], st, pl, staked)
+        if live.get("status") in {"won", "lost"}:
+            add(out["live"], live["status"], book.f(live.get("pl"), 0.0) or 0.0,
+                (book.f(live.get("cost"), 0.0) or 0.0) + (book.f(live.get("fee"), 0.0) or 0.0))
+    for k in ("paper", "paper_copied", "live", "paper_missed"):
+        g = out[k]
+        g["bets"] = g["won"] + g["lost"]
+        g["pl"] = round(g["pl"], 2)
+        g["staked"] = round(g["staked"], 2)
+        g["roi"] = g["pl"] / g["staked"] if g["staked"] else None
+    return out
