@@ -223,7 +223,21 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
     push(new_rows)
     push_settled(rows, was_open)
     print("LEAGUE_ROUND", json.dumps({k: v for k, v in status.items() if k != "standings"}, default=str))
+    _flag_geo_retry()
     return status
+
+
+def _flag_geo_retry() -> None:
+    """Tell the workflow to resend blocked orders from a fresh runner (see league/geo_retry.py)."""
+    out = os.getenv("GITHUB_OUTPUT")
+    if not out:
+        return
+    try:
+        blocked = any(live_sharp.geo_blocked(r) for r in live_sharp.load())
+    except Exception:
+        blocked = False
+    with open(out, "a") as fh:
+        fh.write(f"geo_retry={'true' if blocked else 'false'}\n")
 
 
 if __name__ == "__main__":

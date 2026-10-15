@@ -15,7 +15,9 @@ permissions:
 jobs:
   round:
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 12
+    outputs:
+      geo_retry: ${{ steps.round.outputs.geo_retry }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,6 +26,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Run league round
+        id: round
         env:
           PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
           PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
@@ -36,6 +39,73 @@ jobs:
           KALSHI_WRITE_API_KEY_ID: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_API_KEY_ID || '' }}
           KALSHI_WRITE_PRIVATE_KEY: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_PRIVATE_KEY || '' }}
         run: python -m league.run
+      - name: Save league results
+        if: always()
+        run: |
+          git config user.name "pm-edge-bot"
+          git config user.email "pm-edge-bot@users.noreply.github.com"
+          for f in league_trades.csv league_status.json live_sharp_trades.csv; do if [ -f "$f" ]; then git add "$f"; fi; done
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "League round [skip ci]"
+          for i in 1 2 3 4; do
+            git pull --rebase -X theirs origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            sleep $((i * 5))
+          done
+          exit 1
+
+  # Kalshi blocks sports orders sent from Washington, and now and then the round's runner is
+  # there. A new job gets a new runner (almost always elsewhere), so resend those orders here.
+  geo_retry:
+    needs: round
+    if: needs.round.outputs.geo_retry == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # the round job has just pushed; start from that, not the commit that triggered this run
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Resend orders blocked for location
+        env:
+          LIVE_SHARP_ENABLED: ${{ vars.LIVE_SHARP_ENABLED }}
+          KALSHI_WRITE_API_KEY_ID: ${{ secrets.KALSHI_WRITE_API_KEY_ID }}
+          KALSHI_WRITE_PRIVATE_KEY: ${{ secrets.KALSHI_WRITE_PRIVATE_KEY }}
+        run: python -m league.geo_retry
+      - name: Save league results
+        if: always()
+        run: |
+          git config user.name "pm-edge-bot"
+          git config user.email "pm-edge-bot@users.noreply.github.com"
+          for f in live_sharp_trades.csv; do if [ -f "$f" ]; then git add "$f"; fi; done
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Live bets location retry [skip ci]"
+          for i in 1 2 3 4; do
+            git pull --rebase -X theirs origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            sleep $((i * 5))
+          done
+          exit 1
+
+  # Runs alongside geo_retry instead of before it, so its 5-minute wait doesn't delay the retry.
+  followup:
+    needs: round
+    if: always() && needs.round.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # the round job has just pushed; start from that, not the commit that triggered this run
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
       - name: Five-minute follow-up (tap-delay price + extra mark)
         continue-on-error: true
         env:
@@ -50,9 +120,9 @@ jobs:
         run: |
           git config user.name "pm-edge-bot"
           git config user.email "pm-edge-bot@users.noreply.github.com"
-          for f in league_trades.csv league_status.json live_sharp_trades.csv; do if [ -f "$f" ]; then git add "$f"; fi; done
+          for f in league_trades.csv; do if [ -f "$f" ]; then git add "$f"; fi; done
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "League round [skip ci]"
+          git commit -m "League follow-up [skip ci]"
           for i in 1 2 3 4; do
             git pull --rebase -X theirs origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
             sleep $((i * 5))

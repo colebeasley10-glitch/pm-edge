@@ -556,3 +556,77 @@ def vs_paper(rows: list[dict], paper_rows: list[dict]) -> dict | None:
         g["staked"] = round(g["staked"], 2)
         g["roi"] = g["pl"] / g["staked"] if g["staked"] else None
     return out
+
+
+# Kalshi rejects sports orders sent from Washington state. GitHub's runners land in different
+# data centers each run and now and then in Washington, which blocks every order that round.
+GEO_BLOCK = "not_currently_allowed_in_Washington"
+GEO_RETRY_WINDOW = timedelta(minutes=20)
+
+
+def geo_blocked(r: dict) -> bool:
+    """An order Kalshi rejected for the runner's location that hasn't been retried yet."""
+    note = str(r.get("note") or "")
+    return r.get("status") == "error" and GEO_BLOCK in note and not note.startswith("Retried")
+
+
+def retry_geo(rows: list[dict], client, *, now: datetime | None = None) -> dict:
+    """Resend orders blocked for the runner's location, from this (different) runner.
+
+    Same ticker, side, size and limit price as the original, so a retry can never pay more
+    than the pick saw; it simply doesn't fill if the price has moved. Orders older than
+    GEO_RETRY_WINDOW are left blocked. Each order is retried once, under a new client id.
+    """
+    now = now or book.now_utc()
+    out = {"retried": 0, "filled": 0, "missed": 0, "blocked_again": 0, "too_old": 0, "errors": 0, "new": []}
+    todo = [r for r in rows if geo_blocked(r)]
+    if not todo:
+        return out
+    day = et_day(now)
+    spent, _ = _spent(rows, day)
+    try:
+        spent = max(spent, client.committed_cost_for_prefix(f"{PREFIX}{day}-"))
+    except Exception as exc:
+        out["error"] = f"{type(exc).__name__}: {str(exc)[:120]}"
+        return out
+    for r in todo:
+        placed = book.parse_dt(r.get("placed_at"))
+        if placed is None or now - placed > GEO_RETRY_WINDOW:
+            r["note"] = "Retried: no, too late. " + str(r.get("note") or "")[:120]
+            out["too_old"] += 1
+            continue
+        count = int(book.f(r.get("contracts_wanted"), 0) or 0)
+        price = book.f(r.get("limit_price"))
+        if count < 1 or price is None or not (0 < price < 1):
+            r["note"] = "Retried: no, bad order details. " + str(r.get("note") or "")[:120]
+            continue
+        if r.get("day") == day and spent + count * price > daily_budget() + 1e-9:
+            r["note"] = "Retried: no, daily budget used up. " + str(r.get("note") or "")[:120]
+            continue
+        cid = f"{r.get('trade_id') or r.get('client_order_id')}-r"
+        r["client_order_id"] = cid
+        out["retried"] += 1
+        try:
+            existing = client.find_order_by_client_id(cid)
+            order = existing or client.create_buy_order(
+                ticker=r["ticker"], outcome_side=r["side"], count=count, max_price=price,
+                execution="TAKE", client_order_id=cid)
+            order = order.get("order", order) if isinstance(order, dict) else {}
+            if not existing and not order.get("fill_count_fp") and not order.get("fill_count"):
+                order = client.find_order_by_client_id(cid) or order
+            r["note"] = ""
+            _record_fill(r, order, client)
+            r["note"] = ("Retried from another server after a Washington block. " + str(r.get("note") or "")).strip()
+            if r["status"] == "open":
+                out["filled"] += 1
+                out["new"].append(r)
+                spent += (book.f(r.get("cost"), 0.0) or 0.0) + (book.f(r.get("fee"), 0.0) or 0.0)
+            else:
+                out["missed"] += 1
+        except Exception as exc:
+            msg = f"{type(exc).__name__}: {str(exc)[:140]}"
+            again = GEO_BLOCK in msg
+            r.update({"status": "error", "pl": 0.0,
+                      "note": ("Retried: blocked again. " if again else "Retried: failed. ") + msg})
+            out["blocked_again" if again else "errors"] += 1
+    return out
