@@ -311,6 +311,13 @@ def main():
 if __name__=="__main__":
     try:
         main()
+    except RuntimeError as exc:
+        if "CFBD unavailable" not in str(exc):
+            print(f"::error title=NCAA beta failed::{type(exc).__name__}: {str(exc)[:400]}")
+            raise
+        # CFBD quota used up / outage with nothing cached: skip quietly so GitHub
+        # doesn't email a failure every half hour; it resumes once CFBD answers again.
+        print(f"::warning title=NCAA beta skipped::{str(exc)[:400]}")
     except Exception as exc:
         # surface the reason as a GitHub annotation so it shows on the run page
         print(f"::error title=NCAA beta failed::{type(exc).__name__}: {str(exc)[:400]}")
