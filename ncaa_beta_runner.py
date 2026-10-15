@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import json, math, os, re, statistics, requests
 import approval_links
-from cfbd_client import CFBD
+from cfbd_client import CachedCFBD
 from ncaa_predictive import ratings_map, project
 from watcher import fetch_open_kalshi_sports_markets, inferred_sport_rule, parse_market
 
@@ -193,7 +193,7 @@ def match_kalshi(signal,markets,home,away,home_spread):
 
 def main():
     now=datetime.now(timezone.utc); year=now.year
-    c=CFBD(); games=c.games(year); core=c.core(year); rm=ratings_map(core)
+    c=CachedCFBD(); games=c.games(year); core=c.core(year); rm=ratings_map(core)
     upcoming=[]; weeks=set()
     for g in games:
         if g.get("completed"): continue
@@ -212,6 +212,11 @@ def main():
         try: line_rows.extend(c.lines(year,w))
         except Exception as e: print("CFBD lines fetch failed",w,e)
     by_id={str(x.get("id") or x.get("gameId")):x for x in line_rows}
+    c.save()
+    print({"cfbd_calls":c.calls,"cfbd_errors":c.errors})
+    if not upcoming:
+        print("No FBS games in the next 18 hours; skipping Kalshi scan.")
+        return
 
     try:
         kalshi_markets,kalshi_stats=fetch_open_kalshi_sports_markets(KALSHI_BASE,max_events=3000)

@@ -2,8 +2,14 @@ name: NCAA Model Beta
 
 on:
   workflow_dispatch:
+  repository_dispatch:
+    types: [tick]
   schedule:
     - cron: "15,45 * * * *"
+
+concurrency:
+  group: ncaa-beta
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -23,7 +29,9 @@ jobs:
       - name: Restore NCAA beta state
         uses: actions/cache@v4
         with:
-          path: .ncaa_beta_state.json
+          path: |
+            .ncaa_beta_state.json
+            .ncaa_beta_cfbd_cache.json
           key: ncaa-beta-${{ github.run_id }}
           restore-keys: |
             ncaa-beta-

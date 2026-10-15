@@ -2,6 +2,8 @@ name: PM Edge Watch
 
 on:
   workflow_dispatch:
+  repository_dispatch:
+    types: [tick]
   push:
     branches: [main]
     paths:
