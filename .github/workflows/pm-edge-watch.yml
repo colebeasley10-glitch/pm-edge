@@ -142,9 +142,7 @@ jobs:
           PM_EDGE_OVERNIGHT_MISSED_RETENTION_DAYS: "14"
         run: python pm_edge_runner_v29.py
 
-      # Whale Flow moved to the always-on Railway paper worker.
-      # Keeping it out of this scheduled Actions job avoids duplicate signals
-      # and consumes zero paid sportsbook-odds credits for the Whale lane.
+      # Whale Flow is retired (its Railway worker was shut down Oct 2026).
 
       - name: Reconcile PM Edge fills and settlements
         if: always()
@@ -213,21 +211,4 @@ jobs:
             git commit -m "Update PM Edge audit ledgers [skip ci]"
             git push
 
-            # Keep the deployed mobile-backend branch on the exact same
-            # ledgers without replacing its backend-specific application code.
-            git fetch origin railway/code-change-HB1cBE
-            git worktree add /tmp/pm-edge-mobile origin/railway/code-change-HB1cBE
-            for file in pm_edge_auto_ledger.csv pm_edge_signal_ledger.csv pm_edge_candidate_ledger.csv pm_edge_clv_ledger_v2.csv pm_edge_fill_ledger.csv pm_edge_signal_outcomes.csv pm_edge_whale_flow_ledger.csv .pm_edge_watch_state.json .pm_edge_whale_state.json; do
-              if [ -f "$file" ]; then
-                cp "$file" "/tmp/pm-edge-mobile/$file"
-              fi
-            done
-            cd /tmp/pm-edge-mobile
-            for file in pm_edge_auto_ledger.csv pm_edge_signal_ledger.csv pm_edge_candidate_ledger.csv pm_edge_clv_ledger_v2.csv pm_edge_fill_ledger.csv pm_edge_signal_outcomes.csv pm_edge_whale_flow_ledger.csv .pm_edge_watch_state.json .pm_edge_whale_state.json; do
-              [ -f "$file" ] && git add "$file"
-            done
-            if ! git diff --cached --quiet; then
-              git commit -m "Sync PM Edge ledgers to mobile backend"
-              git push origin HEAD:railway/code-change-HB1cBE
-            fi
           fi
