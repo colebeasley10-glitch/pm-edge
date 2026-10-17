@@ -683,6 +683,15 @@ tab_home, tab_live, tab_league, tab_lab, tab_picks, tab_bets, tab_results, tab_s
     ["Home", "Live $1", "Paper", "Lab", f"Alerts {len(picks)}" if len(picks) else "Alerts", "My bets", "Results", "System"]
 )
 
+def _price_label(p: dict) -> str:
+    """'66¢ (−200)': exchange prices also shown as American odds (after fees), comparable to sportsbooks."""
+    shown, d = str(p.get("shown") or ""), _num(p.get("decimal"))
+    if shown.endswith("¢") and d and d > 1.0:
+        am = f"+{round((d - 1) * 100)}" if d >= 2.0 else f"−{round(100 / (d - 1))}"
+        return f"{shown} ({am})"
+    return shown.replace("-", "−")
+
+
 # ------------------------------------------------------------------- home --
 with tab_home:
     _h_rows, _h_ls = load_live_sharp()
@@ -754,14 +763,14 @@ with tab_home:
             _rows = "".join(
                 f"<a class='cmp-row{' best' if i == 0 else ''}' href='{esc(p.get('url') or '#')}' target='_blank' rel='noopener'>"
                 f"<span class='cmp-v'>{esc(p['venue'])}{' · best' if i == 0 else ''}</span>"
-                f"<span class='cmp-p'>{esc(p['shown'])}</span>"
+                f"<span class='cmp-p'>{esc(_price_label(p))}</span>"
                 f"<span class='cmp-e {'ev-pos' if p.get('ev', 0) > 0 else 'ev-neg'}'>{p.get('ev', 0) * 100:+.1f}%</span></a>"
                 for i, p in enumerate(_ps))
             _items.append(
                 f"<details class='hm-opp-d'><summary class='hm-opp'><div><div class='t'>{esc(_r['team'])} ML</div>"
                 f"<div class='s'>{esc(_r.get('sport') or '')} · {esc(starts(_r.get('starts')))}</div>"
                 f"<div class='ev {_cls}'>{_ev * 100:+.1f}% EV · {esc(_b['venue'])}</div></div>"
-                f"<div class='px'>{esc(_b['shown'])}<small>fair {esc(_r['fair_odds'])}</small></div></summary>"
+                f"<div class='px'>{esc(_price_label(_b))}<small>fair {esc(_r['fair_odds'])}</small></div></summary>"
                 f"<div class='cmp'><div class='cmp-h'><span>{len(_ps)} place{'s' if len(_ps) != 1 else ''} to bet it</span>"
                 f"<span>Pinnacle fair {esc(_r['fair_odds'])}</span></div>{_rows}"
                 f"<div class='cmp-note'>Green = best price. EV compares each price with Pinnacle's fair line. "

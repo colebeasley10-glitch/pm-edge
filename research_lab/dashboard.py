@@ -330,8 +330,11 @@ def render_ev_finder() -> None:
     for r in board["rows"]:
         for p in r["prices"]:
             if p["ev"] * 100 >= min_ev:
+                _price = p["shown"]
+                if str(_price).endswith("¢") and p.get("decimal", 0) > 1:
+                    _price = f"{_price} ({_odds(p['decimal'])})"
                 rows.append({"Game": r["game"], "Team": r["team"], "Fair": r["fair_odds"], "Venue": p["venue"],
-                             "Price": p["shown"], "EV": f"{p['ev'] * 100:+.1f}%", "Kickoff": _when(r["starts"]),
+                             "Price": _price, "EV": f"{p['ev'] * 100:+.1f}%", "Kickoff": _when(r["starts"]),
                              "Price at": _when(p["at"]), "_ev": p["ev"]})
     if not rows:
         st.write("Nothing at that EV right now.")
