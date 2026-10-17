@@ -176,8 +176,10 @@ def _load_usage(now: datetime, base: Path | None) -> dict:
     except ValueError:
         u = {}
     if u.get("day") != et_day(now):
+        # "remaining" is re-learned each day from the first response, so the lab notices when the
+        # monthly credits reset (a call on an empty account is refused and costs nothing).
         u = {"day": et_day(now), "credits": 0, "last_snapshot": u.get("last_snapshot"),
-             "remaining": u.get("remaining"), "snapshot": u.get("snapshot")}
+             "remaining": None, "snapshot": u.get("snapshot")}
     return u
 
 

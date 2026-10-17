@@ -690,3 +690,24 @@ def test_promo_conversion_math():
     from research_lab.dashboard import promo_conversion
     # $1 bonus at +250 hedged at -300 (decimal 1.333): 2.5 * (1 - 0.75) = 62.5%
     assert abs(promo_conversion(3.5, 4 / 3) - 0.625) < 1e-9
+
+
+def test_book_snapshot_retries_next_day_after_empty_account(tmp_path):
+    class Resp:
+        status_code, headers = 401, {"x-requests-last": "0", "x-requests-remaining": "0"}
+
+        def json(self):
+            return {}
+
+    class Sess:
+        calls = 0
+
+        def get(self, url, **kw):
+            Sess.calls += 1
+            return Resp()
+    ev_data.book_snapshot(NOW, tmp_path, session=Sess(), key="k")
+    ev_data.book_snapshot(NOW + timedelta(hours=5), tmp_path, session=Sess(), key="k")
+    assert Sess.calls == 3                      # same day: empty account, no more tries
+    ev_data.book_snapshot(NOW + timedelta(days=1), tmp_path, session=Sess(), key="k")
+    assert Sess.calls == 6                      # next day: checks again in case credits reset
+
