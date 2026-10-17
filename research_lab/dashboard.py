@@ -48,7 +48,7 @@ def load_status() -> dict:
 def header(title: str) -> None:
     st.set_page_config(page_title=f"Research Lab: {title}", page_icon="🧪", layout="centered")
     try:
-        st.page_link("app.py", label="Back to PM Edge", icon="⬅️")
+        st.page_link("app.py", label="Back to SharpIQ", icon="⬅️")
     except Exception:  # page opened outside the multipage app (e.g. tests)
         pass
     st.title(title)

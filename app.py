@@ -1,4 +1,4 @@
-"""PM Edge: phone-first dashboard.
+"""SharpIQ (formerly PM Edge): phone-first dashboard.
 
 Four tabs: Picks (what to bet now), My bets (open + settled), Results (is it
 working?), System (is it running?). Stats count from the fresh start set in
@@ -24,7 +24,7 @@ import streamlit as st
 import dashboard_data
 from kalshi_readonly import KalshiReadOnlyClient
 
-st.set_page_config(page_title="PM Edge", page_icon="🎯", layout="centered",
+st.set_page_config(page_title="SharpIQ", page_icon="🎯", layout="centered",
                    initial_sidebar_state="collapsed")
 
 EASTERN = ZoneInfo("America/New_York")
@@ -64,26 +64,27 @@ _seed_env_from_secrets()
 st.markdown(
     """
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
     :root {
-      --bg:#0A0F18; --panel:#111A27; --panel2:#0E1622; --deep:#070C14; --line:#1E2A3B; --text:#F2F5FA; --soft:#C3CCDA;
-      --muted:#8796AD; --gold:#F2C14E; --up:#2BE07A; --down:#FF5A5F; --hero:#17304F;
+      --bg:#0B0D10; --panel:#15181D; --panel2:#111418; --deep:#0E1013; --line:#262A31; --text:#F4F6F8; --soft:#C7CCD4;
+      --muted:#8B93A0; --gold:#F5B800; --up:#22C55E; --down:#F05252; --hero:#0E2A1B;
     }
     html, body, .stApp, .stApp p, .stApp span, .stApp div, .stApp button, .stApp label, .stApp li {
-      font-family:'Barlow', system-ui, sans-serif !important;
+      font-family:'Manrope', system-ui, sans-serif !important;
     }
-    .stApp { background:radial-gradient(130% 45% at 50% 0%, #13233A 0%, var(--bg) 60%) fixed; color:var(--text); }
+    .stApp { background:var(--bg); color:var(--text); }
+    .num, .big, .v, .amt, .pv, .price { font-variant-numeric:tabular-nums; }
     /* hide Streamlit's own chrome: toolbar, menu, footer, deploy and status badges */
     [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"],
     #MainMenu, footer, [data-testid="stSidebar"], [data-testid="collapsedControl"],
     [class*="viewerBadge"], [data-testid="stAppDeployButton"], [data-testid="manage-app-button"] { display:none !important; }
     .block-container { padding-top:1.4rem; padding-bottom:4rem; max-width:640px; }
-    .num { font-family:'Barlow Condensed', sans-serif !important; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:.01em; }
+    .num { font-family:'Manrope', sans-serif !important; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:.01em; }
     .up { color:var(--up); } .down { color:var(--down); }
     /* header */
     .pe-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
-    .pe-mark { font-family:'Barlow Condensed', sans-serif !important; font-weight:800; font-size:1.75rem; letter-spacing:.04em; }
+    .pe-mark { font-family:'Manrope', sans-serif !important; font-weight:800; font-size:1.7rem; letter-spacing:-.02em; }
     .pe-mark i { font-style:normal; color:var(--gold); }
     .pe-pill { font-size:.8rem; font-weight:700; padding:.38rem .75rem; border-radius:999px; }
     .pe-pill.on { color:var(--up); background:rgba(43,224,122,.12); }
@@ -91,69 +92,98 @@ st.markdown(
     .pe-lede { color:var(--muted); font-size:.9rem; margin:.5rem 0 1rem; line-height:1.45; }
     .k { color:var(--muted); font-size:.68rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; white-space:nowrap; }
     /* hero card */
-    .pe-hero { background:linear-gradient(140deg, var(--hero) 0%, var(--panel) 65%); border:1px solid #22385A;
+    .pe-hero { background:linear-gradient(150deg, var(--hero) 0%, #10161A 70%); border:1px solid rgba(34,197,94,.45);
                border-radius:20px; padding:1rem; display:flex; flex-direction:column; gap:.9rem; margin:.3rem 0 .6rem; }
     .pe-hero .top { display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; }
-    .pe-hero .big { font-family:'Barlow Condensed', sans-serif !important; font-weight:800; font-size:3rem; line-height:1; margin-top:.35rem; }
-    .pe-hero .mid { font-family:'Barlow Condensed', sans-serif !important; font-weight:700; font-size:1.4rem; margin-top:.25rem; text-align:right; }
+    .pe-hero .big { font-family:'Manrope', sans-serif !important; font-weight:800; font-size:3rem; line-height:1; margin-top:.35rem; }
+    .pe-hero .mid { font-family:'Manrope', sans-serif !important; font-weight:700; font-size:1.4rem; margin-top:.25rem; text-align:right; }
     .pe-hero .stats { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:.5rem; }
     .pe-hero .stat { background:rgba(7,12,20,.55); border-radius:12px; padding:.5rem .65rem; min-width:0; }
-    .pe-hero .stat .v { font-family:'Barlow Condensed', sans-serif !important; font-weight:700; font-size:1.25rem; margin-top:.1rem; white-space:nowrap; }
+    .pe-hero .stat .k { white-space:normal; letter-spacing:.06em; line-height:1.25; }
+    .pe-hero .stat .v { font-family:'Manrope', sans-serif !important; font-weight:700; font-size:1.25rem; margin-top:.1rem; white-space:nowrap; }
     .pe-hero .bar { display:flex; flex-direction:column; gap:.35rem; }
     .pe-hero .bar .lab { display:flex; justify-content:space-between; font-size:.8rem; color:var(--soft); }
     .pe-hero .bar .track { height:6px; border-radius:3px; background:var(--line); overflow:hidden; }
-    .pe-hero .bar .fill { height:6px; border-radius:3px; background:linear-gradient(90deg, var(--up), var(--gold)); }
+    .pe-hero .bar .fill { height:6px; border-radius:3px; background:var(--up); }
     /* open vs settled split */
     .pe-split { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:.6rem; margin:.2rem 0 .4rem; }
     .pe-split .box { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:.8rem .9rem;
                      display:flex; flex-direction:column; gap:.45rem; min-width:0; }
     .pe-split .hd { display:flex; justify-content:space-between; align-items:center; }
-    .pe-split .cnt { font-family:'Barlow Condensed', sans-serif !important; font-weight:700; font-size:.95rem; color:var(--soft);
+    .pe-split .cnt { font-family:'Manrope', sans-serif !important; font-weight:700; font-size:.95rem; color:var(--soft);
                      background:var(--panel2); border:1px solid var(--line); border-radius:999px; padding:0 .5rem; }
-    .pe-split .amt { font-family:'Barlow Condensed', sans-serif !important; font-weight:800; font-size:2rem; line-height:1; }
+    .pe-split .amt { font-family:'Manrope', sans-serif !important; font-weight:800; font-size:2rem; line-height:1; }
     .pe-split .cap { font-size:.7rem; color:var(--muted); margin-top:-.25rem; }
     .pe-split dl { display:grid; grid-template-columns:1fr auto; row-gap:.2rem; column-gap:.5rem; margin:.15rem 0 0;
                    padding-top:.5rem; border-top:1px solid var(--line); font-size:.78rem; }
     .pe-split dt { color:var(--muted); } .pe-split dd { margin:0; text-align:right; font-weight:700; color:var(--soft);
-                   font-family:'Barlow Condensed', sans-serif !important; font-size:.95rem; }
+                   font-family:'Manrope', sans-serif !important; font-size:.95rem; }
     .pe-total { display:flex; justify-content:space-between; align-items:baseline; background:var(--panel2); border:1px solid var(--line);
                 border-radius:12px; padding:.55rem .9rem; margin:0 0 .6rem; font-size:.8rem; color:var(--soft); }
-    .pe-total b { font-family:'Barlow Condensed', sans-serif !important; font-size:1.15rem; }
+    .pe-total b { font-family:'Manrope', sans-serif !important; font-size:1.15rem; }
     /* older board (scorecards) keeps working, restyled */
     .pe-board { background:var(--panel); border:1px solid var(--line); border-radius:18px;
                 padding:1rem 1.1rem; display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; }
     .pe-board .k { font-size:.68rem; }
-    .pe-board .big { font-family:'Barlow Condensed', sans-serif !important; font-size:2.4rem; font-weight:800; line-height:1.05; margin-top:.2rem; }
+    .pe-board .big { font-family:'Manrope', sans-serif !important; font-size:2.4rem; font-weight:800; line-height:1.05; margin-top:.2rem; }
     .pe-board .side { display:flex; gap:1.25rem; text-align:right; }
-    .pe-board .side .v { font-family:'Barlow Condensed', sans-serif !important; font-size:1.3rem; font-weight:700; margin-top:.1rem; white-space:nowrap; }
+    .pe-board .side .v { font-family:'Manrope', sans-serif !important; font-size:1.3rem; font-weight:700; margin-top:.1rem; white-space:nowrap; }
     @media (max-width:600px) {
       .pe-board { display:block; padding:1rem; }
       .pe-board .side { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:.75rem;
                         text-align:left; margin-top:.9rem; padding-top:.85rem; border-top:1px solid var(--line); }
       .pe-hero .big { font-size:2.6rem; }
     }
-    /* tabs as pills (covers both Streamlit tab DOMs: baseweb and react-aria) */
-    .stTabs [role="tablist"] { gap:.5rem !important; border-bottom:0 !important; margin:.2rem 0 .5rem; overflow-x:auto;
-                               scrollbar-width:none; box-shadow:none !important; }
+    /* tabs -> bottom navigation bar (covers both Streamlit tab DOMs: baseweb and react-aria) */
+    .stTabs [role="tablist"] { position:fixed !important; left:0; right:0; bottom:0; z-index:999; gap:.15rem !important;
+                               margin:0 !important; padding:.45rem .5rem calc(.55rem + env(safe-area-inset-bottom)) !important;
+                               background:rgba(11,13,16,.97); border-top:1px solid var(--line) !important; overflow-x:auto;
+                               justify-content:safe center; scrollbar-width:none; box-shadow:none !important;
+                               backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
     .stTabs [role="tablist"]::-webkit-scrollbar { display:none; }
-    .stTabs [role="tab"] { height:2.3rem !important; padding:0 1rem !important; border-radius:999px !important;
-                           border:1px solid var(--line) !important; background:var(--panel2) !important; color:var(--soft) !important;
-                           white-space:nowrap; flex:none; display:flex; align-items:center; }
-    .stTabs [role="tab"] p { font-weight:600 !important; font-size:.88rem !important; color:var(--soft) !important; }
-    .stTabs [role="tab"][aria-selected="true"] { background:var(--up) !important; border-color:var(--up) !important; }
-    .stTabs [role="tab"][aria-selected="true"] p { color:#06140C !important; }
+    .stTabs [role="tab"] { height:2.6rem !important; padding:0 .8rem !important; border-radius:12px !important; border:0 !important;
+                           background:transparent !important; white-space:nowrap; flex:none; display:flex; align-items:center; }
+    .stTabs [role="tab"] p { font-weight:600 !important; font-size:.8rem !important; color:var(--muted) !important; }
+    .stTabs [role="tab"][aria-selected="true"] { background:rgba(245,184,0,.12) !important; }
+    .stTabs [role="tab"][aria-selected="true"] p { color:var(--gold) !important; font-weight:800 !important; }
     .stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"], .stTabs .react-aria-SelectionIndicator { display:none !important; }
     .stTabs [role="tablist"] + div, .stTabs [data-baseweb="tab-border"] { border:0 !important; }
+    .block-container { padding-bottom:6.5rem !important; }
+    [data-testid="stTabsScrollRight"], [data-testid="stTabsScrollLeft"] { display:none !important; }
+    /* home screen */
+    .hm-tiles { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:.6rem; margin:.2rem 0 .4rem; }
+    .hm-tile { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:.8rem .9rem; min-width:0; }
+    .hm-tile .v { font-weight:800; font-size:1.45rem; line-height:1.1; white-space:nowrap; }
+    .hm-tile .l { color:var(--muted); font-size:.78rem; margin-top:.2rem; }
+    .hm-opps { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:.1rem .95rem; margin:.5rem 0 .8rem; }
+    .hm-opp { display:flex; justify-content:space-between; align-items:center; gap:.8rem; padding:.75rem 0; border-bottom:1px solid var(--line); }
+    .hm-opp:last-child { border-bottom:0; }
+    .hm-opp .t { font-weight:700; font-size:.95rem; } .hm-opp .s { color:var(--muted); font-size:.75rem; margin-top:.1rem; }
+    .hm-opp .ev { font-weight:700; font-size:.78rem; }
+    .hm-opp .px { text-align:right; font-weight:800; font-size:1.05rem; white-space:nowrap; }
+    .hm-opp .px small { display:block; color:var(--muted); font-weight:600; font-size:.72rem; }
+    .ev-pos { color:var(--up); } .ev-neg { color:var(--muted); }
+    /* lab */
+    a.hm-tile, a.lab-card { text-decoration:none !important; color:var(--text) !important; display:block; }
+    a.hm-tile:hover, a.lab-card:hover { border-color:var(--gold) !important; }
+    .lab-cards { display:flex; flex-direction:column; gap:.6rem; margin:.6rem 0 1rem; }
+    .lab-card { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:.85rem .95rem; }
+    .lc-top { display:flex; justify-content:space-between; gap:.8rem; align-items:flex-start; }
+    .lc-name { font-weight:800; font-size:1rem; } .lc-desc { color:var(--muted); font-size:.78rem; margin-top:.15rem; line-height:1.35; }
+    .lc-bank { font-weight:800; color:var(--gold); white-space:nowrap; }
+    .lc-stats { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.4rem; margin-top:.7rem; padding-top:.65rem; border-top:1px solid var(--line); }
+    .lc-stats b { display:block; font-weight:800; font-size:1.02rem; white-space:nowrap; }
+    .lc-stats span { color:var(--muted); font-size:.7rem; }
     /* section headers */
-    .section { font-family:'Barlow Condensed', sans-serif !important; font-weight:700; font-size:1.08rem; letter-spacing:.06em;
-               text-transform:uppercase; margin:1.3rem 0 .1rem; display:flex; justify-content:space-between; align-items:baseline; }
+    .section { font-family:'Manrope', sans-serif !important; font-weight:800; font-size:1.08rem; letter-spacing:-.01em;
+               margin:1.3rem 0 .1rem; display:flex; justify-content:space-between; align-items:baseline; gap:.75rem; }
     .section .n { color:var(--muted); margin-left:.35rem; }
     /* bet cards */
     .cards { display:flex; flex-direction:column; gap:.6rem; margin:.6rem 0 1rem; }
     .card { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:.65rem; display:flex; gap:.75rem; align-items:stretch; }
     .bug { width:7.4rem; flex:none; background:var(--deep); border:1px solid #182334; border-radius:11px; padding:.45rem .6rem;
            display:flex; flex-direction:column; gap:.18rem; justify-content:center; }
-    .bug .tr { display:flex; justify-content:space-between; align-items:center; font-family:'Barlow Condensed', sans-serif !important;
+    .bug .tr { display:flex; justify-content:space-between; align-items:center; font-family:'Manrope', sans-serif !important;
                font-weight:700; font-size:1.05rem; color:#7F8DA3; letter-spacing:.02em; line-height:1.15; }
     .bug .tr.me { color:#FFFFFF; }
     .bug .tn { display:flex; align-items:center; gap:.38rem; min-width:0; overflow:hidden; white-space:nowrap; }
@@ -162,15 +192,15 @@ st.markdown(
                padding-top:.25rem; margin-top:.1rem; display:flex; justify-content:space-between; text-transform:uppercase; }
     .bug .lv { color:var(--down); }
     .bug.tag { align-items:flex-start; }
-    .bug.tag .big { font-family:'Barlow Condensed', sans-serif !important; font-weight:700; font-size:1rem; color:#FFFFFF; }
+    .bug.tag .big { font-family:'Manrope', sans-serif !important; font-weight:700; font-size:1rem; color:#FFFFFF; }
     .card .info { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:space-between; gap:.2rem; padding:.1rem .1rem .1rem 0; }
     .card .lg { font-size:.62rem; font-weight:700; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; }
     .card .pn { font-weight:700; font-size:.98rem; color:var(--text); line-height:1.25; }
     .card .dot { width:.5rem; height:.5rem; border-radius:50%; display:inline-block; margin-right:.4rem; vertical-align:middle; }
     .card .pr { display:flex; justify-content:space-between; align-items:flex-end; gap:.6rem; }
     .card .ps { font-size:.78rem; color:var(--muted); line-height:1.35; }
-    .card .pv { font-family:'Barlow Condensed', sans-serif !important; font-weight:800; font-size:1.35rem; line-height:1; white-space:nowrap; text-align:right; }
-    .card .pv small { display:block; font-family:'Barlow', sans-serif !important; font-weight:600; font-size:.66rem; color:var(--muted); margin-top:.2rem; letter-spacing:.04em; }
+    .card .pv { font-family:'Manrope', sans-serif !important; font-weight:800; font-size:1.35rem; line-height:1; white-space:nowrap; text-align:right; }
+    .card .pv small { display:block; font-family:'Manrope', sans-serif !important; font-weight:600; font-size:.66rem; color:var(--muted); margin-top:.2rem; letter-spacing:.04em; }
     /* bet slip (alerts tab) */
     .slip { background:var(--panel); border:1px solid var(--line); border-radius:18px; margin:1rem 0 .55rem; position:relative; }
     .slip .top { padding:1rem 1.15rem .9rem; }
@@ -180,8 +210,8 @@ st.markdown(
     .slip h4 { font-size:1.08rem; font-weight:650; line-height:1.3; margin:.45rem 0 0; padding:0 !important; color:var(--text); }
     .slip .tear { border-top:1.5px dashed var(--line); margin:0 .9rem; position:relative; }
     .slip .bottom { padding:.9rem 1.15rem 1rem; display:grid; grid-template-columns:auto 1fr; gap:1.2rem; align-items:center; }
-    .slip .price { font-family:'Barlow Condensed', sans-serif !important; font-size:2.6rem; font-weight:800; color:var(--up); line-height:1; }
-    .slip .price small { display:block; font-family:'Barlow', sans-serif !important; font-size:.75rem; font-weight:500; color:var(--muted); margin-top:.3rem; }
+    .slip .price { font-family:'Manrope', sans-serif !important; font-size:2.6rem; font-weight:800; color:var(--up); line-height:1; }
+    .slip .price small { display:block; font-family:'Manrope', sans-serif !important; font-size:.75rem; font-weight:500; color:var(--muted); margin-top:.3rem; }
     .slip dl { display:grid; grid-template-columns:1fr auto; row-gap:.28rem; column-gap:.75rem; margin:0; font-size:.88rem; }
     .slip dt { color:var(--muted); } .slip dd { margin:0; text-align:right; font-weight:650; }
     /* lists (finished bets, standings) */
@@ -190,7 +220,7 @@ st.markdown(
     .row-list .r:last-child { border-bottom:0; }
     .row-list .t { font-weight:600; font-size:.95rem; line-height:1.3; }
     .row-list .s { color:var(--muted); font-size:.8rem; margin-top:.15rem; overflow-wrap:anywhere; }
-    .row-list .v { font-family:'Barlow Condensed', sans-serif !important; font-weight:700; font-size:1.1rem; text-align:right; white-space:nowrap; }
+    .row-list .v { font-family:'Manrope', sans-serif !important; font-weight:700; font-size:1.1rem; text-align:right; white-space:nowrap; }
     .quiet { text-align:center; padding:2.6rem 1.2rem; color:var(--muted); line-height:1.5; }
     .quiet strong { display:block; color:var(--text); font-size:1.1rem; font-weight:700; margin-bottom:.35rem; }
     .verdict { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:.8rem 1rem; margin:1.2rem 0 1rem; }
@@ -200,7 +230,8 @@ st.markdown(
                                         background:var(--panel2) !important; border:1px solid var(--line) !important; color:var(--soft) !important; }
     .stButton button:hover { border-color:var(--up) !important; color:var(--text) !important; }
     .stLinkButton a[kind="primary"], .stLinkButton a[data-testid="stBaseLinkButton-primary"] {
-      background:var(--up) !important; color:#06140C !important; border:0 !important; }
+      background:var(--gold) !important; color:#14110A !important; border:0 !important; }
+    .stButton button:hover { border-color:var(--gold) !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -622,16 +653,95 @@ if lg_last is not None and (datetime.now(timezone.utc) - lg_last).total_seconds(
 st.markdown(
     f"""
     <div class='pe-head'>
-      <div class='pe-mark'>PM<i>EDGE</i></div>
+      <div class='pe-mark'>Sharp<i>IQ</i></div>
       <div class='pe-pill {"on" if running else "off"}'>● {"Live" if running else "Idle"}{(" · " + esc(local_time(lg_last))) if lg_last else ""}</div>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-tab_live, tab_league, tab_lab, tab_picks, tab_bets, tab_results, tab_system = st.tabs(
-    ["Live $1", "Paper", "Lab 🧪", f"Alerts {len(picks)}" if len(picks) else "Alerts", "My bets", "Results", "System"]
+tab_home, tab_live, tab_league, tab_lab, tab_picks, tab_bets, tab_results, tab_system = st.tabs(
+    ["Home", "Live $1", "Paper", "Lab", f"Alerts {len(picks)}" if len(picks) else "Alerts", "My bets", "Results", "System"]
 )
+
+# ------------------------------------------------------------------- home --
+with tab_home:
+    _h_rows, _h_ls = load_live_sharp()
+    _h_open = [r for r in _h_rows if r.get("status") == "open"]
+    _h_risk = sum((_num(r.get("cost")) or 0) + (_num(r.get("fee")) or 0) for r in _h_open)
+    _h_today = datetime.now(EASTERN).date()
+    _h_today_pl = sum(_num(r.get("pl")) or 0 for r in _h_rows if r.get("status") in {"won", "lost"}
+                      and _when(r.get("settled_at")) and _when(r.get("settled_at")).astimezone(EASTERN).date() == _h_today)
+    _h_paper = league[league.get("strategy", pd.Series(dtype=str)).astype(str) == "sharp"] if not league.empty else league
+    _h_paper_done = _h_paper[_h_paper["status"].isin(["won", "lost"])] if not _h_paper.empty else _h_paper
+    _h_paper_pl = float(pd.to_numeric(_h_paper_done.get("pl"), errors="coerce").fillna(0).sum()) if not _h_paper_done.empty else 0.0
+    _h_paper_rec = (f"{int((_h_paper_done['status'] == 'won').sum())}–{int((_h_paper_done['status'] == 'lost').sum())}"
+                    if not _h_paper_done.empty else "0–0")
+    _h_budget = float(_h_ls.get("budget") or 0)
+    _h_fill = max(0.0, min(100.0, 100.0 * float(_h_ls.get("spent_today") or 0) / _h_budget)) if _h_budget else 0.0
+    st.markdown(
+        f"""
+        <div class='pe-hero'>
+          <div class='top'>
+            <div><div class='k'>Live $1 Sharp · real money</div>
+              <div class='big {tone(_h_ls["pl"])}'>{money(_h_ls["pl"], signed=True)}</div></div>
+            <div class='mid {tone(_h_today_pl)}'>{money(_h_today_pl, signed=True)}<div class='k' style='text-align:right'>today</div></div>
+          </div>
+          <div class='stats'>
+            <div class='stat'><div class='k'>Record</div><div class='v'>{_h_ls["won"]}–{_h_ls["lost"]}</div></div>
+            <div class='stat'><div class='k'>ROI</div><div class='v {tone(_h_ls["roi"] or 0)}'>{pct(_h_ls["roi"], signed=True)}</div></div>
+            <div class='stat'><div class='k'>Open</div><div class='v'>{_h_ls["open"]}</div></div>
+          </div>
+          <div class='bar'>
+            <div class='lab'><span>Today's budget</span><span><b style='color:var(--text)'>{money(_h_ls["spent_today"])}</b> of {money(_h_ls["budget"])}</span></div>
+            <div class='track'><div class='fill' style='width:{_h_fill:.0f}%'></div></div>
+          </div>
+        </div>
+        <div class='hm-tiles'>
+          <div class='hm-tile'><div class='v'>{money(_h_risk)}</div><div class='l'>At risk now</div></div>
+          <div class='hm-tile'><div class='v {tone(_h_paper_pl)}'>{money(_h_paper_pl, signed=True)}</div><div class='l'>Paper Sharp · {_h_paper_rec}</div></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    # top opportunities: best price per team on the +EV board (Pinnacle fair vs every venue)
+    _h_board = {}
+    try:
+        import json as _hj
+        from pathlib import Path as _hP
+        _bp = _hP("research_lab/data/ev_board.json")
+        _h_board = _hj.loads(_bp.read_text()) if _bp.exists() else {}
+    except Exception:
+        _h_board = {}
+    _h_opps = []
+    for _r in _h_board.get("rows") or []:
+        if not _r.get("prices"):
+            continue
+        _best = max(_r["prices"], key=lambda p: p.get("ev", -9))
+        _st = _when(_r.get("starts"))
+        if _st is not None and _st <= datetime.now(timezone.utc):
+            continue
+        _h_opps.append((_best.get("ev", 0), _r, _best))
+    _h_opps.sort(key=lambda x: -x[0])
+    st.markdown(f"<div class='section'><span>Top opportunities</span>"
+                f"<span class='n' style='font-size:.75rem;font-weight:600;white-space:nowrap'>"
+                f"{esc(ago(_h_board.get('at'))) if _h_board.get('at') else ''}</span></div>",
+                unsafe_allow_html=True)
+    if _h_opps:
+        _items = []
+        for _ev, _r, _b in _h_opps[:4]:
+            _cls = "ev-pos" if _ev > 0 else "ev-neg"
+            _items.append(
+                f"<div class='hm-opp'><div><div class='t'>{esc(_r['team'])} ML</div>"
+                f"<div class='s'>{esc(_r.get('sport') or '')} · {esc(starts(_r.get('starts')))}</div>"
+                f"<div class='ev {_cls}'>{_ev * 100:+.1f}% EV · {esc(_b['venue'])}</div></div>"
+                f"<div class='px'>{esc(_b['shown'])}<small>fair {esc(_r['fair_odds'])}</small></div></div>")
+        st.markdown("<div class='hm-opps'>" + "".join(_items) + "</div>", unsafe_allow_html=True)
+        st.caption("Best price for each team vs Pinnacle's fair line. You get a phone alert at +3% EV.")
+    else:
+        quiet("No games priced yet", "The board fills in when the Lab pulls Pinnacle prices (every ~30 minutes).")
+    st.page_link("pages/Research_Lab_EV_Finder.py", label="See all prices", icon="🎯")
+    st.page_link("pages/Research_Lab_Promo_Converter.py", label="Promo Converter", icon="🎁")
 
 # ---------------------------------------------------------- live $1 sharp --
 with tab_live:
@@ -1189,13 +1299,49 @@ with tab_system:
 
 # ------------------------------------------------------------ research lab --
 with tab_lab:
-    st.markdown("**Strategy Research Lab: paper only.** Three new strategies tested side by side with "
-                "Sharp, each with its own $500 virtual bankroll. No real money.")
-    st.page_link("pages/Research_Lab_EV_Finder.py", label="+EV Finder (all your books)", icon="🎯")
-    st.page_link("pages/Research_Lab_Promo_Converter.py", label="Promo Converter", icon="🎁")
-    st.page_link("pages/Research_Lab_Compare.py", label="Compare all strategies", icon="📊")
-    st.page_link("pages/Research_Lab_Value_Only.py", label="Value Only", icon="📈")
-    st.page_link("pages/Research_Lab_Hybrid.py", label="Hybrid: Value + Sharp", icon="🔀")
-    st.page_link("pages/Research_Lab_Structural_Arb.py", label="Structural Arbitrage", icon="🧩")
-    st.page_link("pages/Research_Lab_Value_Pinnacle.py", label="Value Only (Pinnacle prices)", icon="📌")
-    st.page_link("pages/Research_Lab_Hybrid_Pinnacle.py", label="Hybrid (Pinnacle prices)", icon="📍")
+    import sys as _lsys
+    for _m in [k for k in _lsys.modules if k == "research_lab" or k.startswith("research_lab.")]:
+        del _lsys.modules[_m]  # always the newest lab code (Streamlit Cloud keeps old modules around)
+    from research_lab import config as _lcfg, metrics as _lmet
+    from research_lab.ledger import Store as _LStore
+    st.markdown("<div class='pe-lede'>Strategies tested side by side on <b>paper</b>, each with its own "
+                "$500 virtual bankroll. Tap one for its bets, misses and model checks.</div>", unsafe_allow_html=True)
+    _tools = [("Research_Lab_EV_Finder", "+EV Finder", "Best price across all your books vs Pinnacle"),
+              ("Research_Lab_Promo_Converter", "Promo Converter", "Turn bonus bets into cash")]
+    st.markdown("<div class='hm-tiles'>" + "".join(
+        f"<a class='hm-tile lab-tool' href='/{pg}' target='_self'><div class='v' style='font-size:1.05rem'>{esc(t)}</div>"
+        f"<div class='l'>{esc(d)}</div></a>" for pg, t, d in _tools) + "</div>", unsafe_allow_html=True)
+    _pages = {"VALUE_ONLY_v1": "Research_Lab_Value_Only", "HYBRID_SHARP_VALUE_v1": "Research_Lab_Hybrid",
+              "STRUCTURAL_ARB_v1": "Research_Lab_Structural_Arb", "VALUE_ONLY_v2": "Research_Lab_Value_Pinnacle",
+              "HYBRID_SHARP_VALUE_v2": "Research_Lab_Hybrid_Pinnacle", "EV_FINDER_v1": "Research_Lab_EV_Finder"}
+    _cards = []
+    try:
+        _sh = _lmet.sharp_summary()
+        _cards.append(("Research_Lab_Compare", "Sharp (benchmark)", "Follows big public Kalshi trades", _sh, None))
+    except Exception:
+        pass
+    for _spec in _lcfg.RESEARCH_STRATEGIES:
+        try:
+            _sm = _lmet.summarize(_LStore(_spec.key).positions)
+        except Exception:
+            continue
+        _short = {"VALUE_ONLY_v1": "Sportsbook consensus vs Kalshi", "HYBRID_SHARP_VALUE_v1": "Value + matching Kalshi trade flow",
+                  "STRUCTURAL_ARB_v1": "Locked-profit price gaps on Kalshi", "VALUE_ONLY_v2": "Pinnacle's fair line vs Kalshi",
+                  "HYBRID_SHARP_VALUE_v2": "Pinnacle value + trade flow", "EV_FINDER_v1": "Best price on any of your books"}
+        _cards.append((_pages.get(_spec.key, "Research_Lab_Compare"), _spec.label, _short.get(_spec.key, ""), _sm, _sm["bankroll"]))
+    _html = []
+    for _pg, _name, _desc, _sm, _bank in _cards:
+        _n = _sm["won"] + _sm["lost"]
+        _wr = f"{100 * _sm['won'] / _n:.0f}%" if _n else "—"
+        _roi = pct(_sm["roi"], signed=True) if _sm["roi"] is not None else "—"
+        _html.append(
+            f"<a class='lab-card' href='/{_pg}' target='_self'>"
+            f"<div class='lc-top'><div><div class='lc-name'>{esc(_name)}</div><div class='lc-desc'>{esc(_desc)}</div></div>"
+            f"<div class='lc-bank'>{('$' + format(_bank, ',.0f')) if _bank is not None else ''}</div></div>"
+            f"<div class='lc-stats'><div><b>{_sm['won']}–{_sm['lost']}</b><span>Record</span></div>"
+            f"<div><b>{_wr}</b><span>Win rate</span></div>"
+            f"<div><b class='{tone(_sm['roi'] or 0)}'>{_roi}</b><span>ROI</span></div>"
+            f"<div><b>{_sm['open']}</b><span>Open</span></div></div></a>")
+    st.markdown("<div class='section'><span>Strategies</span></div><div class='lab-cards'>" + "".join(_html) + "</div>",
+                unsafe_allow_html=True)
+    st.page_link("pages/Research_Lab_Compare.py", label="Compare all side by side", icon="📊")
