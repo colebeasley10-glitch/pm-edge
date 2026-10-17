@@ -74,6 +74,9 @@ st.markdown(
       font-family:'Manrope', system-ui, sans-serif !important;
     }
     .stApp { background:var(--bg); color:var(--text); }
+    /* keep Streamlit's icon font (expander arrows etc.), which the rule above would replace with text */
+    .stApp [data-testid="stIconMaterial"], .stApp span[class*="material-symbols"], .stApp span[class*="material-icons"] {
+      font-family:'Material Symbols Rounded', 'Material Icons' !important; }
     .num, .big, .v, .amt, .pv, .price { font-variant-numeric:tabular-nums; }
     /* hide Streamlit's own chrome: toolbar, menu, footer, deploy and status badges */
     [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"],
@@ -692,6 +695,33 @@ def _price_label(p: dict) -> str:
     return shown.replace("-", "−")
 
 
+def _parse_odds(text: str):
+    """'-194', '+150', '150', '66c', '66¢', '0.66' -> win probability implied by that price (no fees)."""
+    t = str(text or "").strip().lower().replace("−", "-").replace("¢", "c").replace(" ", "")
+    if not t:
+        return None
+    try:
+        if t.endswith("c"):
+            v = float(t[:-1]) / 100.0
+            return v if 0 < v < 1 else None
+        v = float(t)
+    except ValueError:
+        return None
+    if 0 < v < 1:                       # 0.66 = 66 cents
+        return v
+    if v <= -100:                       # American favourite
+        return -v / (-v + 100)
+    if v >= 100:                        # American underdog
+        return 100 / (v + 100)
+    return None
+
+
+def _american_from_prob(p: float) -> str:
+    if p <= 0 or p >= 1:
+        return "—"
+    return f"−{round(100 * p / (1 - p))}" if p >= 0.5 else f"+{round(100 * (1 - p) / p)}"
+
+
 # ------------------------------------------------------------------- home --
 with tab_home:
     _h_rows, _h_ls = load_live_sharp()
@@ -779,6 +809,46 @@ with tab_home:
         st.caption("Tap a pick to compare its price at every book. You get a phone alert at +3% EV.")
     else:
         quiet("No games priced yet", "The board fills in when the Lab pulls Pinnacle prices (every ~30 minutes).")
+    with st.expander("🧮 EV calculator", expanded=False):
+        _mode = st.radio("Fair price from", ["I know the fair odds", "Both sides of a sharp line"], horizontal=True,
+                         label_visibility="collapsed")
+        if _mode == "I know the fair odds":
+            _fair_txt = st.text_input("Fair odds", value="-208", help="American odds (-208, +150) or cents (66c)")
+            _fair_p = _parse_odds(_fair_txt)
+        else:
+            _c1, _c2 = st.columns(2)
+            _a = _parse_odds(_c1.text_input("Your side at the sharp book", value="-215"))
+            _bb = _parse_odds(_c2.text_input("Other side", value="+180"))
+            _fair_p = (_a / (_a + _bb)) if _a and _bb else None   # remove the vig proportionally
+            if _fair_p:
+                st.caption(f"Book's margin {((_a + _bb) - 1) * 100:.1f}% removed → fair {_american_from_prob(_fair_p)} "
+                           f"({_fair_p * 100:.1f}%)")
+        _c3, _c4 = st.columns(2)
+        _price_txt = _c3.text_input("Price you can get", value="-194", help="American odds or cents (Kalshi 66c)")
+        _stake = _c4.number_input("Stake ($)", min_value=1.0, value=100.0, step=10.0)
+        _fee = st.checkbox("Kalshi taker fee (cents prices only)", value=str(_price_txt).strip().lower().endswith(("c", "¢")))
+        _pp = _parse_odds(_price_txt)
+        if not _fair_p or not _pp:
+            st.write("Enter odds like **-194**, **+150**, or a price like **66c**.")
+        else:
+            _cost = _pp
+            if _fee and str(_price_txt).strip().lower().endswith(("c", "¢")):
+                import math as _m
+                _cost = _pp + _m.ceil(0.07 * 100 * _pp * (1 - _pp) - 1e-9) / 100 / 100   # fee per contract (100-lot)
+            _dec = 1.0 / _cost
+            _ev = _fair_p * _dec - 1.0
+            _ev_d = _stake * _ev
+            _verdict = ("Strong value 🔥" if _ev >= 0.05 else "Good value ✅" if _ev >= 0.03 else
+                        "Small edge (thin) 👍" if _ev > 0.005 else "About even ➖" if _ev > -0.005 else "Bad price ❌")
+            st.markdown(
+                f"<div class='hm-tiles'><div class='hm-tile'><div class='v {tone(_ev)}'>{_ev * 100:+.1f}%</div>"
+                f"<div class='l'>EV · {esc(_verdict)}</div></div>"
+                f"<div class='hm-tile'><div class='v {tone(_ev_d)}'>{money(_ev_d, signed=True)}</div>"
+                f"<div class='l'>avg per ${_stake:,.0f} bet</div></div></div>",
+                unsafe_allow_html=True)
+            st.caption(f"Fair: wins {_fair_p * 100:.1f}% ({_american_from_prob(_fair_p)}). Your price needs it to win "
+                       f"{(1 / _dec) * 100:.1f}% to break even ({_american_from_prob(1 / _dec)}). "
+                       f"Any price better than {_american_from_prob(_fair_p)} is +EV; 3%+ is where alerts fire.")
     st.page_link("pages/Research_Lab_EV_Finder.py", label="See all prices", icon="🎯")
     st.page_link("pages/Research_Lab_Promo_Converter.py", label="Promo Converter", icon="🎁")
 
