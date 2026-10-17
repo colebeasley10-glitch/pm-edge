@@ -12,7 +12,7 @@ class EventMatch:
     event: dict | None
     confidence: float
     reason: str
-    # Shadow-only validation of the chosen event (never affects acceptance).
+    # Strict validation of the chosen event (a failed check rejects the match).
     shadow: dict | None = None
 
 
@@ -90,14 +90,19 @@ def match_event(spec, events: list[dict], aliases: dict[str, str], market_time: 
         return EventMatch(None, best[0] * 0.8, "ambiguous sportsbook event match")
     try:
         shadow = shadow_validate_match(spec, best[1], aliases, market_time)
-    except Exception as exc:  # shadow must never break production matching
-        shadow = {"matcher_shadow_pass": None, "matcher_shadow_reason": f"shadow_error:{type(exc).__name__}"}
+    except Exception as exc:
+        shadow = {"matcher_shadow_pass": False, "matcher_shadow_reason": f"shadow_error:{type(exc).__name__}"}
+    # Strict validation is enforced: the fuzzy score above treats "Georgia" and
+    # "Georgia Tech" as a 0.96 match, so if the token-boundary check can't confirm
+    # the same teams (and same day, when both dates are known) we fail closed.
+    if shadow.get("matcher_shadow_pass") is not True:
+        return EventMatch(None, 0.0, f"strict match rejected: {shadow.get('matcher_shadow_reason')}", shadow)
     return EventMatch(best[1], best[0], f"team={best[2]:.2f}, time={best[3]:.2f}", shadow)
 
 
 # ---------------------------------------------------------------------------
-# Shadow-only match validation (logged next to production matches; never used
-# to accept or reject a match).
+# Strict match validation. Originally shadow-only; now enforced by match_event()
+# (a match it does not pass is rejected).
 #
 # team_similarity() scores any substring as 0.96, so "Georgia" vs
 # "Georgia Tech" or "Miami" vs "Miami (OH)" look like near-perfect matches.
@@ -161,8 +166,23 @@ def _align(short: list[str], long: list[str]):
 
 
 def shadow_team_match(a: str, b: str, aliases: dict[str, str]) -> tuple[float, str]:
-    """Token-boundary team comparison: (score, reason). Credible when >= 0.90."""
-    x, y = canon(a, aliases), canon(b, aliases)
+    """Token-boundary team comparison: (score, reason). Credible when >= 0.90.
+
+    Tries both the raw and alias-canonical spellings of each name, so "USC" (alias
+    -> "southern california") still matches a sportsbook's "USC Trojans".
+    """
+    xs = {normalize_text(a), canon(a, aliases)}
+    ys = {normalize_text(b), canon(b, aliases)}
+    best = (0.0, "missing_name")
+    for x in xs:
+        for y in ys:
+            got = _token_match(x, y)
+            if got[0] > best[0] or best[1] == "missing_name":
+                best = got
+    return best
+
+
+def _token_match(x: str, y: str) -> tuple[float, str]:
     if not x or not y:
         return 0.0, "missing_name"
     if x == y:
@@ -199,7 +219,7 @@ def _local_date(value):
 
 def shadow_validate_match(spec, event: dict | None, aliases: dict[str, str],
                           market_time: str | None = None) -> dict:
-    """Shadow validation of an accepted production match. Logging only."""
+    """Strict validation of a candidate match; match_event() rejects anything that fails."""
     out = {
         "matcher_shadow_version": SHADOW_MATCHER_VERSION,
         "matcher_shadow_pass": False,

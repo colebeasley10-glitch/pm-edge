@@ -122,15 +122,13 @@ def test_same_teams_wrong_date_doubleheader_is_now_rejected_end_to_end():
     game2_kalshi_time = "2026-09-16T23:30:00+00:00"
 
     em = match_event(spec, [game1_event], ALIASES, game2_kalshi_time)
-    # The raw matcher still finds a strong team-name match (this is expected --
-    # it has no other event to compare against). The safeguard has to live in
-    # watcher.py's acceptance logic, tested below.
-    assert em.event is not None
-    team_score = watcher.event_match_team_score(em)
-    assert team_score >= watcher.TEAM_PAIR_STRONG_SAME_SPORT
+    # The strict matcher now rejects this at the source: same teams, different day.
+    assert em.event is None
+    assert em.shadow["matcher_shadow_reason"] == "date_mismatch"
 
+    # watcher.py's own time check still independently catches it as well.
     time_ok, delta_h = watcher.low_score_time_confirmed(
-        {"_kalshi_game_time": game2_kalshi_time}, em.event
+        {"_kalshi_game_time": game2_kalshi_time}, game1_event
     )
     assert delta_h is not None
     assert time_ok is False, "a 30.5-hour gap must fail the time-confirmation check"

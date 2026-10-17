@@ -1430,8 +1430,8 @@ def main():
             sample_rejection("event_match_failed_or_ambiguous", market.get("ticker"))
             continue
 
-        # Shadow-only matcher validation: carried to the candidate ledger for
-        # later analysis; it never changes which matches are accepted.
+        # Strict matcher result, carried to the candidate ledger. match_event()
+        # already rejected anything that failed it.
         market["_matcher_shadow"] = dict(getattr(em, "shadow", None) or {})
 
         # Once the sport is identified, prefer direct participant-pair evidence

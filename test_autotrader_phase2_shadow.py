@@ -387,12 +387,12 @@ class MatcherShadowTests(unittest.TestCase):
         self.assertEqual(diff["matcher_shadow_reason"], "date_mismatch")
         self.assertEqual(unknown["matcher_shadow_reason"], "ok_date_unverified")
 
-    def test_production_match_unchanged_but_shadow_flags_it(self):
+    def test_strict_matcher_rejects_georgia_vs_georgia_tech(self):
         spec = parse_market({"ticker": "KX", "title": "Georgia at Clemson: Georgia wins"})
         events = [{"id": "e1", "home_team": "Clemson Tigers", "away_team": "Georgia Tech Yellow Jackets",
                    "commence_time": "2026-10-03T23:30:00Z"}]
         em = match_event(spec, events, {}, None)
-        self.assertIsNotNone(em.event)  # production still accepts (behavior unchanged)
+        self.assertIsNone(em.event)  # fail closed: different team
         self.assertFalse(em.shadow["matcher_shadow_pass"])
         self.assertIn("qualifier", em.shadow["matcher_shadow_reason"])
 
@@ -687,3 +687,12 @@ class PaperOnlySecurityTests(unittest.TestCase):
 if __name__ == "__main__":
     with CommittedLedgerGuard():
         unittest.main()
+
+
+def test_strict_matcher_handles_aliased_short_names():
+    from pmedge.matcher import load_aliases
+    aliases = load_aliases()
+    assert shadow_team_match("USC", "USC Trojans", aliases)[0] >= 0.90
+    assert shadow_team_match("Ole Miss", "Ole Miss Rebels", aliases)[0] >= 0.90
+    assert shadow_team_match("Ole Miss", "Mississippi State Bulldogs", aliases)[0] < 0.90
+    assert shadow_team_match("Miami", "Miami (OH) RedHawks", aliases)[0] < 0.90

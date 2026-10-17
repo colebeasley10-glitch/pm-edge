@@ -167,5 +167,53 @@ def main() -> None:
     print("Kalshi one-tap submit tests: PASS")
 
 
+
+class PagedSession:
+    """Serves orders in pages of 2 with a cursor, like Kalshi's 200-per-page listing."""
+    def __init__(self, orders, page_size=2):
+        self.orders, self.page_size, self.calls = orders, page_size, []
+
+    def request(self, method, url, **kwargs):
+        params = kwargs.get("params") or {}
+        self.calls.append(params)
+        start = int(params.get("cursor") or 0)
+        page = self.orders[start:start + self.page_size]
+        nxt = start + self.page_size
+        return FakeResponse(200, {"orders": page, "cursor": str(nxt) if nxt < len(self.orders) else ""})
+
+
+def _paged_client(session):
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    pem = key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+                            serialization.NoEncryption())
+    return KalshiSubmitClient("k", pem, session=session)
+
+
+def test_order_lookups_read_past_the_first_page():
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    orders = [{"client_order_id": f"pmls-1-{i}", "created_time": now, "status": "executed",
+               "initial_count_fp": "1.00", "fill_count_fp": "1.00", "outcome_side": "yes",
+               "yes_price_dollars": "0.500000"} for i in range(5)]
+    client = _paged_client(PagedSession(orders))
+    assert len(client.get_all_orders()) == 5
+    assert client.find_order_by_client_id("pmls-1-4") is not None  # on page 3
+    fee = 0.02  # ceil(0.07 * 1 * 0.5 * 0.5 * 100) / 100
+    assert abs(client.committed_cost_for_prefix("pmls-1-") - 5 * (0.50 + fee)) < 1e-9
+
+
+def test_order_paging_stops_at_old_orders_and_refuses_partial_counts():
+    import pytest
+    from kalshi_submit import KalshiSubmitError
+    old = "2020-01-01T00:00:00Z"
+    orders = [{"client_order_id": f"x-{i}", "created_time": old} for i in range(10)]
+    session = PagedSession(orders)
+    client = _paged_client(session)
+    assert len(client.get_all_orders()) == 2 and len(session.calls) == 1  # whole page old: stop
+    recent = [{"client_order_id": f"y-{i}"} for i in range(10)]  # no timestamps: keep paging
+    with pytest.raises(KalshiSubmitError):
+        _paged_client(PagedSession(recent)).get_all_orders(max_pages=3)
+
 if __name__ == "__main__":
     main()

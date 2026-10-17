@@ -369,57 +369,14 @@ class GeoBlockedClient(FakeClient):
         raise RuntimeError(GEO_ERR)
 
 
-def test_geo_blocked_order_is_retried_once_from_new_runner():
+def test_location_blocked_order_is_final_and_counted_as_blocked():
+    """A Washington block is not retried from another location; it stays an error."""
     os.environ["LIVE_SHARP_MIN_TRADES"] = "0"
     try:
         rows = []
         live_sharp.place([paper(80, 0.40)], GeoBlockedClient(), now=NOW, rows=rows)
-        r = rows[0]
-        assert r["status"] == "error" and live_sharp.geo_blocked(r)
-        c = FakeClient()
-        out = live_sharp.retry_geo(rows, c, now=NOW + timedelta(minutes=2))
-        assert out["retried"] == 1 and out["filled"] == 1 and r["status"] == "open"
-        o = c.orders[0]
-        # same order as the pick: never pays more than the price it saw, new client id
-        assert o["price"] == 0.40 and o["client_order_id"] == r["trade_id"] + "-r"
-        assert r["note"].startswith("Retried") and not live_sharp.geo_blocked(r)
-        assert live_sharp.retry_geo(rows, c, now=NOW + timedelta(minutes=3))["retried"] == 0
+        assert rows[0]["status"] == "error" and "Washington" in rows[0]["note"]
+        assert not hasattr(live_sharp, "retry_geo")
+        assert live_sharp.daily(rows)[0]["blocked"] == 1
     finally:
         os.environ.pop("LIVE_SHARP_MIN_TRADES", None)
-
-
-def test_geo_retry_blocked_again_or_too_late_is_not_retried_again():
-    os.environ["LIVE_SHARP_MIN_TRADES"] = "0"
-    try:
-        rows = []
-        live_sharp.place([paper(81, 0.40), paper(82, 0.50)], GeoBlockedClient(), now=NOW, rows=rows)
-        rows[1]["placed_at"] = book.iso(NOW - timedelta(hours=1))  # stale
-        out = live_sharp.retry_geo(rows, GeoBlockedClient(), now=NOW + timedelta(minutes=2))
-        assert out["blocked_again"] == 1 and out["too_old"] == 1
-        assert all(r["status"] == "error" and not live_sharp.geo_blocked(r) for r in rows)
-        # both still count as blocked in the by-day view
-        assert live_sharp.daily(rows)[0]["blocked"] == 2
-    finally:
-        os.environ.pop("LIVE_SHARP_MIN_TRADES", None)
-
-
-def test_geo_retry_respects_daily_budget():
-    os.environ["LIVE_SHARP_MIN_TRADES"] = "0"
-    try:
-        rows = []
-        live_sharp.place([paper(83, 0.40)], GeoBlockedClient(), now=NOW, rows=rows)
-        c = FakeClient(prior_spend=live_sharp.daily_budget())
-        out = live_sharp.retry_geo(rows, c, now=NOW + timedelta(minutes=2))
-        assert out["retried"] == 0 and c.calls == 0 and rows[0]["status"] == "error"
-    finally:
-        os.environ.pop("LIVE_SHARP_MIN_TRADES", None)
-
-
-def test_round_flags_geo_retry_for_workflow(monkeypatch):
-    out = tmp / "gh_output"
-    monkeypatch.setenv("GITHUB_OUTPUT", str(out))
-    monkeypatch.setattr(live_sharp, "load", lambda path=None: [{"status": "error", "note": GEO_ERR}])
-    run._flag_geo_retry()
-    monkeypatch.setattr(live_sharp, "load", lambda path=None: [{"status": "error", "note": "Retried: blocked again. " + GEO_ERR}])
-    run._flag_geo_retry()
-    assert out.read_text().splitlines() == ["geo_retry=true", "geo_retry=false"]

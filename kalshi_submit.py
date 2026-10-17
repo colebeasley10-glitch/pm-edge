@@ -59,6 +59,20 @@ def _fixed_price(value: float) -> str:
     return f"{price:.4f}"
 
 
+def _order_epoch(row: dict) -> float | None:
+    """An order's creation time as unix seconds, or None if missing/unparseable."""
+    raw = row.get("created_time") or row.get("created_ts")
+    if raw in (None, ""):
+        return None
+    if isinstance(raw, (int, float)):
+        return float(raw) / (1000.0 if raw > 1e12 else 1.0)
+    try:
+        from datetime import datetime
+        return datetime.fromisoformat(str(raw).replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
 class KalshiSubmitClient:
     def __init__(self, api_key_id: str, private_key_pem: bytes, *, base_url: str = DEFAULT_BASE_URL, session=None):
         self.api_key_id = str(api_key_id).strip()
@@ -126,6 +140,33 @@ class KalshiSubmitClient:
         rows = payload.get("orders", [])
         return rows if isinstance(rows, list) else []
 
+    def get_all_orders(self, *, lookback_hours: float = 48.0, max_pages: int = 25) -> list[dict]:
+        """Every recent order, following Kalshi's cursor across pages (200 per page).
+
+        Stops once a whole page is older than ``lookback_hours`` (Kalshi lists newest
+        first), so a routine check is usually one or two requests. If the page cap is
+        hit while recent orders may remain, raises instead of returning a partial list,
+        so spend checks never silently undercount.
+        """
+        cutoff = time.time() - float(lookback_hours) * 3600.0
+        rows: list[dict] = []
+        cursor = None
+        for _ in range(max(1, int(max_pages))):
+            params = {"limit": 200}
+            if cursor:
+                params["cursor"] = cursor
+            payload = self._request("GET", "/portfolio/orders", params=params)
+            page = payload.get("orders", [])
+            page = page if isinstance(page, list) else []
+            rows.extend(page)
+            cursor = payload.get("cursor")
+            if not cursor or not page:
+                return rows
+            times = [_order_epoch(r) for r in page]
+            if all(t is not None and t < cutoff for t in times):
+                return rows
+        raise KalshiSubmitError(0, f"order history exceeded {max_pages} pages; refusing a partial count")
+
     def get_positions(self, *, limit: int = 200) -> list[dict]:
         payload = self._request(
             "GET",
@@ -145,7 +186,7 @@ class KalshiSubmitClient:
 
     def find_order_by_client_id(self, client_order_id: str) -> dict | None:
         target = str(client_order_id)
-        for row in self.get_orders(limit=200):
+        for row in self.get_all_orders():
             if str(row.get("client_order_id") or "") == target:
                 return row
         return None
@@ -154,7 +195,7 @@ class KalshiSubmitClient:
         """Conservative submitted max-cost total for PM Edge orders matching a prefix."""
         total = 0.0
         prefix = str(client_id_prefix)
-        for row in self.get_orders(limit=200):
+        for row in self.get_all_orders():
             if not str(row.get("client_order_id") or "").startswith(prefix):
                 continue
             try:
@@ -185,7 +226,7 @@ class KalshiSubmitClient:
         """
         total = 0.0
         prefix = str(client_id_prefix)
-        for row in self.get_orders(limit=200):
+        for row in self.get_all_orders():
             if not str(row.get("client_order_id") or "").startswith(prefix):
                 continue
             try:
