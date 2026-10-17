@@ -1,7 +1,7 @@
 {
  "day_stats": {
   "data_failures": 0,
-  "day": "20261016",
+  "day": "20261017",
   "structural_filled": 0,
   "structural_qualified": 0
  },
@@ -23,7 +23,7 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 10/16"
  },
  "last_run": {
-  "at": "2026-10-17T03:32:40.475790Z",
+  "at": "2026-10-17T04:02:35.428701Z",
   "book_errors": 0,
   "data_failures": [],
   "ev": {
@@ -31,17 +31,24 @@
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
-    "errors": [],
+    "errors": [
+     "americanfootball_ncaaf: HTTP 401",
+     "americanfootball_nfl: HTTP 401",
+     "basketball_nba: HTTP 401"
+    ],
     "fresh": false,
     "remaining": "0",
-    "skipped": "lab odds budget used or account nearly empty",
     "taken_at": null
    },
    "errors": [],
-   "games": 18,
-   "kalshi_offers": 6,
-   "picks": 36,
-   "polymarket_offers": 0
+   "games": 61,
+   "kalshi_offers": 50,
+   "picks": 610,
+   "polymarket_offers": 108
+  },
+  "my_bets": {
+   "logged": 0,
+   "settled_now": 0
   },
   "notes": [
    "No sportsbook prices this round: the main scanner priced 0 markets (Odds API credits may be used up). Value and Hybrid can't evaluate anything."
@@ -51,33 +58,33 @@
    "budget": 90,
    "errors": [],
    "fetched": [
-    "tennis"
+    "football"
    ],
-   "kalshi_markets": 86,
-   "matched": 6,
-   "pinnacle_games": 95,
-   "requests_today": 12,
+   "kalshi_markets": 5108,
+   "matched": 295,
+   "pinnacle_games": 63,
+   "requests_today": 1,
    "samples": [
-    "no_moneyline: Zverev vs Davidovich Fokina: Alexander Zverev wins",
-    "no_moneyline: Zverev vs Davidovich Fokina: Alejandro Davidovich Fokina wins",
-    "no_moneyline: Diallo vs Mayot: Gabriel Diallo wins",
-    "no_moneyline: Diallo vs Mayot: Harold Mayot wins",
-    "no_moneyline: Omarkhanov vs Sakamoto: Amir Omarkhanov wins",
-    "no_moneyline: Omarkhanov vs Sakamoto: Rei Sakamoto wins",
-    "no_moneyline: Daniel vs Basilashvili: Taro Daniel wins",
-    "no_moneyline: Daniel vs Basilashvili: Nikoloz Basilashvili wins"
+    "no_moneyline: Columbia vs Penn: Penn wins",
+    "no_moneyline: Columbia vs Penn: Columbia wins",
+    "no_pinnacle_match: Akron vs Miami (OH): Miami (OH) wins",
+    "no_pinnacle_match: Akron vs Miami (OH): Akron wins",
+    "no_pinnacle_match: Arkansas vs Vanderbilt: Vanderbilt wins",
+    "no_pinnacle_match: Arkansas vs Vanderbilt: Arkansas wins",
+    "no_pinnacle_match: Arkansas St. vs Southern Miss: Southern Miss wins",
+    "no_pinnacle_match: Arkansas St. vs Southern Miss: Arkansas St. wins"
    ],
    "skipped": [
-    "football: next in 15 min",
-    "basketball: next in 30 min",
-    "hockey: next in 111 min",
-    "baseball: next in 111 min",
-    "soccer: next in 171 min"
+    "basketball: next in 0 min",
+    "hockey: next in 81 min",
+    "baseball: next in 81 min",
+    "soccer: next in 141 min",
+    "tennis: next in 330 min"
    ],
    "unmatched": {
-    "no_moneyline": 55,
-    "no_pinnacle_match": 24,
-    "selection_not_matched": 1
+    "no_moneyline": 4,
+    "no_pinnacle_match": 3506,
+    "pinnacle_line_not_offered": 1303
    }
   },
   "reconciled": true,
@@ -99,8 +106,8 @@
     "pushed": 0,
     "qualified": 0,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 110,
+    "scanned": 61,
     "settle": {
      "marked": 0,
      "pending": 0,
@@ -109,16 +116,31 @@
    },
    "EV_FINDER_v2": {
     "filled": 0,
-    "no_fill": 0,
+    "no_fill": 2,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 2,
     "reconcile_problems": [],
     "rejected": 0,
-    "scanned": 36,
+    "scanned": 610,
     "settle": {
      "marked": 4,
      "pending": 4,
+     "settled": 0
+    }
+   },
+   "EV_FINDER_v3": {
+    "filled": 0,
+    "no_fill": 2,
+    "ok": true,
+    "pushed": 0,
+    "qualified": 2,
+    "reconcile_problems": [],
+    "rejected": 0,
+    "scanned": 610,
+    "settle": {
+     "marked": 0,
+     "pending": 0,
      "settled": 0
     }
    },
@@ -142,8 +164,8 @@
     "ok": true,
     "qualified": 0,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 295,
+    "scanned": 295,
     "settle": {
      "marked": 0,
      "pending": 0,
@@ -185,8 +207,8 @@
     "ok": true,
     "qualified": 0,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 295,
+    "scanned": 295,
     "settle": {
      "marked": 0,
      "pending": 0,
@@ -203,6 +225,6 @@
    "scanned": 400
   }
  },
- "last_success": "2026-10-17T03:32:40.475790Z",
+ "last_success": "2026-10-17T04:02:35.428701Z",
  "report_sent": "20261016"
 }
