@@ -6,9 +6,25 @@
   "structural_qualified": 0
  },
  "last_run": {
-  "at": "2026-10-17T02:05:01.517061Z",
+  "at": "2026-10-17T02:26:12.124081Z",
   "book_errors": 0,
   "data_failures": [],
+  "ev": {
+   "books": {
+    "credits_today": 0,
+    "daily_credits": 6,
+    "errors": [
+     "americanfootball_ncaaf: HTTP 401",
+     "americanfootball_nfl: HTTP 401",
+     "basketball_nba: HTTP 401"
+    ],
+    "fresh": false,
+    "remaining": "0",
+    "taken_at": null
+   },
+   "errors": [],
+   "games": 0
+  },
   "notes": [
    "No sportsbook prices this round: the main scanner priced 0 markets (Odds API credits may be used up). Value and Hybrid can't evaluate anything."
   ],
@@ -16,30 +32,18 @@
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [
-    "football",
-    "basketball"
-   ],
-   "kalshi_markets": 6838,
-   "matched": 350,
-   "pinnacle_games": 77,
+   "fetched": [],
+   "kalshi_markets": 0,
+   "matched": 0,
+   "note": "no Pinnacle fetch due this round",
+   "pinnacle_games": 0,
    "requests_today": 4,
-   "samples": [
-    "no_moneyline: Columbia vs Penn: Penn wins",
-    "no_moneyline: Columbia vs Penn: Columbia wins",
-    "no_pinnacle_match: Memphis vs Tulane: Tulane wins",
-    "no_pinnacle_match: Memphis vs Tulane: Memphis wins",
-    "no_pinnacle_match: Akron vs Miami (OH): Miami (OH) wins",
-    "no_pinnacle_match: Akron vs Miami (OH): Akron wins",
-    "no_pinnacle_match: Appalachian St. vs Coastal Carolina: Coastal Carolina wins",
-    "no_pinnacle_match: Appalachian St. vs Coastal Carolina: Appalachian St. wins"
+   "samples": [],
+   "skipped": [
+    "football: fetched 21 min ago",
+    "basketball: fetched 21 min ago"
    ],
-   "skipped": [],
-   "unmatched": {
-    "no_moneyline": 6,
-    "no_pinnacle_match": 4956,
-    "pinnacle_line_not_offered": 1526
-   }
+   "unmatched": {}
   },
   "reconciled": true,
   "snapshot": {
@@ -52,6 +56,22 @@
    "tickers": 0
   },
   "strategies": {
+   "EV_FINDER_v1": {
+    "arbs": 0,
+    "filled": 0,
+    "no_fill": 0,
+    "ok": true,
+    "pushed": 0,
+    "qualified": 0,
+    "reconcile_problems": [],
+    "rejected": 0,
+    "scanned": 0,
+    "settle": {
+     "marked": 0,
+     "pending": 0,
+     "settled": 0
+    }
+   },
    "HYBRID_SHARP_VALUE_v1": {
     "filled": 0,
     "no_fill": 0,
@@ -72,8 +92,8 @@
     "ok": true,
     "qualified": 0,
     "reconcile_problems": [],
-    "rejected": 350,
-    "scanned": 350,
+    "rejected": 0,
+    "scanned": 0,
     "settle": {
      "marked": 0,
      "pending": 0,
@@ -115,8 +135,8 @@
     "ok": true,
     "qualified": 0,
     "reconcile_problems": [],
-    "rejected": 350,
-    "scanned": 350,
+    "rejected": 0,
+    "scanned": 0,
     "settle": {
      "marked": 0,
      "pending": 0,
@@ -133,5 +153,5 @@
    "scanned": 400
   }
  },
- "last_success": "2026-10-17T02:05:01.517061Z"
+ "last_success": "2026-10-17T02:26:12.124081Z"
 }
