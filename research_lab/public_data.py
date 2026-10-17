@@ -97,6 +97,21 @@ class PublicKalshi:
                 break
         return out[:max_events]
 
+    def series_events(self, series_ticker: str, max_events: int = 200) -> list[dict]:
+        """Open events (with fresh nested market quotes) for one Kalshi series."""
+        data = self._get("/events", {"series_ticker": series_ticker, "status": "open",
+                                     "with_nested_markets": "true", "limit": min(200, max_events)})
+        out = []
+        for e in data.get("events") or []:
+            ms = []
+            for raw in e.get("markets") or []:
+                m = normalize_market(raw)
+                m["expected_expiration_time"] = raw.get("expected_expiration_time")
+                ms.append(m)
+            out.append({"event_ticker": e.get("event_ticker") or "", "title": e.get("title") or "",
+                        "series_ticker": series_ticker, "markets": ms})
+        return out
+
     # ---- order book ----
     def orderbook(self, ticker: str, depth: int = 20) -> "Book":
         data = self._get(f"/markets/{ticker}/orderbook", {"depth": depth})

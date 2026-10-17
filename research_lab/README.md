@@ -9,6 +9,8 @@ compares four ways of finding Kalshi bets. Nothing here can place a real order.
 | Value Only | `VALUE_ONLY_v1` | Sportsbook consensus (power de-vig) beats the current Kalshi ask by 3+ pts after fees and buffers. |
 | Hybrid | `HYBRID_SHARP_VALUE_v1` | Same value test **and** recent public trade flow on the same side. Flow is a filter, never a probability boost. |
 | Structural Arb | `STRUCTURAL_ARB_v1` | Provable price inconsistencies between related contracts (strike ladders, NO baskets on mutually exclusive outcomes). |
+| Value Only (Pinnacle) | `VALUE_ONLY_v2` | v1 rules, but fair value is Pinnacle's de-vigged line from PinnWire's free feed. |
+| Hybrid (Pinnacle) | `HYBRID_SHARP_VALUE_v2` | v1 Hybrid rules on Pinnacle prices. |
 
 ## How a round works (`python -m research_lab.run`)
 
@@ -23,7 +25,17 @@ compares four ways of finding Kalshi bets. Nothing here can place a real order.
 It runs in `.github/workflows/research-lab.yml`, triggered after every *PM Edge Watch* run (≈30 min).
 That workflow gets no Kalshi keys.
 
-## Value safeguards (both value strategies)
+## Pinnacle prices (v2)
+
+`research_lab/pinnacle.py` pulls PinnWire's free feed (`PINNWIRE_KEY` secret, 100 requests/day). One request
+returns every upcoming game in a sport, so the lab fetches football and NBA at most once per 25 minutes and
+stops at 90 requests a day. Kalshi game/spread/total markets (NCAAF, NFL, NBA) are matched to Pinnacle games
+with the strict matcher; spreads and totals need Pinnacle to offer the **exact** same line. The two-way price is
+de-vigged three ways (power used, proportional and Shin recorded). One sharp book replaces "3+ books agree", so
+v2 instead rejects any Pinnacle market whose margin is abnormal (overround > 1.10). Team-name fixes for
+Pinnacle spellings live in `research_lab/pinnacle_aliases.csv`.
+
+## Value safeguards (all value strategies)
 
 A candidate is rejected (with the reason logged) unless all of these hold: strict team and date match;
 the live contract re-parses to the same market type and line; kickoff known and ≥5 min away; Kalshi settles

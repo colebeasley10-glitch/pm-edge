@@ -15,7 +15,7 @@ from collections import Counter
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from research_lab import config, metrics, report
+from research_lab import config, metrics, pinnacle, report
 from research_lab.context import RunContext
 from research_lab.flow import aggregate
 from research_lab.ledger import LedgerError, Store, iso, loads, now_utc, run_lock
@@ -29,6 +29,8 @@ RUNNERS = {
     config.VALUE_ONLY.key: run_value_only,
     config.HYBRID_SHARP_VALUE.key: run_hybrid,
     config.STRUCTURAL_ARB.key: run_structural,
+    config.VALUE_ONLY_V2.key: run_value_only,
+    config.HYBRID_SHARP_VALUE_V2.key: run_hybrid,
 }
 
 
@@ -57,8 +59,29 @@ def reconcile(store: Store) -> list[str]:
     return problems
 
 
+def pinnacle_round(ctx: RunContext, kalshi, pinn, base: Path) -> dict:
+    """Fetch Pinnacle prices (if due) and the matching Kalshi series; fill ctx.pinnacle_quotes."""
+    payloads, info = pinnacle.fetch_due(pinn, ctx.now, base)
+    kalshi_events: dict[int, list] = {}
+    for sid in payloads:
+        evs = []
+        for series in pinnacle.SPORTS[sid][1]:
+            try:
+                evs += kalshi.series_events(series)
+            except PublicDataError:
+                info["errors"].append(f"Kalshi series {series} unavailable")
+        kalshi_events[sid] = evs
+    quotes, markets, match_info = pinnacle.build_quotes(payloads, kalshi_events, ctx.now)
+    ctx.pinnacle_quotes = quotes
+    ctx.markets.update(markets)
+    info.update(match_info)
+    if not payloads and not info["errors"]:
+        info["note"] = "no Pinnacle fetch due this round"
+    return info
+
+
 def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = None,
-              snapshot_path: Path | None = None, send_report: bool = True) -> dict:
+              snapshot_path: Path | None = None, send_report: bool = True, pinn=None) -> dict:
     now = now or now_utc()
     base = Path(base or config.DATA_DIR)
     kalshi = kalshi or PublicKalshi()
@@ -96,6 +119,10 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
         except PublicDataError:
             ctx.flow_complete = False
             ctx.notes.append("trade tape unavailable; Hybrid can't confirm flow this round")
+        try:
+            out["pinnacle"] = pinnacle_round(ctx, kalshi, pinn or pinnacle.PinnWire(), base)
+        except Exception as exc:  # Pinnacle problems only affect the v2 strategies
+            out["pinnacle"] = {"errors": [f"{type(exc).__name__}: {str(exc)[:160]}"]}
         try:
             ctx.events = kalshi.open_events(config.STRUCTURAL_ARB.params["max_events"])
         except PublicDataError:

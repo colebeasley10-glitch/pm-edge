@@ -223,7 +223,7 @@ def _summary() -> dict:
 
 def run_value_only(spec: StrategySpec, store: Store, ctx) -> dict:
     s = _summary()
-    for q in ctx.quotes:
+    for q in ctx.quotes_for(spec.params):
         s["scanned"] += 1
         d = evaluate(q, ctx, spec.params)
         if not d["ok"]:
@@ -258,7 +258,7 @@ def flow_check(ctx, ticker: str, side: str, params: dict) -> tuple[bool, str, di
 
 def run_hybrid(spec: StrategySpec, store: Store, ctx) -> dict:
     s = _summary()
-    for q in ctx.quotes:
+    for q in ctx.quotes_for(spec.params):
         s["scanned"] += 1
         d = evaluate(q, ctx, spec.params)
         if not d["ok"]:

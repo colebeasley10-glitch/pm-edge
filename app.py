@@ -1195,3 +1195,5 @@ with tab_lab:
     st.page_link("pages/Research_Lab_Value_Only.py", label="Value Only", icon="📈")
     st.page_link("pages/Research_Lab_Hybrid.py", label="Hybrid: Value + Sharp", icon="🔀")
     st.page_link("pages/Research_Lab_Structural_Arb.py", label="Structural Arbitrage", icon="🧩")
+    st.page_link("pages/Research_Lab_Value_Pinnacle.py", label="Value Only (Pinnacle prices)", icon="📌")
+    st.page_link("pages/Research_Lab_Hybrid_Pinnacle.py", label="Hybrid (Pinnacle prices)", icon="📍")

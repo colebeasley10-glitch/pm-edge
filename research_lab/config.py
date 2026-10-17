@@ -83,7 +83,28 @@ STRUCTURAL_ARB = StrategySpec(
     },
 )
 
-RESEARCH_STRATEGIES = [VALUE_ONLY, HYBRID_SHARP_VALUE, STRUCTURAL_ARB]
+# v2: same rules as v1, but fair value comes from Pinnacle (PinnWire free feed) instead of
+# the main scanner's multi-book consensus, which stops whenever the Odds API runs out.
+# One sharp book replaces "3+ books agree": min_books=1, and Pinnacle's own margin must be
+# normal (two-way overround <= 1.10). Prices must be from this round (<= 45 min old).
+_PINNACLE = {"fair_source": "pinnacle", "min_books": 1, "max_dispersion": 1.0, "max_fair_age_min": 45,
+             "max_overround": 1.10}
+
+VALUE_ONLY_V2 = StrategySpec(
+    id="VALUE_ONLY", version=2, label="Value Only (Pinnacle)", started="2026-10-17",
+    description=("Value Only rules, priced off Pinnacle's de-vigged line (free PinnWire feed): buys when "
+                 "Pinnacle says a Kalshi contract is worth 3+ points more than the current ask after fees."),
+    params={**VALUE_ONLY.params, **_PINNACLE},
+)
+
+HYBRID_SHARP_VALUE_V2 = StrategySpec(
+    id="HYBRID_SHARP_VALUE", version=2, label="Hybrid (Pinnacle)", started="2026-10-17",
+    description=("Hybrid rules priced off Pinnacle: a 3+ point edge against Pinnacle's fair line and "
+                 "recent public Kalshi trade flow on the same side."),
+    params={**HYBRID_SHARP_VALUE.params, **_PINNACLE},
+)
+
+RESEARCH_STRATEGIES = [VALUE_ONLY, HYBRID_SHARP_VALUE, STRUCTURAL_ARB, VALUE_ONLY_V2, HYBRID_SHARP_VALUE_V2]
 BY_KEY = {s.key: s for s in RESEARCH_STRATEGIES}
 
 SHARP_EXISTING_LABEL = "Existing Sharp (paper)"

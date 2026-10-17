@@ -59,10 +59,11 @@ def test_importing_the_lab_loads_no_order_code_even_with_live_vars_set():
 
 
 def test_public_client_only_ever_sends_get():
-    src = (LAB / "public_data.py").read_text()
-    for verb in (".post(", ".put(", ".delete(", ".patch(", ".request("):
-        assert verb not in src, verb
-    assert "session.get(" in src
+    for name in ("public_data.py", "pinnacle.py"):
+        src = (LAB / name).read_text()
+        for verb in (".post(", ".put(", ".delete(", ".patch(", ".request("):
+            assert verb not in src, (name, verb)
+        assert "session.get(" in src
 
 
 def test_no_real_money_switch_in_config():

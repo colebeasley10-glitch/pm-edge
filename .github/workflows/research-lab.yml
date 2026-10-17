@@ -34,6 +34,8 @@ jobs:
           PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
           PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
           STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
+          # Free PinnWire data key (Pinnacle prices) for the v2 strategies. Not a trading key.
+          PINNWIRE_KEY: ${{ secrets.PINNWIRE_KEY }}
           PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
         run: python -m research_lab.run
       - name: Save Research Lab ledgers

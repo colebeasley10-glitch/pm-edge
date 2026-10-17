@@ -442,3 +442,114 @@ def test_run_with_empty_snapshot_still_settles_and_reports(tmp_path):
     assert out["snapshot"]["empty"] and out["reconciled"]
     assert all(v.get("ok") for v in out["strategies"].values())
     assert (tmp_path / "data" / "status.json").exists()
+
+
+# ---------------------------------------------------------------- Pinnacle (v2)
+
+from research_lab import pinnacle  # noqa: E402
+from pmedge.market_parse import parse_market  # noqa: E402
+
+PIN_EVENT = {"event_id": 101, "league_name": "NCAA", "home": "Houston", "away": "Oklahoma State",
+             "starts": iso(KICK), "periods": {"num_0": {
+                 "money_line": {"home": 1.505, "away": 2.68},
+                 "spreads": {"-4.5": {"hdp": -4.5, "home": 1.917, "away": 1.952, "max": 4000},
+                             "-3.5": {"hdp": -3.5, "home": 1.8, "away": 2.08, "max": 2000}},
+                 "totals": {"61": {"points": 61, "over": 1.752, "under": 2.09, "max": 1500}}}}}
+PIN_PAYLOAD = {"generated_at": iso(NOW - timedelta(minutes=2)), "events": [
+    PIN_EVENT, {**PIN_EVENT, "event_id": 102, "league_name": "Canadian Football", "home": "Ottawa", "away": "Toronto"}]}
+
+
+def kmarket(ticker, title, yes_sub="", **kw):
+    return market(ticker=ticker, title=title, yes_sub_title=yes_sub, event="KXNCAAFGAME-26OCT17OKSTHOU",
+                  rules_primary="Includes overtime.", occurrence_datetime=iso(KICK), **kw)
+
+
+def pin_event():
+    return pinnacle.events_from(PIN_PAYLOAD, {"NCAA", "NFL"}, NOW)
+
+
+def test_pinnacle_league_filter_and_parse():
+    evs = pin_event()
+    assert [e.home for e in evs] == ["Houston"]
+
+
+def test_pinnacle_moneyline_fair_is_devigged_and_side_correct():
+    ev = pin_event()[0]
+    spec = parse_market(kmarket("KXNCAAFGAME-X-HOU", "Oklahoma State at Houston: Houston wins", "Houston"))
+    probs, why = pinnacle.fair_for(spec, ev, pinnacle.lab_aliases(), 1.10)
+    raw = (1 / 1.505) / (1 / 1.505 + 1 / 2.68)
+    assert why == "ok" and abs(probs["proportional"] - raw) < 1e-9 and 0.6 < probs["power"] < 0.7
+    spec = parse_market(kmarket("KXNCAAFGAME-X-OKST", "Oklahoma State at Houston: Oklahoma State wins",
+                                "Oklahoma State"))
+    probs2, _ = pinnacle.fair_for(spec, ev, pinnacle.lab_aliases(), 1.10)
+    assert abs(probs["power"] + probs2["power"] - 1) < 1e-9
+
+
+def test_pinnacle_spread_uses_exact_line_and_rejects_missing_line():
+    ev = pin_event()[0]
+    spec = parse_market(kmarket("KXNCAAFSPREAD-X-HOU4", "Oklahoma State at Houston: Houston wins by over 4.5 points"))
+    assert spec.market_type == "spread" and spec.point == -4.5
+    probs, why = pinnacle.fair_for(spec, ev, pinnacle.lab_aliases(), 1.10)
+    assert why == "ok" and abs(probs["proportional"] - (1 / 1.917) / (1 / 1.917 + 1 / 1.952)) < 1e-9
+    spec = parse_market(kmarket("KXNCAAFSPREAD-X-HOU10", "Oklahoma State at Houston: Houston wins by over 10.5 points"))
+    assert pinnacle.fair_for(spec, ev, pinnacle.lab_aliases(), 1.10) == (None, "pinnacle_line_not_offered")
+    # away team covering +3.5 is Houston -3.5 from the home side
+    spec = parse_market(kmarket("KXNCAAFSPREAD-X-OKST", "Oklahoma State at Houston: Oklahoma State wins by over 3.5 points"))
+    assert pinnacle.fair_for(spec, ev, pinnacle.lab_aliases(), 1.10)[1] == "pinnacle_line_not_offered"
+
+
+def test_pinnacle_total_and_bad_margin():
+    ev = pin_event()[0]
+    spec = parse_market(kmarket("KXNCAAFTOTAL-X-61", "Oklahoma State at Houston: Total Points",
+                                "Over 61 points scored"))
+    probs, why = pinnacle.fair_for(spec, ev, pinnacle.lab_aliases(), 1.10)
+    assert why == "ok" and probs["power"] < 0.6
+    assert pinnacle.two_way(1.5, 1.5, 1.10) is None   # 133% book: broken data, rejected
+
+
+def test_pinnacle_fetch_respects_budget_and_refetch_gap(tmp_path):
+    class Fake:
+        key, calls = "k", 0
+
+        def fixtures(self, sid):
+            Fake.calls += 1
+            return PIN_PAYLOAD
+    out, info = pinnacle.fetch_due(Fake(), NOW, tmp_path)
+    assert set(out) == {5, 3} and info["requests_today"] == 2
+    out, info = pinnacle.fetch_due(Fake(), NOW + timedelta(minutes=10), tmp_path)
+    assert out == {} and Fake.calls == 2           # too soon: no new requests
+    u = pinnacle.load_usage(NOW, tmp_path)
+    u["requests"] = pinnacle.DAILY_BUDGET
+    pinnacle.save_usage(u, tmp_path)
+    out, info = pinnacle.fetch_due(Fake(), NOW + timedelta(hours=1), tmp_path)
+    assert out == {} and any("budget" in x for x in info["skipped"])
+    out, info = pinnacle.fetch_due(type("NoKey", (), {"key": ""})(), NOW, tmp_path / "nk")
+    assert out == {} and info["errors"] == ["PINNWIRE_KEY is not set"]
+
+
+def test_v2_round_end_to_end_with_pinnacle(tmp_path):
+    hou = kmarket("KXNCAAFGAME-26OCT17OKSTHOU-HOU", "Oklahoma State at Houston: Houston wins", "Houston",
+                  yes_ask=0.58, yes_bid=0.56)
+
+    class FakeSeriesKalshi(FakeKalshi):
+        def series_events(self, series):
+            return [{"event_ticker": hou["event_ticker"], "markets": [hou]}] if series == "KXNCAAFGAME" else []
+
+    class FakePin:
+        key = "k"
+
+        def fixtures(self, sid):
+            return PIN_PAYLOAD if sid == 5 else {"events": []}
+    k = FakeSeriesKalshi(markets={hou["ticker"]: hou},
+                         books={hou["ticker"]: book(yes_bids=((0.56, 100),), no_bids=((0.42, 100),))})
+    out = run_round(now=NOW, kalshi=k, base=tmp_path / "data", snapshot_path=tmp_path / "none.csv",
+                    send_report=False, pinn=FakePin())
+    assert out["pinnacle"]["matched"] >= 1
+    v2 = out["strategies"][config.VALUE_ONLY_V2.key]
+    assert v2["filled"] == 1, out
+    st = Store(config.VALUE_ONLY_V2.key, tmp_path / "data")
+    p = st.positions[0]
+    assert p["side"] == "YES" and p["category"] == "NCAA" and float(p["fair"]) > 0.62
+    # v1 (scanner-priced) saw nothing and opened nothing: ledgers stay separate
+    assert Store(config.VALUE_ONLY.key, tmp_path / "data").positions == []
+    assert out["reconciled"]

@@ -14,7 +14,8 @@ from research_lab.public_data import Book, PublicDataError
 class RunContext:
     now: datetime
     kalshi: object                            # research_lab.public_data.PublicKalshi (or a test fake)
-    quotes: list = field(default_factory=list)   # snapshot.FairQuote
+    quotes: list = field(default_factory=list)   # snapshot.FairQuote (main scanner, v1)
+    pinnacle_quotes: list = field(default_factory=list)  # FairQuote priced off Pinnacle (v2)
     markets: dict = field(default_factory=dict)  # ticker -> fresh normalized market
     flows: dict = field(default_factory=dict)    # (ticker, side) -> flow.Flow
     flow_complete: bool = True
@@ -39,3 +40,6 @@ class RunContext:
             b = None
         self.books[ticker] = b
         return b
+
+    def quotes_for(self, params: dict) -> list:
+        return self.pinnacle_quotes if params.get("fair_source") == "pinnacle" else self.quotes

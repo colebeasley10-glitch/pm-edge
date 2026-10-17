@@ -112,6 +112,11 @@ def _health(status: dict) -> None:
         if snap.get("empty"):
             st.warning("The main scanner priced no markets on its last run, so Value and Hybrid had nothing "
                        "to evaluate. Usually this means the Odds API credits are used up.")
+        pin = last.get("pinnacle") or {}
+        if pin:
+            st.write(f"Pinnacle feed: {pin.get('requests_today', 0)}/{pin.get('budget', 90)} requests today · "
+                     f"{pin.get('matched', 0)} Kalshi markets priced"
+                     + (" · " + "; ".join(pin["errors"][:2]) if pin.get("errors") else ""))
         st.write("Ledgers reconciled: " + ("yes ✅" if last.get("reconciled") else "no ⚠️"))
         if last.get("data_failures"):
             st.write("Failed data fetches: " + "; ".join(last["data_failures"][:5]))
