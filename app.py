@@ -781,13 +781,18 @@ with tab_home:
             continue
         _h_opps.append((_best.get("ev", 0), _r, _best))
     _h_opps.sort(key=lambda x: -x[0])
-    st.markdown(f"<div class='section'><span>Top opportunities</span>"
+    _h_plays = [o for o in _h_opps if o[0] >= 0.01]
+    st.markdown(f"<div class='section'><span>Today's plays"
+                f"{(' <span class=n>' + str(len(_h_plays)) + '</span>') if _h_plays else ''}</span>"
                 f"<span class='n' style='font-size:.75rem;font-weight:600;white-space:nowrap'>"
                 f"{esc(ago(_h_board.get('at'))) if _h_board.get('at') else ''}</span></div>",
                 unsafe_allow_html=True)
     if _h_opps:
+        _show = _h_plays[:12] if _h_plays else _h_opps[:3]
+        if not _h_plays:
+            st.markdown("<div class='pe-lede'>No plays at +1% EV right now. Closest prices:</div>", unsafe_allow_html=True)
         _items = []
-        for _ev, _r, _b in _h_opps[:5]:
+        for _ev, _r, _b in _show:
             _cls = "ev-pos" if _ev > 0 else "ev-neg"
             _ps = sorted(_r["prices"], key=lambda p: -p.get("decimal", 0))
             _rows = "".join(
@@ -796,17 +801,21 @@ with tab_home:
                 f"<span class='cmp-p'>{esc(_price_label(p))}</span>"
                 f"<span class='cmp-e {'ev-pos' if p.get('ev', 0) > 0 else 'ev-neg'}'>{p.get('ev', 0) * 100:+.1f}%</span></a>"
                 for i, p in enumerate(_ps))
+            _label = _r.get("label") or f"{_r['team']} ML"
+            _kelly = _num(_r.get("kelly")) or 0.0
+            _size = f" · bet {_kelly * 100:.1f}% of bankroll" if _ev >= 0.01 and _kelly > 0 else ""
             _items.append(
-                f"<details class='hm-opp-d'><summary class='hm-opp'><div><div class='t'>{esc(_r['team'])} ML</div>"
-                f"<div class='s'>{esc(_r.get('sport') or '')} · {esc(starts(_r.get('starts')))}</div>"
-                f"<div class='ev {_cls}'>{_ev * 100:+.1f}% EV · {esc(_b['venue'])}</div></div>"
+                f"<details class='hm-opp-d'><summary class='hm-opp'><div><div class='t'>{esc(_label)}</div>"
+                f"<div class='s'>{esc(_r.get('game') or '')} · {esc(starts(_r.get('starts')))}</div>"
+                f"<div class='ev {_cls}'>{_ev * 100:+.1f}% EV · {esc(_b['venue'])}{esc(_size)}</div></div>"
                 f"<div class='px'>{esc(_price_label(_b))}<small>fair {esc(_r['fair_odds'])}</small></div></summary>"
-                f"<div class='cmp'><div class='cmp-h'><span>{len(_ps)} place{'s' if len(_ps) != 1 else ''} to bet it</span>"
+                f"<div class='cmp'><div class='cmp-h'><span>Price at {len(_ps)} place{'s' if len(_ps) != 1 else ''}</span>"
                 f"<span>Pinnacle fair {esc(_r['fair_odds'])}</span></div>{_rows}"
                 f"<div class='cmp-note'>Green = best price. EV compares each price with Pinnacle's fair line. "
-                f"Sportsbook prices can be a few hours old.</div></div></details>")
+                f"Bet size is a quarter-Kelly suggestion (max 3%). Sportsbook prices can be a few hours old.</div></div></details>")
         st.markdown("<div class='hm-opps'>" + "".join(_items) + "</div>", unsafe_allow_html=True)
-        st.caption("Tap a pick to compare its price at every book. You get a phone alert at +3% EV.")
+        st.caption("Plays = +1% EV or better vs Pinnacle's fair line, across moneylines, spreads and totals. "
+                   "Tap one to compare prices. Phone alert at +3%.")
     else:
         quiet("No games priced yet", "The board fills in when the Lab pulls Pinnacle prices (every ~30 minutes).")
     with st.expander("🧮 EV calculator", expanded=False):
@@ -1422,7 +1431,8 @@ with tab_lab:
         f"<div class='l'>{esc(d)}</div></a>" for pg, t, d in _tools) + "</div>", unsafe_allow_html=True)
     _pages = {"VALUE_ONLY_v1": "Research_Lab_Value_Only", "HYBRID_SHARP_VALUE_v1": "Research_Lab_Hybrid",
               "STRUCTURAL_ARB_v1": "Research_Lab_Structural_Arb", "VALUE_ONLY_v2": "Research_Lab_Value_Pinnacle",
-              "HYBRID_SHARP_VALUE_v2": "Research_Lab_Hybrid_Pinnacle", "EV_FINDER_v1": "Research_Lab_EV_Finder"}
+              "HYBRID_SHARP_VALUE_v2": "Research_Lab_Hybrid_Pinnacle", "EV_FINDER_v1": "Research_Lab_EV_Finder",
+              "EV_FINDER_v2": "Research_Lab_Todays_Plays"}
     _cards = []
     try:
         _sh = _lmet.sharp_summary()
@@ -1436,7 +1446,8 @@ with tab_lab:
             continue
         _short = {"VALUE_ONLY_v1": "Sportsbook consensus vs Kalshi", "HYBRID_SHARP_VALUE_v1": "Value + matching Kalshi trade flow",
                   "STRUCTURAL_ARB_v1": "Locked-profit price gaps on Kalshi", "VALUE_ONLY_v2": "Pinnacle's fair line vs Kalshi",
-                  "HYBRID_SHARP_VALUE_v2": "Pinnacle value + trade flow", "EV_FINDER_v1": "Best price on any of your books"}
+                  "HYBRID_SHARP_VALUE_v2": "Pinnacle value + trade flow", "EV_FINDER_v1": "Best price on any of your books",
+                  "EV_FINDER_v2": "Every +1% play, all sports and markets"}
         _cards.append((_pages.get(_spec.key, "Research_Lab_Compare"), _spec.label, _short.get(_spec.key, ""), _sm, _sm["bankroll"]))
     _html = []
     for _pg, _name, _desc, _sm, _bank in _cards:

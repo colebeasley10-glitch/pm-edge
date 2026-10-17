@@ -135,3 +135,59 @@ def push_alerts(lines: list[str], store: Store, now, max_per_run: int = 5) -> in
     for x in fresh:
         sent[x.split(" · price")[0]] = iso(now)
     return len(fresh)
+
+
+def run_plays(spec: StrategySpec, store: Store, ctx) -> dict:
+    """EV_FINDER v2: best price per pick at +1% EV; one paper bet per game; alerts at +3%."""
+    p = spec.params
+    s = {"scanned": 0, "qualified": 0, "filled": 0, "no_fill": 0, "rejected": 0, "alerts": []}
+    for pk in ctx.picks:
+        s["scanned"] += 1
+        fresh = [o for o in pk.offers if o.at is not None and ctx.now - o.at <= timedelta(minutes=p["max_price_age_min"])]
+        if not fresh:
+            continue
+        best = max(fresh, key=lambda o: o.decimal)
+        ev = pk.fair * best.decimal - 1
+        info = {"venue": best.venue, "shown": best.shown, "decimal": round(best.decimal, 4), "ev": round(ev, 4),
+                "fair_odds": american(1 / pk.fair), "age_s": _age_s(ctx, best), "market": pk.market, "sport": pk.sport,
+                "label": pk.label}
+        row = {"run_at": iso(ctx.now), "strategy": spec.key, "ticker": pk.settle_ticker or pk.key,
+               "event_ticker": pk.event, "title": f"{pk.game}: {pk.label}", "category": pk.league, "side": pk.settle_side,
+               "fair": round(pk.fair, 4), "ask": round(best.decimal, 4), "net_edge": round(ev, 4),
+               "quote_age_s": info["age_s"] or "", "fair_age_s": "", "spread": "", "details": dumps(info)}
+        if ev > p["max_ev"]:
+            store.log_candidate({**row, "decision": "REJECTED", "reason": "suspicious_ev_review"})
+            s["rejected"] += 1
+            continue
+        if ev + 1e-9 < p["min_ev"]:
+            continue  # below +1%: not a play (not logged, to keep the ledger small)
+        s["qualified"] += 1
+        if ev >= p["alert_ev"] and not (pk.market == "moneyline" and pk.sport in ("football", "basketball")):
+            # football/basketball moneylines already alert from +EV Finder v1
+            s["alerts"].append(f"{best.venue}: {pk.label} {best.shown} · fair {info['fair_odds']} · EV +{ev * 100:.1f}%")
+        if not pk.settle_ticker:
+            store.log_candidate({**row, "decision": "NO_FILL", "reason": "no_kalshi_settlement_market"})
+            s["no_fill"] += 1
+            continue
+        stake = TARGET_STAKE
+        ok, why = portfolio.check_limits(store, event=pk.event, ticker=pk.settle_ticker, committed=stake, now=ctx.now)
+        pid = position_id(spec.key, pk.settle_ticker, pk.settle_side + best.venue, ctx.now)
+        if not ok or store.has_position(pid):
+            store.log_candidate({**row, "decision": "REJECTED", "reason": why if not ok else "duplicate_this_run"})
+            s["rejected"] += 1
+            continue
+        store.add_position({
+            "position_id": pid, "strategy": spec.id, "version": spec.version, "opened_at": iso(ctx.now),
+            "day": portfolio.et_day(ctx.now), "ticker": pk.settle_ticker, "event_ticker": pk.event,
+            "title": f"{pk.game}: {pk.label}", "category": pk.league, "market_type": pk.market,
+            "side": pk.settle_side, "contracts": round(stake * best.decimal, 4), "wanted": round(stake * best.decimal, 4),
+            "entry_price": round(1 / best.decimal, 4), "cost": stake, "fee": 0.0, "committed": stake,
+            "fill_status": "filled", "fair": round(pk.fair, 4), "net_edge": round(ev, 4),
+            "reason": f"{pk.label} at {best.venue} {best.shown} vs fair {info['fair_odds']} (+{ev * 100:.1f}% EV)",
+            "quote_at": iso(best.at), "fair_at": "", "commence_time": iso(pk.starts),
+            "details": dumps({**info, "manual_bet": best.venue != "Kalshi"}), "legs": "", "status": "open",
+        })
+        store.log_candidate({**row, "decision": "FILLED", "reason": f"paper bet at {best.venue}"})
+        s["filled"] += 1
+    return s
+

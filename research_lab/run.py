@@ -17,7 +17,7 @@ from pathlib import Path
 
 from research_lab import config, ev_data, metrics, pinnacle, report
 from research_lab.fills import taker_fee
-from research_lab.strategies.ev_finder import push_alerts, run_ev_finder
+from research_lab.strategies.ev_finder import push_alerts, run_ev_finder, run_plays
 from research_lab.context import RunContext
 from research_lab.flow import aggregate
 from research_lab.ledger import LedgerError, Store, iso, loads, now_utc, parse_dt, run_lock
@@ -34,6 +34,7 @@ RUNNERS = {
     config.VALUE_ONLY_V2.key: run_value_only,
     config.HYBRID_SHARP_VALUE_V2.key: run_hybrid,
     config.EV_FINDER.key: lambda spec, store, ctx: run_ev(spec, store, ctx),
+    config.EV_FINDER_V2.key: lambda spec, store, ctx: run_ev_plays(spec, store, ctx),
 }
 
 
@@ -100,16 +101,27 @@ def ev_round(ctx: RunContext, base: Path, *, poly_fetch=None, odds_session=None,
     info["books"] = binfo
     if games:
         info["book_offers"] = ev_data.add_books(games, snap, parse_dt(binfo.get("taken_at")))
+    picks = ev_data.build_picks(games, ctx.pinnacle_quotes, ctx.markets, ctx.now, taker_fee)
+    info["picks"] = len(picks)
+    if picks:
         from research_lab.ledger import _atomic_write_text
         _atomic_write_text(base / "ev_board.json", json.dumps(
-            {"at": iso(ctx.now), "books_taken_at": binfo.get("taken_at"), "rows": ev_data.board_rows(games)},
+            {"at": iso(ctx.now), "books_taken_at": binfo.get("taken_at"), "rows": ev_data.pick_rows(picks)},
             default=str))
-    ctx.ev_games = games
+    # EV_FINDER v1 was frozen on football + basketball moneylines
+    ctx.ev_games = [g for g in games if g.sport in pinnacle.ORIGINAL_SPORTS]
+    ctx.picks = picks
     return info
 
 
 def run_ev(spec, store, ctx) -> dict:
     res = run_ev_finder(spec, store, ctx)
+    res["pushed"] = push_alerts(res.pop("alerts", []), store, ctx.now)
+    return res
+
+
+def run_ev_plays(spec, store, ctx) -> dict:
+    res = run_plays(spec, store, ctx)
     res["pushed"] = push_alerts(res.pop("alerts", []), store, ctx.now)
     return res
 

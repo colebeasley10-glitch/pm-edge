@@ -32,12 +32,23 @@ from research_lab.snapshot import FairQuote
 BASE = "https://pinnwire.com"
 DAILY_BUDGET = int(os.getenv("RESEARCH_LAB_PINNACLE_DAILY_BUDGET", "90"))   # of 100; leaves room for checks
 MIN_REFETCH = timedelta(minutes=25)
-# sport_id -> (name, Kalshi series to price, Pinnacle leagues to keep)
+MAX_FETCHES_PER_RUN = 3
+# sport_id -> (name, Kalshi series to price, Pinnacle leagues to keep (empty = all), refresh minutes).
+# The refresh schedule keeps every sport inside the free 100 requests/day (budget 90):
+# football ~32/day, basketball ~24, hockey/baseball ~12 each, soccer ~8, tennis ~4.
+SOCCER_SERIES = ["KXEPLGAME", "KXUCLGAME", "KXUELGAME", "KXLALIGAGAME", "KXSERIEAGAME", "KXBUNDESLIGAGAME",
+                 "KXLIGUE1GAME", "KXMLSGAME"]
 SPORTS = {
     5: ("football", ["KXNCAAFGAME", "KXNCAAFSPREAD", "KXNCAAFTOTAL", "KXNFLGAME", "KXNFLSPREAD", "KXNFLTOTAL"],
-        {"NCAA", "NFL"}),
-    3: ("basketball", ["KXNBAGAME", "KXNBASPREAD", "KXNBATOTAL"], {"NBA"}),
+        {"NCAA", "NFL"}, 45),
+    3: ("basketball", ["KXNBAGAME", "KXNBASPREAD", "KXNBATOTAL"], {"NBA"}, 60),
+    4: ("hockey", ["KXNHLGAME", "KXNHLSPREAD", "KXNHLTOTAL"], {"NHL"}, 120),
+    6: ("baseball", ["KXMLBGAME", "KXMLBSPREAD", "KXMLBTOTAL"], {"MLB"}, 120),
+    1: ("soccer", SOCCER_SERIES, set(), 180),
+    2: ("tennis", ["KXATPMATCH", "KXWTAMATCH"], set(), 360),
 }
+# Strategies frozen before more sports were added keep their original universe.
+ORIGINAL_SPORTS = ("football", "basketball")
 LAB_ALIASES = Path(__file__).parent / "pinnacle_aliases.csv"
 
 
@@ -92,28 +103,32 @@ class PinnWire:
 
 
 def fetch_due(client, now: datetime, base: Path | None = None) -> tuple[dict[int, dict], dict]:
-    """Fetch each sport not fetched in the last MIN_REFETCH, within the daily budget."""
+    """Fetch the sports whose refresh time has come (at most MAX_FETCHES_PER_RUN), within the daily budget."""
     u = load_usage(now, base)
     out, info = {}, {"requests_today": u["requests"], "budget": DAILY_BUDGET, "fetched": [], "skipped": [],
                      "errors": []}
     if not getattr(client, "key", "x"):
         info["errors"].append("PINNWIRE_KEY is not set")
         return out, info
-    for sid in SPORTS:
+    for sid, spec in SPORTS.items():
+        name, every = spec[0], timedelta(minutes=spec[3])
         last = parse_dt(u["last_fetch"].get(str(sid)))
-        if last is not None and now - last < MIN_REFETCH:
-            info["skipped"].append(f"{SPORTS[sid][0]}: fetched {int((now - last).total_seconds() // 60)} min ago")
+        if last is not None and now - last < every:
+            info["skipped"].append(f"{name}: next in {int((every - (now - last)).total_seconds() // 60)} min")
             continue
         if u["requests"] >= DAILY_BUDGET:
-            info["skipped"].append(f"{SPORTS[sid][0]}: daily budget used")
+            info["skipped"].append(f"{name}: daily budget used")
+            continue
+        if len(info["fetched"]) + len(info["errors"]) >= MAX_FETCHES_PER_RUN:
+            info["skipped"].append(f"{name}: next round")
             continue
         u["requests"] += 1
         try:
             out[sid] = client.fixtures(sid)
             u["last_fetch"][str(sid)] = iso(now)
-            info["fetched"].append(SPORTS[sid][0])
+            info["fetched"].append(name)
         except (PinnacleError, requests.RequestException) as exc:
-            info["errors"].append(f"{SPORTS[sid][0]}: {type(exc).__name__}: {str(exc)[:80]}")
+            info["errors"].append(f"{name}: {type(exc).__name__}: {str(exc)[:80]}")
     info["requests_today"] = u["requests"]
     save_usage(u, base)
     return out, info
@@ -169,6 +184,16 @@ def two_way(a_price, b_price, max_overround: float) -> dict | None:
             "shin": devig_shin(outs)["a"]}
 
 
+def three_way(ml: dict, side: str, max_overround: float) -> dict | None:
+    """De-vig a home/draw/away moneyline; P(side wins in regulation) by method."""
+    prices = {k: _f(ml.get(k)) for k in ("home", "draw", "away")}
+    if any(v is None for v in prices.values()) or sum(1 / v for v in prices.values()) > max_overround:
+        return None
+    outs = [{"name": k, "price": v} for k, v in prices.items()]
+    return {"power": devig_power(outs)[side], "proportional": devig_proportional(outs)[side],
+            "shin": devig_shin(outs)[side]}
+
+
 def _keyed(entries: dict, value: float, field: str) -> dict | None:
     for k, v in (entries or {}).items():
         try:
@@ -196,11 +221,12 @@ def fair_for(spec, ev: PinEvent, aliases: dict, max_overround: float) -> tuple[d
     full = ev.full
     if spec.market_type == "h2h":
         ml = full.get("money_line") or {}
-        if ml.get("draw") is not None:
-            return None, "three_way_market"
         side = which_team(spec.selection or "", ev, aliases)
         if side is None:
             return None, "selection_not_matched"
+        if ml.get("draw") is not None:
+            p = three_way(ml, side, max_overround + 0.02)
+            return (p, "ok") if p else (None, "no_moneyline")
         other = "away" if side == "home" else "home"
         p = two_way(ml.get(side), ml.get(other), max_overround)
         return (p, "ok") if p else (None, "no_moneyline")

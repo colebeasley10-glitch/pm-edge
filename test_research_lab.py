@@ -515,16 +515,25 @@ def test_pinnacle_fetch_respects_budget_and_refetch_gap(tmp_path):
             Fake.calls += 1
             return PIN_PAYLOAD
     out, info = pinnacle.fetch_due(Fake(), NOW, tmp_path)
-    assert set(out) == {5, 3} and info["requests_today"] == 2
+    assert set(out) == {5, 3, 4} and info["requests_today"] == 3          # max 3 sports per round
     out, info = pinnacle.fetch_due(Fake(), NOW + timedelta(minutes=10), tmp_path)
-    assert out == {} and Fake.calls == 2           # too soon: no new requests
+    assert set(out) == {6, 1, 2}                                           # the rest go next round
+    out, info = pinnacle.fetch_due(Fake(), NOW + timedelta(minutes=20), tmp_path)
+    assert out == {} and Fake.calls == 6                                   # nothing due yet
+    out, info = pinnacle.fetch_due(Fake(), NOW + timedelta(minutes=50), tmp_path)
+    assert set(out) == {5}                                                 # football every 45 min
     u = pinnacle.load_usage(NOW, tmp_path)
     u["requests"] = pinnacle.DAILY_BUDGET
     pinnacle.save_usage(u, tmp_path)
-    out, info = pinnacle.fetch_due(Fake(), NOW + timedelta(hours=1), tmp_path)
+    out, info = pinnacle.fetch_due(Fake(), NOW + timedelta(hours=3), tmp_path)
     assert out == {} and any("budget" in x for x in info["skipped"])
     out, info = pinnacle.fetch_due(type("NoKey", (), {"key": ""})(), NOW, tmp_path / "nk")
     assert out == {} and info["errors"] == ["PINNWIRE_KEY is not set"]
+
+
+def test_daily_schedule_fits_free_plan():
+    per_day = sum(24 * 60 / spec[3] for spec in pinnacle.SPORTS.values())
+    assert per_day <= 100
 
 
 def test_v2_round_end_to_end_with_pinnacle(tmp_path):
@@ -710,4 +719,68 @@ def test_book_snapshot_retries_next_day_after_empty_account(tmp_path):
     assert Sess.calls == 3                      # same day: empty account, no more tries
     ev_data.book_snapshot(NOW + timedelta(days=1), tmp_path, session=Sess(), key="k")
     assert Sess.calls == 6                      # next day: checks again in case credits reset
+
+
+# ---------------------------------------------------------------- Today's Plays (EV_FINDER v2)
+
+from research_lab.strategies.ev_finder import run_plays  # noqa: E402
+
+
+def test_three_way_soccer_devig():
+    ml = {"home": 2.10, "draw": 3.40, "away": 3.60}
+    h = pinnacle.three_way(ml, "home", 1.12)
+    a = pinnacle.three_way(ml, "away", 1.12)
+    assert h and a and 0.40 < h["power"] < 0.50 and h["power"] + a["power"] < 0.80   # draw takes the rest
+
+
+def test_spread_and_total_picks_have_both_sides(tmp_path):
+    games = _games()
+    sq = FairQuote(ticker="KXNCAAFSPREAD-X-HOU4", title="t", event_id="101", commence_time=KICK, sport_key="pinnacle_football",
+                   sport_title="NCAA", market_type="spread", selection="Houston", point=-4.5, fair_yes_power=0.52,
+                   fair_yes_prop=0.52, fair_yes_shin=0.52, books=1, dispersion=None, fair_at=NOW, evaluated_at=NOW,
+                   matcher_pass=True, matcher_reason="ok")
+    tq = FairQuote(ticker="KXNCAAFTOTAL-X-61", title="t", event_id="101", commence_time=KICK, sport_key="pinnacle_football",
+                   sport_title="NCAA", market_type="total", selection="Over", point=61.0, fair_yes_power=0.47,
+                   fair_yes_prop=0.47, fair_yes_shin=0.47, books=1, dispersion=None, fair_at=NOW, evaluated_at=NOW,
+                   matcher_pass=True, matcher_reason="ok")
+    mk = {"KXNCAAFSPREAD-X-HOU4": {"yes_ask": 0.46, "no_ask": 0.56}, "KXNCAAFTOTAL-X-61": {"yes_ask": 0.49, "no_ask": 0.53}}
+    picks = ev_data.build_picks(games, [sq, tq], mk, NOW, taker_fee)
+    labels = {p.label: p for p in picks}
+    assert "Houston −4.5" in labels and "Oklahoma State +4.5" in labels
+    assert "Over 61" in labels and "Under 61" in labels
+    assert labels["Oklahoma State +4.5"].settle_side == "NO" and abs(labels["Oklahoma State +4.5"].fair - 0.48) < 1e-9
+    # Houston -4.5 at 46c vs fair 52%: about +11% EV before fees -> a play; paper bet settles from Kalshi
+    st = Store(config.EV_FINDER_V2.key, tmp_path)
+    ctx = RunContext(now=NOW, kalshi=FakeKalshi(), picks=[labels["Houston −4.5"], labels["Under 61"]])
+    res = run_plays(config.EV_FINDER_V2, st, ctx)
+    assert res["filled"] == 1                       # one play per game, best first
+    pos = st.positions[0]
+    assert pos["side"] in {"YES", "NO"} and pos["ticker"].startswith("KXNCAAF")
+    settle_store(st, {pos["ticker"]: {"result": "yes" if pos["side"] == "YES" else "no", "status": "settled"}}, NOW + timedelta(days=1))
+    assert st.positions[0]["status"] == "won" and reconcile(st) == []
+
+
+def test_plays_threshold_is_one_percent(tmp_path):
+    g = _games()[0]
+    g.settle = {"home": "K-HOU", "away": "K-OKST"}
+    for ev, should in ((0.015, 1), (0.005, 0)):
+        g.offers = [ev_data.Offer("Kalshi", "away", (1 + ev) / g.fair["away"], "x", NOW)]
+        picks = ev_data.build_picks([g], [], {}, NOW, taker_fee)
+        st = Store(config.EV_FINDER_V2.key, tmp_path / f"t{ev}")
+        assert run_plays(config.EV_FINDER_V2, st, RunContext(now=NOW, kalshi=FakeKalshi(), picks=picks))["filled"] == should
+
+
+def test_frozen_strategies_keep_original_sports():
+    q = lambda sk: FairQuote(ticker="T", title="t", event_id="e", commence_time=KICK, sport_key=sk, sport_title="",
+                             market_type="h2h", selection="", point=None, fair_yes_power=.5, fair_yes_prop=.5,
+                             fair_yes_shin=.5, books=1, dispersion=None, fair_at=NOW, evaluated_at=NOW,
+                             matcher_pass=True, matcher_reason="")
+    ctx = RunContext(now=NOW, kalshi=FakeKalshi(), pinnacle_quotes=[q("pinnacle_football"), q("pinnacle_hockey")])
+    assert [x.sport_key for x in ctx.quotes_for(config.VALUE_ONLY_V2.params)] == ["pinnacle_football"]
+
+
+def test_kelly_suggestion_is_capped():
+    assert abs(ev_data.kelly_fraction(0.55, 2.0) - 0.025) < 1e-9   # quarter of 10%
+    assert ev_data.kelly_fraction(0.80, 2.0) == 0.03           # capped
+    assert ev_data.kelly_fraction(0.40, 2.0) == 0.0            # negative EV -> no bet
 

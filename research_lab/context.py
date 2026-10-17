@@ -17,7 +17,8 @@ class RunContext:
     quotes: list = field(default_factory=list)   # snapshot.FairQuote (main scanner, v1)
     pinnacle_quotes: list = field(default_factory=list)  # FairQuote priced off Pinnacle (v2)
     pinnacle_events: dict = field(default_factory=dict)  # sport_id -> [PinEvent] fetched this round
-    ev_games: list = field(default_factory=list)          # ev_data.Game with every venue's offers
+    ev_games: list = field(default_factory=list)          # ev_data.Game, original sports only (EV_FINDER v1)
+    picks: list = field(default_factory=list)             # ev_data.Pick, every sport/market (EV_FINDER v2)
     markets: dict = field(default_factory=dict)  # ticker -> fresh normalized market
     flows: dict = field(default_factory=dict)    # (ticker, side) -> flow.Flow
     flow_complete: bool = True
@@ -44,4 +45,8 @@ class RunContext:
         return b
 
     def quotes_for(self, params: dict) -> list:
-        return self.pinnacle_quotes if params.get("fair_source") == "pinnacle" else self.quotes
+        if params.get("fair_source") != "pinnacle":
+            return self.quotes
+        # v2 value strategies were frozen on football + basketball; later sports don't enter them
+        return [q for q in self.pinnacle_quotes
+                if q.sport_key in {"pinnacle_football", "pinnacle_basketball"}]

@@ -120,8 +120,24 @@ EV_FINDER = StrategySpec(
     },
 )
 
+EV_FINDER_V2 = StrategySpec(
+    id="EV_FINDER", version=2, label="Today's Plays", started="2026-10-17",
+    description=("OddsJam-style daily plays: every moneyline, spread and total across football, basketball, "
+                 "hockey, baseball, soccer and tennis, at +1% EV or better vs Pinnacle's fair line. "
+                 "Paper-bets the best price for each game; phone alert at +3%."),
+    params={
+        "min_ev": 0.01,
+        "alert_ev": 0.03,
+        "max_ev": 0.20,
+        "max_price_age_min": 120,
+        "markets": "moneyline, spread, total",
+        "sports": "football, basketball, hockey, baseball, soccer, tennis",
+        "stake": "flat ~$10 paper; quarter-Kelly shown as a suggestion",
+    },
+)
+
 RESEARCH_STRATEGIES = [VALUE_ONLY, HYBRID_SHARP_VALUE, STRUCTURAL_ARB, VALUE_ONLY_V2, HYBRID_SHARP_VALUE_V2,
-                       EV_FINDER]
+                       EV_FINDER, EV_FINDER_V2]
 BY_KEY = {s.key: s for s in RESEARCH_STRATEGIES}
 
 SHARP_EXISTING_LABEL = "Existing Sharp (paper)"

@@ -11,6 +11,7 @@ compares four ways of finding Kalshi bets. Nothing here can place a real order.
 | Structural Arb | `STRUCTURAL_ARB_v1` | Provable price inconsistencies between related contracts (strike ladders, NO baskets on mutually exclusive outcomes). |
 | Value Only (Pinnacle) | `VALUE_ONLY_v2` | v1 rules, but fair value is Pinnacle's de-vigged line from PinnWire's free feed. |
 | Hybrid (Pinnacle) | `HYBRID_SHARP_VALUE_v2` | v1 Hybrid rules on Pinnacle prices. |
+| Today's Plays | `EV_FINDER_v2` | Every moneyline, spread and total across football, basketball, hockey, baseball, soccer and tennis at +1% EV or better vs Pinnacle. One ~$10 paper bet per game at the best price; quarter-Kelly size shown as a suggestion; alerts at +3%. |
 | +EV Finder | `EV_FINDER_v1` | OddsJam-style: Pinnacle's fair moneyline vs Kalshi, Polymarket, DraftKings, Bovada, Fliff, Novig, ProphetX. Paper-bets the best price at 3%+ EV, alerts you to bet sportsbooks by hand, flags cross-venue arbitrage. |
 
 ## How a round works (`python -m research_lab.run`)
@@ -35,6 +36,14 @@ with the strict matcher; spreads and totals need Pinnacle to offer the **exact**
 de-vigged three ways (power used, proportional and Shin recorded). One sharp book replaces "3+ books agree", so
 v2 instead rejects any Pinnacle market whose margin is abnormal (overround > 1.10). Team-name fixes for
 Pinnacle spellings live in `research_lab/pinnacle_aliases.csv`.
+
+## Sports rotation (free Pinnacle feed)
+
+PinnWire's free plan is 100 requests/day; one request returns every game in a sport. Each sport refreshes on
+its own schedule (football 45 min, basketball 60, hockey and baseball 120, soccer 180, tennis 360), at most 3
+sports per round, capped at 90 requests/day. Strategies frozen before the extra sports were added (Value v2,
+Hybrid v2, +EV Finder v1) still only see football and basketball, so their records stay comparable. Soccer
+moneylines are de-vigged three ways (home/draw/away).
 
 ## +EV Finder and Promo Converter
 

@@ -65,6 +65,7 @@ class Game:
     fair: dict                 # {"home": p, "away": p} (power de-vig)
     offers: list = field(default_factory=list)
     settle: dict = field(default_factory=dict)   # side -> Kalshi game ticker (official result)
+    three_way: bool = False                      # soccer: a draw is possible (no 2-way arbitrage)
 
     @property
     def key(self) -> str:
@@ -78,19 +79,26 @@ class Game:
 
 
 def games_from_pinnacle(events_by_sport: dict[int, list[PinEvent]], now: datetime, max_overround: float) -> list[Game]:
+    from research_lab.pinnacle import SPORTS, three_way
     out = []
     for sid, evs in events_by_sport.items():
+        sport = SPORTS.get(sid, ("other",))[0]
         for ev in evs:
             if ev.starts is None or ev.starts <= now + timedelta(minutes=5):
                 continue
             ml = ev.full.get("money_line") or {}
-            if ml.get("draw") is not None:
+            if ml.get("draw") is not None:       # soccer: three outcomes, draw kept out of home/away
+                h, a = three_way(ml, "home", max_overround + 0.02), three_way(ml, "away", max_overround + 0.02)
+                if not h or not a:
+                    continue
+                g = Game(ev, sport, {"home": h["power"], "away": a["power"]})
+                g.three_way = True
+                out.append(g)
                 continue
             p = two_way(ml.get("home"), ml.get("away"), max_overround)
             if not p:
                 continue
-            out.append(Game(ev, "football" if sid == 5 else "basketball",
-                            {"home": p["power"], "away": 1.0 - p["power"]}))
+            out.append(Game(ev, sport, {"home": p["power"], "away": 1.0 - p["power"]}))
     return out
 
 
@@ -276,3 +284,93 @@ def board_rows(games: list[Game]) -> list[dict]:
                                      "ev": round(fair * o.decimal - 1, 4), "at": iso(o.at), "url": o.url}
                                     for o in offers]})
     return rows
+
+
+# ------------------------------------------------------------------ plays (every market, both sides)
+
+@dataclass
+class Pick:
+    key: str
+    label: str                 # "Houston ML", "Houston -4.5", "Over 61.5"
+    game: str
+    league: str
+    sport: str
+    market: str                # moneyline | spread | total
+    starts: datetime | None
+    fair: float                # P(this pick wins), Pinnacle de-vigged
+    offers: list
+    settle_ticker: str = ""    # Kalshi market whose official result settles it
+    settle_side: str = "YES"
+    event: str = ""            # one play per game per strategy
+
+
+def _pt(x: float) -> str:
+    return f"{x:+g}".replace("-", "−")
+
+
+def build_picks(games: list[Game], pinnacle_quotes: list, markets: dict, now: datetime, fee_fn) -> list[Pick]:
+    """Moneyline picks from games, plus both sides of every Kalshi spread/total priced off Pinnacle."""
+    picks: list[Pick] = []
+    by_id = {g.key: g for g in games}
+    for g in games:
+        for side in ("home", "away"):
+            picks.append(Pick(f"{g.key}:ml:{side}", f"{g.team(side)} ML", g.title(), g.event.league, g.sport,
+                              "moneyline", g.event.starts, g.fair[side], [o for o in g.offers if o.side == side],
+                              g.settle.get(side, ""), "YES", g.key))
+    aliases = lab_aliases()
+    for q in pinnacle_quotes:
+        if q.market_type not in {"spread", "total"} or q.point is None or q.fair_yes_power is None:
+            continue
+        if q.commence_time is None or q.commence_time <= now + timedelta(minutes=5):
+            continue
+        m = markets.get(q.ticker) or {}
+        g = by_id.get(q.event_id)
+        title = g.title() if g else str(m.get("title") or "").split(":")[0]
+        league = g.event.league if g else q.sport_title
+        sport = g.sport if g else q.sport_key.replace("pinnacle_", "")
+        if q.market_type == "total":
+            yes_label, no_label = f"Over {q.point:g}", f"Under {q.point:g}"
+        else:
+            other = ""
+            if g:
+                side = which_team(q.selection, g.event, aliases)
+                other = g.team("away" if side == "home" else "home") if side else ""
+            yes_label = f"{q.selection} {_pt(q.point)}"
+            no_label = f"{other} {_pt(-q.point)}" if other else f"Not {q.selection} {_pt(q.point)}"
+        for side, label, fair, ask in (("YES", yes_label, q.fair_yes_power, m.get("yes_ask")),
+                                       ("NO", no_label, 1.0 - q.fair_yes_power, m.get("no_ask"))):
+            offers = []
+            if ask is not None and 0.02 < float(ask) < 0.98:
+                a = float(ask)
+                offers.append(Offer("Kalshi", side, 1.0 / (a + fee_fn(a, 10) / 10), f"{a * 100:.0f}¢", now, q.ticker,
+                                    f"https://kalshi.com/markets/{q.ticker.split('-', 1)[0].lower()}"))
+            picks.append(Pick(f"{q.ticker}:{side}", label, title, league, sport, q.market_type, q.commence_time,
+                              fair, offers, q.ticker, side, q.event_id or q.ticker))
+    return picks
+
+
+def kelly_fraction(fair: float, decimal: float, fraction: float = 0.25, cap: float = 0.03) -> float:
+    """Suggested share of bankroll: quarter Kelly, capped at 3%."""
+    b = decimal - 1.0
+    if b <= 0:
+        return 0.0
+    k = (fair * decimal - 1.0) / b
+    return max(0.0, min(cap, k * fraction))
+
+
+def pick_rows(picks: list[Pick]) -> list[dict]:
+    rows = []
+    for pk in picks:
+        offers = sorted(pk.offers, key=lambda o: -o.decimal)
+        if not offers:
+            continue
+        best = offers[0]
+        rows.append({"label": pk.label, "team": pk.label, "game": pk.game, "sport": pk.league, "kind": pk.sport,
+                     "market": pk.market, "starts": iso(pk.starts), "fair": round(pk.fair, 4),
+                     "fair_odds": american(1 / pk.fair) if 0 < pk.fair < 1 else "—",
+                     "kalshi_ticker": pk.settle_ticker, "kelly": round(kelly_fraction(pk.fair, best.decimal), 4),
+                     "prices": [{"venue": o.venue, "shown": o.shown, "decimal": round(o.decimal, 4),
+                                 "ev": round(pk.fair * o.decimal - 1, 4), "at": iso(o.at), "url": o.url}
+                                for o in offers]})
+    return rows
+
