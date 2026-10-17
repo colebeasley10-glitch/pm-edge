@@ -186,6 +186,47 @@ def _record_fill(r: dict, order: dict, client) -> None:
               "cost": round(cost, 2), "fee": round(fee, 2)})
 
 
+UNCONFIRMED = "Unconfirmed:"
+UNCONFIRMED_WINDOW = timedelta(hours=48)
+
+
+def _is_rejection(exc: Exception) -> bool:
+    """Kalshi answered and said no (has an HTTP status). Anything else is an unknown outcome."""
+    return getattr(exc, "status_code", None) not in (None, 0)
+
+
+def _confirm_unknown(r: dict, client, exc: Exception | None = None) -> bool:
+    """Ask Kalshi whether an order with this client id exists; record it if so."""
+    try:
+        found = client.find_order_by_client_id(r["client_order_id"])
+    except Exception:
+        found = None
+    if found:
+        order = found.get("order", found) if isinstance(found, dict) else {}
+        _record_fill(r, order, client)
+        r["note"] = ("Confirmed on Kalshi after an unclear reply. " + str(r.get("note") or "")).strip()
+        return True
+    if exc is not None:
+        r.update({"status": "error", "pl": 0.0,
+                  "note": f"{UNCONFIRMED} {type(exc).__name__}: {str(exc)[:140]}"})
+    return False
+
+
+def reconcile_unconfirmed(rows: list[dict], client, *, now: datetime | None = None) -> int:
+    """Re-check recent orders whose outcome was unclear (timeout). Returns how many turned up."""
+    now = now or book.now_utc()
+    found = 0
+    for r in rows:
+        if r.get("status") != "error" or not str(r.get("note") or "").startswith(UNCONFIRMED):
+            continue
+        placed = book.parse_dt(r.get("placed_at"))
+        if placed is None or now - placed > UNCONFIRMED_WINDOW:
+            continue
+        if _confirm_unknown(r, client):
+            found += 1
+    return found
+
+
 def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
           rows: list[dict] | None = None) -> dict:
     """Place real orders for the new Sharp paper picks. Returns a summary; never raises on one bad order."""
@@ -255,7 +296,12 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
             _record_fill(r, order, client)
         except Exception as exc:
             r.update({"status": "error", "note": f"{type(exc).__name__}: {str(exc)[:160]}", "pl": 0.0})
-            skip("order_error")
+            if not _is_rejection(exc):
+                # A timeout or dropped connection doesn't mean the order failed: Kalshi may
+                # have taken it. Look before calling it an error.
+                _confirm_unknown(r, client, exc)
+            if r["status"] == "error":
+                skip("order_error")
         rows.append(r)
         seen.add(p["trade_id"])
         if r["status"] != "error":

@@ -380,3 +380,69 @@ def test_location_blocked_order_is_final_and_counted_as_blocked():
         assert live_sharp.daily(rows)[0]["blocked"] == 1
     finally:
         os.environ.pop("LIVE_SHARP_MIN_TRADES", None)
+
+
+class TimeoutButAcceptedClient(FakeClient):
+    """Kalshi takes the order, but the reply never arrives."""
+    def create_buy_order(self, **kw):
+        super().create_buy_order(**kw)
+        raise TimeoutError("read timed out")
+
+
+class TimeoutNotAcceptedClient(FakeClient):
+    def create_buy_order(self, **kw):
+        raise TimeoutError("read timed out")
+
+
+class RejectedError(Exception):
+    status_code = 400
+
+
+class RejectingClient(FakeClient):
+    def create_buy_order(self, **kw):
+        raise RejectedError("insufficient balance")
+
+
+def test_timeout_on_accepted_order_is_recorded_as_a_real_bet():
+    os.environ["LIVE_SHARP_MIN_TRADES"] = "0"
+    try:
+        rows = []
+        c = TimeoutButAcceptedClient()
+        live_sharp.place([paper(90, 0.40)], c, now=NOW, rows=rows)
+        assert rows[0]["status"] == "open" and rows[0]["filled"] > 0
+        assert rows[0]["note"].startswith("Confirmed on Kalshi")
+        assert c.calls == 1  # never sent twice
+    finally:
+        os.environ.pop("LIVE_SHARP_MIN_TRADES", None)
+
+
+def test_timeout_without_order_is_unconfirmed_then_reconciled_later():
+    os.environ["LIVE_SHARP_MIN_TRADES"] = "0"
+    try:
+        rows = []
+        live_sharp.place([paper(91, 0.40)], TimeoutNotAcceptedClient(), now=NOW, rows=rows)
+        r = rows[0]
+        assert r["status"] == "error" and r["note"].startswith(live_sharp.UNCONFIRMED)
+        # nothing on Kalshi yet: stays unconfirmed, nothing is re-sent
+        c = FakeClient()
+        assert live_sharp.reconcile_unconfirmed(rows, c, now=NOW + timedelta(minutes=30)) == 0
+        assert c.calls == 0
+        # the order shows up on Kalshi later: picked up as a real bet
+        c.orders.append({"order_id": "late", "client_order_id": r["client_order_id"], "price": 0.40,
+                         "fill_count_fp": "2"})
+        c.fills.append({"order_id": "late", "count_fp": "2", "yes_price_dollars": "0.40"})
+        assert live_sharp.reconcile_unconfirmed(rows, c, now=NOW + timedelta(hours=1)) == 1
+        assert r["status"] == "open" and c.calls == 0
+    finally:
+        os.environ.pop("LIVE_SHARP_MIN_TRADES", None)
+
+
+def test_clear_rejection_is_an_error_without_lookup():
+    os.environ["LIVE_SHARP_MIN_TRADES"] = "0"
+    try:
+        rows = []
+        live_sharp.place([paper(92, 0.40)], RejectingClient(), now=NOW, rows=rows)
+        assert rows[0]["status"] == "error"
+        assert not rows[0]["note"].startswith(live_sharp.UNCONFIRMED)
+    finally:
+        os.environ.pop("LIVE_SHARP_MIN_TRADES", None)

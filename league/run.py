@@ -120,6 +120,13 @@ def run_live_sharp(new_sharp_rows: list[dict], kalshi, now: datetime, client=Non
             finished += live_sharp.sync_sells(rows, client, now=now)
         except Exception as exc:
             out["sell_sync_error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
+        # orders whose reply timed out: see whether Kalshi actually took them
+        try:
+            n = live_sharp.reconcile_unconfirmed(rows, client, now=now)
+            if n:
+                out["unconfirmed_found"] = n
+        except Exception as exc:
+            out["reconcile_error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
     try:
         finished += live_sharp.settle(rows, kalshi.markets, now=now) if rows else []
     except Exception as exc:
