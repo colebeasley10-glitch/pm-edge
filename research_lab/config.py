@@ -136,8 +136,21 @@ EV_FINDER_V2 = StrategySpec(
     },
 )
 
+EV_FINDER_V3 = StrategySpec(
+    id="EV_FINDER", version=3, label="Today's Plays (-200 to +150)", started="2026-10-17",
+    description=("Today's Plays, limited to prices between -200 and +150 so no bet risks a lot to win a "
+                 "little or depends on a long shot. +1% EV or better vs Pinnacle; alerts at +3%."),
+    params={
+        **EV_FINDER_V2.params,
+        "min_decimal": 1.5,          # -200
+        "max_decimal": 2.5,          # +150
+    },
+)
+
 RESEARCH_STRATEGIES = [VALUE_ONLY, HYBRID_SHARP_VALUE, STRUCTURAL_ARB, VALUE_ONLY_V2, HYBRID_SHARP_VALUE_V2,
-                       EV_FINDER, EV_FINDER_V2]
+                       EV_FINDER, EV_FINDER_V2, EV_FINDER_V3]
+# Odds band for the plays you see and log (decimal 1.5 = -200, 2.5 = +150)
+PLAY_MIN_DECIMAL, PLAY_MAX_DECIMAL = 1.5, 2.5
 BY_KEY = {s.key: s for s in RESEARCH_STRATEGIES}
 
 SHARP_EXISTING_LABEL = "Existing Sharp (paper)"

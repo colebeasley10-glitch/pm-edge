@@ -15,7 +15,7 @@ from collections import Counter
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from research_lab import config, ev_data, metrics, pinnacle, report
+from research_lab import config, ev_data, metrics, my_bets, pinnacle, report
 from research_lab.fills import taker_fee
 from research_lab.strategies.ev_finder import push_alerts, run_ev_finder, run_plays
 from research_lab.context import RunContext
@@ -35,6 +35,7 @@ RUNNERS = {
     config.HYBRID_SHARP_VALUE_V2.key: run_hybrid,
     config.EV_FINDER.key: lambda spec, store, ctx: run_ev(spec, store, ctx),
     config.EV_FINDER_V2.key: lambda spec, store, ctx: run_ev_plays(spec, store, ctx),
+    config.EV_FINDER_V3.key: lambda spec, store, ctx: run_ev_plays(spec, store, ctx),
 }
 
 
@@ -122,7 +123,9 @@ def run_ev(spec, store, ctx) -> dict:
 
 def run_ev_plays(spec, store, ctx) -> dict:
     res = run_plays(spec, store, ctx)
-    res["pushed"] = push_alerts(res.pop("alerts", []), store, ctx.now)
+    alerts = res.pop("alerts", [])
+    # only the newest Today's Plays version sends phone alerts (no duplicates across versions)
+    res["pushed"] = push_alerts(alerts, store, ctx.now) if spec.key == config.EV_FINDER_V3.key else 0
     return res
 
 
@@ -146,6 +149,7 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
         tickers = [q.ticker for q in quotes]
         for st in stores.values():
             tickers += tickers_to_check(st)
+        tickers += my_bets.open_tickers(base)
         try:
             markets = kalshi.markets(tickers) if tickers else {}
         except PublicDataError:
@@ -153,6 +157,10 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
         # 1. settlement first, so freed bankroll is available this round
         for key, st in stores.items():
             out["strategies"].setdefault(key, {})["settle"] = settle_store(st, markets, now)
+        try:
+            out["my_bets"] = my_bets.settle_files(markets, now, base)   # your own logged bets
+        except Exception as exc:
+            out["my_bets"] = {"error": f"{type(exc).__name__}: {str(exc)[:120]}"}
         # 2. shared data
         ctx = RunContext(now=now, kalshi=kalshi, quotes=quotes, markets=markets)
         if not quotes:

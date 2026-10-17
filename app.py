@@ -44,7 +44,7 @@ def _seed_env_from_secrets() -> None:
         "KALSHI_API_KEY_ID", "KALSHI_PRIVATE_KEY",
         "KALSHI_WRITE_API_KEY_ID", "KALSHI_WRITE_PRIVATE_KEY",
         "PM_EDGE_KALSHI_READONLY_BASE_URL", "PM_EDGE_KALSHI_PUBLIC_BASE_URL",
-        "PM_EDGE_STATS_START",
+        "PM_EDGE_STATS_START", "GITHUB_TOKEN",
     )
     for name in names:
         try:
@@ -254,6 +254,10 @@ st.markdown(
     .stLinkButton a[kind="primary"], .stLinkButton a[data-testid="stBaseLinkButton-primary"] {
       background:var(--gold) !important; color:#14110A !important; border:0 !important; }
     .stButton button:hover { border-color:var(--gold) !important; }
+    [data-testid="stBaseButton-primaryFormSubmit"], [data-testid="stBaseButton-primary"] {
+      background:var(--gold) !important; border:0 !important; border-radius:12px !important; }
+    [data-testid="stBaseButton-primaryFormSubmit"] p, [data-testid="stBaseButton-primary"] p {
+      color:#14110A !important; font-weight:800 !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -781,6 +785,8 @@ with tab_home:
             continue
         _h_opps.append((_best.get("ev", 0), _r, _best))
     _h_opps.sort(key=lambda x: -x[0])
+    # only prices between -200 and +150 (decimal 1.5-2.5): no laying big juice, no long shots
+    _h_opps = [o for o in _h_opps if 1.5 - 1e-9 <= (_num(o[2].get("decimal")) or 0) <= 2.5 + 1e-9]
     _h_plays = [o for o in _h_opps if o[0] >= 0.01]
     st.markdown(f"<div class='section'><span>Today's plays"
                 f"{(' <span class=n>' + str(len(_h_plays)) + '</span>') if _h_plays else ''}</span>"
@@ -814,10 +820,86 @@ with tab_home:
                 f"<div class='cmp-note'>Green = best price. EV compares each price with Pinnacle's fair line. "
                 f"Bet size is a quarter-Kelly suggestion (max 3%). Sportsbook prices can be a few hours old.</div></div></details>")
         st.markdown("<div class='hm-opps'>" + "".join(_items) + "</div>", unsafe_allow_html=True)
-        st.caption("Plays = +1% EV or better vs Pinnacle's fair line, across moneylines, spreads and totals. "
-                   "Tap one to compare prices. Phone alert at +3%.")
+        st.caption("Plays = +1% EV or better vs Pinnacle's fair line, priced between −200 and +150, across "
+                   "moneylines, spreads and totals. Tap one to compare prices. Phone alert at +3%.")
     else:
         quiet("No games priced yet", "The board fills in when the Lab pulls Pinnacle prices (every ~30 minutes).")
+
+    # ---- log a bet you placed, and your record ----
+    import sys as _bsys
+    for _m in [k for k in _bsys.modules if k == "research_lab" or k.startswith("research_lab.") or k == "bet_log"]:
+        del _bsys.modules[_m]
+    import bet_log as _bl
+    from research_lab import my_bets as _mb
+    st.markdown("<div class='section'><span>Log a bet</span></div>", unsafe_allow_html=True)
+    _choices = {f"{_r.get('label') or _r['team']} · {_b['venue']} {_price_label(_b)} · {_ev * 100:+.1f}%": (_ev, _r, _b)
+                for _ev, _r, _b in (_h_plays or _h_opps)[:20]}
+    if not _choices:
+        st.caption("Plays you can log show up here.")
+    else:
+        _pick = st.selectbox("Play", list(_choices), label_visibility="collapsed")
+        _ev0, _r0, _b0 = _choices[_pick]
+        _am0 = _mb.decimal_to_american(float(_b0.get("decimal") or 2.0))
+        _venues = list(dict.fromkeys([p["venue"] for p in sorted(_r0["prices"], key=lambda p: -p.get("decimal", 0))]
+                                     + ["DraftKings", "Bovada", "Fliff", "Novig", "ProphetX", "Kalshi", "Polymarket",
+                                        "Rebet", "Other"]))
+        with st.form(f"logbet_{abs(hash(_pick)) % 10**8}", clear_on_submit=False):
+            _c1, _c2 = st.columns(2)
+            _amt = _c1.number_input("Amount bet ($)", min_value=0.5, value=10.0, step=5.0)
+            _odds_txt = _c2.text_input("Odds you got", value=_am0, help="American odds, e.g. -110 or +135")
+            _venue = st.selectbox("Where you bet it", _venues)
+            _go = st.form_submit_button("Log bet", type="primary", use_container_width=True)
+        if _go:
+            _dec = _mb.american_to_decimal(_odds_txt)
+            if _dec is None:
+                st.error("Enter odds like -110 or +135.")
+            elif not _bl.token():
+                st.error("Logging needs a GitHub key in the app's secrets (GITHUB_TOKEN). See the setup steps in chat.")
+            else:
+                _fair = float(_r0.get("fair") or 0)
+                try:
+                    _bl.append_bet({"label": _r0.get("label") or _r0["team"], "game": _r0.get("game", ""),
+                                    "league": _r0.get("sport", ""), "market": _r0.get("market", "moneyline"),
+                                    "venue": _venue, "odds": _odds_txt.strip().replace("−", "-"),
+                                    "decimal": round(_dec, 4), "stake": round(float(_amt), 2), "fair": _fair,
+                                    "ev_at_log": round(_fair * _dec - 1, 4) if _fair else "",
+                                    "settle_ticker": _r0.get("kalshi_ticker", ""), "settle_side": _r0.get("settle_side", "YES"),
+                                    "starts": _r0.get("starts", "")})
+                    st.success(f"Logged: ${float(_amt):,.2f} on {_r0.get('label') or _r0['team']} at {_odds_txt} "
+                               f"({_venue}). It settles automatically from the official result.")
+                    st.cache_data.clear()
+                except Exception as exc:
+                    st.error(f"Couldn't save the bet: {exc}")
+
+    @st.cache_data(ttl=20, show_spinner=False)
+    def _my_bets_rows(_tok_set: bool):
+        if _tok_set:
+            try:
+                return _bl.read_log()[0]
+            except Exception:
+                pass
+        return _mb.load_log()
+    _mrows = _my_bets_rows(bool(_bl.token()))
+    _mres = _mb.load_results()
+    if _mrows:
+        _ms = _mb.summary(_mrows, _mres)
+        st.markdown(
+            f"<div class='section'><span>Your bets</span></div>"
+            f"<div class='hm-tiles'><div class='hm-tile'><div class='v {tone(_ms['pl'])}'>{money(_ms['pl'], signed=True)}</div>"
+            f"<div class='l'>{_ms['won']}–{_ms['lost']} · ROI {pct(_ms['roi'], signed=True) if _ms['roi'] is not None else '—'}</div></div>"
+            f"<div class='hm-tile'><div class='v'>{_ms['open']}</div><div class='l'>open · {money(_ms['open_stake'])} at risk</div></div></div>",
+            unsafe_allow_html=True)
+        _lst = []
+        for _x in sorted(_mrows, key=lambda r: r.get("logged_at", ""), reverse=True)[:12]:
+            _res = _mres.get(_x.get("bet_id") or "")
+            _st = (_res or {}).get("status", "open")
+            _plv = (_res or {}).get("pl")
+            _right = (money(float(_plv), signed=True) if _plv is not None else "open")
+            _cls = tone(float(_plv)) if _plv is not None else ""
+            _lst.append(f"<div class='r'><div><div class='t'>{esc(_x.get('label'))} {esc(_x.get('odds'))}</div>"
+                        f"<div class='s'>${float(_x.get('stake') or 0):,.2f} at {esc(_x.get('venue'))} · "
+                        f"{esc(_x.get('game'))}</div></div><div class='v {_cls}'>{_right}</div></div>")
+        st.markdown("<div class='row-list'>" + "".join(_lst) + "</div>", unsafe_allow_html=True)
     with st.expander("🧮 EV calculator", expanded=False):
         _mode = st.radio("Fair price from", ["I know the fair odds", "Both sides of a sharp line"], horizontal=True,
                          label_visibility="collapsed")
@@ -1432,7 +1514,7 @@ with tab_lab:
     _pages = {"VALUE_ONLY_v1": "Research_Lab_Value_Only", "HYBRID_SHARP_VALUE_v1": "Research_Lab_Hybrid",
               "STRUCTURAL_ARB_v1": "Research_Lab_Structural_Arb", "VALUE_ONLY_v2": "Research_Lab_Value_Pinnacle",
               "HYBRID_SHARP_VALUE_v2": "Research_Lab_Hybrid_Pinnacle", "EV_FINDER_v1": "Research_Lab_EV_Finder",
-              "EV_FINDER_v2": "Research_Lab_Todays_Plays"}
+              "EV_FINDER_v2": "Research_Lab_Todays_Plays", "EV_FINDER_v3": "Research_Lab_Todays_Plays_Band"}
     _cards = []
     try:
         _sh = _lmet.sharp_summary()
@@ -1447,7 +1529,8 @@ with tab_lab:
         _short = {"VALUE_ONLY_v1": "Sportsbook consensus vs Kalshi", "HYBRID_SHARP_VALUE_v1": "Value + matching Kalshi trade flow",
                   "STRUCTURAL_ARB_v1": "Locked-profit price gaps on Kalshi", "VALUE_ONLY_v2": "Pinnacle's fair line vs Kalshi",
                   "HYBRID_SHARP_VALUE_v2": "Pinnacle value + trade flow", "EV_FINDER_v1": "Best price on any of your books",
-                  "EV_FINDER_v2": "Every +1% play, all sports and markets"}
+                  "EV_FINDER_v2": "Every +1% play, any odds",
+                  "EV_FINDER_v3": "+1% plays priced -200 to +150 (what you bet)"}
         _cards.append((_pages.get(_spec.key, "Research_Lab_Compare"), _spec.label, _short.get(_spec.key, ""), _sm, _sm["bankroll"]))
     _html = []
     for _pg, _name, _desc, _sm, _bank in _cards:

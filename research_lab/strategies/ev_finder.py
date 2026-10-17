@@ -144,6 +144,8 @@ def run_plays(spec: StrategySpec, store: Store, ctx) -> dict:
     for pk in ctx.picks:
         s["scanned"] += 1
         fresh = [o for o in pk.offers if o.at is not None and ctx.now - o.at <= timedelta(minutes=p["max_price_age_min"])]
+        if "min_decimal" in p:   # v3: only prices between -200 and +150
+            fresh = [o for o in fresh if p["min_decimal"] - 1e-9 <= o.decimal <= p["max_decimal"] + 1e-9]
         if not fresh:
             continue
         best = max(fresh, key=lambda o: o.decimal)

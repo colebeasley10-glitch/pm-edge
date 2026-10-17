@@ -784,3 +784,87 @@ def test_kelly_suggestion_is_capped():
     assert ev_data.kelly_fraction(0.80, 2.0) == 0.03           # capped
     assert ev_data.kelly_fraction(0.40, 2.0) == 0.0            # negative EV -> no bet
 
+
+
+# ---------------------------------------------------------------- your logged bets + odds band
+
+from research_lab import my_bets  # noqa: E402
+
+
+def test_american_odds_conversion():
+    assert abs(my_bets.american_to_decimal("-110") - 1.9090909) < 1e-6
+    assert my_bets.american_to_decimal("+150") == 2.5 and my_bets.american_to_decimal("150") == 2.5
+    assert my_bets.american_to_decimal("−200") == 1.5          # unicode minus works
+    assert my_bets.american_to_decimal("50") is None and my_bets.american_to_decimal("abc") is None
+    assert my_bets.decimal_to_american(2.5) == "+150" and my_bets.decimal_to_american(1.5) == "-200"
+
+
+def test_logged_bets_settle_from_kalshi(tmp_path):
+    rows = [{"bet_id": "a", "label": "Houston ML", "stake": "20", "decimal": "1.8", "settle_ticker": "K1", "settle_side": "YES"},
+            {"bet_id": "b", "label": "Under 61", "stake": "10", "decimal": "2.0", "settle_ticker": "K2", "settle_side": "NO"},
+            {"bet_id": "c", "label": "Open one", "stake": "5", "decimal": "2.0", "settle_ticker": "K3", "settle_side": "YES"},
+            {"bet_id": "d", "label": "Voided", "stake": "7", "decimal": "2.0", "settle_ticker": "K4", "settle_side": "YES"}]
+    (tmp_path / my_bets.LOG_NAME).write_text(my_bets.render_log(rows))
+    mk = {"K1": {"result": "yes"}, "K2": {"result": "yes"}, "K3": {"result": "", "status": "active"},
+          "K4": {"result": "", "status": "voided"}}
+    out = my_bets.settle_files(mk, NOW, tmp_path)
+    res = my_bets.load_results(tmp_path)
+    assert out["settled_now"] == 3 and "c" not in res
+    assert res["a"]["status"] == "won" and res["a"]["pl"] == 16.0
+    assert res["b"]["status"] == "lost" and res["b"]["pl"] == -10.0     # NO side lost when Kalshi says yes
+    assert res["d"]["status"] == "void" and res["d"]["pl"] == 0.0
+    s = my_bets.summary(my_bets.load_log(tmp_path), res)
+    assert (s["won"], s["lost"], s["pl"], s["open"]) == (1, 1, 6.0, 1)
+    assert my_bets.settle_files(mk, NOW, tmp_path)["settled_now"] == 0   # never settles twice
+    assert my_bets.open_tickers(tmp_path) == ["K3"]
+
+
+def test_v3_only_takes_prices_between_minus200_and_plus150(tmp_path):
+    g = _games()[0]
+    g.settle = {"home": "K-HOU", "away": "K-OKST"}
+    cases = ((3.20, 0), (2.40, 1), (1.40, 0))           # +220 out, +140 in, -250 out
+    for dec, should in cases:
+        g.fair = {"home": 1.05 / dec, "away": 1 - 1.05 / dec}   # +5% EV at that price
+        g.offers = [ev_data.Offer("Kalshi", "home", dec, "x", NOW)]
+        picks = ev_data.build_picks([g], [], {}, NOW, taker_fee)
+        st = Store(config.EV_FINDER_V3.key, tmp_path / f"d{dec}")
+        assert run_plays(config.EV_FINDER_V3, st, RunContext(now=NOW, kalshi=FakeKalshi(), picks=picks))["filled"] == should
+
+
+def test_bet_log_appends_through_github_api():
+    import base64
+    import bet_log
+
+    class R:
+        def __init__(self, code, data=None):
+            self.status_code, self._d = code, data or {}
+
+        def json(self):
+            return self._d
+
+    class S:
+        def __init__(self):
+            self.content, self.sha, self.puts = "", None, 0
+
+        def get(self, url, **kw):
+            if self.sha is None:
+                return R(404)
+            return R(200, {"content": base64.b64encode(self.content.encode()).decode(), "sha": self.sha})
+
+        def put(self, url, json=None, **kw):
+            self.puts += 1
+            if self.puts == 1 and self.sha is None:      # first write creates the file
+                pass
+            self.content = base64.b64decode(json["content"]).decode()
+            self.sha = f"sha{self.puts}"
+            return R(201)
+    import os
+    os.environ["GITHUB_TOKEN"] = "t"
+    try:
+        s = S()
+        bet_log.append_bet({"label": "A", "odds": "-110", "stake": 10}, session=s)
+        bet_log.append_bet({"label": "B", "odds": "+120", "stake": 5}, session=s)
+        rows = my_bets.parse_log(s.content)
+        assert [r["label"] for r in rows] == ["A", "B"] and all(r["bet_id"] for r in rows)
+    finally:
+        os.environ.pop("GITHUB_TOKEN", None)

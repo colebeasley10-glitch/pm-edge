@@ -368,7 +368,8 @@ def pick_rows(picks: list[Pick]) -> list[dict]:
         rows.append({"label": pk.label, "team": pk.label, "game": pk.game, "sport": pk.league, "kind": pk.sport,
                      "market": pk.market, "starts": iso(pk.starts), "fair": round(pk.fair, 4),
                      "fair_odds": american(1 / pk.fair) if 0 < pk.fair < 1 else "—",
-                     "kalshi_ticker": pk.settle_ticker, "kelly": round(kelly_fraction(pk.fair, best.decimal), 4),
+                     "kalshi_ticker": pk.settle_ticker, "settle_side": pk.settle_side,
+                     "kelly": round(kelly_fraction(pk.fair, best.decimal), 4),
                      "prices": [{"venue": o.venue, "shown": o.shown, "decimal": round(o.decimal, 4),
                                  "ev": round(pk.fair * o.decimal - 1, 4), "at": iso(o.at), "url": o.url}
                                 for o in offers]})
