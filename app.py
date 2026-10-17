@@ -629,8 +629,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-tab_live, tab_league, tab_picks, tab_bets, tab_results, tab_system, tab_lab = st.tabs(
-    ["Live $1", "Paper", f"Alerts {len(picks)}" if len(picks) else "Alerts", "My bets", "Results", "System", "Lab 🧪"]
+tab_live, tab_league, tab_lab, tab_picks, tab_bets, tab_results, tab_system = st.tabs(
+    ["Live $1", "Paper", "Lab 🧪", f"Alerts {len(picks)}" if len(picks) else "Alerts", "My bets", "Results", "System"]
 )
 
 # ---------------------------------------------------------- live $1 sharp --
