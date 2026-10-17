@@ -134,21 +134,24 @@ st.markdown(
                         text-align:left; margin-top:.9rem; padding-top:.85rem; border-top:1px solid var(--line); }
       .pe-hero .big { font-size:2.6rem; }
     }
-    /* tabs -> bottom navigation bar (covers both Streamlit tab DOMs: baseweb and react-aria) */
-    .stTabs [role="tablist"] { position:fixed !important; left:0; right:0; bottom:0; z-index:999; gap:.15rem !important;
-                               margin:0 !important; padding:.45rem .5rem calc(.55rem + env(safe-area-inset-bottom)) !important;
-                               background:rgba(11,13,16,.97); border-top:1px solid var(--line) !important; overflow-x:auto;
-                               justify-content:safe center; scrollbar-width:none; box-shadow:none !important;
+    /* tabs -> floating bottom navigation: all tabs visible in two rows, lifted above Streamlit
+       Cloud's "Manage app" button (bottom-right, outside the app, can't be hidden) */
+    .stTabs [role="tablist"] { position:fixed !important; left:.6rem; right:.6rem; bottom:calc(3.6rem + env(safe-area-inset-bottom));
+                               z-index:999; margin:0 auto !important; max-width:640px; padding:.35rem !important;
+                               display:grid !important; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.25rem !important;
+                               background:#15181D; border:1px solid var(--line) !important; border-radius:18px;
+                               box-shadow:0 8px 28px rgba(0,0,0,.55) !important; overflow:visible;
                                backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
-    .stTabs [role="tablist"]::-webkit-scrollbar { display:none; }
-    .stTabs [role="tab"] { height:2.6rem !important; padding:0 .8rem !important; border-radius:12px !important; border:0 !important;
-                           background:transparent !important; white-space:nowrap; flex:none; display:flex; align-items:center; }
-    .stTabs [role="tab"] p { font-weight:600 !important; font-size:.8rem !important; color:var(--muted) !important; }
-    .stTabs [role="tab"][aria-selected="true"] { background:rgba(245,184,0,.12) !important; }
+    .stTabs [role="tab"] { height:2.5rem !important; padding:0 .3rem !important; border-radius:12px !important; border:0 !important;
+                           background:transparent !important; white-space:nowrap; min-width:0; display:flex; align-items:center;
+                           justify-content:center; }
+    .stTabs [role="tab"] p { font-weight:600 !important; font-size:.82rem !important; color:var(--muted) !important;
+                             overflow:hidden; text-overflow:ellipsis; }
+    .stTabs [role="tab"][aria-selected="true"] { background:rgba(245,184,0,.14) !important; }
     .stTabs [role="tab"][aria-selected="true"] p { color:var(--gold) !important; font-weight:800 !important; }
     .stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"], .stTabs .react-aria-SelectionIndicator { display:none !important; }
     .stTabs [role="tablist"] + div, .stTabs [data-baseweb="tab-border"] { border:0 !important; }
-    .block-container { padding-bottom:6.5rem !important; }
+    .block-container { padding-bottom:12rem !important; }
     [data-testid="stTabsScrollRight"], [data-testid="stTabsScrollLeft"] { display:none !important; }
     /* home screen */
     .hm-tiles { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:.6rem; margin:.2rem 0 .4rem; }
