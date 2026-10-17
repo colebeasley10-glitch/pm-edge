@@ -757,20 +757,17 @@ with tab_home:
                 f"<span class='cmp-p'>{esc(p['shown'])}</span>"
                 f"<span class='cmp-e {'ev-pos' if p.get('ev', 0) > 0 else 'ev-neg'}'>{p.get('ev', 0) * 100:+.1f}%</span></a>"
                 for i, p in enumerate(_ps))
-            _win = 10.0 * (_b.get("decimal", 1.0) - 1.0)
-            _btn = (f"<a class='cmp-bet' href='{esc(_b.get('url') or '#')}' target='_blank' rel='noopener'>"
-                    f"<b>Bet on {esc(_b['venue'])}</b><span>$10 wins ${_win:,.2f} at {esc(_b['shown'])}</span></a>")
             _items.append(
                 f"<details class='hm-opp-d'><summary class='hm-opp'><div><div class='t'>{esc(_r['team'])} ML</div>"
                 f"<div class='s'>{esc(_r.get('sport') or '')} · {esc(starts(_r.get('starts')))}</div>"
                 f"<div class='ev {_cls}'>{_ev * 100:+.1f}% EV · {esc(_b['venue'])}</div></div>"
                 f"<div class='px'>{esc(_b['shown'])}<small>fair {esc(_r['fair_odds'])}</small></div></summary>"
                 f"<div class='cmp'><div class='cmp-h'><span>{len(_ps)} place{'s' if len(_ps) != 1 else ''} to bet it</span>"
-                f"<span>Pinnacle fair {esc(_r['fair_odds'])}</span></div>{_rows}{_btn}"
-                f"<div class='cmp-note'>Kalshi and Polymarket open the game. Sportsbooks open the book; find the bet there. "
-                f"Check the price before you place it.</div></div></details>")
+                f"<span>Pinnacle fair {esc(_r['fair_odds'])}</span></div>{_rows}"
+                f"<div class='cmp-note'>Green = best price. EV compares each price with Pinnacle's fair line. "
+                f"Sportsbook prices can be a few hours old.</div></div></details>")
         st.markdown("<div class='hm-opps'>" + "".join(_items) + "</div>", unsafe_allow_html=True)
-        st.caption("Tap a pick to compare every place to bet it. You get a phone alert at +3% EV.")
+        st.caption("Tap a pick to compare its price at every book. You get a phone alert at +3% EV.")
     else:
         quiet("No games priced yet", "The board fills in when the Lab pulls Pinnacle prices (every ~30 minutes).")
     st.page_link("pages/Research_Lab_EV_Finder.py", label="See all prices", icon="🎯")
