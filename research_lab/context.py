@@ -16,6 +16,8 @@ class RunContext:
     kalshi: object                            # research_lab.public_data.PublicKalshi (or a test fake)
     quotes: list = field(default_factory=list)   # snapshot.FairQuote (main scanner, v1)
     pinnacle_quotes: list = field(default_factory=list)  # FairQuote priced off Pinnacle (v2)
+    pinnacle_events: dict = field(default_factory=dict)  # sport_id -> [PinEvent] fetched this round
+    ev_games: list = field(default_factory=list)          # ev_data.Game with every venue's offers
     markets: dict = field(default_factory=dict)  # ticker -> fresh normalized market
     flows: dict = field(default_factory=dict)    # (ticker, side) -> flow.Flow
     flow_complete: bool = True

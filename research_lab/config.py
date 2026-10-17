@@ -104,7 +104,24 @@ HYBRID_SHARP_VALUE_V2 = StrategySpec(
     params={**HYBRID_SHARP_VALUE.params, **_PINNACLE},
 )
 
-RESEARCH_STRATEGIES = [VALUE_ONLY, HYBRID_SHARP_VALUE, STRUCTURAL_ARB, VALUE_ONLY_V2, HYBRID_SHARP_VALUE_V2]
+EV_FINDER = StrategySpec(
+    id="EV_FINDER", version=1, label="+EV Finder", started="2026-10-17",
+    description=("OddsJam-style: compares Kalshi, Polymarket, DraftKings, Bovada, Fliff, Novig and ProphetX "
+                 "moneylines to Pinnacle's fair line and paper-bets the best price when EV is 3%+. "
+                 "Alerts you to place sportsbook bets by hand."),
+    params={
+        "min_ev": 0.03,              # fair probability x decimal odds - 1
+        "max_ev": 0.20,              # bigger is almost always stale or mismatched data
+        "min_arb": 0.005,            # arbitrage must lock at least 0.5%
+        "max_price_age_min": 120,    # venue price no older than this
+        "max_overround": 1.10,       # Pinnacle's own margin must be normal
+        "polymarket_fee_rate": 0.01, # conservative allowance for Polymarket taker costs
+        "markets": "moneyline",
+    },
+)
+
+RESEARCH_STRATEGIES = [VALUE_ONLY, HYBRID_SHARP_VALUE, STRUCTURAL_ARB, VALUE_ONLY_V2, HYBRID_SHARP_VALUE_V2,
+                       EV_FINDER]
 BY_KEY = {s.key: s for s in RESEARCH_STRATEGIES}
 
 SHARP_EXISTING_LABEL = "Existing Sharp (paper)"

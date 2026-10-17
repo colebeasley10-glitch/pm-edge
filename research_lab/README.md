@@ -11,6 +11,7 @@ compares four ways of finding Kalshi bets. Nothing here can place a real order.
 | Structural Arb | `STRUCTURAL_ARB_v1` | Provable price inconsistencies between related contracts (strike ladders, NO baskets on mutually exclusive outcomes). |
 | Value Only (Pinnacle) | `VALUE_ONLY_v2` | v1 rules, but fair value is Pinnacle's de-vigged line from PinnWire's free feed. |
 | Hybrid (Pinnacle) | `HYBRID_SHARP_VALUE_v2` | v1 Hybrid rules on Pinnacle prices. |
+| +EV Finder | `EV_FINDER_v1` | OddsJam-style: Pinnacle's fair moneyline vs Kalshi, Polymarket, DraftKings, Bovada, Fliff, Novig, ProphetX. Paper-bets the best price at 3%+ EV, alerts you to bet sportsbooks by hand, flags cross-venue arbitrage. |
 
 ## How a round works (`python -m research_lab.run`)
 
@@ -34,6 +35,24 @@ with the strict matcher; spreads and totals need Pinnacle to offer the **exact**
 de-vigged three ways (power used, proportional and Shin recorded). One sharp book replaces "3+ books agree", so
 v2 instead rejects any Pinnacle market whose margin is abnormal (overround > 1.10). Team-name fixes for
 Pinnacle spellings live in `research_lab/pinnacle_aliases.csv`.
+
+## +EV Finder and Promo Converter
+
+`research_lab/ev_data.py` collects every venue's moneyline for each game Pinnacle priced that round:
+Kalshi (live), Polymarket (live, public Gamma API, 1% fee allowance), and DraftKings / Bovada / Fliff / Novig /
+ProphetX from The Odds API. Requesting named books costs 1 credit per sport, so a snapshot of NCAAF + NFL + NBA
+is 3 credits; the lab takes one every 4 hours, max 6 credits a day, and skips if the account has < 60 left.
+Sportsbook prices can be hours old, so alerts show their age and must be confirmed before betting.
+
+EV = fair probability x decimal odds - 1 (fees included for Kalshi/Polymarket). The best price per side at 3-20%
+EV gets one ~$10 paper bet, settled from Kalshi's official game result (games without a Kalshi market alert only).
+Arbitrage = best price each side at different venues summing below 99.5%; logged and alerted, not paper-traded.
+Pushover alerts ("bet by hand · PAPER-tracked") are capped at 5 per run and not repeated within 6 hours.
+Middles, spreads/totals and player props are not covered yet (props need paid per-game data).
+
+The **Promo Converter** page converts a bonus bet (stake not returned) into guaranteed cash:
+conversion = (bonus decimal odds - 1) x (1 - 1 / hedge decimal odds). It has a calculator plus a list of the best
+current conversions from the latest board.
 
 ## Value safeguards (all value strategies)
 

@@ -294,3 +294,110 @@ def _settings_tab(spec, store: Store) -> None:
         st.write(f"Last failed run: {_when(store.stats.get('last_failure'))}")
     if runs:
         st.dataframe(pd.DataFrame(runs[-20:][::-1]), hide_index=True, width="stretch")
+
+
+# ------------------------------------------------------------------ +EV board and promo converter
+
+BONUS_BOOKS = {"DraftKings", "Bovada", "Fliff"}
+
+
+def load_board() -> dict:
+    p = config.DATA_DIR / "ev_board.json"
+    try:
+        return json.loads(p.read_text()) if p.exists() else {}
+    except ValueError:
+        return {}
+
+
+def _odds(d: float) -> str:
+    if d >= 2.0:
+        return f"+{round((d - 1) * 100)}"
+    return f"{round(-100 / (d - 1))}"
+
+
+def render_ev_finder() -> None:
+    render_strategy(config.EV_FINDER)
+    board = load_board()
+    st.subheader("Live price board")
+    if not board.get("rows"):
+        st.write("No games priced yet. The board fills in each round Pinnacle prices are pulled.")
+        return
+    st.caption(f"Pinnacle fair line vs every venue · updated {_when(board.get('at'))} · sportsbook prices from "
+               f"{_when(board.get('books_taken_at')) if board.get('books_taken_at') else 'no snapshot yet'}. "
+               "Always confirm a price before betting.")
+    min_ev = st.slider("Show prices with EV of at least", -10, 10, 0, format="%d%%")
+    rows = []
+    for r in board["rows"]:
+        for p in r["prices"]:
+            if p["ev"] * 100 >= min_ev:
+                rows.append({"Game": r["game"], "Team": r["team"], "Fair": r["fair_odds"], "Venue": p["venue"],
+                             "Price": p["shown"], "EV": f"{p['ev'] * 100:+.1f}%", "Kickoff": _when(r["starts"]),
+                             "Price at": _when(p["at"]), "_ev": p["ev"]})
+    if not rows:
+        st.write("Nothing at that EV right now.")
+        return
+    df = pd.DataFrame(rows).sort_values("_ev", ascending=False).drop(columns="_ev")
+    st.dataframe(df, hide_index=True, width="stretch")
+
+
+def promo_conversion(book_decimal: float, hedge_decimal: float) -> float:
+    """Share of a bonus bet (stake not returned) locked in as cash by hedging the other side."""
+    return (book_decimal - 1.0) * (1.0 - 1.0 / hedge_decimal)
+
+
+def render_promo() -> None:
+    header("Promo Converter")
+    st.caption("Turn a bonus bet into guaranteed cash: bet the bonus on one side at your sportsbook, "
+               "hedge the other side somewhere else. Bonus-bet stakes aren't returned, so longer odds convert better.")
+    st.subheader("Calculator")
+    c1, c2 = st.columns(2)
+    bonus = c1.number_input("Bonus bet ($)", min_value=1.0, value=25.0, step=5.0)
+    book_odds = c2.number_input("Bonus bet odds (American)", value=250, step=5)
+    c3, c4 = st.columns(2)
+    venue = c3.selectbox("Hedge at", ["Kalshi (¢ price)", "Sportsbook (American odds)"])
+    if venue.startswith("Kalshi"):
+        cents = c4.number_input("Kalshi price for the other side (¢)", min_value=1, max_value=99, value=72)
+        from research_lab.fills import fee_per_contract
+        hedge_dec = 1.0 / (cents / 100 + fee_per_contract(cents / 100, 10))
+    else:
+        h = c4.number_input("Other side odds (American)", value=-300, step=5)
+        hedge_dec = 1 + (h / 100 if h > 0 else 100 / abs(h))
+    d = 1 + (book_odds / 100 if book_odds > 0 else 100 / abs(book_odds))
+    hedge_stake = bonus * (d - 1) / hedge_dec
+    locked = hedge_stake * (hedge_dec - 1)
+    st.metric("Guaranteed cash", f"${locked:,.2f}", f"{locked / bonus:.0%} of the bonus", delta_color="off")
+    if venue.startswith("Kalshi"):
+        st.write(f"Hedge: buy about **{hedge_stake * hedge_dec:,.0f} contracts** at {cents}¢ "
+                 f"(≈ ${hedge_stake:,.2f} with fees).")
+    else:
+        st.write(f"Hedge: bet **${hedge_stake:,.2f}** on the other side.")
+    st.caption("Either outcome leaves you the same amount. Most people aim for 65–80% conversion.")
+
+    st.subheader("Best conversions right now")
+    board = load_board()
+    games: dict[str, dict] = {}
+    for r in board.get("rows") or []:
+        games.setdefault(r["game"], {})[r["team"]] = r
+    out = []
+    for game, sides in games.items():
+        if len(sides) != 2:
+            continue
+        (ta, ra), (tb, rb) = sides.items()
+        for team, mine, other in ((ta, ra, rb), (tb, rb, ra)):
+            hedges = [p for p in other["prices"] if p["venue"] not in BONUS_BOOKS]
+            if not hedges:
+                continue
+            hb = max(hedges, key=lambda p: p["decimal"])
+            for p in mine["prices"]:
+                if p["venue"] in BONUS_BOOKS:
+                    out.append({"Bonus at": p["venue"], "Bet": f"{team} {p['shown']}", "Hedge": f"{hb['venue']} "
+                                f"{other['team']} {hb['shown']}", "Converts": promo_conversion(p["decimal"], hb["decimal"]),
+                                "Game": game, "Kickoff": _when(mine["starts"])})
+    if not out:
+        st.write("Needs a sportsbook snapshot plus a Kalshi, Polymarket, Novig or ProphetX price on the same game. "
+                 "Use the calculator above in the meantime.")
+        return
+    df = pd.DataFrame(out).sort_values("Converts", ascending=False).head(15)
+    df["Converts"] = df["Converts"].map(lambda x: f"{x:.0%}")
+    st.dataframe(df, hide_index=True, width="stretch")
+    st.caption("Sportsbook prices may be hours old. Check both prices before placing either bet.")

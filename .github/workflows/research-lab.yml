@@ -36,6 +36,9 @@ jobs:
           STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
           # Free PinnWire data key (Pinnacle prices) for the v2 strategies. Not a trading key.
           PINNWIRE_KEY: ${{ secrets.PINNWIRE_KEY }}
+          # Odds API (same free key as the scanner). The lab spends at most 6 credits/day on
+          # named-book moneyline snapshots and stops if the account drops below 60.
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
         run: python -m research_lab.run
       - name: Save Research Lab ledgers

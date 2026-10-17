@@ -570,3 +570,123 @@ def test_current_kalshi_title_format_gets_matchup_and_matches_pinnacle():
                  "Houston wins by over 4.5 points"))
     quotes, _, info = pinnacle.build_quotes({5: PIN_PAYLOAD}, {5: [{"markets": [sp]}]}, NOW)
     assert info["matched"] == 1 and quotes[0].market_type == "spread" and quotes[0].point == -4.5
+
+
+# ---------------------------------------------------------------- +EV Finder
+
+from research_lab import ev_data  # noqa: E402
+from research_lab.strategies.ev_finder import run_ev_finder  # noqa: E402
+
+
+def _games():
+    evs = pinnacle.events_from(PIN_PAYLOAD, {"NCAA"}, NOW)
+    return ev_data.games_from_pinnacle({5: evs}, NOW, 1.10)
+
+
+def test_american_odds_format():
+    assert ev_data.american(1.909) == "-110" and ev_data.american(2.5) == "+150"
+
+
+def test_ev_game_fair_line_from_pinnacle():
+    g = _games()[0]
+    assert abs(g.fair["home"] + g.fair["away"] - 1) < 1e-9 and g.fair["home"] > 0.6
+
+
+def test_books_and_polymarket_attach_to_right_team():
+    games = _games()
+    snap = {"americanfootball_ncaaf": [{"home_team": "Houston Cougars", "away_team": "Oklahoma State Cowboys",
+                                        "commence_time": iso(KICK), "bookmakers": [
+        {"key": "draftkings", "last_update": iso(NOW - timedelta(minutes=10)), "markets": [
+            {"key": "h2h", "outcomes": [{"name": "Houston Cougars", "price": 1.80},
+                                        {"name": "Oklahoma State Cowboys", "price": 2.05}]}]},
+        {"key": "williamhill_us", "markets": []}]}]}
+    assert ev_data.add_books(games, snap, NOW) == 2
+    poly = [{"markets": [{"sportsMarketType": "moneyline", "outcomes": '["Oklahoma State", "Houston"]',
+                          "bestBid": "0.36", "bestAsk": "0.37", "gameStartTime": iso(KICK)}]}]
+    assert ev_data.add_polymarket(games, poly, NOW, 0.0) == 2
+    g = games[0]
+    dk_home = [o for o in g.offers if o.venue == "DraftKings" and o.side == "home"][0]
+    assert dk_home.decimal == 1.80 and dk_home.shown == "-125"
+    poly_away = [o for o in g.offers if o.venue == "Polymarket" and o.side == "away"][0]
+    assert abs(poly_away.decimal - 1 / 0.37) < 1e-9
+    poly_home = [o for o in g.offers if o.venue == "Polymarket" and o.side == "home"][0]
+    assert abs(poly_home.decimal - 1 / 0.64) < 1e-9      # Houston ask = 1 - 0.36 bid
+
+
+def test_ev_finder_paper_bets_best_price_and_settles_from_kalshi(tmp_path):
+    games = _games()
+    g = games[0]
+    g.settle = {"home": "KXNCAAFGAME-X-HOU", "away": "KXNCAAFGAME-X-OKST"}
+    fair_away = g.fair["away"]
+    big = (1 + 0.06) / fair_away                     # 6% EV on Oklahoma State
+    g.offers = [ev_data.Offer("DraftKings", "away", big, ev_data.american(big), NOW),
+                ev_data.Offer("Bovada", "away", 1.5, "-200", NOW),
+                ev_data.Offer("Fliff", "home", 1.40, "-250", NOW)]
+    st = Store(config.EV_FINDER.key, tmp_path)
+    ctx = RunContext(now=NOW, kalshi=FakeKalshi(), ev_games=games)
+    res = run_ev_finder(config.EV_FINDER, st, ctx)
+    assert res["filled"] == 1 and res["qualified"] == 1
+    p = st.positions[0]
+    assert p["ticker"] == "KXNCAAFGAME-X-OKST" and "DraftKings" in p["reason"]
+    assert abs(float(p["net_edge"]) - 0.06) < 1e-3 and p["committed"] == 10.0
+    settle_store(st, {"KXNCAAFGAME-X-OKST": {"result": "yes", "status": "settled"}}, NOW + timedelta(days=1))
+    assert st.positions[0]["status"] == "won" and abs(st.positions[0]["pl"] - round(10 * big - 10, 2)) < 0.01
+    assert reconcile(st) == []
+
+
+def test_ev_finder_rejects_stale_and_suspicious_prices(tmp_path):
+    g = _games()[0]
+    g.settle = {"away": "T"}
+    g.offers = [ev_data.Offer("Bovada", "away", 1.06 / g.fair["away"], "+x", NOW - timedelta(hours=5))]
+    st = Store(config.EV_FINDER.key, tmp_path)
+    res = run_ev_finder(config.EV_FINDER, st, RunContext(now=NOW, kalshi=FakeKalshi(), ev_games=[g]))
+    assert res["filled"] == 0 and res["qualified"] == 0          # 5h-old price ignored
+    g.offers = [ev_data.Offer("Bovada", "away", 1.50 / g.fair["away"], "+x", NOW)]
+    res = run_ev_finder(config.EV_FINDER, st, RunContext(now=NOW, kalshi=FakeKalshi(), ev_games=[g]))
+    assert res["filled"] == 0 and st.stats["rejections"]["suspicious_ev_review"] == 1
+
+
+def test_arbitrage_detected_across_venues(tmp_path):
+    g = _games()[0]
+    g.offers = [ev_data.Offer("Kalshi", "home", 1.75, "57¢", NOW), ev_data.Offer("Fliff", "away", 2.70, "+170", NOW)]
+    st = Store(config.EV_FINDER.key, tmp_path)
+    res = run_ev_finder(config.EV_FINDER, st, RunContext(now=NOW, kalshi=FakeKalshi(), ev_games=[g]))
+    assert res["arbs"] == 1 and any(a.startswith("ARB") for a in res["alerts"])
+    # same venue both sides is not an arbitrage we'd count
+    g.offers = [ev_data.Offer("Fliff", "home", 1.75, "x", NOW), ev_data.Offer("Fliff", "away", 2.70, "x", NOW)]
+    assert run_ev_finder(config.EV_FINDER, st, RunContext(now=NOW, kalshi=FakeKalshi(), ev_games=[g]))["arbs"] == 0
+
+
+def test_book_snapshot_budget_and_cache(tmp_path):
+    class Resp:
+        status_code = 200
+        headers = {"x-requests-last": "1", "x-requests-remaining": "400"}
+
+        def json(self):
+            return []
+
+    class Sess:
+        calls = 0
+
+        def get(self, url, **kw):
+            Sess.calls += 1
+            assert kw["params"]["markets"] == "h2h" and "draftkings" in kw["params"]["bookmakers"]
+            return Resp()
+    snap, info = ev_data.book_snapshot(NOW, tmp_path, session=Sess(), key="k")
+    assert info["fresh"] and Sess.calls == 3 and info["credits_today"] == 3
+    snap, info = ev_data.book_snapshot(NOW + timedelta(hours=1), tmp_path, session=Sess(), key="k")
+    assert not info["fresh"] and Sess.calls == 3                  # not due yet: cached
+    snap, info = ev_data.book_snapshot(NOW + timedelta(hours=5), tmp_path, session=Sess(), key="k")
+    assert info["fresh"] and Sess.calls == 6                      # second snapshot uses the 6/day budget
+    snap, info = ev_data.book_snapshot(NOW + timedelta(hours=9, minutes=50), tmp_path, session=Sess(), key="k")
+    assert not info["fresh"] and Sess.calls == 6 and "skipped" in info   # budget used for the day
+    Resp.headers = {"x-requests-last": "1", "x-requests-remaining": "10"}
+    snap, info = ev_data.book_snapshot(NOW + timedelta(days=1), tmp_path / "low", session=Sess(), key="k")
+    snap, info = ev_data.book_snapshot(NOW + timedelta(days=1, hours=5), tmp_path / "low", session=Sess(), key="k")
+    assert "skipped" in info                                       # account nearly empty: leave it for the scanner
+
+
+def test_promo_conversion_math():
+    from research_lab.dashboard import promo_conversion
+    # $1 bonus at +250 hedged at -300 (decimal 1.333): 2.5 * (1 - 0.75) = 62.5%
+    assert abs(promo_conversion(3.5, 4 / 3) - 0.625) < 1e-9

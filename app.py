@@ -1191,6 +1191,8 @@ with tab_system:
 with tab_lab:
     st.markdown("**Strategy Research Lab: paper only.** Three new strategies tested side by side with "
                 "Sharp, each with its own $500 virtual bankroll. No real money.")
+    st.page_link("pages/Research_Lab_EV_Finder.py", label="+EV Finder (all your books)", icon="🎯")
+    st.page_link("pages/Research_Lab_Promo_Converter.py", label="Promo Converter", icon="🎁")
     st.page_link("pages/Research_Lab_Compare.py", label="Compare all strategies", icon="📊")
     st.page_link("pages/Research_Lab_Value_Only.py", label="Value Only", icon="📈")
     st.page_link("pages/Research_Lab_Hybrid.py", label="Hybrid: Value + Sharp", icon="🔀")

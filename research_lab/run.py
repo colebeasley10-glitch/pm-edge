@@ -15,10 +15,12 @@ from collections import Counter
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from research_lab import config, metrics, pinnacle, report
+from research_lab import config, ev_data, metrics, pinnacle, report
+from research_lab.fills import taker_fee
+from research_lab.strategies.ev_finder import push_alerts, run_ev_finder
 from research_lab.context import RunContext
 from research_lab.flow import aggregate
-from research_lab.ledger import LedgerError, Store, iso, loads, now_utc, run_lock
+from research_lab.ledger import LedgerError, Store, iso, loads, now_utc, parse_dt, run_lock
 from research_lab.public_data import PublicDataError, PublicKalshi
 from research_lab.settle import settle_store, tickers_to_check
 from research_lab.snapshot import load_snapshot
@@ -31,6 +33,7 @@ RUNNERS = {
     config.STRUCTURAL_ARB.key: run_structural,
     config.VALUE_ONLY_V2.key: run_value_only,
     config.HYBRID_SHARP_VALUE_V2.key: run_hybrid,
+    config.EV_FINDER.key: lambda spec, store, ctx: run_ev(spec, store, ctx),
 }
 
 
@@ -71,6 +74,7 @@ def pinnacle_round(ctx: RunContext, kalshi, pinn, base: Path) -> dict:
             except PublicDataError:
                 info["errors"].append(f"Kalshi series {series} unavailable")
         kalshi_events[sid] = evs
+    ctx.pinnacle_events = {sid: pinnacle.events_from(p, pinnacle.SPORTS[sid][2], ctx.now) for sid, p in payloads.items()}
     quotes, markets, match_info = pinnacle.build_quotes(payloads, kalshi_events, ctx.now)
     ctx.pinnacle_quotes = quotes
     ctx.markets.update(markets)
@@ -80,8 +84,39 @@ def pinnacle_round(ctx: RunContext, kalshi, pinn, base: Path) -> dict:
     return info
 
 
+def ev_round(ctx: RunContext, base: Path, *, poly_fetch=None, odds_session=None, odds_key=None) -> dict:
+    """Collect every venue's moneyline for games Pinnacle priced this round (for EV_FINDER)."""
+    p = config.EV_FINDER.params
+    games = ev_data.games_from_pinnacle(ctx.pinnacle_events, ctx.now, p["max_overround"])
+    info = {"games": len(games), "errors": []}
+    if games:
+        info["kalshi_offers"] = ev_data.add_kalshi(games, ctx.pinnacle_quotes, ctx.markets, ctx.now, taker_fee)
+        try:
+            raw = (poly_fetch or ev_data.fetch_polymarket)(ctx.now)
+            info["polymarket_offers"] = ev_data.add_polymarket(games, raw, ctx.now, p["polymarket_fee_rate"])
+        except Exception as exc:
+            info["errors"].append(f"Polymarket: {type(exc).__name__}")
+    snap, binfo = ev_data.book_snapshot(ctx.now, base, session=odds_session, key=odds_key)
+    info["books"] = binfo
+    if games:
+        info["book_offers"] = ev_data.add_books(games, snap, parse_dt(binfo.get("taken_at")))
+        from research_lab.ledger import _atomic_write_text
+        _atomic_write_text(base / "ev_board.json", json.dumps(
+            {"at": iso(ctx.now), "books_taken_at": binfo.get("taken_at"), "rows": ev_data.board_rows(games)},
+            default=str))
+    ctx.ev_games = games
+    return info
+
+
+def run_ev(spec, store, ctx) -> dict:
+    res = run_ev_finder(spec, store, ctx)
+    res["pushed"] = push_alerts(res.pop("alerts", []), store, ctx.now)
+    return res
+
+
 def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = None,
-              snapshot_path: Path | None = None, send_report: bool = True, pinn=None) -> dict:
+              snapshot_path: Path | None = None, send_report: bool = True, pinn=None,
+              poly_fetch=None, odds_session=None, odds_key=None) -> dict:
     now = now or now_utc()
     base = Path(base or config.DATA_DIR)
     kalshi = kalshi or PublicKalshi()
@@ -123,6 +158,10 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
             out["pinnacle"] = pinnacle_round(ctx, kalshi, pinn or pinnacle.PinnWire(), base)
         except Exception as exc:  # Pinnacle problems only affect the v2 strategies
             out["pinnacle"] = {"errors": [f"{type(exc).__name__}: {str(exc)[:160]}"]}
+        try:
+            out["ev"] = ev_round(ctx, base, poly_fetch=poly_fetch, odds_session=odds_session, odds_key=odds_key)
+        except Exception as exc:  # only affects the +EV Finder
+            out["ev"] = {"errors": [f"{type(exc).__name__}: {str(exc)[:160]}"]}
         try:
             ctx.events = kalshi.open_events(config.STRUCTURAL_ARB.params["max_events"])
         except PublicDataError:
