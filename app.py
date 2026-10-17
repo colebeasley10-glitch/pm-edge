@@ -629,8 +629,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-tab_live, tab_league, tab_picks, tab_bets, tab_results, tab_system = st.tabs(
-    ["Live $1", "Paper", f"Alerts {len(picks)}" if len(picks) else "Alerts", "My bets", "Results", "System"]
+tab_live, tab_league, tab_picks, tab_bets, tab_results, tab_system, tab_lab = st.tabs(
+    ["Live $1", "Paper", f"Alerts {len(picks)}" if len(picks) else "Alerts", "My bets", "Results", "System", "Lab 🧪"]
 )
 
 # ---------------------------------------------------------- live $1 sharp --
@@ -1186,3 +1186,12 @@ with tab_system:
         st.cache_data.clear()
         st.rerun()
     st.page_link("pages/Kalshi_Connection_Check.py", label="Run a Kalshi connection check")
+
+# ------------------------------------------------------------ research lab --
+with tab_lab:
+    st.markdown("**Strategy Research Lab: paper only.** Three new strategies tested side by side with "
+                "Sharp, each with its own $500 virtual bankroll. No real money.")
+    st.page_link("pages/Research_Lab_Compare.py", label="Compare all strategies", icon="📊")
+    st.page_link("pages/Research_Lab_Value_Only.py", label="Value Only", icon="📈")
+    st.page_link("pages/Research_Lab_Hybrid.py", label="Hybrid: Value + Sharp", icon="🔀")
+    st.page_link("pages/Research_Lab_Structural_Arb.py", label="Structural Arbitrage", icon="🧩")
