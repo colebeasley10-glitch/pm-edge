@@ -1,0 +1,287 @@
+"""Streamlit views for the Strategy Research Lab (read-only, PAPER results)."""
+from __future__ import annotations
+
+import json
+from datetime import datetime, timezone
+
+import pandas as pd
+import streamlit as st
+
+from research_lab import config, metrics
+from research_lab.ledger import LedgerError, Store, loads, parse_dt
+from research_lab.portfolio import EASTERN, available_cash
+
+PAPER_BANNER = "🧪 **PAPER TRADING ONLY.** Simulated bets with a virtual bankroll. No real money, no real orders."
+
+
+def _money(x) -> str:
+    if x is None:
+        return "—"
+    return f"{'+' if x > 0 else '−' if x < 0 else ''}${abs(x):,.2f}"
+
+
+def _pct(x) -> str:
+    return "—" if x is None else f"{x * 100:+.1f}%"
+
+
+def _when(v) -> str:
+    dt = parse_dt(v)
+    return dt.astimezone(EASTERN).strftime("%b %d %I:%M %p") if dt else "—"
+
+
+def load_store(spec) -> Store | None:
+    try:
+        return Store(spec.key)
+    except LedgerError as exc:
+        st.error(f"{spec.label} ledger couldn't be read: {exc}")
+        return None
+
+
+def load_status() -> dict:
+    p = config.DATA_DIR / "status.json"
+    try:
+        return json.loads(p.read_text()) if p.exists() else {}
+    except ValueError:
+        return {}
+
+
+def header(title: str) -> None:
+    st.set_page_config(page_title=f"Research Lab: {title}", page_icon="🧪", layout="centered")
+    st.title(title)
+    st.info(PAPER_BANNER)
+
+
+# ------------------------------------------------------------------ comparison
+
+def render_compare() -> None:
+    header("Strategy Research Lab")
+    status = load_status()
+    window = st.radio("Window", ["Since lab start", "All time"], horizontal=True,
+                      help="Since lab start compares every strategy over the same dates.")
+    since = min(s.started for s in config.RESEARCH_STRATEGIES) if window == "Since lab start" else None
+    rows, hist = [], []
+    sharp = metrics.sharp_summary(since=since)
+    rows.append(_overview_row(config.SHARP_EXISTING_LABEL, sharp, bankroll=None))
+    for h in sharp["history"]:
+        hist.append({"strategy": "Existing Sharp", "at": h["at"], "cum_pl": h["cum_pl"]})
+    for spec in config.RESEARCH_STRATEGIES:
+        stv = load_store(spec)
+        if stv is None:
+            continue
+        s = metrics.summarize(stv.positions)
+        rows.append(_overview_row(f"{spec.label} v{spec.version}", s, bankroll=s["bankroll"]))
+        for h in s["history"]:
+            hist.append({"strategy": spec.label, "at": h["at"], "cum_pl": h["cum_pl"]})
+    st.subheader("Overview")
+    st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+    st.caption("Net P/L and ROI use one definition for every strategy: settled bets only, after fees. "
+               "Existing Sharp is read from the league ledger and has no virtual bankroll.")
+    if hist:
+        df = pd.DataFrame(hist)
+        df["at"] = pd.to_datetime(df["at"], errors="coerce", utc=True)
+        df = df.dropna(subset=["at"]).sort_values("at")
+        wide = df.pivot_table(index="at", columns="strategy", values="cum_pl", aggfunc="last").ffill()
+        st.subheader("Cumulative net P/L")
+        st.line_chart(wide)
+    else:
+        st.caption("No settled paper bets yet, so there's nothing to chart.")
+    _health(status)
+    st.caption("Short samples prove nothing. Don't pick a winner on a few weeks of ROI; "
+               "compare closing-line value and calibration too, on each strategy's page.")
+
+
+def _overview_row(label: str, s: dict, bankroll) -> dict:
+    return {"Strategy": label, "Record": f"{s['won']}-{s['lost']}" + (f" ({s['voids']} void)" if s["voids"] else ""),
+            "Net P/L": _money(s["net_pl"]), "ROI": _pct(s["roi"]), "Open": s["open"],
+            "Bankroll": "—" if bankroll is None else f"${bankroll:,.2f}"}
+
+
+def _health(status: dict) -> None:
+    with st.expander("System health"):
+        last = status.get("last_run") or {}
+        st.write(f"Last run: {_when(last.get('at'))} · last fully successful: {_when(status.get('last_success'))}")
+        if status.get("last_failure"):
+            st.write(f"Last failure: {_when(status.get('last_failure'))}")
+        snap = last.get("snapshot") or {}
+        st.write(f"Sportsbook snapshot: {snap.get('tickers', 0)} priced markets"
+                 + (" (missing)" if snap.get("missing") else " (stale)" if snap.get("stale") else ""))
+        if snap.get("empty"):
+            st.warning("The main scanner priced no markets on its last run, so Value and Hybrid had nothing "
+                       "to evaluate. Usually this means the Odds API credits are used up.")
+        st.write("Ledgers reconciled: " + ("yes ✅" if last.get("reconciled") else "no ⚠️"))
+        if last.get("data_failures"):
+            st.write("Failed data fetches: " + "; ".join(last["data_failures"][:5]))
+        for n in last.get("notes") or []:
+            st.write("• " + n)
+
+
+# ------------------------------------------------------------------ one strategy
+
+def render_strategy(spec) -> None:
+    header(f"{spec.label} (v{spec.version})")
+    st.caption(spec.description)
+    store = load_store(spec)
+    if store is None:
+        return
+    s = metrics.store_summary(store)
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Record", f"{s['won']}-{s['lost']}", help=f"{s['voids']} void · win rate {_pct(s['win_pct'])}")
+    c2.metric("Net P/L", _money(s["net_pl"]), _pct(s["roi"]) + " ROI")
+    c3.metric("Bankroll", f"${s['bankroll']:,.2f}", f"${available_cash(store):,.2f} free")
+    c4, c5, c6 = st.columns(3)
+    c4.metric("Open", s["open"], f"${s['open_exposure']:,.2f} at risk", delta_color="off")
+    c5.metric("Max drawdown", f"${s['max_drawdown']:,.2f}")
+    c6.metric("Avg CLV", "—" if s["clv_avg"] is None else f"{s['clv_avg']:+.1f}¢", f"{s['clv_n']} bets",
+              delta_color="off")
+
+    tabs = st.tabs(["Bets", "Candidates", "Model check", "Settings & health"])
+    with tabs[0]:
+        _bets_tab(store, s)
+    with tabs[1]:
+        _candidates_tab(store, s)
+    with tabs[2]:
+        _model_tab(s)
+    with tabs[3]:
+        _settings_tab(spec, store)
+
+
+def _bets_tab(store: Store, s: dict) -> None:
+    if s["history"]:
+        h = pd.DataFrame(s["history"])
+        h["at"] = pd.to_datetime(h["at"], errors="coerce", utc=True)
+        st.caption("Virtual bankroll after each settled bet")
+        st.line_chart(h.set_index("at")["bankroll"])
+    if not store.positions:
+        st.write("No paper bets yet. That's fine: the strategy only bets when every check passes.")
+        return
+    df = pd.DataFrame(store.positions)
+    df["opened"] = pd.to_datetime(df["opened_at"], errors="coerce", utc=True)
+    cats = sorted(x for x in df["category"].dropna().unique() if x)
+    types = sorted(x for x in df["market_type"].dropna().unique() if x)
+    f1, f2 = st.columns(2)
+    state = f1.selectbox("Show", ["All", "Open", "Settled", "Won", "Lost"])
+    cat = f2.selectbox("Category", ["All"] + cats)
+    typ = st.selectbox("Market type", ["All"] + types) if len(types) > 1 else "All"
+    dmin = df["opened"].min()
+    dates = st.date_input("Opened between", value=(dmin.date(), datetime.now(timezone.utc).date())) \
+        if pd.notna(dmin) else None
+    view = df
+    if state == "Open":
+        view = view[view["status"] == "open"]
+    elif state == "Settled":
+        view = view[view["status"].isin(["won", "lost", "void", "closed"])]
+    elif state in {"Won", "Lost"}:
+        view = view[view["status"] == state.lower()]
+    if cat != "All":
+        view = view[view["category"] == cat]
+    if typ != "All":
+        view = view[view["market_type"] == typ]
+    if dates and isinstance(dates, tuple) and len(dates) == 2:
+        d = view["opened"].dt.tz_convert(EASTERN).dt.date
+        view = view[(d >= dates[0]) & (d <= dates[1])]
+    view = view.sort_values("opened", ascending=False)
+    settled = df[df["status"].isin(["won", "lost"])].copy()
+    if not settled.empty:
+        settled["pl_n"] = pd.to_numeric(settled["pl"], errors="coerce")
+        b1, b2 = st.columns(2)
+        top = settled.nlargest(3, "pl_n")
+        bot = settled.nsmallest(3, "pl_n")
+        b1.caption("Largest wins")
+        b1.dataframe(top[["title", "pl"]], hide_index=True)
+        b2.caption("Largest losses")
+        b2.dataframe(bot[["title", "pl"]], hide_index=True)
+    st.caption(f"{len(view)} bets · tap one for details")
+    for p in view.head(60).to_dict("records"):
+        icon = {"open": "⏳", "won": "✅", "lost": "❌", "void": "↩️", "closed": "➖"}.get(p.get("status"), "•")
+        pl = metrics.f(p.get("pl"))
+        label = (f"{icon} PAPER · {p.get('side')} {str(p.get('title'))[:55]} @ "
+                 f"{float(p.get('entry_price') or 0) * 100:.0f}¢" + ("" if pl is None else f" · {_money(pl)}"))
+        with st.expander(label):
+            _trade_detail(p)
+
+
+def _trade_detail(p: dict) -> None:
+    rows = [("Ticker", p.get("ticker")), ("Market", p.get("title")), ("Strategy", f"{p.get('strategy')} v{p.get('version')}"),
+            ("Side", p.get("side")), ("Entered", _when(p.get("opened_at"))),
+            ("Entry price", f"{float(p.get('entry_price') or 0) * 100:.1f}¢"),
+            ("Contracts", f"{p.get('contracts')} of {p.get('wanted')} wanted ({p.get('fill_status')})"),
+            ("Cost + fees", f"${float(p.get('cost') or 0):.2f} + ${float(p.get('fee') or 0):.2f}"),
+            ("Fair probability", "—" if not p.get("fair") else f"{float(p['fair']):.1%} (power)"
+             + (f", {float(p['fair_proportional']):.1%} proportional" if p.get("fair_proportional") else "")
+             + (f", {float(p['fair_shin']):.1%} Shin" if p.get("fair_shin") else "")),
+            ("Net edge", "—" if not p.get("net_edge") else f"{float(p['net_edge']) * 100:.1f} pts"),
+            ("Why", p.get("reason")), ("Kalshi quote at", _when(p.get("quote_at"))),
+            ("Sportsbook prices at", _when(p.get("fair_at"))), ("Kickoff", _when(p.get("commence_time"))),
+            ("Status", p.get("status")), ("Result", p.get("result") or "pending"),
+            ("Realized P/L", "—" if metrics.f(p.get("pl")) is None else _money(metrics.f(p.get("pl")))),
+            ("CLV", "—" if not p.get("clv_cents") else f"{float(p['clv_cents']):+.1f}¢")]
+    for k, v in rows:
+        st.write(f"**{k}:** {v}")
+    legs = loads(p.get("legs"), None)
+    if legs:
+        st.write("**Legs** (all filled from the same snapshot):")
+        st.dataframe(pd.DataFrame(legs)[["ticker", "side", "contracts", "avg_price", "cost", "fee", "outcome"]],
+                     hide_index=True)
+    det = loads(p.get("details"), {}) or {}
+    if det:
+        with st.popover("Raw evidence"):
+            st.json(det)
+
+
+def _candidates_tab(store: Store, s: dict) -> None:
+    sig = s["signal"]
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Markets scanned", f"{sig.get('scanned_total', 0):,}")
+    c2.metric("Paper fills", sig.get("filled_total", 0))
+    c3.metric("Fill rate", _pct(sig.get("fill_rate")).replace("+", ""), f"{sig.get('no_fill_total', 0)} missed",
+              delta_color="off")
+    if sig.get("avg_net_edge") is not None:
+        st.caption(f"Avg net edge on attempts {sig['avg_net_edge'] * 100:.1f} pts · avg spread "
+                   f"{(sig.get('avg_spread') or 0) * 100:.1f}¢ · avg quote age {sig.get('avg_quote_age_s') or 0:.0f}s")
+    if sig.get("rejections"):
+        st.caption("Why candidates were rejected (all time)")
+        st.bar_chart(pd.Series(sig["rejections"]).head(12))
+    if not store.candidates:
+        st.write("No candidates logged yet.")
+        return
+    df = pd.DataFrame(store.candidates).sort_values("run_at", ascending=False)
+    pick = st.selectbox("Show", ["Recent qualified & missed", "All recent", "Rejected only"])
+    if pick == "Recent qualified & missed":
+        df = df[df["decision"].isin(["FILLED", "PARTIAL", "NO_FILL"])]
+    elif pick == "Rejected only":
+        df = df[df["decision"] == "REJECTED"]
+    st.dataframe(df[["run_at", "title", "side", "decision", "reason", "fair", "ask", "net_edge"]].head(200),
+                 hide_index=True, width="stretch")
+    st.caption("Candidate rows are kept 14 days; rejection counts above are kept forever.")
+
+
+def _model_tab(s: dict) -> None:
+    avg_fair = "—" if s["avg_fair"] is None else f"{s['avg_fair']:.1%}"
+    brier = "—" if s["brier"] is None else f"{s['brier']:.3f}"
+    st.write(f"Average fair probability: {avg_fair} · Brier score: {brier} (lower is better; 0.25 = coin flip)")
+    if s["calibration"]:
+        st.caption("Calibration: predicted vs actual win rate by probability bucket")
+        st.dataframe(pd.DataFrame(s["calibration"]), hide_index=True)
+    for title, key in (("By category", "by_category"), ("By entry price", "by_price"), ("By edge size", "by_edge"),
+                       ("By trade-flow size", "by_flow"), ("By week", "by_week")):
+        g = s.get(key) or {}
+        if not g or list(g) == ["n/a"]:
+            continue
+        st.caption(title)
+        st.dataframe(pd.DataFrame([{"Bucket": k, "Record": f"{v['won']}-{v['lost']}", "Net P/L": _money(v["pl"]),
+                                    "ROI": _pct(v["roi"])} for k, v in g.items()]), hide_index=True)
+    if not s["calibration"] and not any(s.get(k) for k in ("by_category",)):
+        st.write("Nothing settled yet.")
+
+
+def _settings_tab(spec, store: Store) -> None:
+    st.write(f"**Frozen since:** {spec.started} · **version:** {spec.version}")
+    st.write(f"**Bankroll:** ${config.STARTING_BANKROLL:,.0f} start · ~${config.TARGET_STAKE:.0f} per bet · "
+             f"${config.MAX_EVENT_EXPOSURE:.0f} max per game · ${config.DAILY_EXPOSURE_CAP:.0f}/day cap")
+    st.json(spec.params)
+    runs = store.stats.get("runs") or []
+    st.write(f"Last successful run: {_when(store.stats.get('last_success'))}")
+    if store.stats.get("last_failure"):
+        st.write(f"Last failed run: {_when(store.stats.get('last_failure'))}")
+    if runs:
+        st.dataframe(pd.DataFrame(runs[-20:][::-1]), hide_index=True, width="stretch")

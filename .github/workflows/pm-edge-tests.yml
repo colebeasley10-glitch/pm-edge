@@ -163,3 +163,8 @@ jobs:
 
       - name: Run v25 launcher self-test
         run: python pm_edge_runner_v25.py --self-test
+
+      - name: Run Research Lab tests (paper-only safety included)
+        run: |
+          pip install pytest
+          python -m pytest -q test_research_lab.py test_research_lab_safety.py
