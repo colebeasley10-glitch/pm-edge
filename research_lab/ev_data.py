@@ -32,6 +32,10 @@ ODDS_SPORTS = {"americanfootball_ncaaf": (5, "NCAA"), "americanfootball_nfl": (5
                "basketball_nba": (3, "NBA")}
 BOOKS = {"draftkings": "DraftKings", "bovada": "Bovada", "fliff": "Fliff", "novig": "Novig",
          "prophetx": "ProphetX"}
+# Where "bet it" sends you. Sportsbooks don't offer public pre-filled bet-slip links (that needs a
+# partnership, which is what Gambly has), so these open the book; Kalshi/Polymarket open the game.
+VENUE_URLS = {"DraftKings": "https://sportsbook.draftkings.com", "Bovada": "https://www.bovada.lv/sports",
+              "Fliff": "https://www.getfliff.com", "Novig": "https://novig.us", "ProphetX": "https://www.prophetx.co"}
 DAILY_CREDITS = int(os.getenv("RESEARCH_LAB_ODDS_DAILY_CREDITS", "6"))
 MIN_ACCOUNT_REMAINING = int(os.getenv("RESEARCH_LAB_ODDS_MIN_REMAINING", "60"))
 SNAPSHOT_EVERY = timedelta(hours=float(os.getenv("RESEARCH_LAB_ODDS_EVERY_HOURS", "4")))
@@ -51,6 +55,7 @@ class Offer:
     shown: str                 # the price as the venue shows it (e.g. "-110", "54¢")
     at: datetime | None
     kalshi_ticker: str = ""    # set for Kalshi offers
+    url: str = ""              # where to go place it
 
 
 @dataclass
@@ -122,7 +127,9 @@ def add_kalshi(games: list[Game], pinnacle_quotes: list, markets: dict, now: dat
             continue
         ask = float(ask)
         cost = ask + fee_fn(ask, 10) / 10
-        g.offers.append(Offer("Kalshi", side, 1.0 / cost, f"{ask * 100:.0f}¢", now, q.ticker))
+        series = q.ticker.split("-", 1)[0].lower()
+        g.offers.append(Offer("Kalshi", side, 1.0 / cost, f"{ask * 100:.0f}¢", now, q.ticker,
+                              f"https://kalshi.com/markets/{series}"))
         n += 1
     return n
 
@@ -153,7 +160,9 @@ def add_polymarket(games: list[Game], raw_events: list[dict], now: datetime, fee
             for name, ask in ((outs[0], ask0), (outs[1], 1.0 - bid0)):
                 cost = ask * (1 + fee_rate)
                 if 0.02 < ask < 0.98:
-                    g.offers.append(Offer("Polymarket", sides[name], 1.0 / cost, f"{ask * 100:.0f}¢", now))
+                    slug = str(e.get("slug") or "")
+                    g.offers.append(Offer("Polymarket", sides[name], 1.0 / cost, f"{ask * 100:.0f}¢", now, "",
+                                          f"https://polymarket.com/event/{slug}" if slug else "https://polymarket.com/sports"))
                     n += 1
             break
     return n
@@ -246,7 +255,7 @@ def add_books(games: list[Game], snapshot: dict, taken_at: datetime | None) -> i
                         except (TypeError, ValueError):
                             continue
                         if side and d > 1.0:
-                            g.offers.append(Offer(name, side, d, american(d), at))
+                            g.offers.append(Offer(name, side, d, american(d), at, "", VENUE_URLS.get(name, "")))
                             n += 1
     return n
 
@@ -264,5 +273,6 @@ def board_rows(games: list[Game]) -> list[dict]:
                          "fair": round(fair, 4), "fair_odds": american(1 / fair),
                          "kalshi_ticker": g.settle.get(side, ""),
                          "prices": [{"venue": o.venue, "shown": o.shown, "decimal": round(o.decimal, 4),
-                                     "ev": round(fair * o.decimal - 1, 4), "at": iso(o.at)} for o in offers]})
+                                     "ev": round(fair * o.decimal - 1, 4), "at": iso(o.at), "url": o.url}
+                                    for o in offers]})
     return rows

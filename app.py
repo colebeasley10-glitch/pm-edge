@@ -166,6 +166,22 @@ st.markdown(
     .hm-opp .px { text-align:right; font-weight:800; font-size:1.05rem; white-space:nowrap; }
     .hm-opp .px small { display:block; color:var(--muted); font-weight:600; font-size:.72rem; }
     .ev-pos { color:var(--up); } .ev-neg { color:var(--muted); }
+    /* compare-all (tap an opportunity) */
+    details.hm-opp-d { border-bottom:1px solid var(--line); }
+    details.hm-opp-d:last-child { border-bottom:0; }
+    details.hm-opp-d > summary { list-style:none; cursor:pointer; border-bottom:0; }
+    details.hm-opp-d > summary::-webkit-details-marker { display:none; }
+    details.hm-opp-d[open] > summary .px { color:var(--gold); }
+    .cmp { padding:0 0 .9rem; display:flex; flex-direction:column; gap:.4rem; }
+    .cmp-h { display:flex; justify-content:space-between; color:var(--muted); font-size:.74rem; font-weight:600; margin-bottom:.1rem; }
+    a.cmp-row { display:grid; grid-template-columns:1fr auto 4.2rem; gap:.6rem; align-items:center; padding:.6rem .75rem;
+                background:var(--panel2); border:1px solid var(--line); border-radius:12px; text-decoration:none !important; color:var(--text) !important; }
+    a.cmp-row.best { border-color:var(--up); background:rgba(34,197,94,.08); }
+    .cmp-v { font-weight:700; font-size:.9rem; } .cmp-p { font-weight:800; font-size:1rem; } .cmp-e { font-weight:700; font-size:.82rem; text-align:right; }
+    a.cmp-bet { display:flex; flex-direction:column; align-items:center; gap:.1rem; margin-top:.3rem; padding:.75rem;
+                border-radius:14px; background:var(--gold); color:#14110A !important; text-decoration:none !important; }
+    a.cmp-bet b { font-weight:800; font-size:1rem; letter-spacing:.02em; } a.cmp-bet span { font-size:.8rem; font-weight:600; }
+    .cmp-note { color:var(--muted); font-size:.72rem; line-height:1.4; }
     /* lab */
     a.hm-tile, a.lab-card { text-decoration:none !important; color:var(--text) !important; display:block; }
     a.hm-tile:hover, a.lab-card:hover { border-color:var(--gold) !important; }
@@ -732,15 +748,29 @@ with tab_home:
                 unsafe_allow_html=True)
     if _h_opps:
         _items = []
-        for _ev, _r, _b in _h_opps[:4]:
+        for _ev, _r, _b in _h_opps[:5]:
             _cls = "ev-pos" if _ev > 0 else "ev-neg"
+            _ps = sorted(_r["prices"], key=lambda p: -p.get("decimal", 0))
+            _rows = "".join(
+                f"<a class='cmp-row{' best' if i == 0 else ''}' href='{esc(p.get('url') or '#')}' target='_blank' rel='noopener'>"
+                f"<span class='cmp-v'>{esc(p['venue'])}{' · best' if i == 0 else ''}</span>"
+                f"<span class='cmp-p'>{esc(p['shown'])}</span>"
+                f"<span class='cmp-e {'ev-pos' if p.get('ev', 0) > 0 else 'ev-neg'}'>{p.get('ev', 0) * 100:+.1f}%</span></a>"
+                for i, p in enumerate(_ps))
+            _win = 10.0 * (_b.get("decimal", 1.0) - 1.0)
+            _btn = (f"<a class='cmp-bet' href='{esc(_b.get('url') or '#')}' target='_blank' rel='noopener'>"
+                    f"<b>Bet on {esc(_b['venue'])}</b><span>$10 wins ${_win:,.2f} at {esc(_b['shown'])}</span></a>")
             _items.append(
-                f"<div class='hm-opp'><div><div class='t'>{esc(_r['team'])} ML</div>"
+                f"<details class='hm-opp-d'><summary class='hm-opp'><div><div class='t'>{esc(_r['team'])} ML</div>"
                 f"<div class='s'>{esc(_r.get('sport') or '')} · {esc(starts(_r.get('starts')))}</div>"
                 f"<div class='ev {_cls}'>{_ev * 100:+.1f}% EV · {esc(_b['venue'])}</div></div>"
-                f"<div class='px'>{esc(_b['shown'])}<small>fair {esc(_r['fair_odds'])}</small></div></div>")
+                f"<div class='px'>{esc(_b['shown'])}<small>fair {esc(_r['fair_odds'])}</small></div></summary>"
+                f"<div class='cmp'><div class='cmp-h'><span>{len(_ps)} place{'s' if len(_ps) != 1 else ''} to bet it</span>"
+                f"<span>Pinnacle fair {esc(_r['fair_odds'])}</span></div>{_rows}{_btn}"
+                f"<div class='cmp-note'>Kalshi and Polymarket open the game. Sportsbooks open the book; find the bet there. "
+                f"Check the price before you place it.</div></div></details>")
         st.markdown("<div class='hm-opps'>" + "".join(_items) + "</div>", unsafe_allow_html=True)
-        st.caption("Best price for each team vs Pinnacle's fair line. You get a phone alert at +3% EV.")
+        st.caption("Tap a pick to compare every place to bet it. You get a phone alert at +3% EV.")
     else:
         quiet("No games priced yet", "The board fills in when the Lab pulls Pinnacle prices (every ~30 minutes).")
     st.page_link("pages/Research_Lab_EV_Finder.py", label="See all prices", icon="🎯")
