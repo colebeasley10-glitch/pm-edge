@@ -6,7 +6,7 @@
   "structural_qualified": 0
  },
  "last_run": {
-  "at": "2026-10-17T02:02:37.442663Z",
+  "at": "2026-10-17T02:05:01.517061Z",
   "book_errors": 0,
   "data_failures": [],
   "notes": [
@@ -16,18 +16,30 @@
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [],
-   "kalshi_markets": 0,
-   "matched": 0,
-   "note": "no Pinnacle fetch due this round",
-   "pinnacle_games": 0,
-   "requests_today": 2,
-   "samples": [],
-   "skipped": [
-    "football: fetched 24 min ago",
-    "basketball: fetched 24 min ago"
+   "fetched": [
+    "football",
+    "basketball"
    ],
-   "unmatched": {}
+   "kalshi_markets": 6838,
+   "matched": 350,
+   "pinnacle_games": 77,
+   "requests_today": 4,
+   "samples": [
+    "no_moneyline: Columbia vs Penn: Penn wins",
+    "no_moneyline: Columbia vs Penn: Columbia wins",
+    "no_pinnacle_match: Memphis vs Tulane: Tulane wins",
+    "no_pinnacle_match: Memphis vs Tulane: Memphis wins",
+    "no_pinnacle_match: Akron vs Miami (OH): Miami (OH) wins",
+    "no_pinnacle_match: Akron vs Miami (OH): Akron wins",
+    "no_pinnacle_match: Appalachian St. vs Coastal Carolina: Coastal Carolina wins",
+    "no_pinnacle_match: Appalachian St. vs Coastal Carolina: Appalachian St. wins"
+   ],
+   "skipped": [],
+   "unmatched": {
+    "no_moneyline": 6,
+    "no_pinnacle_match": 4956,
+    "pinnacle_line_not_offered": 1526
+   }
   },
   "reconciled": true,
   "snapshot": {
@@ -60,8 +72,8 @@
     "ok": true,
     "qualified": 0,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 350,
+    "scanned": 350,
     "settle": {
      "marked": 0,
      "pending": 0,
@@ -103,8 +115,8 @@
     "ok": true,
     "qualified": 0,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 350,
+    "scanned": 350,
     "settle": {
      "marked": 0,
      "pending": 0,
@@ -121,5 +133,5 @@
    "scanned": 400
   }
  },
- "last_success": "2026-10-17T02:02:37.442663Z"
+ "last_success": "2026-10-17T02:05:01.517061Z"
 }
