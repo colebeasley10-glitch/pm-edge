@@ -553,3 +553,20 @@ def test_v2_round_end_to_end_with_pinnacle(tmp_path):
     # v1 (scanner-priced) saw nothing and opened nothing: ledgers stay separate
     assert Store(config.VALUE_ONLY.key, tmp_path / "data").positions == []
     assert out["reconciled"]
+
+
+def test_current_kalshi_title_format_gets_matchup_and_matches_pinnacle():
+    from research_lab.public_data import with_matchup
+    t = with_matchup("Oklahoma St. vs Houston", "Houston wins")
+    assert t == "Oklahoma St. vs Houston: Houston wins"
+    assert with_matchup("A vs B", "A vs B: A wins") == "A vs B: A wins"
+    m = kmarket("KXNCAAFGAME-26OCT17OKSTHOU-HOU", t, "Houston")
+    ev = pin_event()[0]
+    spec = parse_market(m)
+    assert spec.market_type == "h2h" and spec.participant_a and spec.participant_b
+    quotes, _, info = pinnacle.build_quotes({5: PIN_PAYLOAD}, {5: [{"markets": [m]}]}, NOW)
+    assert info["matched"] == 1 and quotes[0].fair_side("YES") > 0.6
+    sp = kmarket("KXNCAAFSPREAD-26OCT17OKSTHOU-HOU4", with_matchup("Oklahoma St. vs Houston",
+                 "Houston wins by over 4.5 points"))
+    quotes, _, info = pinnacle.build_quotes({5: PIN_PAYLOAD}, {5: [{"markets": [sp]}]}, NOW)
+    assert info["matched"] == 1 and quotes[0].market_type == "spread" and quotes[0].point == -4.5

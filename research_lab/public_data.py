@@ -107,6 +107,7 @@ class PublicKalshi:
             for raw in e.get("markets") or []:
                 m = normalize_market(raw)
                 m["expected_expiration_time"] = raw.get("expected_expiration_time")
+                m["title"] = with_matchup(e.get("title") or "", m["title"])
                 ms.append(m)
             out.append({"event_ticker": e.get("event_ticker") or "", "title": e.get("title") or "",
                         "series_ticker": series_ticker, "markets": ms})
@@ -132,6 +133,14 @@ class PublicKalshi:
             if not cursor or not batch:
                 return out, True
         return out, False
+
+
+def with_matchup(event_title: str, market_title: str) -> str:
+    """Kalshi now titles sports markets "Marist wins" and keeps "Columbia vs Marist" on the event.
+    The market parser needs both teams, so prefix the matchup when the market title lacks it."""
+    if event_title and ":" not in market_title and event_title.lower() not in market_title.lower():
+        return f"{event_title}: {market_title}"
+    return market_title
 
 
 def _levels(raw) -> list[tuple[float, float]]:

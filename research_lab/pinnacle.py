@@ -244,7 +244,12 @@ def build_quotes(payloads: dict[int, dict], kalshi_events: dict[int, list[dict]]
                  max_overround: float = 1.10) -> tuple[list[FairQuote], dict[str, dict], dict]:
     """Match Kalshi markets to Pinnacle games. Returns (quotes, markets_by_ticker, info)."""
     aliases = lab_aliases()
-    quotes, markets, reasons = [], {}, {}
+    quotes, markets, reasons, samples = [], {}, {}, []
+
+    def miss(reason: str, m: dict) -> None:
+        reasons[reason] = reasons.get(reason, 0) + 1
+        if len(samples) < 8 and reason != "unsupported_market_type":
+            samples.append(f"{reason}: {str(m.get('title'))[:70]}")
     for sid, payload in payloads.items():
         evs = events_from(payload, SPORTS[sid][2], now)
         pool = [e.as_match_event() for e in evs]
@@ -256,16 +261,16 @@ def build_quotes(payloads: dict[int, dict], kalshi_events: dict[int, list[dict]]
                 markets[m["ticker"]] = m
                 spec = parse_market(m)
                 if spec.market_type not in {"h2h", "spread", "total"}:
-                    reasons["unsupported_market_type"] = reasons.get("unsupported_market_type", 0) + 1
+                    miss("unsupported_market_type", m)
                     continue
                 em = match_event(spec, pool, aliases, m.get("occurrence_datetime"))
                 if em.event is None:
-                    reasons["no_pinnacle_match"] = reasons.get("no_pinnacle_match", 0) + 1
+                    miss("no_pinnacle_match", m)
                     continue
                 ev = by_id[str(em.event["id"])]
                 probs, why = fair_for(spec, ev, aliases, max_overround)
                 if probs is None:
-                    reasons[why] = reasons.get(why, 0) + 1
+                    miss(why, m)
                     continue
                 quotes.append(FairQuote(
                     ticker=m["ticker"], title=m.get("title") or m["ticker"], event_id=ev.id,
@@ -274,4 +279,6 @@ def build_quotes(payloads: dict[int, dict], kalshi_events: dict[int, list[dict]]
                     fair_yes_power=probs["power"], fair_yes_prop=probs["proportional"], fair_yes_shin=probs["shin"],
                     books=1, dispersion=None, fair_at=ev.generated_at, evaluated_at=now, matcher_pass=True,
                     matcher_reason=em.reason))
-    return quotes, markets, {"matched": len(quotes), "kalshi_markets": len(markets), "unmatched": reasons}
+    return quotes, markets, {"matched": len(quotes), "kalshi_markets": len(markets), "unmatched": reasons,
+                             "pinnacle_games": sum(len(events_from(p, SPORTS[s][2], now)) for s, p in payloads.items()),
+                             "samples": samples}
