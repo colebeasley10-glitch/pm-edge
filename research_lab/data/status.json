@@ -1,7 +1,7 @@
 {
  "day_stats": {
   "data_failures": 0,
-  "day": "20261017",
+  "day": "20261018",
   "structural_filled": 0,
   "structural_qualified": 0
  },
@@ -26,27 +26,33 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 10/17"
  },
  "last_run": {
-  "at": "2026-10-18T03:32:19.606900Z",
+  "at": "2026-10-18T04:01:56.758772Z",
   "best_price": {
-   "compared": 0,
-   "new_picks": 0,
-   "poly_cheaper": 0
+   "compared": 1,
+   "new_picks": 3,
+   "poly_cheaper": 1
   },
   "book_errors": 0,
   "data_failures": [],
   "ev": {
+   "book_offers": 0,
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
-    "errors": [],
+    "errors": [
+     "americanfootball_ncaaf: HTTP 401",
+     "americanfootball_nfl: HTTP 401",
+     "basketball_nba: HTTP 401"
+    ],
     "fresh": false,
     "remaining": "0",
-    "skipped": "lab odds budget used or account nearly empty",
     "taken_at": null
    },
    "errors": [],
-   "games": 0,
-   "picks": 0
+   "games": 34,
+   "kalshi_offers": 54,
+   "picks": 340,
+   "polymarket_offers": 34
   },
   "my_bets": {
    "logged": 0,
@@ -59,22 +65,36 @@
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [],
-   "kalshi_markets": 0,
-   "matched": 0,
-   "note": "no Pinnacle fetch due this round",
-   "pinnacle_games": 0,
-   "requests_today": 73,
-   "samples": [],
-   "skipped": [
-    "football: next in 14 min",
-    "basketball: next in 0 min",
-    "hockey: next in 112 min",
-    "baseball: next in 112 min",
-    "soccer: next in 89 min",
-    "tennis: next in 6 min"
+   "fetched": [
+    "football",
+    "basketball",
+    "tennis"
    ],
-   "unmatched": {}
+   "kalshi_markets": 3106,
+   "matched": 190,
+   "pinnacle_games": 109,
+   "requests_today": 3,
+   "samples": [
+    "no_pinnacle_match: Ohio vs Sacramento St.: Sacramento St. wins",
+    "no_pinnacle_match: Ohio vs Sacramento St.: Ohio wins",
+    "no_pinnacle_match: New Mexico vs Hawai'i: Hawai'i wins",
+    "no_pinnacle_match: New Mexico vs Hawai'i: New Mexico wins",
+    "no_pinnacle_match: Utah vs Colorado: Colorado wins",
+    "no_pinnacle_match: Utah vs Colorado: Utah wins",
+    "no_pinnacle_match: Wake Forest vs California: California wins",
+    "no_pinnacle_match: Wake Forest vs California: Wake Forest wins"
+   ],
+   "skipped": [
+    "hockey: next in 82 min",
+    "baseball: next in 82 min",
+    "soccer: next in 59 min"
+   ],
+   "unmatched": {
+    "no_moneyline": 29,
+    "no_pinnacle_match": 2390,
+    "pinnacle_line_not_offered": 496,
+    "selection_not_matched": 1
+   }
   },
   "reconciled": true,
   "snapshot": {
@@ -95,8 +115,8 @@
     "pushed": 0,
     "qualified": 0,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 44,
+    "scanned": 25,
     "settle": {
      "marked": 0,
      "pending": 0,
@@ -104,14 +124,14 @@
     }
    },
    "EV_FINDER_v2": {
-    "filled": 0,
+    "filled": 5,
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 6,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 1,
+    "scanned": 340,
     "settle": {
      "marked": 4,
      "pending": 4,
@@ -119,14 +139,14 @@
     }
    },
    "EV_FINDER_v3": {
-    "filled": 0,
+    "filled": 1,
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 1,
     "reconcile_problems": [],
     "rejected": 0,
-    "scanned": 0,
+    "scanned": 340,
     "settle": {
      "marked": 1,
      "pending": 1,
@@ -153,8 +173,8 @@
     "ok": true,
     "qualified": 0,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 178,
+    "scanned": 178,
     "settle": {
      "marked": 0,
      "pending": 0,
@@ -196,8 +216,8 @@
     "ok": true,
     "qualified": 0,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 178,
+    "scanned": 178,
     "settle": {
      "marked": 0,
      "pending": 0,
@@ -214,6 +234,6 @@
    "scanned": 400
   }
  },
- "last_success": "2026-10-18T03:32:19.606900Z",
+ "last_success": "2026-10-18T04:01:56.758772Z",
  "report_sent": "20261017"
 }
