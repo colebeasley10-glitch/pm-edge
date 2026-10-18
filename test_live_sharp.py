@@ -1,4 +1,4 @@
-"""Live $1 Sharp: sizing, hard caps, idempotency, fills and settlement, with a fake Kalshi."""
+"""Live $2 Sharp: sizing, hard caps, idempotency, fills and settlement, with a fake Kalshi."""
 import os
 import tempfile
 from datetime import datetime, timedelta, timezone
@@ -58,10 +58,10 @@ def paper(i, price=0.50, side="YES", trades=50):
 
 
 def test_size():
-    assert live_sharp.size(0.50) == 2           # $1.00 of contracts
-    assert live_sharp.size(0.33) == 3           # $0.99
-    assert live_sharp.size(0.07) == 14          # $0.98
-    assert live_sharp.size(0.97) == 1
+    assert live_sharp.size(0.50) == 4           # $2.00 of contracts
+    assert live_sharp.size(0.33) == 6           # $1.98
+    assert live_sharp.size(0.07) == 28          # $1.96
+    assert live_sharp.size(0.97) == 2
     assert live_sharp.size(0.50, budget=0.60) == 1   # only room for one today
     assert live_sharp.size(0.50, budget=0.40) == 0
 
@@ -69,7 +69,7 @@ def test_size():
 def test_env_cannot_raise_caps():
     os.environ.update({"LIVE_SHARP_MAX_PER_BET": "50", "LIVE_SHARP_DAILY_BUDGET": "1000",})
     try:
-        assert live_sharp.per_bet() == 1.0 and live_sharp.daily_budget() == 50.0
+        assert live_sharp.per_bet() == 2.0 and live_sharp.daily_budget() == 105.0
     finally:
         for k in ("LIVE_SHARP_MAX_PER_BET", "LIVE_SHARP_DAILY_BUDGET"):
             os.environ.pop(k)
@@ -79,8 +79,8 @@ def test_daily_budget_and_order_cap():
     c, rows = FakeClient(), []
     out = live_sharp.place([paper(i) for i in range(60)], c, now=NOW, rows=rows)
     spent = sum(float(r["cost"]) + float(r["fee"]) for r in rows)
-    assert spent <= 50.0 + 1e-9, spent
-    assert all(o["count"] * o["price"] <= 1.0 + 1e-9 for o in c.orders)
+    assert spent <= 105.0 + 1e-9, spent
+    assert all(o["count"] * o["price"] <= 2.0 + 1e-9 for o in c.orders)
     assert out["skipped"].get("daily_budget", 0) == 60 - out["placed"]
     # next Eastern day the budget resets
     out2 = live_sharp.place([paper(100)], c, now=NOW + timedelta(days=1), rows=rows)
@@ -88,7 +88,7 @@ def test_daily_budget_and_order_cap():
 
 
 def test_kalshi_history_counts_toward_budget():
-    c = FakeClient(prior_spend=49.80)   # e.g. a ledger commit was lost
+    c = FakeClient(prior_spend=104.80)   # e.g. a ledger commit was lost
     out = live_sharp.place([paper(1)], c, now=NOW, rows=[])
     assert out["placed"] == 0 and out["skipped"] == {"daily_budget": 1}
 
@@ -117,7 +117,7 @@ def test_settle():
     done = live_sharp.settle(rows, lambda t: {k: mk[k] for k in t}, now=NOW)
     assert [r["status"] for r in done] == ["won", "lost"]
     won = done[0]
-    assert abs(float(won["pl"]) - (2 - float(won["cost"]) - float(won["fee"]))) < 1e-6
+    assert abs(float(won["pl"]) - (float(won["filled"]) - float(won["cost"]) - float(won["fee"]))) < 1e-6
     s = live_sharp.summary(rows, NOW)
     assert s["won"] == 1 and s["lost"] == 1
 
@@ -141,7 +141,7 @@ def test_round_places_only_when_enabled():
     c = FakeClient()
     paper_row = book.load()[-1]
     out = run.run_live_sharp([paper_row], FakeKalshi(), NOW, client=c)
-    assert out["placed"] == 1 and c.orders[0]["price"] == 0.50 and c.orders[0]["count"] == 2
+    assert out["placed"] == 1 and c.orders[0]["price"] == 0.50 and c.orders[0]["count"] == 4
 
 
 def test_marks_open_bets_like_paper():
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("Live $1 Sharp tests: PASS")
+    print("Live $2 Sharp tests: PASS")
 
 
 def test_daily_breakdown():

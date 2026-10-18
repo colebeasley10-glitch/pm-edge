@@ -2,7 +2,7 @@
 
 Sent by the first lab run at or after 11pm Eastern (or before 6am for the previous day if
 those runs were skipped). Titled "Research Lab (PAPER)" so it can't be confused with the
-real-money Live $1 Sharp messages.
+real-money Live $2 Sharp messages.
 """
 from __future__ import annotations
 

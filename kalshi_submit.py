@@ -6,8 +6,8 @@ This module intentionally exposes only approval-gated order capabilities:
 
 It contains no cancel, amend, decrease, transfer, withdrawal, or autonomous
 submission path. Callers must require an explicit user approval action, with one
-owner-approved exception: league/live_sharp.py places capped $1 Sharp copies on
-its own ($1/bet, $50/day, IOC only, off unless
+owner-approved exception: league/live_sharp.py places capped $2 Sharp copies on
+its own ($2/bet, $105/day, IOC only, off unless
 LIVE_SHARP_ENABLED=1).
 """
 from __future__ import annotations

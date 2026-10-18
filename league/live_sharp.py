@@ -1,9 +1,9 @@
-"""Live $1 Sharp: copy each new Sharp paper pick with a real Kalshi order.
+"""Live $2 Sharp: copy each new Sharp paper pick with a real Kalshi order.
 
 Real money, so every limit is enforced here in code, not just in config:
 
-* at most $1.00 of contracts per bet (fee on top, a few cents);
-* at most $50.00 spent per Eastern day, fees included (no limit on the number of bets);
+* at most $2.00 of contracts per bet (fee on top, a few cents);
+* at most $105.00 spent per Eastern day, fees included (no limit on the number of bets);
 * the daily spend is the larger of this ledger and Kalshi's own order history,
   so a lost ledger commit can't double the budget;
 * orders are immediate-or-cancel at the price the paper pick saw, so we never
@@ -34,8 +34,8 @@ LEDGER = Path(os.getenv("LIVE_SHARP_LEDGER_PATH", "live_sharp_trades.csv"))
 PREFIX = "pmls-"
 
 # Hard ceilings. Env can lower these, never raise them.
-CEIL_PER_BET = 1.00
-CEIL_DAILY = 50.00
+CEIL_PER_BET = 2.00
+CEIL_DAILY = 105.00
 
 FIELDS = [
     "trade_id", "paper_trade_id", "client_order_id", "placed_at", "day", "ticker", "title", "side",

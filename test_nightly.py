@@ -32,9 +32,9 @@ def test_build_summary():
     ]
     title, lines = nightly.build("20261013", paper, live, {"fair_cache": {}, "daily_usage": {"credits": 0}})
     text = "\n".join(lines)
-    assert "Live $1 −$0.14 (1-1)" in title and "Paper Sharp −$4.90 (1-1)" in title
+    assert "Live $2 −$0.14 (1-1)" in title and "Paper Sharp −$4.90 (1-1)" in title
     assert "Orders 5: 3 filled, 1 missed (price moved), 1 blocked by Kalshi" in text
-    assert "Spent $1.96 of $50" in text
+    assert "Spent $1.96 of $105" in text
     assert "Opened 3: Sharp 2, Weather 1" in text and "Sharp 1-1, −$4.90" in text
     assert "Odds API is out of credits" in text
     _, lines2 = nightly.build("20261013", paper, live, {"fair_cache": {"X": {}}, "daily_usage": {"credits": 3}})

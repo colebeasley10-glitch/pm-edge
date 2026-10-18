@@ -600,7 +600,7 @@ def cards_html(items) -> str:
 
 
 def _refresh_all() -> None:
-    """One tap refreshes both the paper league bets and the real $1 bets."""
+    """One tap refreshes both the paper league bets and the real $2 bets."""
     _refresh_live_bets()
     _refresh_live_sharp()
     live_scores.clear()
@@ -687,7 +687,7 @@ st.markdown(
 )
 
 tab_home, tab_live, tab_league, tab_lab, tab_picks, tab_bets, tab_results, tab_system = st.tabs(
-    ["Home", "Live $1", "Paper", "Lab", f"Alerts {len(picks)}" if len(picks) else "Alerts", "My bets", "Results", "System"]
+    ["Home", "Live $2", "Paper", "Lab", f"Alerts {len(picks)}" if len(picks) else "Alerts", "My bets", "Results", "System"]
 )
 
 def _price_label(p: dict) -> str:
@@ -745,7 +745,7 @@ with tab_home:
         f"""
         <div class='pe-hero'>
           <div class='top'>
-            <div><div class='k'>Live $1 Sharp · real money</div>
+            <div><div class='k'>Live $2 Sharp · real money</div>
               <div class='big {tone(_h_ls["pl"])}'>{money(_h_ls["pl"], signed=True)}</div></div>
             <div class='mid {tone(_h_today_pl)}'>{money(_h_today_pl, signed=True)}<div class='k' style='text-align:right'>today</div></div>
           </div>
@@ -978,7 +978,7 @@ with tab_live:
         f"""
         <div class='pe-hero'>
           <div class='top'>
-            <div><div class='k'>Live $1 Sharp · real money</div>
+            <div><div class='k'>Live $2 Sharp · real money</div>
               <div class='big {tone(ls["pl"])}'>{money(ls["pl"], signed=True)}</div></div>
           </div>
           <div class='stats'>
@@ -1000,7 +1000,7 @@ with tab_live:
     _ls_on = (league_status.get("live_sharp") or {}).get("enabled")
     st.markdown(
         "<div class='pe-lede' style='font-size:.8rem'>" + ("" if _ls_on else "<b>Off.</b> ")
-        + "Copies every Sharp pick with a real Kalshi order · $1 per bet · $50/day cap · "
+        + "Copies every Sharp pick with a real Kalshi order · $2 per bet · $105/day cap · "
           "buys only at the price the pick saw."
         + ("" if _ls_on else " Turn it on with the LIVE_SHARP_ENABLED repo variable.")
         + "</div>", unsafe_allow_html=True)
@@ -1109,7 +1109,7 @@ with tab_live:
                         f"<span class='num'>{pct(g['roi'], signed=True) if g['roi'] is not None else '—'}</span>",
                         tone(g["roi"] or 0))
             st.markdown(rows_html([
-                _vs_row(_vs["live"], "Your real $1 bets"),
+                _vs_row(_vs["live"], "Your real $2 bets"),
                 _vs_row(_vs["paper_copied"], "The same picks on paper. Should track the live row closely"),
                 _vs_row(_vs["paper_missed"], "Picks live couldn't place: no fill, blocked or skipped"),
                 _vs_row(_vs["paper"], "Every paper Sharp pick since live started"),
