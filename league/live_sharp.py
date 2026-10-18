@@ -437,6 +437,16 @@ def settle(rows: list[dict], fetch_markets, *, now: datetime | None = None) -> l
             if mark is not None and avg is not None:
                 r["clv_cents"] = round((mark - avg) * 100.0, 2)
             done.append(r)
+        elif (pay := book.scalar_payout(m, r["side"])) is not None:
+            # no-result game: Kalshi paid each contract a partial amount instead of $0/$1
+            n = book.f(r.get("filled"), 0.0) or 0.0
+            sold = min(n, book.f(r.get("sold"), 0.0) or 0.0)
+            sale = (book.f(r.get("sale_proceeds"), 0.0) or 0.0) - (book.f(r.get("sale_fee"), 0.0) or 0.0)
+            pl = round((n - sold) * pay + sale - cost - fee, 2)
+            r.update({"status": "won" if pl > 0 else "lost" if pl < 0 else "void", "result": "scalar",
+                      "settled_at": book.iso(now), "pl": pl,
+                      "note": f"No result - Kalshi settled at {pay * 100:.0f}c per contract"})
+            done.append(r)
         elif result in {"void", "voided", "all_no_void"} or status in {"voided", "canceled", "cancelled"}:
             r.update({"status": "void", "result": result or status, "settled_at": book.iso(now), "pl": 0.0})
             done.append(r)

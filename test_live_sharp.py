@@ -446,3 +446,31 @@ def test_clear_rejection_is_an_error_without_lookup():
         assert not rows[0]["note"].startswith(live_sharp.UNCONFIRMED)
     finally:
         os.environ.pop("LIVE_SHARP_MIN_TRADES", None)
+
+
+def test_no_result_market_settles_at_kalshi_partial_value():
+    """A rained-out cricket match settles at a partial price, not $0/$1 (Oct 17 WI v IND)."""
+    from league import live_sharp
+    row = {"ticker": "KXT20MATCH-26OCT170930WIIND-WI", "side": "NO", "status": "open",
+           "filled": "1.0", "cost": "0.61", "fee": "0.02"}
+    market = {"ticker": row["ticker"], "status": "finalized", "result": "scalar", "settlement_value": 0.5}
+    done = live_sharp.settle([row], lambda t: {row["ticker"]: market})
+    assert done == [row]
+    assert row["result"] == "scalar"
+    assert row["pl"] == -0.13 and row["status"] == "lost"
+
+
+def test_paper_no_result_market_settles_at_partial_value():
+    from league import book
+    row = {"ticker": "KXT20MATCH-X-WI", "side": "NO", "status": "open",
+           "contracts": "16", "cost": "9.76", "fee": "0.27"}
+    market = {"ticker": row["ticker"], "status": "finalized", "result": "", "settlement_value": 0.5}
+    out = book.update([row], lambda t: {row["ticker"]: market})
+    assert out["settled"] == 1 and row["result"] == "scalar"
+    assert row["pl"] == round(8 - 9.76 - 0.27, 2)
+
+
+def test_still_trading_market_is_not_settled_by_partial_value_logic():
+    from league import book
+    assert book.scalar_payout({"status": "active", "result": "", "settlement_value": None}, "YES") is None
+    assert book.scalar_payout({"status": "finalized", "result": "void", "settlement_value": 0.5}, "YES") is None

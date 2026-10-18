@@ -236,6 +236,27 @@ def mark_cutoff(row: dict) -> datetime | None:
     return None
 
 
+SETTLED_STATUSES = {"finalized", "settled", "determined"}
+
+
+def scalar_payout(m: dict, side: str) -> float | None:
+    """Per-contract payout for a market Kalshi settled at a price other than $0/$1.
+
+    Happens when a game ends with no result (e.g. a rained-out cricket match): the
+    result comes back "scalar" (or blank) with a settlement value between 0 and 1.
+    Returns None while the market hasn't settled that way.
+    """
+    result = str(m.get("result") or "").lower()
+    status = str(m.get("status") or "").lower()
+    if result in {"yes", "no", "void", "voided", "all_no_void"} or status in {"voided", "canceled", "cancelled"}:
+        return None
+    value = f(m.get("settlement_value"))
+    if value is None or not (result == "scalar" or status in SETTLED_STATUSES):
+        return None
+    value = min(1.0, max(0.0, value))
+    return value if side == "YES" else 1.0 - value
+
+
 def update(rows: list[dict], fetch_markets, *, now: datetime | None = None) -> dict:
     """Mark open trades to market and settle finished ones.
 
@@ -272,6 +293,18 @@ def update(rows: list[dict], fetch_markets, *, now: datetime | None = None) -> d
             if closing is not None:
                 r["closing_mid"] = round(closing, 4)
                 r["clv_cents"] = round((closing - (f(r.get("entry_price"), 0.0) or 0.0)) * 100.0, 2)
+            settled += 1
+            continue
+        pay = scalar_payout(m, r["side"])
+        if pay is not None:
+            contracts = int(f(r.get("contracts"), 0) or 0)
+            cost = f(r.get("cost"), 0.0) or 0.0
+            fee = f(r.get("fee"), 0.0) or 0.0
+            pl = round(contracts * pay - cost - fee, 2)
+            r["status"] = "won" if pl > 0 else "lost" if pl < 0 else "void"
+            r["result"] = "scalar"
+            r["settled_at"] = iso(now)
+            r["pl"] = pl
             settled += 1
             continue
         if result in {"void", "voided", "all_no_void"} or status in {"voided", "canceled", "cancelled"}:
