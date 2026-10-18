@@ -1507,6 +1507,7 @@ with tab_lab:
     st.markdown("<div class='pe-lede'>Strategies tested side by side on <b>paper</b>, each with its own "
                 "$500 virtual bankroll. Tap one for its bets, misses and model checks.</div>", unsafe_allow_html=True)
     _tools = [("Research_Lab_EV_Finder", "+EV Finder", "Best price across all your books vs Pinnacle"),
+              ("Research_Lab_Best_Price", "Best Price", "Were your Sharp picks cheaper on Polymarket?"),
               ("Research_Lab_Promo_Converter", "Promo Converter", "Turn bonus bets into cash")]
     st.markdown("<div class='hm-tiles'>" + "".join(
         f"<a class='hm-tile lab-tool' href='/{pg}' target='_self'><div class='v' style='font-size:1.05rem'>{esc(t)}</div>"

@@ -116,3 +116,12 @@ Only**, **Research Lab Hybrid**, **Research Lab Structural Arb**. Everything is 
 * The lab only checks ladders and NO baskets. YES baskets need proof that the outcomes are exhaustive,
   which the API doesn't give.
 * Market making and new forecasting models are intentionally not built.
+
+## Best Price (read-only)
+
+`research_lab/best_price.py` checks every new **live** Sharp pick (from `live_sharp_trades.csv`, read-only) against
+the same bet on Polymarket in the next lab round (a few minutes later), fees included, and records both prices in
+`research_lab/data/BEST_PRICE/best_price.csv`. It never places or changes an order; live bets stay on Kalshi.
+The **Best Price** page shows how often Polymarket was cheaper, by how much, and what buying at the cheaper venue
+would have saved. Game/match winners only for now; spreads, totals and ties are logged as "not compared".
+Novig isn't included: its prices only came through The Odds API, whose free credits are used up.

@@ -404,3 +404,45 @@ def render_promo() -> None:
     df["Converts"] = df["Converts"].map(lambda x: f"{x:.0%}")
     st.dataframe(df, hide_index=True, width="stretch")
     st.caption("Sportsbook prices may be hours old. Check both prices before placing either bet.")
+
+
+# ------------------------------------------------------------------ best price (live Sharp vs Polymarket)
+
+def render_best_price() -> None:
+    from research_lab import best_price
+    st.set_page_config(page_title="Research Lab: Best Price", page_icon="🏷️", layout="centered")
+    try:
+        st.page_link("app.py", label="Back to SharpIQ", icon="⬅️")
+    except Exception:
+        pass
+    st.title("Best Price")
+    st.info("👀 **READ-ONLY.** Your live Sharp bets still go to Kalshi. This only records what the same bet "
+            "cost on Polymarket a few minutes after each pick, fees included, so you can see if buying "
+            "wherever it's cheapest would pay off.")
+    rows = best_price.load()
+    if not rows:
+        st.write("No picks compared yet. Each new live Sharp pick is checked in the next Research Lab round.")
+        return
+    s = best_price.summary(rows)
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Polymarket cheaper", f"{s['poly_cheaper']} of {s['compared']}" if s["compared"] else "—")
+    c2.metric("Avg edge when cheaper", f"{s['avg_edge_cents']:.1f}¢" if s["avg_edge_cents"] is not None else "—")
+    c3.metric("Would have saved", _money(s["saved"]) if s["compared"] else "—",
+              help="Same number of contracts bought at the cheaper venue instead of Kalshi.")
+    if s["spent"]:
+        st.caption(f"That's {s['saved'] / s['spent'] * 100:.1f}% of the ${s['spent']:.2f} spent on compared picks. "
+                   f"{s['picks'] - s['compared']} of {s['picks']} picks couldn't be compared (no matching "
+                   "Polymarket market, too thin, or not a game-winner bet).")
+    results = {t.get("trade_id"): t.get("status") for t in best_price.sharp_trades()}
+    table = []
+    for r in reversed(rows):
+        d = best_price._f(r.get("diff_cents"))
+        table.append({"Placed": _when(r.get("placed_at")), "Pick": r.get("pick"),
+                      "Kalshi": f"{best_price._f(r.get('kalshi_cost'), 0) * 100:.1f}¢" if r.get("kalshi_cost") else "—",
+                      "Polymarket": f"{best_price._f(r.get('poly_cost')) * 100:.1f}¢" if r.get("poly_cost") else "—",
+                      "Best": r.get("best_venue") if d is not None else "—",
+                      "Diff": f"{d:+.1f}¢" if d is not None else (r.get("note") or "—"),
+                      "Result": results.get(r.get("trade_id"), "—")})
+    st.dataframe(pd.DataFrame(table), hide_index=True, width="stretch")
+    st.caption("Diff is Kalshi's all-in price minus Polymarket's (a 1% Polymarket fee allowance is included). "
+               "Positive means Polymarket was cheaper.")
