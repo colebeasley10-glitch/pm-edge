@@ -135,6 +135,19 @@ class KalshiSubmitClient:
             raise KalshiSubmitError(response.status_code, "Unexpected Kalshi response", payload)
         return payload
 
+    def get_balance_dollars(self) -> float | None:
+        """Cash available to the account behind THIS (write) key, in dollars.
+
+        Kalshi reports `balance` in cents; newer responses may also carry a
+        `balance_dollars` string. Returns None if neither field is present.
+        """
+        payload = self._request("GET", "/portfolio/balance")
+        if payload.get("balance_dollars") is not None:
+            return float(payload["balance_dollars"])
+        if payload.get("balance") is not None:
+            return float(payload["balance"]) / 100.0
+        return None
+
     def get_orders(self, *, limit: int = 200) -> list[dict]:
         payload = self._request("GET", "/portfolio/orders", params={"limit": max(1, min(int(limit), 200))})
         rows = payload.get("orders", [])
