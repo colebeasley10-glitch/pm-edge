@@ -165,6 +165,23 @@ def run_live_sharp(new_sharp_rows: list[dict], kalshi, now: datetime, client=Non
     return out
 
 
+def alert_low_pools(low: list[dict], sent: dict, now: datetime) -> list[dict]:
+    """One push per pool per Eastern day when a Kalshi pool the bot bets from runs low.
+
+    `sent` maps pool -> ET day last alerted and is updated in place (kept in league_status)."""
+    day = live_sharp.et_day(now)
+    fresh = [p for p in low if sent.get(str(p["pool"])) != day]
+    if not fresh:
+        return []
+    _pushover("⚠️ Kalshi pool low: top it up",
+              [f"{p['name']} (Exchange {p['pool']}): ${p['cash']:.2f}" for p in fresh]
+              + ["Live bets on these markets will be skipped until you move cash there:",
+                 "kalshi.com/account/exchange-indexes → Transfer"])
+    for p in fresh:
+        sent[str(p["pool"])] = day
+    return fresh
+
+
 def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict:
     now = now or datetime.now(timezone.utc)
     kalshi = kalshi or LeagueKalshi()
@@ -172,13 +189,20 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
     was_open = {r.get("trade_id") for r in rows if r.get("status") == "open"}
     status = {"ran_at": book.iso(now), "strategies": {}}
     try:
-        status["nightly_sent"] = json.loads(STATUS.read_text()).get("nightly_sent") if STATUS.exists() else None
+        _prev = json.loads(STATUS.read_text()) if STATUS.exists() else {}
     except Exception:
-        status["nightly_sent"] = None
+        _prev = {}
+    status["nightly_sent"] = _prev.get("nightly_sent")
+    status["pool_alerts"] = dict(_prev.get("pool_alerts") or {})
     try:
         status["update"] = book.update(rows, kalshi.markets, now=now)
     except Exception as exc:
         status["update"] = {"error": f"{type(exc).__name__}: {exc}"}
+    shadow_rows = book.load(book.SHADOW_LEDGER)
+    try:
+        status["shadow_update"] = book.update(shadow_rows, kalshi.markets, now=now) if shadow_rows else {}
+    except Exception as exc:
+        status["shadow_update"] = {"error": f"{type(exc).__name__}: {exc}"}
     session = requests.Session()
     session.headers["User-Agent"] = "pm-edge-league (github.com/colebeasley10-glitch/pm-edge)"
     new_rows = []
@@ -193,6 +217,15 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
                                  "fair": None if pk.fair is None else round(pk.fair, 4),
                                  "edge": None if pk.edge() is None else round(pk.edge(), 4)}
                                 for pk in picks]
+                # grade what it would have done: same gate, cap and $10 paper sizing, separate ledger
+                st["shadow_opened"] = 0
+                room_sh = max(0, daily_cap(strat.NAME) - opened_today(shadow_rows, strat.NAME, now))
+                for pk in picks:
+                    if st["shadow_opened"] >= room_sh:
+                        break
+                    if book.gate(pk, shadow_rows, now=now)[0]:
+                        book.open_trade(pk, shadow_rows, now=now)
+                        st["shadow_opened"] += 1
                 picks = []
             room = max(0, daily_cap(strat.NAME) - opened_today(rows, strat.NAME, now))
             live_candidates = []
@@ -213,6 +246,7 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
             if strat.NAME == "sharp":
                 # real $2 copies go out right away, before slower strategies run
                 status["live_sharp"] = run_live_sharp(live_candidates, kalshi, now)
+                alert_low_pools(status["live_sharp"].get("low_pools") or [], status["pool_alerts"], now)
         except Exception as exc:
             st["error"] = f"{type(exc).__name__}: {str(exc)[:200]}"
             traceback.print_exc()
@@ -221,6 +255,9 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
         status["strategies"][strat.NAME] = st
     book.save(rows)
     status["standings"] = book.standings(rows)
+    if shadow_rows:
+        book.save(shadow_rows, book.SHADOW_LEDGER)
+    status["shadow_standings"] = book.standings(shadow_rows)
     try:
         from league import nightly
         sent_day = nightly.maybe_send(now, status.get("nightly_sent"), rows, live_sharp.load(), _pushover)

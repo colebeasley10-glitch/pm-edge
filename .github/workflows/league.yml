@@ -44,7 +44,7 @@ jobs:
         run: |
           git config user.name "pm-edge-bot"
           git config user.email "pm-edge-bot@users.noreply.github.com"
-          for f in league_trades.csv league_status.json live_sharp_trades.csv; do if [ -f "$f" ]; then git add "$f"; fi; done
+          for f in league_trades.csv league_status.json live_sharp_trades.csv league_shadow.csv; do if [ -f "$f" ]; then git add "$f"; fi; done
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "League round [skip ci]"
           for i in 1 2 3 4; do

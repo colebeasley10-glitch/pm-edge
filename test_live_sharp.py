@@ -535,3 +535,35 @@ def test_drift_recorded_once_after_25_minutes():
     assert abs(float(r["drift_cents"]) - 6.0) < 0.6
     live_sharp.settle([r], mk(0.70), now=NOW + timedelta(minutes=90))
     assert abs(float(r["drift_cents"]) - 6.0) < 0.6
+
+
+class PoolClient(FakeClient):
+    """Sharded account: cash per pool, and each ticker lives in one pool."""
+    def __init__(self, pools, where, **kw):
+        super().__init__(**kw)
+        self.pools, self.where = dict(pools), where
+
+    def get_balance_dollars(self):
+        return sum(self.pools.values())
+
+    def get_pool_balances(self):
+        return dict(self.pools)
+
+    def get_market_pool(self, ticker):
+        return self.where.get(ticker)
+
+
+def test_pool_cash_not_total_cash():
+    # $89 overall, but the tennis pool (3) is empty: the tennis pick is skipped, the other goes out
+    c, rows = PoolClient({0: 89.0, 3: 0.40}, {"KXT-700": 3, "KXT-701": 0}), []
+    out = live_sharp.place([paper(700), paper(701)], c, now=NOW, rows=rows)
+    assert out["placed"] == 1 and out["skipped"].get("low_cash") == 1
+    assert c.orders[0]["ticker"] == "KXT-701"
+    assert [p["pool"] for p in out["low_pools"]] == [3]
+    assert out["pools"] == {"0": 89.0, "3": 0.4}
+
+
+def test_low_pools_reported_with_no_picks():
+    c = PoolClient({0: 50.0, 3: 5.0}, {})
+    out = live_sharp.place([], c, now=NOW, rows=[])
+    assert [p["pool"] for p in out["low_pools"]] == [3]

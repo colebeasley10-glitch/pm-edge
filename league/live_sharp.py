@@ -234,6 +234,40 @@ def reconcile_unconfirmed(rows: list[dict], client, *, now: datetime | None = No
     return found
 
 
+POOL_NAMES = {0: "Default", 1: "Combos", 2: "Crypto & Commodities", 3: "Tennis, Baseball, Basketball"}
+WATCH_POOLS = {0, 3}   # where Sharp picks land (most are tennis -> 3)
+LOW_POOL = 20.0        # alert below this many dollars
+
+
+def _read_pools(client) -> tuple[dict[int, float], float | None]:
+    pools, total = {}, None
+    try:
+        if hasattr(client, "get_pool_balances"):
+            pools = client.get_pool_balances() or {}
+        if hasattr(client, "get_balance_dollars"):
+            total = client.get_balance_dollars()
+    except Exception as exc:
+        print("LIVE_SHARP_BALANCE_ERROR", type(exc).__name__, str(exc)[:120])
+    if total is None and pools:
+        total = sum(pools.values())
+    return pools, total
+
+
+def _pool_of(client, ticker: str) -> int | None:
+    try:
+        return client.get_market_pool(ticker) if hasattr(client, "get_market_pool") else None
+    except Exception as exc:
+        print("LIVE_SHARP_POOL_LOOKUP_ERROR", ticker, type(exc).__name__)
+        return None
+
+
+def _low_pools(pools: dict[int, float], needed: set[int]) -> list[dict]:
+    if not pools:
+        return []
+    return [{"pool": i, "name": POOL_NAMES.get(i, f"Exchange {i}"), "cash": round(pools.get(i, 0.0), 2)}
+            for i in sorted(WATCH_POOLS | needed) if pools.get(i, 0.0) < LOW_POOL]
+
+
 def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
           rows: list[dict] | None = None) -> dict:
     """Place real orders for the new Sharp paper picks. Returns a summary; never raises on one bad order."""
@@ -242,8 +276,18 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
     day = et_day(now)
     picks = [p for p in new_paper_rows if p.get("strategy") == "sharp"]
     out = {"placed": 0, "filled": 0, "skipped": {}, "spent_today": 0.0, "new": []}
+    # Cash per Kalshi pool (exchange shard). An order is checked only against the cash in its
+    # market's pool, and API orders never pull cash across pools, so the total balance can look
+    # fine while e.g. the tennis pool is empty. Read every round so low pools get flagged even
+    # on rounds with no picks.
+    pools, total = _read_pools(client)
+    out["cash"] = None if total is None else round(total, 2)
+    out["pools"] = {str(k): round(v, 2) for k, v in sorted(pools.items())}
+    print("LIVE_SHARP_BALANCE", out["cash"], "POOLS", out["pools"])
+    needed: set[int] = set()
     if not picks:
         out["spent_today"] = round(_spent(rows, day)[0], 2)
+        out["low_pools"] = _low_pools(pools, needed)
         return out
 
     spent, n_orders = _spent(rows, day)
@@ -256,17 +300,6 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
         out["error"] = f"{type(exc).__name__}: {str(exc)[:120]}"
         return out
     seen = {r.get("paper_trade_id") for r in rows}
-
-    # Cash the write key can actually spend. Logged every run so a key/account mismatch
-    # shows up in the Actions log instead of as a string of insufficient_balance errors.
-    cash = None
-    if hasattr(client, "get_balance_dollars"):
-        try:
-            cash = client.get_balance_dollars()
-        except Exception as exc:
-            print("LIVE_SHARP_BALANCE_ERROR", type(exc).__name__, str(exc)[:120])
-    out["cash"] = None if cash is None else round(cash, 2)
-    print("LIVE_SHARP_BALANCE", out["cash"])
 
     def skip(why: str) -> None:
         out["skipped"][why] = out["skipped"].get(why, 0) + 1
@@ -298,6 +331,10 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
             continue
         # don't send an order the account can't pay for in full (it just errors or fills crumbs);
         # 3% headroom covers Kalshi's fee
+        pool = _pool_of(client, p["ticker"]) if pools else None
+        if pool is not None:
+            needed.add(pool)
+        cash = pools.get(pool) if pool is not None else total
         if cash is not None and count * price * 1.03 > cash:
             skip("low_cash")
             continue
@@ -331,12 +368,16 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
             n_orders += 1
             out["placed"] += 1
             spent += (book.f(r.get("cost"), 0.0) or 0.0) + (book.f(r.get("fee"), 0.0) or 0.0)
-            if cash is not None:
-                cash -= (book.f(r.get("cost"), 0.0) or 0.0) + (book.f(r.get("fee"), 0.0) or 0.0)
+            used = (book.f(r.get("cost"), 0.0) or 0.0) + (book.f(r.get("fee"), 0.0) or 0.0)
+            if pool is not None and pool in pools:
+                pools[pool] -= used
+            if total is not None:
+                total -= used
         if r["status"] == "open":
             out["filled"] += 1
             out["new"].append(r)
     out["spent_today"] = round(spent, 2)
+    out["low_pools"] = _low_pools(pools, needed)
     return out
 
 
