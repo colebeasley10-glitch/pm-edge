@@ -97,10 +97,12 @@ st.markdown(
     .pe-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
     .st-key-pe_head { margin-bottom:.6rem; flex-wrap:nowrap !important; }
     .st-key-pe_head .stMarkdown { margin-bottom:0 !important; }
-    .st-key-pe_head .st-key-hdr_refresh .stButton button, .st-key-hdr_refresh .stButton button { min-height:0 !important; height:auto !important; width:auto !important;
-      padding:.2rem .3rem !important; font-size:1.1rem !important; line-height:1 !important;
-      border:none !important; background:transparent !important; box-shadow:none !important; color:var(--muted) !important; }
-    .st-key-hdr_refresh .stButton button:hover { color:var(--text) !important; }
+    .st-key-pe_head .st-key-hdr_refresh .stButton button, .st-key-hdr_refresh .stButton button {
+      min-height:0 !important; height:2.4rem !important; width:2.4rem !important; padding:0 !important;
+      font-size:1.25rem !important; line-height:1 !important; border-radius:12px !important;
+      border:1px solid var(--line) !important; background:var(--panel) !important; box-shadow:none !important;
+      color:var(--text) !important; display:flex !important; align-items:center !important; justify-content:center !important; }
+    .st-key-hdr_refresh .stButton button:hover { border-color:var(--gold) !important; color:var(--gold) !important; }
     .pe-mark { font-family:'Manrope', sans-serif !important; font-weight:800; font-size:1.7rem; letter-spacing:-.02em; }
     .pe-mark i { font-style:normal; color:var(--gold); }
     .pe-pill { font-size:.8rem; font-weight:700; padding:.38rem .75rem; border-radius:999px; }

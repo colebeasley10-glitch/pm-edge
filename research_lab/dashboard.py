@@ -56,10 +56,12 @@ def _top_bar() -> None:
         if st.button("↻", key="lab_refresh", type="tertiary", help="Refresh: newest data"):
             st.cache_data.clear()
             st.rerun()
-    st.markdown("<style>.st-key-lab_refresh .stButton button{min-height:0!important;height:auto!important;"
-                "width:auto!important;padding:.2rem .3rem!important;font-size:1.1rem!important;line-height:1!important;"
-                "border:none!important;background:transparent!important;box-shadow:none!important;opacity:.7}"
-                ".st-key-lab_refresh .stButton button:hover{opacity:1}</style>", unsafe_allow_html=True)
+    st.markdown("<style>.st-key-lab_refresh .stButton button{min-height:0!important;height:2.4rem!important;"
+                "width:2.4rem!important;padding:0!important;font-size:1.25rem!important;line-height:1!important;"
+                "border-radius:12px!important;border:1px solid #262A31!important;background:#15181D!important;"
+                "box-shadow:none!important;color:#F4F6F8!important}"
+                ".st-key-lab_refresh .stButton button:hover{border-color:#F5B800!important;color:#F5B800!important}"
+                "</style>", unsafe_allow_html=True)
 
 
 def header(title: str) -> None:
