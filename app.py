@@ -18,8 +18,16 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
+import sys as _sys
+
 import pandas as pd
 import streamlit as st
+
+# Streamlit Cloud keeps imported modules in memory across code updates, so after a deploy the
+# new app.py can run against the old league code (e.g. a KeyError on a field the old code
+# doesn't return yet). Drop them so every run imports the newest league code.
+for _m in [k for k in _sys.modules if k == "league" or k.startswith("league.")]:
+    del _sys.modules[_m]
 
 import dashboard_data
 from kalshi_readonly import KalshiReadOnlyClient
@@ -1017,12 +1025,13 @@ with tab_live:
         else:
             mark = "<span class='up'>✓</span>" if hit else "<span class='down'>below</span>"
         return f"<div class='sub goal'>Goal {target_txt} {mark}</div>"
-    _roi_goal = _goal_line(f"+{_sc['target_roi'] * 100:.0f}%", _sc["roi_hit"], _sc["roi"] is not None)
-    _dr_few = _sc["drift"] is not None and _sc["n_drift"] < _ls_cmp.DRIFT_MIN_BETS
+    _roi_goal = _goal_line(f"+{_sc.get('target_roi', 0.03) * 100:.0f}%", _sc.get("roi_hit"), _sc["roi"] is not None)
+    _dr_min = getattr(_ls_cmp, "DRIFT_MIN_BETS", 100)
+    _dr_few = _sc["drift"] is not None and _sc["n_drift"] < _dr_min
     _dr_early = " " if _dr_few else ""
-    _dr_goal = _goal_line(f"+{_sc['target_drift']:.0f}¢", _sc["drift_hit"], _sc["drift"] is not None, _dr_early)
+    _dr_goal = _goal_line(f"+{_sc.get('target_drift', 1.0):.0f}¢", _sc.get("drift_hit"), _sc["drift"] is not None, _dr_early)
     if _dr_few:
-        _dr_sub = f"{_sc['n_drift']} of {_ls_cmp.DRIFT_MIN_BETS} bets needed"
+        _dr_sub = f"{_sc['n_drift']} of {_dr_min} bets needed"
     _vt = {"good": "up", "bad": "down"}.get(_sc["tone"], "")
     st.markdown(
         f"""
