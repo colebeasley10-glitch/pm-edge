@@ -43,7 +43,7 @@ FIELDS = [
     "close_time", "result", "settled_at", "pl", "paper_entry", "note",
     "ends_at", "last_mid", "last_mid_at", "clv_cents", "event_ticker",
     "sold", "sale_proceeds", "sale_fee",
-    "drift_cents", "drift_at",
+    "drift_cents", "drift_at", "unit",
 ]
 
 # How long after the buy the price-drift reading is taken. The old clv_cents is the last mid
@@ -342,7 +342,7 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
         r = {
             "trade_id": cid, "paper_trade_id": p["trade_id"], "client_order_id": cid,
             "placed_at": book.iso(now), "day": day, "ticker": p["ticker"], "event_ticker": ev, "title": p.get("title", ""),
-            "side": p["side"], "limit_price": round(price, 4), "contracts_wanted": count,
+            "side": p["side"], "limit_price": round(price, 4), "contracts_wanted": count, "unit": per_bet(),
             "status": "submitted", "close_time": p.get("close_time", ""), "paper_entry": p.get("entry_price", ""),
         }
         try:
@@ -548,6 +548,24 @@ def refresh(rows: list[dict], fetch_markets, *, now: datetime | None = None) -> 
             "waiting": waiting, "checked_at": stamp}
 
 
+# Bet size ("unit") before the per-row `unit` column existed: $1 until the first $2 order.
+UNIT_2_SINCE = datetime(2026, 10, 18, 4, 30, tzinfo=timezone.utc)  # Oct 18, 12:30am ET
+
+
+def unit_of(r: dict) -> float:
+    """The bet size this bet was placed at, so P/L can be counted in units across size changes."""
+    u = book.f(r.get("unit"))
+    if u and u > 0:
+        return u
+    placed = book.parse_dt(r.get("placed_at"))
+    return 2.0 if placed is not None and placed >= UNIT_2_SINCE else 1.0
+
+
+def units(rows: list[dict]) -> float:
+    """Settled P/L in units: each bet's profit divided by the bet size it was placed at."""
+    return sum((book.f(r.get("pl"), 0.0) or 0.0) / unit_of(r) for r in rows if r.get("status") in {"won", "lost"})
+
+
 def summary(rows: list[dict], now: datetime | None = None) -> dict:
     now = now or book.now_utc()
     day = et_day(now)
@@ -558,7 +576,10 @@ def summary(rows: list[dict], now: datetime | None = None) -> dict:
     return {"won": sum(r["status"] == "won" for r in done), "lost": sum(r["status"] == "lost" for r in done),
             "open": sum(r.get("status") == "open" for r in rows), "pl": round(pl, 2), "staked": round(staked, 2),
             "roi": pl / staked if staked else None, "spent_today": round(spent, 2), "orders_today": n,
-            "budget": daily_budget(), "no_fill": sum(r.get("status") == "no_fill" for r in rows)}
+            "budget": daily_budget(), "no_fill": sum(r.get("status") == "no_fill" for r in rows),
+            "units": round(units(rows), 2),
+            "units_today": round(sum((book.f(r.get("pl"), 0.0) or 0.0) / unit_of(r) for r in done
+                                     if (t := book.parse_dt(r.get("settled_at"))) and et_day(t) == day), 2)}
 
 
 def client_from_env():

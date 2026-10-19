@@ -588,3 +588,18 @@ def test_drift_counts_open_bets():
     sc = live_sharp.scorecard(rows)
     assert sc["n_drift"] == 3 and abs(sc["drift"] - 32.0 / 3) < 1e-9
     assert sc["n"] == 1  # settled count unchanged
+
+
+def test_units_respect_bet_size_at_the_time():
+    early = {"status": "won", "pl": 1.0, "placed_at": "2026-10-15T12:00:00Z"}          # $1 era: +1u
+    late = {"status": "won", "pl": 2.0, "placed_at": "2026-10-18T12:00:00Z"}           # $2 era: +1u
+    lost = {"status": "lost", "pl": -2.04, "placed_at": "2026-10-19T12:00:00Z"}        # $2 era: -1.02u
+    tagged = {"status": "won", "pl": 5.0, "unit": 5.0, "placed_at": "2026-11-01T12:00:00Z"}  # +1u
+    opn = {"status": "open", "pl": "", "placed_at": "2026-10-19T12:00:00Z"}
+    assert abs(live_sharp.units([early, late, lost, tagged, opn]) - 1.98) < 1e-9
+
+
+def test_new_orders_record_their_unit():
+    c, rows = FakeClient(), []
+    live_sharp.place([paper(900)], c, now=NOW, rows=rows)
+    assert float(rows[0]["unit"]) == live_sharp.per_bet()
