@@ -104,6 +104,7 @@ st.markdown(
     .pe-hero .stat { background:rgba(7,12,20,.55); border-radius:12px; padding:.5rem .65rem; min-width:0; }
     .pe-hero .stat .k { white-space:normal; letter-spacing:.06em; line-height:1.25; }
     .pe-hero .stat .v { font-family:'Manrope', sans-serif !important; font-weight:700; font-size:1.25rem; margin-top:.1rem; white-space:nowrap; }
+    .pe-hero .stat .sub { color:var(--muted); font-size:.72rem; line-height:1.3; margin-top:.15rem; white-space:normal; overflow-wrap:anywhere; }
     .pe-hero .bar { display:flex; flex-direction:column; gap:.35rem; }
     .pe-hero .bar .lab { display:flex; justify-content:space-between; font-size:.8rem; color:var(--soft); }
     .pe-hero .bar .track { height:6px; border-radius:3px; background:var(--line); overflow:hidden; }
@@ -1001,11 +1002,12 @@ with tab_live:
     _nx = _sc["next"]
     _goal = _nx["need"] if _nx else _sc["n"]
     _prog = max(0.0, min(100.0, 100.0 * _sc["n"] / _goal)) if _goal else 100.0
-    _roi_txt = (f"{pct(_sc['roi'], signed=True)} <span style='color:var(--muted);font-size:.75em'>"
-                f"(range {pct(_sc['roi'] - _sc['roi_half'], signed=True)} to {pct(_sc['roi'] + _sc['roi_half'], signed=True)})</span>"
-                if _sc["roi"] is not None and _sc["roi_half"] is not None else pct(_sc["roi"], signed=True) if _sc["roi"] is not None else "—")
-    _dr_txt = (f"{_sc['drift']:+.1f}¢" + (f" <span style='color:var(--muted);font-size:.75em'>±{_sc['drift_half']:.1f} · {_sc['n_drift']} bets</span>"
-               if _sc["drift_half"] is not None else "") if _sc["drift"] is not None else "<span style='color:var(--muted)'>collecting</span>")
+    _roi_v = pct(_sc["roi"], signed=True) if _sc["roi"] is not None else "—"
+    _roi_sub = (f"likely {pct(_sc['roi'] - _sc['roi_half'], signed=True)} to {pct(_sc['roi'] + _sc['roi_half'], signed=True)}"
+                if _sc["roi"] is not None and _sc["roi_half"] is not None else "")
+    _dr_v = f"{_sc['drift']:+.1f}¢" if _sc["drift"] is not None else "—"
+    _dr_sub = (f"±{_sc['drift_half']:.1f}¢ · {_sc['n_drift']} bets" if _sc["drift_half"] is not None
+               else f"{_sc['n_drift']} bets" if _sc["drift"] is not None else "collecting")
     _vt = {"good": "up", "bad": "down"}.get(_sc["tone"], "")
     st.markdown(
         f"""
@@ -1014,8 +1016,8 @@ with tab_live:
             <div class='v {_vt}' style='font-weight:600;margin-top:.25rem'>{esc(_sc["verdict"])}</div></div></div>
           <div class='stats'>
             <div class='stat'><div class='k'>Settled bets</div><div class='v'>{_sc["n"]}</div></div>
-            <div class='stat'><div class='k'>ROI (95% range)</div><div class='v {tone(_sc["roi"] or 0)}'>{_roi_txt}</div></div>
-            <div class='stat'><div class='k'>Price drift after buy</div><div class='v {tone(_sc["drift"] or 0)}'>{_dr_txt}</div></div>
+            <div class='stat'><div class='k'>ROI</div><div class='v {tone(_sc["roi"] or 0)}'>{_roi_v}</div><div class='sub'>{_roi_sub}</div></div>
+            <div class='stat'><div class='k'>Price drift</div><div class='v {tone(_sc["drift"] or 0)}'>{_dr_v}</div><div class='sub'>{_dr_sub}</div></div>
           </div>
           <div class='bar'>
             <div class='lab'><span>{('Next: ' + _nx['size'] + ' bets') if _nx else 'All checkpoints cleared'}</span>
