@@ -624,6 +624,7 @@ def scorecard(rows: list[dict]) -> dict:
         staked, pl = staked + c, pl + p
         rets.append((c, p))
     n = len(rets)
+    n_settled = len(done)  # includes crumb fills too small to carry a cost, so it matches the record
     roi = pl / staked if staked else None
     # spread of per-bet returns around the stake-weighted ROI
     half = None
@@ -640,10 +641,10 @@ def scorecard(rows: list[dict]) -> dict:
     for i, (need, size, need_lo) in enumerate(STAGES):
         drift_ok = drift_m is None or n_drift < 100 or drift_m > 0
         lo_ok = (not need_lo) or (roi is not None and half is not None and roi - half > 0)
-        if n >= need and roi is not None and roi > 0 and drift_ok and lo_ok:
+        if n_settled >= need and roi is not None and roi > 0 and drift_ok and lo_ok:
             stage = i + 1
             continue
-        nxt = {"need": need, "size": size, "to_go": max(0, need - n), "need_lo": need_lo}
+        nxt = {"need": need, "size": size, "to_go": max(0, need - n_settled), "need_lo": need_lo}
         break
 
     if recent_roi is not None and recent_roi < 0:
@@ -656,7 +657,7 @@ def scorecard(rows: list[dict]) -> dict:
         verdict, tone = f"Not proven yet — {nxt['to_go']} more settled bets to the first checkpoint.", "wait"
     else:
         verdict, tone = "Enough bets, but results aren't positive yet — hold at $2.", "bad"
-    return {"n": n, "staked": round(staked, 2), "pl": round(pl, 2), "roi": roi, "roi_half": half,
+    return {"n": n_settled, "n_priced": n, "staked": round(staked, 2), "pl": round(pl, 2), "roi": roi, "roi_half": half,
             "drift": drift_m, "drift_half": drift_h, "n_drift": n_drift, "recent_roi": recent_roi,
             "stage": stage, "next": nxt, "verdict": verdict, "tone": tone}
 
