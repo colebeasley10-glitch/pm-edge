@@ -997,6 +997,39 @@ with tab_live:
     st.markdown(pl_split(open_n=ls["open"], open_pl=_open_now, at_risk=_risk, payout=_pays,
                          done_n=ls["won"] + ls["lost"], done_pl=ls["pl"], record=f'{ls["won"]}–{ls["lost"]}',
                          today_pl=_today_pl), unsafe_allow_html=True)
+    _sc = _ls_cmp.scorecard(live_rows)
+    _nx = _sc["next"]
+    _goal = _nx["need"] if _nx else _sc["n"]
+    _prog = max(0.0, min(100.0, 100.0 * _sc["n"] / _goal)) if _goal else 100.0
+    _roi_txt = (f"{pct(_sc['roi'], signed=True)} <span style='color:var(--muted);font-size:.75em'>"
+                f"(range {pct(_sc['roi'] - _sc['roi_half'], signed=True)} to {pct(_sc['roi'] + _sc['roi_half'], signed=True)})</span>"
+                if _sc["roi"] is not None and _sc["roi_half"] is not None else pct(_sc["roi"], signed=True) if _sc["roi"] is not None else "—")
+    _dr_txt = (f"{_sc['drift']:+.1f}¢" + (f" <span style='color:var(--muted);font-size:.75em'>±{_sc['drift_half']:.1f} · {_sc['n_drift']} bets</span>"
+               if _sc["drift_half"] is not None else "") if _sc["drift"] is not None else "<span style='color:var(--muted)'>collecting</span>")
+    _vt = {"good": "up", "bad": "down"}.get(_sc["tone"], "")
+    st.markdown(
+        f"""
+        <div class='pe-hero'>
+          <div class='top'><div><div class='k'>Edge scorecard · when to raise the bet</div>
+            <div class='v {_vt}' style='font-weight:600;margin-top:.25rem'>{esc(_sc["verdict"])}</div></div></div>
+          <div class='stats'>
+            <div class='stat'><div class='k'>Settled bets</div><div class='v'>{_sc["n"]}</div></div>
+            <div class='stat'><div class='k'>ROI (95% range)</div><div class='v {tone(_sc["roi"] or 0)}'>{_roi_txt}</div></div>
+            <div class='stat'><div class='k'>Price drift after buy</div><div class='v {tone(_sc["drift"] or 0)}'>{_dr_txt}</div></div>
+          </div>
+          <div class='bar'>
+            <div class='lab'><span>{('Next: ' + _nx['size'] + ' bets') if _nx else 'All checkpoints cleared'}</span>
+              <span><b style='color:var(--text)'>{_sc["n"]}</b> of {_goal} bets</span></div>
+            <div class='track'><div class='fill' style='width:{_prog:.0f}%'></div></div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.caption("Step up when the bet count is reached and ROI and drift are both positive "
+               "(at 1,000 bets the whole ROI range must be above zero). Keep each bet near 1–2% of "
+               "your Kalshi cash. Drift is the price ~30 min after the buy minus what you paid: "
+               "positive means the market kept moving your way.")
     _ls_on = (league_status.get("live_sharp") or {}).get("enabled")
     st.markdown(
         "<div class='pe-lede' style='font-size:.8rem'>" + ("" if _ls_on else "<b>Off.</b> ")

@@ -498,3 +498,40 @@ def test_cash_runs_down_across_one_run():
     c, rows = CashClient(5.0), []
     out = live_sharp.place([paper(600 + i) for i in range(3)], c, now=NOW, rows=rows)
     assert out["placed"] == 2 and out["skipped"].get("low_cash") == 1
+
+
+def _settled(i, cost, pl, drift=None):
+    return {"trade_id": f"s{i}", "status": "won" if pl > 0 else "lost", "cost": cost, "fee": 0,
+            "pl": pl, "settled_at": f"2026-10-{1 + i // 100:02d}T00:00:{i % 60:02d}Z",
+            "drift_cents": "" if drift is None else drift}
+
+
+def test_scorecard_not_proven_with_few_bets():
+    rows = [_settled(i, 1.0, 0.9 if i % 2 else -1.0) for i in range(200)]
+    sc = live_sharp.scorecard(rows)
+    assert sc["n"] == 200 and sc["stage"] == 0 and sc["next"]["to_go"] == 300
+    assert sc["roi_half"] > 0.05 and sc["tone"] == "wait"
+
+
+def test_scorecard_first_step_needs_500_positive_bets():
+    rows = [_settled(i, 1.0, 1.1 if i % 2 else -1.0, drift=2) for i in range(520)]
+    sc = live_sharp.scorecard(rows)
+    assert sc["stage"] == 1 and sc["next"]["size"] == "$5–10" and sc["tone"] == "good"
+
+
+def test_scorecard_negative_drift_blocks_step():
+    rows = [_settled(i, 1.0, 1.1 if i % 2 else -1.0, drift=-3) for i in range(520)]
+    assert live_sharp.scorecard(rows)["stage"] == 0
+
+
+def test_drift_recorded_once_after_25_minutes():
+    r = {"trade_id": "d1", "ticker": "KXD-1", "side": "YES", "status": "open", "filled": 2, "avg_price": 0.40,
+         "cost": 0.8, "fee": 0.02, "placed_at": book.iso(NOW)}
+    mk = lambda mid: (lambda tickers: {"KXD-1": {"status": "active", "yes_bid": mid - .01, "yes_ask": mid + .01,
+                                                "close_time": "2026-10-20T00:00:00Z"}})
+    live_sharp.settle([r], mk(0.45), now=NOW + timedelta(minutes=10))
+    assert r.get("drift_cents") in (None, "")
+    live_sharp.settle([r], mk(0.46), now=NOW + timedelta(minutes=30))
+    assert abs(float(r["drift_cents"]) - 6.0) < 0.6
+    live_sharp.settle([r], mk(0.70), now=NOW + timedelta(minutes=90))
+    assert abs(float(r["drift_cents"]) - 6.0) < 0.6
