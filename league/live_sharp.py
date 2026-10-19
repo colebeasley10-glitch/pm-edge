@@ -43,7 +43,14 @@ FIELDS = [
     "close_time", "result", "settled_at", "pl", "paper_entry", "note",
     "ends_at", "last_mid", "last_mid_at", "clv_cents", "event_ticker",
     "sold", "sale_proceeds", "sale_fee",
+    "drift_cents", "drift_at",
 ]
+
+# How long after the buy the price-drift reading is taken. The old clv_cents is the last mid
+# before settlement, which for in-play markets is mostly the score, not the line; drift is
+# the first mark at least this long after the fill, so it measures whether the market kept
+# moving our way after we copied the flow.
+DRIFT_AFTER = timedelta(minutes=25)
 
 
 def _env_float(name: str, default: float, ceiling: float) -> float:
@@ -475,6 +482,12 @@ def settle(rows: list[dict], fetch_markets, *, now: datetime | None = None) -> l
             if mid is not None and status in {"open", "active", ""} and (close is None or now < close):
                 r["last_mid"] = round(mid, 4)
                 r["last_mid_at"] = book.iso(now)
+                placed = book.parse_dt(r.get("placed_at"))
+                avg = book.f(r.get("avg_price"))
+                if (r.get("drift_cents") in (None, "") and placed and avg is not None
+                        and now - placed >= DRIFT_AFTER):
+                    r["drift_cents"] = round((mid - avg) * 100.0, 2)
+                    r["drift_at"] = book.iso(now)
     return done
 
 
@@ -577,6 +590,75 @@ def by_sport(rows: list[dict]) -> list[dict]:
         g["roi"] = g["pl"] / g["staked"] if g["staked"] else None
         out.append(g)
     return sorted(out, key=lambda g: (-g["bets"], -g["open"], g["group"]))
+
+
+def _mean_ci(xs: list[float]) -> tuple[float | None, float | None]:
+    """Mean and 95% half-width (normal approximation)."""
+    if not xs:
+        return None, None
+    m = sum(xs) / len(xs)
+    if len(xs) < 2:
+        return m, None
+    sd = math.sqrt(sum((x - m) ** 2 for x in xs) / (len(xs) - 1))
+    return m, 1.96 * sd / math.sqrt(len(xs))
+
+
+# (bets needed, what to step up to, whether the low end of the ROI range must clear 0)
+STAGES = [(500, "$3–5", False), (1000, "$5–10", True)]
+RECENT = 250
+
+
+def scorecard(rows: list[dict]) -> dict:
+    """Is the live edge proven enough to raise the bet size? ROI and price drift with 95% ranges.
+
+    ROI is per-bet return weighted by stake. A step up needs the bet count AND positive results;
+    a negative last-RECENT-bets ROI says step back down."""
+    done = [r for r in rows if r.get("status") in {"won", "lost"}]
+    done.sort(key=lambda r: str(r.get("settled_at") or r.get("placed_at") or ""))
+    rets, staked, pl = [], 0.0, 0.0
+    for r in done:
+        c = (book.f(r.get("cost"), 0.0) or 0.0) + (book.f(r.get("fee"), 0.0) or 0.0)
+        if c <= 0:
+            continue
+        p = book.f(r.get("pl"), 0.0) or 0.0
+        staked, pl = staked + c, pl + p
+        rets.append((c, p))
+    n = len(rets)
+    roi = pl / staked if staked else None
+    # spread of per-bet returns around the stake-weighted ROI
+    half = None
+    if n >= 2 and staked:
+        mc = staked / n
+        var = sum(((p - roi * c) / mc) ** 2 for c, p in rets) / (n - 1)
+        half = 1.96 * math.sqrt(var / n)
+    drift_m, drift_h = _mean_ci([d for r in done if (d := book.f(r.get("drift_cents"))) is not None])
+    n_drift = sum(1 for r in done if book.f(r.get("drift_cents")) is not None)
+    recent = rets[-RECENT:]
+    recent_roi = (sum(p for _, p in recent) / sum(c for c, _ in recent)) if len(recent) >= RECENT else None
+
+    stage, nxt = 0, None
+    for i, (need, size, need_lo) in enumerate(STAGES):
+        drift_ok = drift_m is None or n_drift < 100 or drift_m > 0
+        lo_ok = (not need_lo) or (roi is not None and half is not None and roi - half > 0)
+        if n >= need and roi is not None and roi > 0 and drift_ok and lo_ok:
+            stage = i + 1
+            continue
+        nxt = {"need": need, "size": size, "to_go": max(0, need - n), "need_lo": need_lo}
+        break
+
+    if recent_roi is not None and recent_roi < 0:
+        verdict, tone = f"Last {RECENT} bets are negative: step back a size or hold.", "bad"
+    elif stage and nxt is None:
+        verdict, tone = f"Cleared every checkpoint — {STAGES[-1][1]} is supported.", "good"
+    elif stage:
+        verdict, tone = f"Cleared {STAGES[stage - 1][0]} bets — {STAGES[stage - 1][1]} is supported.", "good"
+    elif nxt and nxt["to_go"] > 0:
+        verdict, tone = f"Not proven yet — {nxt['to_go']} more settled bets to the first checkpoint.", "wait"
+    else:
+        verdict, tone = "Enough bets, but results aren't positive yet — hold at $2.", "bad"
+    return {"n": n, "staked": round(staked, 2), "pl": round(pl, 2), "roi": roi, "roi_half": half,
+            "drift": drift_m, "drift_half": drift_h, "n_drift": n_drift, "recent_roi": recent_roi,
+            "stage": stage, "next": nxt, "verdict": verdict, "tone": tone}
 
 
 def vs_paper(rows: list[dict], paper_rows: list[dict]) -> dict | None:
