@@ -45,12 +45,26 @@ def load_status() -> dict:
         return {}
 
 
+def _top_bar() -> None:
+    """Back link plus a tiny ↻ that reloads the newest saved data."""
+    with st.container(horizontal=True, horizontal_alignment="distribute", vertical_alignment="center",
+                      key="lab_top"):
+        try:
+            st.page_link("app.py", label="Back to SharpIQ", icon="⬅️")
+        except Exception:  # page opened outside the multipage app (e.g. tests)
+            pass
+        if st.button("↻", key="lab_refresh", type="tertiary", help="Refresh: newest data"):
+            st.cache_data.clear()
+            st.rerun()
+    st.markdown("<style>.st-key-lab_refresh .stButton button{min-height:0!important;height:auto!important;"
+                "width:auto!important;padding:.2rem .3rem!important;font-size:1.1rem!important;line-height:1!important;"
+                "border:none!important;background:transparent!important;box-shadow:none!important;opacity:.7}"
+                ".st-key-lab_refresh .stButton button:hover{opacity:1}</style>", unsafe_allow_html=True)
+
+
 def header(title: str) -> None:
     st.set_page_config(page_title=f"Research Lab: {title}", page_icon="🧪", layout="centered")
-    try:
-        st.page_link("app.py", label="Back to SharpIQ", icon="⬅️")
-    except Exception:  # page opened outside the multipage app (e.g. tests)
-        pass
+    _top_bar()
     st.title(title)
     st.info(PAPER_BANNER)
 
@@ -411,10 +425,7 @@ def render_promo() -> None:
 def render_heavy_flow() -> None:
     from research_lab import heavy_flow as hf
     st.set_page_config(page_title="Research Lab: Heavy Flow", page_icon="🐋", layout="centered")
-    try:
-        st.page_link("app.py", label="Back to SharpIQ", icon="⬅️")
-    except Exception:
-        pass
+    _top_bar()
     st.title("Heavy Flow test")
     st.info(f"📝 **PAPER ONLY.** Same Sharp picks, split by how many whale trades backed them "
             f"({hf.MIN_TRADES}+ = heavy). Only picks from {hf.START.strftime('%b %-d')} on count, so the "
@@ -448,10 +459,7 @@ def render_heavy_flow() -> None:
 def render_best_price() -> None:
     from research_lab import best_price
     st.set_page_config(page_title="Research Lab: Best Price", page_icon="🏷️", layout="centered")
-    try:
-        st.page_link("app.py", label="Back to SharpIQ", icon="⬅️")
-    except Exception:
-        pass
+    _top_bar()
     st.title("Best Price")
     st.info("👀 **READ-ONLY.** Your live Sharp bets still go to Kalshi. This only records what the same bet "
             "cost on Polymarket a few minutes after each pick, fees included, so you can see if buying "
