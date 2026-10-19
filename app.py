@@ -104,6 +104,7 @@ st.markdown(
     .pe-hero .stat { background:rgba(7,12,20,.55); border-radius:12px; padding:.5rem .65rem; min-width:0; }
     .pe-hero .stat .k { white-space:normal; letter-spacing:.06em; line-height:1.25; }
     .pe-hero .stat .v { font-family:'Manrope', sans-serif !important; font-weight:700; font-size:1.25rem; margin-top:.1rem; white-space:nowrap; }
+    .pe-hero .stat .sub.goal { color:var(--text); font-weight:600; margin-top:.3rem; }
     .pe-hero .stat .sub { color:var(--muted); font-size:.72rem; line-height:1.3; margin-top:.15rem; white-space:normal; overflow-wrap:anywhere; }
     .pe-hero .bar { display:flex; flex-direction:column; gap:.35rem; }
     .pe-hero .bar .lab { display:flex; justify-content:space-between; font-size:.8rem; color:var(--soft); }
@@ -1006,8 +1007,22 @@ with tab_live:
     _roi_sub = (f"likely {pct(_sc['roi'] - _sc['roi_half'], signed=True)} to {pct(_sc['roi'] + _sc['roi_half'], signed=True)}"
                 if _sc["roi"] is not None and _sc["roi_half"] is not None else "")
     _dr_v = f"{_sc['drift']:+.1f}¢" if _sc["drift"] is not None else "—"
-    _dr_sub = (f"±{_sc['drift_half']:.1f}¢ · {_sc['n_drift']} bets" if _sc["drift_half"] is not None
-               else f"{_sc['n_drift']} bets" if _sc["drift"] is not None else "collecting")
+    _dr_sub = (f"±{_sc['drift_half']:.1f}¢ · {_sc['n_drift']} bet{'s' if _sc['n_drift'] != 1 else ''}" if _sc["drift_half"] is not None
+               else f"{_sc['n_drift']} bet{'s' if _sc['n_drift'] != 1 else ''} so far" if _sc["drift"] is not None else "collecting")
+    def _goal_line(target_txt, hit, have, early=""):
+        if early:
+            mark = f"<span style='color:var(--muted);font-weight:500'>{early}</span>"
+        elif not have:
+            mark = "—"
+        else:
+            mark = "<span class='up'>✓</span>" if hit else "<span class='down'>below</span>"
+        return f"<div class='sub goal'>Goal {target_txt} {mark}</div>"
+    _roi_goal = _goal_line(f"+{_sc['target_roi'] * 100:.0f}%", _sc["roi_hit"], _sc["roi"] is not None)
+    _dr_few = _sc["drift"] is not None and _sc["n_drift"] < _ls_cmp.DRIFT_MIN_BETS
+    _dr_early = " " if _dr_few else ""
+    _dr_goal = _goal_line(f"+{_sc['target_drift']:.0f}¢", _sc["drift_hit"], _sc["drift"] is not None, _dr_early)
+    if _dr_few:
+        _dr_sub = f"{_sc['n_drift']} of {_ls_cmp.DRIFT_MIN_BETS} bets needed"
     _vt = {"good": "up", "bad": "down"}.get(_sc["tone"], "")
     st.markdown(
         f"""
@@ -1015,9 +1030,9 @@ with tab_live:
           <div class='top'><div><div class='k'>Edge scorecard · when to raise the bet</div>
             <div class='v {_vt}' style='font-weight:600;margin-top:.25rem'>{esc(_sc["verdict"])}</div></div></div>
           <div class='stats'>
-            <div class='stat'><div class='k'>Settled bets</div><div class='v'>{_sc["n"]}</div></div>
-            <div class='stat'><div class='k'>ROI</div><div class='v {tone(_sc["roi"] or 0)}'>{_roi_v}</div><div class='sub'>{_roi_sub}</div></div>
-            <div class='stat'><div class='k'>Price drift</div><div class='v {tone(_sc["drift"] or 0)}'>{_dr_v}</div><div class='sub'>{_dr_sub}</div></div>
+            <div class='stat'><div class='k'>Settled bets</div><div class='v'>{_sc["n"]}</div><div class='sub goal'>Goal {_goal:,}</div></div>
+            <div class='stat'><div class='k'>ROI</div><div class='v {tone(_sc["roi"] or 0)}'>{_roi_v}</div>{_roi_goal}<div class='sub'>{_roi_sub}</div></div>
+            <div class='stat'><div class='k'>Price drift</div><div class='v {tone(_sc["drift"] or 0)}'>{_dr_v}</div>{_dr_goal}<div class='sub'>{_dr_sub}</div></div>
           </div>
           <div class='bar'>
             <div class='lab'><span>{('Next: ' + _nx['size'] + ' bets') if _nx else 'All checkpoints cleared'}</span>
@@ -1028,10 +1043,11 @@ with tab_live:
         """,
         unsafe_allow_html=True,
     )
-    st.caption("Step up when the bet count is reached and ROI and drift are both positive "
-               "(at 1,000 bets the whole ROI range must be above zero). Keep each bet near 1–2% of "
-               "your Kalshi cash. Drift is the price ~30 min after the buy minus what you paid: "
-               "positive means the market kept moving your way.")
+    st.caption("Step up when the bet count is reached and both goals are hit: ROI of +3% or better "
+               "(clears Kalshi's fees with room to spare) and price drift of +1¢ or better (about a 2% "
+               "edge). At 1,000 bets the whole ROI range must also be above zero. Drift is the price "
+               "~30 min after the buy minus what you paid; it counts once 100 bets have a reading. "
+               "Keep each bet near 1–2% of your Kalshi cash.")
     _ls_on = (league_status.get("live_sharp") or {}).get("enabled")
     st.markdown(
         "<div class='pe-lede' style='font-size:.8rem'>" + ("" if _ls_on else "<b>Off.</b> ")

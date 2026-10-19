@@ -647,6 +647,11 @@ def _mean_ci(xs: list[float]) -> tuple[float | None, float | None]:
 # (bets needed, what to step up to, whether the low end of the ROI range must clear 0)
 STAGES = [(500, "$3–5", False), (1000, "$5–10", True)]
 RECENT = 250
+# Goals a real edge should hit. ROI must clear Kalshi's fees with room to spare; drift of +1¢
+# on ~50¢ contracts is about a 2% edge, the usual bar for "beating the close".
+TARGET_ROI = 0.03
+TARGET_DRIFT = 1.0      # cents
+DRIFT_MIN_BETS = 100    # drift only counts toward a step once this many bets have a reading
 
 
 def scorecard(rows: list[dict]) -> dict:
@@ -680,9 +685,9 @@ def scorecard(rows: list[dict]) -> dict:
 
     stage, nxt = 0, None
     for i, (need, size, need_lo) in enumerate(STAGES):
-        drift_ok = drift_m is None or n_drift < 100 or drift_m > 0
+        drift_ok = drift_m is None or n_drift < DRIFT_MIN_BETS or drift_m >= TARGET_DRIFT
         lo_ok = (not need_lo) or (roi is not None and half is not None and roi - half > 0)
-        if n_settled >= need and roi is not None and roi > 0 and drift_ok and lo_ok:
+        if n_settled >= need and roi is not None and roi >= TARGET_ROI and drift_ok and lo_ok:
             stage = i + 1
             continue
         nxt = {"need": need, "size": size, "to_go": max(0, need - n_settled), "need_lo": need_lo}
@@ -697,10 +702,14 @@ def scorecard(rows: list[dict]) -> dict:
     elif nxt and nxt["to_go"] > 0:
         verdict, tone = f"Not proven yet — {nxt['to_go']} more settled bets to the first checkpoint.", "wait"
     else:
-        verdict, tone = "Enough bets, but results aren't positive yet — hold at $2.", "bad"
+        verdict, tone = (f"Enough bets, but ROI or drift is under its goal "
+                         f"(+{TARGET_ROI * 100:.0f}% / +{TARGET_DRIFT:.0f}¢) — hold at $2."), "bad"
     return {"n": n_settled, "n_priced": n, "staked": round(staked, 2), "pl": round(pl, 2), "roi": roi, "roi_half": half,
             "drift": drift_m, "drift_half": drift_h, "n_drift": n_drift, "recent_roi": recent_roi,
-            "stage": stage, "next": nxt, "verdict": verdict, "tone": tone}
+            "stage": stage, "next": nxt, "verdict": verdict, "tone": tone,
+            "target_roi": TARGET_ROI, "target_drift": TARGET_DRIFT,
+            "roi_hit": roi is not None and roi >= TARGET_ROI,
+            "drift_hit": drift_m is not None and drift_m >= TARGET_DRIFT}
 
 
 def vs_paper(rows: list[dict], paper_rows: list[dict]) -> dict | None:

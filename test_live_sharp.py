@@ -567,3 +567,14 @@ def test_low_pools_reported_with_no_picks():
     c = PoolClient({0: 50.0, 3: 5.0}, {})
     out = live_sharp.place([], c, now=NOW, rows=[])
     assert [p["pool"] for p in out["low_pools"]] == [3]
+
+
+def test_scorecard_goals():
+    # +5% ROI but drift only +0.5¢ (under the +1¢ goal) once 100+ bets have a reading: hold
+    rows = [_settled(i, 1.0, 1.1 if i % 2 else -1.0, drift=0.5) for i in range(520)]
+    sc = live_sharp.scorecard(rows)
+    assert sc["stage"] == 0 and sc["roi_hit"] and not sc["drift_hit"]
+    # positive but under the +3% ROI goal: hold
+    rows = [_settled(i, 1.0, 1.02 if i % 2 else -1.0, drift=2) for i in range(520)]
+    sc = live_sharp.scorecard(rows)
+    assert sc["stage"] == 0 and not sc["roi_hit"] and sc["drift_hit"]
