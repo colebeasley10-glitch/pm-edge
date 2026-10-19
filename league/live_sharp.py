@@ -250,6 +250,17 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
         return out
     seen = {r.get("paper_trade_id") for r in rows}
 
+    # Cash the write key can actually spend. Logged every run so a key/account mismatch
+    # shows up in the Actions log instead of as a string of insufficient_balance errors.
+    cash = None
+    if hasattr(client, "get_balance_dollars"):
+        try:
+            cash = client.get_balance_dollars()
+        except Exception as exc:
+            print("LIVE_SHARP_BALANCE_ERROR", type(exc).__name__, str(exc)[:120])
+    out["cash"] = None if cash is None else round(cash, 2)
+    print("LIVE_SHARP_BALANCE", out["cash"])
+
     def skip(why: str) -> None:
         out["skipped"][why] = out["skipped"].get(why, 0) + 1
 
@@ -277,6 +288,11 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
         count = size(price, room)
         if count < 1:
             skip("daily_budget" if room < per_bet() else "too_expensive")
+            continue
+        # don't send an order the account can't pay for in full (it just errors or fills crumbs);
+        # 3% headroom covers Kalshi's fee
+        if cash is not None and count * price * 1.03 > cash:
+            skip("low_cash")
             continue
         cid = f"{PREFIX}{day}-{p['trade_id']}"
         r = {
@@ -308,6 +324,8 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
             n_orders += 1
             out["placed"] += 1
             spent += (book.f(r.get("cost"), 0.0) or 0.0) + (book.f(r.get("fee"), 0.0) or 0.0)
+            if cash is not None:
+                cash -= (book.f(r.get("cost"), 0.0) or 0.0) + (book.f(r.get("fee"), 0.0) or 0.0)
         if r["status"] == "open":
             out["filled"] += 1
             out["new"].append(r)

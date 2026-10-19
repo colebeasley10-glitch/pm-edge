@@ -474,3 +474,27 @@ def test_still_trading_market_is_not_settled_by_partial_value_logic():
     from league import book
     assert book.scalar_payout({"status": "active", "result": "", "settlement_value": None}, "YES") is None
     assert book.scalar_payout({"status": "finalized", "result": "void", "settlement_value": 0.5}, "YES") is None
+
+
+class CashClient(FakeClient):
+    def __init__(self, cash, **kw):
+        super().__init__(**kw)
+        self.cash = cash
+
+    def get_balance_dollars(self):
+        return self.cash
+
+
+def test_low_cash_skips_instead_of_sending():
+    # $0.08 in the bot's wallet: nothing is sent, so no insufficient_balance errors or crumb fills
+    c, rows = CashClient(0.08), []
+    out = live_sharp.place([paper(500), paper(501)], c, now=NOW, rows=rows)
+    assert c.calls == 0 and out["placed"] == 0
+    assert out["skipped"].get("low_cash") == 2 and out["cash"] == 0.08
+
+
+def test_cash_runs_down_across_one_run():
+    # $5 covers two $2 bets, not a third
+    c, rows = CashClient(5.0), []
+    out = live_sharp.place([paper(600 + i) for i in range(3)], c, now=NOW, rows=rows)
+    assert out["placed"] == 2 and out["skipped"].get("low_cash") == 1
