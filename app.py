@@ -1040,6 +1040,10 @@ with tab_live:
         + ("" if _ls_on else " Turn it on with the LIVE_SHARP_ENABLED repo variable.")
         + "</div>", unsafe_allow_html=True)
     _lsr = league_status.get("live_sharp") or {}
+    for _lp in _lsr.get("low_pools") or []:
+        st.warning(f"Kalshi pool low: **{_lp['name']}** (Exchange {_lp['pool']}) has ${_lp['cash']:.2f}. "
+                   "Bets on those markets are skipped until you move cash there at "
+                   "kalshi.com/account/exchange-indexes → Transfer.")
     if _lsr.get("kalshi_ok") is False:
         st.caption(f"⚠️ Kalshi key check failed last round: {_lsr.get('kalshi_error', '')}")
     if _lsr.get("error"):
@@ -1406,6 +1410,26 @@ with tab_league:
              f"<span class='num'>{money(pl, signed=True)}</span>", tone(pl))
             for n, total, o, w, l, pl, c, nc, sl, ns in rows
         ), unsafe_allow_html=True)
+
+        try:
+            from league import book as _lbook
+            _shadow = _lbook.standings(_lbook.load(_lbook.SHADOW_LEDGER))
+        except Exception:
+            _shadow = []
+        st.markdown("<div class='section'>Benched, still graded</div>", unsafe_allow_html=True)
+        if _shadow:
+            st.markdown(rows_html(
+                (esc(LEAGUE_LABELS.get(s["strategy"], s["strategy"].title())),
+                 f"{s['won']}-{s['lost']} record, {s['open']} open"
+                 + (f", {pct(s['roi'], signed=True)} ROI" if s["roi"] is not None else "")
+                 + "<br>Off the board: picks are tracked here only, never in the standings or Live $2.",
+                 f"<span class='num'>{money(s['pl'], signed=True)}</span>", tone(s["pl"]))
+                for s in sorted(_shadow, key=lambda s: -s["pl"])
+            ), unsafe_allow_html=True)
+        else:
+            st.markdown("<div class='pe-lede'>Weather, crypto and Polymarket are benched. Their would-be "
+                        "picks are graded here from Oct 19 on; the first ones show up after the next round.</div>",
+                        unsafe_allow_html=True)
 
         st.markdown("<div class='pe-lede'>Each pick is a $10 paper bet at the price you could buy right then, "
                     "after Kalshi's fee. Beating the close means the price moved our way before the market shut, "

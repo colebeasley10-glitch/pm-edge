@@ -17,6 +17,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 LEDGER = Path(os.getenv("LEAGUE_LEDGER_PATH", "league_trades.csv"))
+# Benched strategies' would-be picks, opened and settled exactly like paper trades but kept apart
+# so they never count toward the paper standings or feed Live $2.
+SHADOW_LEDGER = Path(os.getenv("LEAGUE_SHADOW_PATH", "league_shadow.csv"))
 STAKE_DOLLARS = float(os.getenv("LEAGUE_STAKE_DOLLARS", "10"))
 TAKER_FEE_RATE = float(os.getenv("LEAGUE_TAKER_FEE_RATE", "0.07"))
 MIN_PRICE = 0.05

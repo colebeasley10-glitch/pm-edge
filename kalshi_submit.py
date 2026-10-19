@@ -136,7 +136,7 @@ class KalshiSubmitClient:
         return payload
 
     def get_balance_dollars(self) -> float | None:
-        """Cash available to the account behind THIS (write) key, in dollars.
+        """Cash available to the account behind THIS (write) key, in dollars, across all pools.
 
         Kalshi reports `balance` in cents; newer responses may also carry a
         `balance_dollars` string. Returns None if neither field is present.
@@ -147,6 +147,32 @@ class KalshiSubmitClient:
         if payload.get("balance") is not None:
             return float(payload["balance"]) / 100.0
         return None
+
+    def get_pool_balances(self) -> dict[int, float]:
+        """Cash per exchange shard ("pool"), in dollars, e.g. {0: 89.39, 3: 89.38}.
+
+        Kalshi checks an order's collateral only against the cash in that market's shard, and
+        API orders (unlike app/web orders) never pull cash across shards. Empty if the account
+        isn't sharded (no breakdown in the response).
+        """
+        payload = self._request("GET", "/portfolio/balance")
+        out: dict[int, float] = {}
+        for row in payload.get("balance_breakdown") or []:
+            try:
+                out[int(row["exchange_index"])] = float(row["balance"])
+            except (KeyError, TypeError, ValueError):
+                continue
+        return out
+
+    def get_market_pool(self, ticker: str) -> int | None:
+        """The exchange shard a market trades on, or None if Kalshi doesn't say."""
+        payload = self._request("GET", f"/markets/{ticker}")
+        m = payload.get("market", payload) if isinstance(payload, dict) else {}
+        idx = m.get("exchange_index") if isinstance(m, dict) else None
+        try:
+            return None if idx is None else int(idx)
+        except (TypeError, ValueError):
+            return None
 
     def get_orders(self, *, limit: int = 200) -> list[dict]:
         payload = self._request("GET", "/portfolio/orders", params={"limit": max(1, min(int(limit), 200))})

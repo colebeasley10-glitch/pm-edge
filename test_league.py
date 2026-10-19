@@ -123,6 +123,48 @@ def test_round():
     assert st["strategies"]["fake"]["opened"] == 0  # already holding
 
 
+def test_benched_picks_are_graded_on_the_side():
+    """A benched strategy's would-be pick goes to the shadow ledger and settles there,
+    never into the paper book (so it can't feed Live $2 or the standings)."""
+    os.environ.pop("LEAGUE_BENCHED", None)
+    state = {"result": ""}
+
+    class FakeKalshi:
+        def markets(self, tickers):
+            return {t: mk(t, status="settled" if state["result"] else "open", result=state["result"])
+                    for t in tickers}
+
+    class W:
+        NAME = "weather"
+
+        @staticmethod
+        def run(kalshi, now, session=None):
+            return [book.Pick("weather", mk("KXSHADOW-1"), "YES", 0.60, "model says so")]
+
+    before = len([r for r in book.load() if r.get("ticker") == "KXSHADOW-1"])
+    st = run.run_round(NOW, strategies=[W], kalshi=FakeKalshi())
+    assert st["strategies"]["weather"]["shadow_opened"] == 1
+    assert len([r for r in book.load() if r.get("ticker") == "KXSHADOW-1"]) == before
+    sh = [r for r in book.load(book.SHADOW_LEDGER) if r.get("ticker") == "KXSHADOW-1"]
+    assert len(sh) == 1 and sh[0]["status"] == "open"
+    # next round: no duplicate; then the market settles YES and the shadow bet is graded
+    st = run.run_round(NOW + timedelta(minutes=30), strategies=[W], kalshi=FakeKalshi())
+    assert st["strategies"]["weather"]["shadow_opened"] == 0
+    state["result"] = "yes"
+    st = run.run_round(NOW + timedelta(hours=1), strategies=[W], kalshi=FakeKalshi())
+    sh = [r for r in book.load(book.SHADOW_LEDGER) if r.get("ticker") == "KXSHADOW-1"]
+    assert sh[0]["status"] == "won"
+    assert any(s["strategy"] == "weather" and s["won"] >= 1 for s in st["shadow_standings"])
+
+
+def test_low_pool_alert_once_a_day():
+    sent = {}
+    low = [{"pool": 3, "name": "Tennis, Baseball, Basketball", "cash": 4.0}]
+    assert len(run.alert_low_pools(low, sent, NOW)) == 1
+    assert run.alert_low_pools(low, sent, NOW + timedelta(hours=2)) == []
+    assert len(run.alert_low_pools(low, sent, NOW + timedelta(days=1))) == 1
+
+
 def test_benched_strategy_opens_nothing():
     os.environ.pop("LEAGUE_BENCHED", None)
     assert {"crypto", "polymarket"} <= run.benched()
