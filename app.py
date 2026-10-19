@@ -124,6 +124,7 @@ st.markdown(
     .pe-hero .stat .sub { color:var(--muted); font-size:.72rem; line-height:1.3; margin-top:.15rem; white-space:normal; overflow-wrap:anywhere; }
     .pe-hero .bar { display:flex; flex-direction:column; gap:.35rem; }
     .pe-hero .bar .lab { display:flex; justify-content:space-between; font-size:.8rem; color:var(--soft); }
+    .pe-hero .units { font-family:'Manrope', sans-serif !important; font-weight:700; font-size:1rem; margin-top:.1rem; }
     .pe-hero .bar .track { height:6px; border-radius:3px; background:var(--line); overflow:hidden; }
     .pe-hero .bar .fill { height:6px; border-radius:3px; background:var(--up); }
     /* open vs settled split */
@@ -613,6 +614,13 @@ def pl_split(*, open_n, open_pl, at_risk, payout, done_n, done_pl, record, today
     """
 
 
+def units_line(u) -> str:
+    """'+10.56 units' under a P/L figure. A unit is the bet size at the time ($1 early on, $2 now)."""
+    if u is None:
+        return ""
+    return f"<div class='units {tone(u)}'>{u:+.2f} units</div>"
+
+
 def cards_html(items) -> str:
     return "<div class='cards'>" + "".join(items) + "</div>"
 
@@ -769,8 +777,9 @@ with tab_home:
         <div class='pe-hero'>
           <div class='top'>
             <div><div class='k'>Live $2 Sharp · real money</div>
-              <div class='big {tone(_h_ls["pl"])}'>{money(_h_ls["pl"], signed=True)}</div></div>
-            <div class='mid {tone(_h_today_pl)}'>{money(_h_today_pl, signed=True)}<div class='k' style='text-align:right'>today</div></div>
+              <div class='big {tone(_h_ls["pl"])}'>{money(_h_ls["pl"], signed=True)}</div>
+              {units_line(_h_ls.get("units"))}</div>
+            <div class='mid {tone(_h_today_pl)}'>{money(_h_today_pl, signed=True)}<div class='k' style='text-align:right'>today{(" · " + f"{_h_ls['units_today']:+.1f} units") if _h_ls.get("units_today") is not None else ""}</div></div>
           </div>
           <div class='stats'>
             <div class='stat'><div class='k'>Record</div><div class='v'>{_h_ls["won"]}–{_h_ls["lost"]}</div></div>
@@ -1002,7 +1011,8 @@ with tab_live:
         <div class='pe-hero'>
           <div class='top'>
             <div><div class='k'>Live $2 Sharp · real money</div>
-              <div class='big {tone(ls["pl"])}'>{money(ls["pl"], signed=True)}</div></div>
+              <div class='big {tone(ls["pl"])}'>{money(ls["pl"], signed=True)}</div>
+              {units_line(ls.get("units"))}</div>
           </div>
           <div class='stats'>
             <div class='stat'><div class='k'>Record</div><div class='v'>{ls["won"]}–{ls["lost"]}</div></div>
