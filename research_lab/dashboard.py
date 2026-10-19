@@ -408,6 +408,43 @@ def render_promo() -> None:
 
 # ------------------------------------------------------------------ best price (live Sharp vs Polymarket)
 
+def render_heavy_flow() -> None:
+    from research_lab import heavy_flow as hf
+    st.set_page_config(page_title="Research Lab: Heavy Flow", page_icon="🐋", layout="centered")
+    try:
+        st.page_link("app.py", label="Back to SharpIQ", icon="⬅️")
+    except Exception:
+        pass
+    st.title("Heavy Flow test")
+    st.info(f"📝 **PAPER ONLY.** Same Sharp picks, split by how many whale trades backed them "
+            f"({hf.MIN_TRADES}+ = heavy). Only picks from {hf.START.strftime('%b %-d')} on count, so the "
+            "test isn't graded on the bets that gave us the idea. Live $2 Sharp is unchanged.")
+    rows = hf.load()
+    cmp = hf.compare(rows)
+    text, tone = hf.verdict(cmp)
+    (st.success if tone == "good" else st.warning if tone == "bad" else st.info)(text)
+
+    def _roi(s):
+        if s["roi"] is None:
+            return "—"
+        if s["roi_half"] is None:
+            return _pct(s["roi"])
+        return f"{_pct(s['roi'])} ({_pct(s['roi'] - s['roi_half'])} to {_pct(s['roi'] + s['roi_half'])})"
+
+    def _table(c):
+        return [{"Group": name, "Settled": c[k]["n"], "Open": c[k]["open"], "ROI (95% range)": _roi(c[k]),
+                 "P/L (paper)": _money(c[k]["pl"])}
+                for k, name in (("heavy", f"Heavy ({hf.MIN_TRADES}+ trades)"),
+                                ("light", f"Light (<{hf.MIN_TRADES})"), ("all", "All Sharp"))]
+
+    st.subheader("Since the test started")
+    st.dataframe(_table(cmp), hide_index=True, width="stretch")
+    st.caption(f"Decision at {hf.DECIDE_AT} settled heavy-flow bets (about 1–2 weeks at ~19 heavy picks a day).")
+    st.subheader("Before the test (where the idea came from)")
+    st.dataframe(_table(hf.compare(rows, since=None, before=hf.START)), hide_index=True, width="stretch")
+    st.caption("Shown for context only — these bets suggested the filter, so they can't confirm it.")
+
+
 def render_best_price() -> None:
     from research_lab import best_price
     st.set_page_config(page_title="Research Lab: Best Price", page_icon="🏷️", layout="centered")
