@@ -678,8 +678,10 @@ def scorecard(rows: list[dict]) -> dict:
         mc = staked / n
         var = sum(((p - roi * c) / mc) ** 2 for c, p in rets) / (n - 1)
         half = 1.96 * math.sqrt(var / n)
-    drift_m, drift_h = _mean_ci([d for r in done if (d := book.f(r.get("drift_cents"))) is not None])
-    n_drift = sum(1 for r in done if book.f(r.get("drift_cents")) is not None)
+    # drift is read ~30 min after the buy, so it doesn't wait for the bet to settle
+    drift_rows = [r for r in rows if r.get("status") in {"open", "won", "lost"}]
+    drift_m, drift_h = _mean_ci([d for r in drift_rows if (d := book.f(r.get("drift_cents"))) is not None])
+    n_drift = sum(1 for r in drift_rows if book.f(r.get("drift_cents")) is not None)
     recent = rets[-RECENT:]
     recent_roi = (sum(p for _, p in recent) / sum(c for c, _ in recent)) if len(recent) >= RECENT else None
 

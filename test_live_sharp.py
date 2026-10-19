@@ -578,3 +578,13 @@ def test_scorecard_goals():
     rows = [_settled(i, 1.0, 1.02 if i % 2 else -1.0, drift=2) for i in range(520)]
     sc = live_sharp.scorecard(rows)
     assert sc["stage"] == 0 and not sc["roi_hit"] and sc["drift_hit"]
+
+
+def test_drift_counts_open_bets():
+    rows = [_settled(1, 1.0, 0.9, drift=25.5),
+            {"trade_id": "o1", "status": "open", "cost": 1.0, "fee": 0, "drift_cents": 1.0},
+            {"trade_id": "o2", "status": "open", "cost": 1.0, "fee": 0, "drift_cents": 5.5},
+            {"trade_id": "o3", "status": "open", "cost": 1.0, "fee": 0, "drift_cents": ""}]
+    sc = live_sharp.scorecard(rows)
+    assert sc["n_drift"] == 3 and abs(sc["drift"] - 32.0 / 3) < 1e-9
+    assert sc["n"] == 1  # settled count unchanged
