@@ -1082,79 +1082,40 @@ with tab_live:
     st.markdown(pl_split(open_n=ls["open"], open_pl=_open_now, at_risk=_risk, payout=_pays,
                          done_n=ls["won"] + ls["lost"], done_pl=ls["pl"], record=f'{ls["won"]}–{ls["lost"]}',
                          today_pl=_today_pl), unsafe_allow_html=True)
-    _sc = _ls_cmp.scorecard(live_rows)
-    _nx = _sc["next"]
-    _goal = _nx["need"] if _nx else _sc["n"]
-    _prog = max(0.0, min(100.0, 100.0 * _sc["n"] / _goal)) if _goal else 100.0
-    _roi_v = pct(_sc["roi"], signed=True) if _sc["roi"] is not None else "—"
-    _roi_sub = (f"likely {pct(_sc['roi'] - _sc['roi_half'], signed=True)} to {pct(_sc['roi'] + _sc['roi_half'], signed=True)}"
-                if _sc["roi"] is not None and _sc["roi_half"] is not None else "")
-    _dr_v = f"{_sc['drift']:+.1f}¢" if _sc["drift"] is not None else "—"
-    _dr_sub = (f"±{_sc['drift_half']:.1f}¢ · {_sc['n_drift']} bet{'s' if _sc['n_drift'] != 1 else ''}" if _sc["drift_half"] is not None
-               else f"{_sc['n_drift']} bet{'s' if _sc['n_drift'] != 1 else ''} so far" if _sc["drift"] is not None else "collecting")
-    def _goal_line(target_txt, hit, have, early=""):
-        if early:
-            mark = f"<span style='color:var(--muted);font-weight:500'>{early}</span>"
-        elif not have:
-            mark = "—"
-        else:
-            mark = "<span class='up'>✓</span>" if hit else "<span class='down'>below</span>"
-        return f"<div class='sub goal'>Goal {target_txt} {mark}</div>"
-    _roi_goal = _goal_line(f"+{_sc.get('target_roi', 0.03) * 100:.0f}%", _sc.get("roi_hit"), _sc["roi"] is not None)
-    _dr_min = getattr(_ls_cmp, "DRIFT_MIN_BETS", 100)
-    _dr_few = _sc["drift"] is not None and _sc["n_drift"] < _dr_min
-    _dr_early = " " if _dr_few else ""
-    _dr_goal = _goal_line(f"+{_sc.get('target_drift', 1.0):.0f}¢", _sc.get("drift_hit"), _sc["drift"] is not None, _dr_early)
-    if _dr_few:
-        _dr_sub = f"{_sc['n_drift']} of {_dr_min} bets needed"
-    _vt = {"good": "up", "bad": "down"}.get(_sc["tone"], "")
-    st.markdown(
-        f"""
-        <div class='pe-hero'>
-          <div class='top'><div><div class='k'>Edge scorecard · when to raise the bet</div>
-            <div class='v {_vt}' style='font-weight:600;margin-top:.25rem'>{esc(_sc["verdict"])}</div></div></div>
-          <div class='stats'>
-            <div class='stat'><div class='k'>Settled bets</div><div class='v'>{_sc["n"]}</div><div class='sub goal'>Goal {_goal:,}</div></div>
-            <div class='stat'><div class='k'>ROI</div><div class='v {tone(_sc["roi"] or 0)}'>{_roi_v}</div>{_roi_goal}<div class='sub'>{_roi_sub}</div></div>
-            <div class='stat'><div class='k'>Price drift</div><div class='v {tone(_sc["drift"] or 0)}'>{_dr_v}</div>{_dr_goal}<div class='sub'>{_dr_sub}</div></div>
-          </div>
-          <div class='bar'>
-            <div class='lab'><span>{('Next: ' + _nx['size'] + ' bets') if _nx else 'All checkpoints cleared'}</span>
-              <span><b style='color:var(--text)'>{_sc["n"]}</b> of {_goal} bets</span></div>
-            <div class='track'><div class='fill' style='width:{_prog:.0f}%'></div></div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.caption("Step up when the bet count is reached and both goals are hit: ROI of +3% or better "
-               "(clears Kalshi's fees with room to spare) and price drift of +1¢ or better (about a 2% "
-               "edge). At 1,000 bets the whole ROI range must also be above zero. Drift is the price "
-               "~30 min after the buy minus what you paid; it counts once 100 bets have a reading. "
-               "Keep each bet near 1–2% of your Kalshi cash.")
-    _ls_on = (league_status.get("live_sharp") or {}).get("enabled")
-    st.markdown(
-        "<div class='pe-lede' style='font-size:.8rem'>" + ("" if _ls_on else "<b>Off.</b> ")
-        + "Copies every Sharp pick with a real Kalshi order · $5 per bet · $300/day cap · "
-          "buys only at the price the pick saw."
-        + ("" if _ls_on else " Turn it on with the LIVE_SHARP_ENABLED repo variable.")
-        + "</div>", unsafe_allow_html=True)
-    _lsr = league_status.get("live_sharp") or {}
-    _cash = _lsr.get("cash")
-    # Cash is still tracked every round (kalshi_balance_log.csv + low-cash push); the box and chart
-    # are hidden by request. Only a short warning shows, and only when cash is actually low.
-    if _cash is not None:
-        from league import live_sharp as _lsm
-        if _cash < _lsm.LOW_TOTAL:
-            st.error(f"Kalshi cash is low (\\${_cash:.2f}). Deposit soon to keep live Sharp betting.")
-    for _lp in _lsr.get("low_pools") or []:
-        st.warning(f"Kalshi pool low: **{_lp['name']}** (Exchange {_lp['pool']}) has ${_lp['cash']:.2f}. "
-                   "Bets on those markets are skipped until you move cash there at "
-                   "kalshi.com/account/exchange-indexes → Transfer.")
-    if _lsr.get("kalshi_ok") is False:
-        st.caption(f"⚠️ Kalshi key check failed last round: {_lsr.get('kalshi_error', '')}")
-    if _lsr.get("error"):
-        st.caption(f"Last round: {_lsr['error']}")
+    from league import live_sharp as _ls_daily
+    _days = _ls_daily.daily(live_rows) if live_rows else []
+    if _days:
+        st.markdown("<div class='section'><span>Calendar</span></div>", unsafe_allow_html=True)
+        _cm = st.session_state.setdefault("cal_month", (_today.year, _today.month))
+        _first = datetime.strptime(_days[0]["day"], "%Y%m%d")
+
+        def _cal_step(delta: int) -> None:
+            y, m = st.session_state["cal_month"]
+            m += delta
+            y, m = (y - 1, 12) if m < 1 else (y + 1, 1) if m > 12 else (y, m)
+            st.session_state["cal_month"] = (y, m)
+
+        with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+            st.button("‹", key="cal_prev", on_click=_cal_step, args=(-1,),
+                      disabled=_cm <= (_first.year, _first.month))
+            st.button("›", key="cal_next", on_click=_cal_step, args=(1,),
+                      disabled=_cm >= (_today.year, _today.month))
+            _cal_mode = st.segmented_control("Show in", ["$", "u"], default="$", key="cal_mode",
+                                             label_visibility="collapsed")
+        st.markdown(pl_calendar(_days, _cm[0], _cm[1], _cal_mode or "$", _today), unsafe_allow_html=True)
+        st.caption("Settled profit by the day each bet settled (Eastern). u = units, each bet's "
+                   "profit divided by its bet size (\\$1 before Oct 18, \\$2 Oct 18–19, \\$5 from Oct 20).")
+        _day_list = st.expander("Day-by-day details")
+        def _day_row(d):
+            dt = datetime.strptime(d["day"], "%Y%m%d")
+            rec = f"{d['won']}-{d['lost']}" if d["won"] + d["lost"] else "nothing settled"
+            roi = f", {pct(d['roi'], signed=True)} ROI" if d["roi"] is not None else ""
+            orders = (f"<br>{d['orders']} orders: {d['filled']} filled, {d['missed']} missed"
+                      + (f", {d['blocked']} blocked" if d["blocked"] else "")) if d["orders"] else ""
+            return (esc(dt.strftime("%a %b %-d")),
+                    f"{rec}{roi}, running total {money(d['total'], signed=True)}{orders}",
+                    f"<span class='num'>{money(d['pl'], signed=True)}</span>", tone(d["pl"]))
+        _day_list.markdown(rows_html(_day_row(d) for d in reversed(_days)), unsafe_allow_html=True)
 
     def _live_card(r):
         return bet_card(r, _games.get(str(r.get("ticker") or "")), n=_num(r.get("filled")),
@@ -1245,6 +1206,80 @@ with tab_live:
             st.markdown(cards_html(_live_card(r) for r in opn), unsafe_allow_html=True)
         else:
             st.markdown("<div class='pe-lede'>Nothing open right now.</div>", unsafe_allow_html=True)
+    _sc = _ls_cmp.scorecard(live_rows)
+    _nx = _sc["next"]
+    _goal = _nx["need"] if _nx else _sc["n"]
+    _prog = max(0.0, min(100.0, 100.0 * _sc["n"] / _goal)) if _goal else 100.0
+    _roi_v = pct(_sc["roi"], signed=True) if _sc["roi"] is not None else "—"
+    _roi_sub = (f"likely {pct(_sc['roi'] - _sc['roi_half'], signed=True)} to {pct(_sc['roi'] + _sc['roi_half'], signed=True)}"
+                if _sc["roi"] is not None and _sc["roi_half"] is not None else "")
+    _dr_v = f"{_sc['drift']:+.1f}¢" if _sc["drift"] is not None else "—"
+    _dr_sub = (f"±{_sc['drift_half']:.1f}¢ · {_sc['n_drift']} bet{'s' if _sc['n_drift'] != 1 else ''}" if _sc["drift_half"] is not None
+               else f"{_sc['n_drift']} bet{'s' if _sc['n_drift'] != 1 else ''} so far" if _sc["drift"] is not None else "collecting")
+    def _goal_line(target_txt, hit, have, early=""):
+        if early:
+            mark = f"<span style='color:var(--muted);font-weight:500'>{early}</span>"
+        elif not have:
+            mark = "—"
+        else:
+            mark = "<span class='up'>✓</span>" if hit else "<span class='down'>below</span>"
+        return f"<div class='sub goal'>Goal {target_txt} {mark}</div>"
+    _roi_goal = _goal_line(f"+{_sc.get('target_roi', 0.03) * 100:.0f}%", _sc.get("roi_hit"), _sc["roi"] is not None)
+    _dr_min = getattr(_ls_cmp, "DRIFT_MIN_BETS", 100)
+    _dr_few = _sc["drift"] is not None and _sc["n_drift"] < _dr_min
+    _dr_early = " " if _dr_few else ""
+    _dr_goal = _goal_line(f"+{_sc.get('target_drift', 1.0):.0f}¢", _sc.get("drift_hit"), _sc["drift"] is not None, _dr_early)
+    if _dr_few:
+        _dr_sub = f"{_sc['n_drift']} of {_dr_min} bets needed"
+    _vt = {"good": "up", "bad": "down"}.get(_sc["tone"], "")
+    st.markdown(
+        f"""
+        <div class='pe-hero'>
+          <div class='top'><div><div class='k'>Edge scorecard · when to raise the bet</div>
+            <div class='v {_vt}' style='font-weight:600;margin-top:.25rem'>{esc(_sc["verdict"])}</div></div></div>
+          <div class='stats'>
+            <div class='stat'><div class='k'>Settled bets</div><div class='v'>{_sc["n"]}</div><div class='sub goal'>Goal {_goal:,}</div></div>
+            <div class='stat'><div class='k'>ROI</div><div class='v {tone(_sc["roi"] or 0)}'>{_roi_v}</div>{_roi_goal}<div class='sub'>{_roi_sub}</div></div>
+            <div class='stat'><div class='k'>Price drift</div><div class='v {tone(_sc["drift"] or 0)}'>{_dr_v}</div>{_dr_goal}<div class='sub'>{_dr_sub}</div></div>
+          </div>
+          <div class='bar'>
+            <div class='lab'><span>{('Next: ' + _nx['size'] + ' bets') if _nx else 'All checkpoints cleared'}</span>
+              <span><b style='color:var(--text)'>{_sc["n"]}</b> of {_goal} bets</span></div>
+            <div class='track'><div class='fill' style='width:{_prog:.0f}%'></div></div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.caption("Step up when the bet count is reached and both goals are hit: ROI of +3% or better "
+               "(clears Kalshi's fees with room to spare) and price drift of +1¢ or better (about a 2% "
+               "edge). At 1,000 bets the whole ROI range must also be above zero. Drift is the price "
+               "~30 min after the buy minus what you paid; it counts once 100 bets have a reading. "
+               "Keep each bet near 1–2% of your Kalshi cash.")
+    _ls_on = (league_status.get("live_sharp") or {}).get("enabled")
+    st.markdown(
+        "<div class='pe-lede' style='font-size:.8rem'>" + ("" if _ls_on else "<b>Off.</b> ")
+        + "Copies every Sharp pick with a real Kalshi order · $5 per bet · $300/day cap · "
+          "buys only at the price the pick saw."
+        + ("" if _ls_on else " Turn it on with the LIVE_SHARP_ENABLED repo variable.")
+        + "</div>", unsafe_allow_html=True)
+    _lsr = league_status.get("live_sharp") or {}
+    _cash = _lsr.get("cash")
+    # Cash is still tracked every round (kalshi_balance_log.csv + low-cash push); the box and chart
+    # are hidden by request. Only a short warning shows, and only when cash is actually low.
+    if _cash is not None:
+        from league import live_sharp as _lsm
+        if _cash < _lsm.LOW_TOTAL:
+            st.error(f"Kalshi cash is low (\\${_cash:.2f}). Deposit soon to keep live Sharp betting.")
+    for _lp in _lsr.get("low_pools") or []:
+        st.warning(f"Kalshi pool low: **{_lp['name']}** (Exchange {_lp['pool']}) has ${_lp['cash']:.2f}. "
+                   "Bets on those markets are skipped until you move cash there at "
+                   "kalshi.com/account/exchange-indexes → Transfer.")
+    if _lsr.get("kalshi_ok") is False:
+        st.caption(f"⚠️ Kalshi key check failed last round: {_lsr.get('kalshi_error', '')}")
+    if _lsr.get("error"):
+        st.caption(f"Last round: {_lsr['error']}")
+    if live_rows:
         if _vs and _vs["paper"]["bets"]:
             _since = _when(_vs["since"])
             _since_txt = _since.astimezone(EASTERN).strftime("%b %-d") if _since else "live started"
@@ -1278,39 +1313,6 @@ with tab_live:
                 return (esc(g["group"]), detail,
                         f"<span class='num'>{money(g['pl'], signed=True)}</span>", tone(g["pl"]))
             st.markdown(rows_html(_sport_row(g) for g in _sports), unsafe_allow_html=True)
-        _days = _ls_daily.daily(live_rows)
-        if _days:
-            st.markdown("<div class='section'><span>Calendar</span></div>", unsafe_allow_html=True)
-            _cm = st.session_state.setdefault("cal_month", (_today.year, _today.month))
-            _first = datetime.strptime(_days[0]["day"], "%Y%m%d")
-
-            def _cal_step(delta: int) -> None:
-                y, m = st.session_state["cal_month"]
-                m += delta
-                y, m = (y - 1, 12) if m < 1 else (y + 1, 1) if m > 12 else (y, m)
-                st.session_state["cal_month"] = (y, m)
-
-            with st.container(horizontal=True, vertical_alignment="center", gap="small"):
-                st.button("‹", key="cal_prev", on_click=_cal_step, args=(-1,),
-                          disabled=_cm <= (_first.year, _first.month))
-                st.button("›", key="cal_next", on_click=_cal_step, args=(1,),
-                          disabled=_cm >= (_today.year, _today.month))
-                _cal_mode = st.segmented_control("Show in", ["$", "u"], default="$", key="cal_mode",
-                                                 label_visibility="collapsed")
-            st.markdown(pl_calendar(_days, _cm[0], _cm[1], _cal_mode or "$", _today), unsafe_allow_html=True)
-            st.caption("Settled profit by the day each bet settled (Eastern). u = units, each bet's "
-                       "profit divided by its bet size (\\$1 before Oct 18, \\$2 Oct 18–19, \\$5 from Oct 20).")
-            _day_list = st.expander("Day-by-day details")
-            def _day_row(d):
-                dt = datetime.strptime(d["day"], "%Y%m%d")
-                rec = f"{d['won']}-{d['lost']}" if d["won"] + d["lost"] else "nothing settled"
-                roi = f", {pct(d['roi'], signed=True)} ROI" if d["roi"] is not None else ""
-                orders = (f"<br>{d['orders']} orders: {d['filled']} filled, {d['missed']} missed"
-                          + (f", {d['blocked']} blocked" if d["blocked"] else "")) if d["orders"] else ""
-                return (esc(dt.strftime("%a %b %-d")),
-                        f"{rec}{roi}, running total {money(d['total'], signed=True)}{orders}",
-                        f"<span class='num'>{money(d['pl'], signed=True)}</span>", tone(d["pl"]))
-            _day_list.markdown(rows_html(_day_row(d) for d in reversed(_days)), unsafe_allow_html=True)
         st.markdown(f"<div class='section'><span>Finished<span class='n'>{len(rest)}</span></span></div>", unsafe_allow_html=True)
         if rest:
             st.markdown(rows_html(_live_row(r) for r in rest), unsafe_allow_html=True)
