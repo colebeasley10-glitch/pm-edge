@@ -3,7 +3,7 @@
 Sent by the first league round at or after 11pm Eastern (or, if GitHub skipped
 those runs, the first round before 6am for the day before). It covers:
 
-* Live $2 Sharp: orders sent, filled, missed (price moved), blocked by Kalshi,
+* Live $5 Sharp: orders sent, filled, missed (price moved), blocked by Kalshi,
   bets settled that day and their profit, spend vs the $105 budget, all-time P/L;
 * Paper: picks opened and bets settled that day per strategy, Sharp all-time;
 * a warning when the Odds API is out of credits (Sportsbooks can't price anything).
@@ -74,11 +74,11 @@ def build(day: str, paper: list[dict], live: list[dict], watch_state: dict | Non
     s_pl = sum(f(r.get("pl"), 0) or 0 for r in sharp_set)
     sharp_all = sum(f(r.get("pl"), 0) or 0 for r in paper if r.get("strategy") == "sharp" and r.get("status") in {"won", "lost"})
 
-    title = (f"🌙 {datetime.strptime(day, '%Y%m%d'):%a %b %-d}: Live $2 {_money(l_pl)} ({l_w}-{len(settled) - l_w})"
+    title = (f"🌙 {datetime.strptime(day, '%Y%m%d'):%a %b %-d}: Live $5 {_money(l_pl)} ({l_w}-{len(settled) - l_w})"
              f" · Paper Sharp {_money(s_pl)} ({sum(r['status'] == 'won' for r in sharp_set)}-"
              f"{sum(r['status'] == 'lost' for r in sharp_set)})")
     lines = [
-        "LIVE $2",
+        "LIVE $5",
         f"Orders {len(sent)}: {len(filled)} filled, {len(missed)} missed (price moved)"
         + (f", {len(blocked)} blocked by Kalshi" if blocked else "")
         + (f", {len(errors)} other errors" if errors else ""),

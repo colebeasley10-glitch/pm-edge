@@ -20,7 +20,7 @@ STATUS = Path(os.getenv("LEAGUE_STATUS_PATH", "league_status.json"))
 DAILY_CAP = int(os.getenv("LEAGUE_DAILY_CAP_PER_STRATEGY", "12"))
 # Per-strategy overrides of DAILY_CAP; env LEAGUE_DAILY_CAP_<NAME> (e.g. LEAGUE_DAILY_CAP_SHARP) wins.
 UNCAPPED = 10**9
-# Sharp has no bet-count cap: Live $2 Sharp is limited only by its $105/day spend, and it
+# Sharp has no bet-count cap: Live $5 Sharp is limited only by its $105/day spend, and it
 # copies every paper pick until that budget runs out.
 STRATEGY_CAPS = {"sharp": UNCAPPED}
 # Benched strategies still run and report what they would have picked (status "shadow"),
@@ -48,7 +48,7 @@ LABELS = {"weather": "Weather", "polymarket": "Polymarket", "books": "Sportsbook
 
 
 def opened_today(rows: list[dict], strategy: str, now: datetime) -> int:
-    # Eastern day, same as Live $2's daily cap, so both books reset together at midnight ET
+    # Eastern day, same as Live $5's daily cap, so both books reset together at midnight ET
     today = live_sharp.et_day(now)
     return sum(1 for r in rows if r.get("strategy") == strategy
                and live_sharp.et_day(book.parse_dt(r.get("opened_at")) or now) == today)
@@ -109,7 +109,7 @@ def _pushover(title: str, lines: list[str]) -> None:
 
 
 def run_live_sharp(new_sharp_rows: list[dict], kalshi, now: datetime, client=None) -> dict:
-    """Settle real $2 Sharp bets, then copy this round's new Sharp picks with real orders."""
+    """Settle real $5 Sharp bets, then copy this round's new Sharp picks with real orders."""
     rows = live_sharp.load()
     out: dict = {"enabled": False}
     finished: list[dict] = []
@@ -148,14 +148,14 @@ def run_live_sharp(new_sharp_rows: list[dict], kalshi, now: datetime, client=Non
     live_sharp.save(rows)
     new = out.pop("new", [])
     if new:
-        _pushover(f"💵 Live $2 Sharp: {len(new)} real bet{'s' if len(new) != 1 else ''} placed",
+        _pushover(f"💵 Live $5 Sharp: {len(new)} real bet{'s' if len(new) != 1 else ''} placed",
                   [f"{r['side']} {str(r['title'] or r['ticker'])[:60]} — {float(r['filled']):g} at "
                    f"{float(r['avg_price']) * 100:.0f}¢ (${float(r['cost']) + float(r['fee']):.2f})" for r in new]
                   + [f"Today: ${out.get('spent_today', 0):.2f} of ${live_sharp.daily_budget():.0f}"])
     if finished:
         pl = sum(book.f(r.get("pl"), 0.0) or 0.0 for r in finished)
         w = sum(r["status"] == "won" for r in finished)
-        _pushover(f"💵 Live $2 Sharp settled: {w}-{len(finished) - w}, {pl:+.2f} real",
+        _pushover(f"💵 Live $5 Sharp settled: {w}-{len(finished) - w}, {pl:+.2f} real",
                   [f"{'✅' if r['status'] == 'won' else '❌' if r['status'] == 'lost' else '↩️'} "
                    f"{r['side']} {str(r.get('title') or r['ticker'])[:60]} {float(r.get('pl') or 0):+.2f}"
                    + (f" ({r['note']})" if r.get("result") == "sold" else "")
@@ -236,7 +236,7 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
                     continue
                 if st["opened"] >= room:
                     st["skipped"]["daily_cap"] = st["skipped"].get("daily_cap", 0) + 1
-                    # Live $2 copies only picks the paper book actually takes, so the
+                    # Live $5 copies only picks the paper book actually takes, so the
                     # real-money results track the same bets as paper Sharp.
                     continue
                 row = book.open_trade(pk, rows, now=now)
@@ -244,7 +244,7 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
                 live_candidates.append(row)
                 st["opened"] += 1
             if strat.NAME == "sharp":
-                # real $2 copies go out right away, before slower strategies run
+                # real $5 copies go out right away, before slower strategies run
                 status["live_sharp"] = run_live_sharp(live_candidates, kalshi, now)
                 alert_low_pools(status["live_sharp"].get("low_pools") or [], status["pool_alerts"], now)
         except Exception as exc:

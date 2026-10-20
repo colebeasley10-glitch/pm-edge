@@ -630,7 +630,7 @@ def pl_split(*, open_n, open_pl, at_risk, payout, done_n, done_pl, record, today
 
 
 def units_line(u) -> str:
-    """'+10.56 units' under a P/L figure. A unit is the bet size at the time ($1 early on, $2 now)."""
+    """'+10.56 units' under a P/L figure. A unit is the bet size at the time ($1 early on, $2 Oct 18, $5 from Oct 20)."""
     if u is None:
         return ""
     return f"<div class='units {tone(u)}'>{u:+.2f} units</div>"
@@ -678,7 +678,7 @@ def cards_html(items) -> str:
 
 
 def _refresh_all() -> None:
-    """One tap refreshes both the paper league bets and the real $2 bets."""
+    """One tap refreshes both the paper league bets and the real Sharp bets."""
     _refresh_live_bets()
     _refresh_live_sharp()
     live_scores.clear()
@@ -770,7 +770,7 @@ with st.container(horizontal=True, horizontal_alignment="distribute", vertical_a
                   on_click=_refresh_everything)
 
 tab_home, tab_live, tab_league, tab_lab, tab_picks, tab_bets, tab_results, tab_system = st.tabs(
-    ["Home", "Live $2", "Paper", "Lab", f"Alerts {len(picks)}" if len(picks) else "Alerts", "My bets", "Results", "System"]
+    ["Home", "Live $5", "Paper", "Lab", f"Alerts {len(picks)}" if len(picks) else "Alerts", "My bets", "Results", "System"]
 )
 
 def _price_label(p: dict) -> str:
@@ -828,7 +828,7 @@ with tab_home:
         f"""
         <div class='pe-hero'>
           <div class='top'>
-            <div><div class='k'>Live $2 Sharp · real money</div>
+            <div><div class='k'>Live $5 Sharp · real money</div>
               <div class='big {tone(_h_ls["pl"])}'>{money(_h_ls["pl"], signed=True)}</div>
               {units_line(_h_ls.get("units"))}</div>
             <div class='mid {tone(_h_today_pl)}'>{money(_h_today_pl, signed=True)}<div class='k' style='text-align:right'>today{(" · " + f"{_h_ls['units_today']:+.1f} units") if _h_ls.get("units_today") is not None else ""}</div></div>
@@ -1062,7 +1062,7 @@ with tab_live:
         f"""
         <div class='pe-hero'>
           <div class='top'>
-            <div><div class='k'>Live $2 Sharp · real money</div>
+            <div><div class='k'>Live $5 Sharp · real money</div>
               <div class='big {tone(ls["pl"])}'>{money(ls["pl"], signed=True)}</div>
               {units_line(ls.get("units"))}</div>
           </div>
@@ -1135,7 +1135,7 @@ with tab_live:
     _ls_on = (league_status.get("live_sharp") or {}).get("enabled")
     st.markdown(
         "<div class='pe-lede' style='font-size:.8rem'>" + ("" if _ls_on else "<b>Off.</b> ")
-        + "Copies every Sharp pick with a real Kalshi order · $2 per bet · $105/day cap · "
+        + "Copies every Sharp pick with a real Kalshi order · $5 per bet · $105/day cap · "
           "buys only at the price the pick saw."
         + ("" if _ls_on else " Turn it on with the LIVE_SHARP_ENABLED repo variable.")
         + "</div>", unsafe_allow_html=True)
@@ -1248,7 +1248,7 @@ with tab_live:
                         f"<span class='num'>{pct(g['roi'], signed=True) if g['roi'] is not None else '—'}</span>",
                         tone(g["roi"] or 0))
             st.markdown(rows_html([
-                _vs_row(_vs["live"], "Your real $2 bets"),
+                _vs_row(_vs["live"], "Your real bets"),
                 _vs_row(_vs["paper_copied"], "The same picks on paper. Should track the live row closely"),
                 _vs_row(_vs["paper_missed"], "Picks live couldn't place: no fill, blocked or skipped"),
                 _vs_row(_vs["paper"], "Every paper Sharp pick since live started"),
@@ -1292,7 +1292,7 @@ with tab_live:
                                                  label_visibility="collapsed")
             st.markdown(pl_calendar(_days, _cm[0], _cm[1], _cal_mode or "$", _today), unsafe_allow_html=True)
             st.caption("Settled profit by the day each bet settled (Eastern). u = units, each bet's "
-                       "profit divided by its bet size (\\$1 before Oct 18, \\$2 after).")
+                       "profit divided by its bet size (\\$1 before Oct 18, \\$2 Oct 18–19, \\$5 from Oct 20).")
             _day_list = st.expander("Day-by-day details")
             def _day_row(d):
                 dt = datetime.strptime(d["day"], "%Y%m%d")
@@ -1542,7 +1542,7 @@ with tab_league:
                 (esc(LEAGUE_LABELS.get(s["strategy"], s["strategy"].title())),
                  f"{s['won']}-{s['lost']} record, {s['open']} open"
                  + (f", {pct(s['roi'], signed=True)} ROI" if s["roi"] is not None else "")
-                 + "<br>Off the board: picks are tracked here only, never in the standings or Live $2.",
+                 + "<br>Off the board: picks are tracked here only, never in the standings or Live Sharp.",
                  f"<span class='num'>{money(s['pl'], signed=True)}</span>", tone(s["pl"]))
                 for s in sorted(_shadow, key=lambda s: -s["pl"])
             ), unsafe_allow_html=True)

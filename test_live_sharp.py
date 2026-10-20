@@ -58,10 +58,10 @@ def paper(i, price=0.50, side="YES", trades=50):
 
 
 def test_size():
-    assert live_sharp.size(0.50) == 4           # $2.00 of contracts
-    assert live_sharp.size(0.33) == 6           # $1.98
-    assert live_sharp.size(0.07) == 28          # $1.96
-    assert live_sharp.size(0.97) == 2
+    assert live_sharp.size(0.50) == 10          # $5.00 of contracts
+    assert live_sharp.size(0.33) == 15          # $4.95
+    assert live_sharp.size(0.07) == 71          # $4.97
+    assert live_sharp.size(0.97) == 5
     assert live_sharp.size(0.50, budget=0.60) == 1   # only room for one today
     assert live_sharp.size(0.50, budget=0.40) == 0
 
@@ -69,7 +69,7 @@ def test_size():
 def test_env_cannot_raise_caps():
     os.environ.update({"LIVE_SHARP_MAX_PER_BET": "50", "LIVE_SHARP_DAILY_BUDGET": "1000",})
     try:
-        assert live_sharp.per_bet() == 2.0 and live_sharp.daily_budget() == 105.0
+        assert live_sharp.per_bet() == 5.0 and live_sharp.daily_budget() == 105.0
     finally:
         for k in ("LIVE_SHARP_MAX_PER_BET", "LIVE_SHARP_DAILY_BUDGET"):
             os.environ.pop(k)
@@ -80,7 +80,7 @@ def test_daily_budget_and_order_cap():
     out = live_sharp.place([paper(i) for i in range(60)], c, now=NOW, rows=rows)
     spent = sum(float(r["cost"]) + float(r["fee"]) for r in rows)
     assert spent <= 105.0 + 1e-9, spent
-    assert all(o["count"] * o["price"] <= 2.0 + 1e-9 for o in c.orders)
+    assert all(o["count"] * o["price"] <= 5.0 + 1e-9 for o in c.orders)
     assert out["skipped"].get("daily_budget", 0) == 60 - out["placed"]
     # next Eastern day the budget resets
     out2 = live_sharp.place([paper(100)], c, now=NOW + timedelta(days=1), rows=rows)
@@ -141,7 +141,7 @@ def test_round_places_only_when_enabled():
     c = FakeClient()
     paper_row = book.load()[-1]
     out = run.run_live_sharp([paper_row], FakeKalshi(), NOW, client=c)
-    assert out["placed"] == 1 and c.orders[0]["price"] == 0.50 and c.orders[0]["count"] == 4
+    assert out["placed"] == 1 and c.orders[0]["price"] == 0.50 and c.orders[0]["count"] == 10
 
 
 def test_marks_open_bets_like_paper():
@@ -505,8 +505,8 @@ def test_low_cash_skips_instead_of_sending():
 
 
 def test_cash_runs_down_across_one_run():
-    # $5 covers two $2 bets, not a third
-    c, rows = CashClient(5.0), []
+    # $12 covers two $5 bets, not a third
+    c, rows = CashClient(12.0), []
     out = live_sharp.place([paper(600 + i) for i in range(3)], c, now=NOW, rows=rows)
     assert out["placed"] == 2 and out["skipped"].get("low_cash") == 1
 

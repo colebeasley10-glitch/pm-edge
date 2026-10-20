@@ -1,8 +1,8 @@
-"""Live $2 Sharp: copy each new Sharp paper pick with a real Kalshi order.
+"""Live $5 Sharp: copy each new Sharp paper pick with a real Kalshi order.
 
 Real money, so every limit is enforced here in code, not just in config:
 
-* at most $2.00 of contracts per bet (fee on top, a few cents);
+* at most $5.00 of contracts per bet (fee on top, a few cents);
 * at most $105.00 spent per Eastern day, fees included (no limit on the number of bets);
 * the daily spend is the larger of this ledger and Kalshi's own order history,
   so a lost ledger commit can't double the budget;
@@ -34,7 +34,7 @@ LEDGER = Path(os.getenv("LIVE_SHARP_LEDGER_PATH", "live_sharp_trades.csv"))
 PREFIX = "pmls-"
 
 # Hard ceilings. Env can lower these, never raise them.
-CEIL_PER_BET = 2.00
+CEIL_PER_BET = 5.00  # $1 Oct 13, $2 Oct 18, $5 from Oct 20 2026
 CEIL_DAILY = 105.00
 
 FIELDS = [
@@ -728,7 +728,7 @@ def scorecard(rows: list[dict]) -> dict:
         verdict, tone = f"Not proven yet — {nxt['to_go']} more settled bets to the first checkpoint.", "wait"
     else:
         verdict, tone = (f"Enough bets, but ROI or drift is under its goal "
-                         f"(+{TARGET_ROI * 100:.0f}% / +{TARGET_DRIFT:.0f}¢) — hold at $2."), "bad"
+                         f"(+{TARGET_ROI * 100:.0f}% / +{TARGET_DRIFT:.0f}¢) — hold at ${per_bet():g}."), "bad"
     return {"n": n_settled, "n_priced": n, "staked": round(staked, 2), "pl": round(pl, 2), "roi": roi, "roi_half": half,
             "drift": drift_m, "drift_half": drift_h, "n_drift": n_drift, "recent_roi": recent_roi,
             "stage": stage, "next": nxt, "verdict": verdict, "tone": tone,
