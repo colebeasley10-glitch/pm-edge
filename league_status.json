@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-10-20T09:00:43.893058Z",
+ "ran_at": "2026-10-20T09:30:50.708614Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -17,7 +17,7 @@
    }
   },
   "polymarket": {
-   "picks_found": 5,
+   "picks_found": 6,
    "opened": 0,
    "skipped": {},
    "benched": true,
@@ -51,6 +51,13 @@
      "edge": 0.0576
     },
     {
+     "ticker": "KXVALORANTGAME-26OCT210000ATWOL-WOL",
+     "side": "NO",
+     "ask": 0.37,
+     "fair": 0.415,
+     "edge": 0.0283
+    },
+    {
      "ticker": "KXCS2GAME-26OCT201000ASTLG-LG",
      "side": "NO",
      "ask": 0.45,
@@ -61,10 +68,10 @@
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 246,
-    "kalshi_events": 1561,
-    "matched": 166,
-    "priced": 307,
+    "poly_games": 252,
+    "kalshi_events": 1567,
+    "matched": 172,
+    "priced": 320,
     "best_gaps": [
      [
       0.585,
@@ -84,19 +91,19 @@
      ],
      [
       0.015,
+      "KXVALORANTGAME-26OCT210000ATWOL-AT"
+     ],
+     [
+      0.015,
       "KXLOLGAME-26OCT231800T1LOS-T1"
      ],
      [
       0.015,
-      "KXIDNSLGAME-26OCT20BPIYOG-YOG"
+      "KXEUROLEAGUEGAME-26OCT221405RMAMTA-MTA"
      ],
      [
       0.015,
       "KXCS2GAME-26OCT201000SAWSIN-SIN"
-     ],
-     [
-      0.01,
-      "KXWNBAGAME-26OCT22GSATL-ATL"
      ]
     ]
    }
@@ -108,81 +115,36 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 4,
-   "skipped": {},
+   "opened": 3,
+   "skipped": {
+    "same_game": 1
+   },
    "diag": {
-    "skipped_settles_late": 0
+    "skipped_settles_late": 1
    }
   },
   "crypto": {
-   "picks_found": 3,
+   "picks_found": 0,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [
-    {
-     "ticker": "KXETHD-26OCT2006-T2369.99",
-     "side": "NO",
-     "ask": 0.09,
-     "fair": 0.1714,
-     "edge": 0.0757
-    },
-    {
-     "ticker": "KXETHD-26OCT2006-T2374.99",
-     "side": "NO",
-     "ask": 0.2,
-     "fair": 0.2827,
-     "edge": 0.0715
-    },
-    {
-     "ticker": "KXETHD-26OCT2006-T2394.99",
-     "side": "YES",
-     "ask": 0.12,
-     "fair": 0.1809,
-     "edge": 0.0534
-    }
-   ],
+   "shadow": [],
    "shadow_opened": 0,
    "diag": {
-    "markets_priced": 488,
+    "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.0025154517710234297,
-     "ETH-USD": 0.004539385759893631
+     "BTC-USD": 0.0025181233849755178,
+     "ETH-USD": 0.004538872039325209
     },
-    "best": [
-     [
-      -0.75,
-      "KXETHD-26OCT2006-T2444.99"
-     ],
-     [
-      -0.65,
-      "KXETHD-26OCT2006-T2439.99"
-     ],
-     [
-      -0.47,
-      "KXETHD-26OCT2006-T2434.99"
-     ],
-     [
-      -0.45,
-      "KXETHD-26OCT2006-T2429.99"
-     ],
-     [
-      -0.093,
-      "KXETHD-26OCT2006-T2374.99"
-     ],
-     [
-      -0.091,
-      "KXETHD-26OCT2006-T2369.99"
-     ]
-    ]
+    "best": []
    }
   }
  },
  "nightly_sent": "20261019",
  "pool_alerts": {},
  "update": {
-  "marked": 11,
-  "settled": 2
+  "marked": 14,
+  "settled": 0
  },
  "shadow_update": {
   "marked": 8,
@@ -191,32 +153,30 @@
  "live_sharp": {
   "enabled": true,
   "kalshi_ok": true,
-  "placed": 1,
-  "filled": 1,
-  "skipped": {
-   "thin_flow": 3
-  },
-  "spent_today": 23.09,
-  "cash": 192.23,
+  "placed": 3,
+  "filled": 2,
+  "skipped": {},
+  "spent_today": 26.71,
+  "cash": 190.32,
   "pools": {
    "0": 88.61,
    "1": 0.0,
    "2": 8.39,
-   "3": 95.23
+   "3": 93.32
   },
   "low_pools": [],
   "settled": 0,
   "summary": {
    "won": 146,
    "lost": 94,
-   "open": 3,
+   "open": 5,
    "pl": 12.67,
    "staked": 225.26,
    "roi": 0.056246115599751394,
-   "spent_today": 22.91,
-   "orders_today": 14,
+   "spent_today": 26.53,
+   "orders_today": 16,
    "budget": 105.0,
-   "no_fill": 78,
+   "no_fill": 79,
    "units": 10.69,
    "units_today": 2.02
   }
@@ -224,16 +184,16 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 592,
-   "open": 15,
-   "won": 344,
+   "picks": 595,
+   "open": 17,
+   "won": 345,
    "lost": 233,
-   "pl": 209.77000000000032,
-   "risked": 5782.899999999994,
-   "clv_sum": 219.60000000000002,
-   "clv_n": 550,
-   "roi": 0.036274187691296846,
-   "clv": 0.39927272727272733
+   "pl": 215.90000000000032,
+   "risked": 5792.769999999994,
+   "clv_sum": 259.1,
+   "clv_n": 551,
+   "roi": 0.03727059765880581,
+   "clv": 0.47023593466424685
   },
   {
    "strategy": "weather",
