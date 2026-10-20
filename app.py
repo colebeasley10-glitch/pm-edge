@@ -1082,40 +1082,6 @@ with tab_live:
     st.markdown(pl_split(open_n=ls["open"], open_pl=_open_now, at_risk=_risk, payout=_pays,
                          done_n=ls["won"] + ls["lost"], done_pl=ls["pl"], record=f'{ls["won"]}–{ls["lost"]}',
                          today_pl=_today_pl), unsafe_allow_html=True)
-    from league import live_sharp as _ls_daily
-    _days = _ls_daily.daily(live_rows) if live_rows else []
-    if _days:
-        st.markdown("<div class='section'><span>Calendar</span></div>", unsafe_allow_html=True)
-        _cm = st.session_state.setdefault("cal_month", (_today.year, _today.month))
-        _first = datetime.strptime(_days[0]["day"], "%Y%m%d")
-
-        def _cal_step(delta: int) -> None:
-            y, m = st.session_state["cal_month"]
-            m += delta
-            y, m = (y - 1, 12) if m < 1 else (y + 1, 1) if m > 12 else (y, m)
-            st.session_state["cal_month"] = (y, m)
-
-        with st.container(horizontal=True, vertical_alignment="center", gap="small"):
-            st.button("‹", key="cal_prev", on_click=_cal_step, args=(-1,),
-                      disabled=_cm <= (_first.year, _first.month))
-            st.button("›", key="cal_next", on_click=_cal_step, args=(1,),
-                      disabled=_cm >= (_today.year, _today.month))
-            _cal_mode = st.segmented_control("Show in", ["$", "u"], default="$", key="cal_mode",
-                                             label_visibility="collapsed")
-        st.markdown(pl_calendar(_days, _cm[0], _cm[1], _cal_mode or "$", _today), unsafe_allow_html=True)
-        st.caption("Settled profit by the day each bet settled (Eastern). u = units, each bet's "
-                   "profit divided by its bet size (\\$1 before Oct 18, \\$2 Oct 18–19, \\$5 from Oct 20).")
-        _day_list = st.expander("Day-by-day details")
-        def _day_row(d):
-            dt = datetime.strptime(d["day"], "%Y%m%d")
-            rec = f"{d['won']}-{d['lost']}" if d["won"] + d["lost"] else "nothing settled"
-            roi = f", {pct(d['roi'], signed=True)} ROI" if d["roi"] is not None else ""
-            orders = (f"<br>{d['orders']} orders: {d['filled']} filled, {d['missed']} missed"
-                      + (f", {d['blocked']} blocked" if d["blocked"] else "")) if d["orders"] else ""
-            return (esc(dt.strftime("%a %b %-d")),
-                    f"{rec}{roi}, running total {money(d['total'], signed=True)}{orders}",
-                    f"<span class='num'>{money(d['pl'], signed=True)}</span>", tone(d["pl"]))
-        _day_list.markdown(rows_html(_day_row(d) for d in reversed(_days)), unsafe_allow_html=True)
 
     def _live_card(r):
         return bet_card(r, _games.get(str(r.get("ticker") or "")), n=_num(r.get("filled")),
@@ -1206,6 +1172,40 @@ with tab_live:
             st.markdown(cards_html(_live_card(r) for r in opn), unsafe_allow_html=True)
         else:
             st.markdown("<div class='pe-lede'>Nothing open right now.</div>", unsafe_allow_html=True)
+    from league import live_sharp as _ls_daily
+    _days = _ls_daily.daily(live_rows) if live_rows else []
+    if _days:
+        st.markdown("<div class='section'><span>Calendar</span></div>", unsafe_allow_html=True)
+        _cm = st.session_state.setdefault("cal_month", (_today.year, _today.month))
+        _first = datetime.strptime(_days[0]["day"], "%Y%m%d")
+
+        def _cal_step(delta: int) -> None:
+            y, m = st.session_state["cal_month"]
+            m += delta
+            y, m = (y - 1, 12) if m < 1 else (y + 1, 1) if m > 12 else (y, m)
+            st.session_state["cal_month"] = (y, m)
+
+        with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+            st.button("‹", key="cal_prev", on_click=_cal_step, args=(-1,),
+                      disabled=_cm <= (_first.year, _first.month))
+            st.button("›", key="cal_next", on_click=_cal_step, args=(1,),
+                      disabled=_cm >= (_today.year, _today.month))
+            _cal_mode = st.segmented_control("Show in", ["$", "u"], default="$", key="cal_mode",
+                                             label_visibility="collapsed")
+        st.markdown(pl_calendar(_days, _cm[0], _cm[1], _cal_mode or "$", _today), unsafe_allow_html=True)
+        st.caption("Settled profit by the day each bet settled (Eastern). u = units, each bet's "
+                   "profit divided by its bet size (\\$1 before Oct 18, \\$2 Oct 18–19, \\$5 from Oct 20).")
+        _day_list = st.expander("Day-by-day details")
+        def _day_row(d):
+            dt = datetime.strptime(d["day"], "%Y%m%d")
+            rec = f"{d['won']}-{d['lost']}" if d["won"] + d["lost"] else "nothing settled"
+            roi = f", {pct(d['roi'], signed=True)} ROI" if d["roi"] is not None else ""
+            orders = (f"<br>{d['orders']} orders: {d['filled']} filled, {d['missed']} missed"
+                      + (f", {d['blocked']} blocked" if d["blocked"] else "")) if d["orders"] else ""
+            return (esc(dt.strftime("%a %b %-d")),
+                    f"{rec}{roi}, running total {money(d['total'], signed=True)}{orders}",
+                    f"<span class='num'>{money(d['pl'], signed=True)}</span>", tone(d["pl"]))
+        _day_list.markdown(rows_html(_day_row(d) for d in reversed(_days)), unsafe_allow_html=True)
     _sc = _ls_cmp.scorecard(live_rows)
     _nx = _sc["next"]
     _goal = _nx["need"] if _nx else _sc["n"]
