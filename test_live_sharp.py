@@ -241,6 +241,17 @@ def test_daily_breakdown():
     d = out["20261013"]
     assert (d["won"], d["lost"], d["pl"], d["total"]) == (0, 1, -0.62, -0.14)
     assert (d["orders"], d["filled"], d["missed"], d["blocked"]) == (4, 2, 1, 1)
+    # units: Oct 12-13 bets were placed at $1, so units equal dollars
+    assert out["20261012"]["units"] == 0.48 and d["units"] == -0.62
+
+
+def test_daily_units_follow_bet_size():
+    rows = [{"day": "20261019", "status": "won", "unit": "2", "cost": "1.00", "fee": "0.02", "pl": "0.96",
+             "settled_at": "2026-10-19T20:00:00Z"},
+            {"day": "20261019", "status": "lost", "unit": "2", "cost": "1.10", "fee": "0.02", "pl": "-1.12",
+             "settled_at": "2026-10-19T21:00:00Z"}]
+    d = live_sharp.daily(rows)[0]
+    assert d["pl"] == -0.16 and d["units"] == -0.08
 
 
 def _sell(ticker, side, count, price, when="2026-10-13T20:00:00Z", fee="0.01"):

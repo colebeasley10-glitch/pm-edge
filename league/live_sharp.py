@@ -594,7 +594,7 @@ def daily(rows: list[dict]) -> list[dict]:
     days: dict[str, dict] = {}
 
     def row(day: str) -> dict:
-        return days.setdefault(day, {"day": day, "won": 0, "lost": 0, "pl": 0.0, "staked": 0.0,
+        return days.setdefault(day, {"day": day, "won": 0, "lost": 0, "pl": 0.0, "units": 0.0, "staked": 0.0,
                                      "orders": 0, "filled": 0, "missed": 0, "blocked": 0})
 
     for r in rows:
@@ -605,6 +605,7 @@ def daily(rows: list[dict]) -> list[dict]:
                 d = row(et_day(when))
                 d[st] += 1
                 d["pl"] += book.f(r.get("pl"), 0.0) or 0.0
+                d["units"] += (book.f(r.get("pl"), 0.0) or 0.0) / unit_of(r)
                 d["staked"] += (book.f(r.get("cost"), 0.0) or 0.0) + (book.f(r.get("fee"), 0.0) or 0.0)
         if r.get("day") and st != "skipped":
             d = row(str(r["day"]))
@@ -621,6 +622,7 @@ def daily(rows: list[dict]) -> list[dict]:
         d = days[day]
         total += d["pl"]
         d["pl"] = round(d["pl"], 2)
+        d["units"] = round(d["units"], 2)
         d["roi"] = d["pl"] / d["staked"] if d["staked"] else None
         d["total"] = round(total, 2)
         out.append(d)

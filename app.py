@@ -204,6 +204,21 @@ st.markdown(
                 border-radius:14px; background:var(--gold); color:#14110A !important; text-decoration:none !important; }
     a.cmp-bet b { font-weight:800; font-size:1rem; letter-spacing:.02em; } a.cmp-bet span { font-size:.8rem; font-weight:600; }
     .cmp-note { color:var(--muted); font-size:.72rem; line-height:1.4; }
+    /* P/L calendar */
+    .cal { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:.75rem .55rem .6rem; margin:.2rem 0 .6rem; }
+    .cal-h { display:flex; align-items:baseline; gap:.5rem; padding:0 .3rem .55rem; }
+    .cal-h b { font-size:1.15rem; font-weight:800; } .cal-h span { font-weight:700; font-size:.9rem; }
+    .cal-g { display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:4px; }
+    .cal-dow { text-align:center; color:var(--muted); font-size:.68rem; font-weight:700; padding-bottom:.2rem; }
+    .cal-d { min-height:3.1rem; border-radius:10px; display:flex; flex-direction:column; align-items:center;
+             justify-content:space-between; padding:.3rem 0 .35rem; min-width:0; }
+    .cal-d .n { color:var(--muted); font-size:.72rem; font-weight:600; }
+    .cal-d .v { font-size:.7rem; font-weight:800; white-space:nowrap; letter-spacing:-.02em; }
+    .cal-d.win { background:rgba(34,197,94,.14); } .cal-d.win .v { color:var(--up); }
+    .cal-d.loss { background:rgba(240,82,82,.14); } .cal-d.loss .v { color:var(--down); }
+    .cal-d.flat { background:var(--panel2); } .cal-d.flat .v { color:var(--soft); }
+    .cal-d.today { box-shadow:inset 0 0 0 1.5px #6EA8FE; } .cal-d.today .n { color:#6EA8FE; }
+    @media (min-width:640px) { .cal-d { min-height:4rem; } .cal-d .v { font-size:.85rem; } .cal-d .n { font-size:.8rem; } }
     /* lab */
     a.hm-tile, a.lab-card { text-decoration:none !important; color:var(--text) !important; display:block; }
     a.hm-tile:hover, a.lab-card:hover { border-color:var(--gold) !important; }
@@ -619,6 +634,43 @@ def units_line(u) -> str:
     if u is None:
         return ""
     return f"<div class='units {tone(u)}'>{u:+.2f} units</div>"
+
+
+def _cal_amt(v: float, mode: str) -> str:
+    """Compact cell figure: '$137', '$22.7', '$4.13' or '2.74u'. Sign is shown by colour."""
+    a = abs(v)
+    if mode == "u":
+        return f"{a:.2f}u" if a < 10 else f"{a:.1f}u"
+    return f"${a:.2f}" if a < 10 else f"${a:.1f}" if a < 100 else f"${a:,.0f}"
+
+
+def pl_calendar(days: list[dict], year: int, month: int, mode: str, today) -> str:
+    """Month grid of settled P/L per Eastern day, green for up days and red for down days."""
+    import calendar as _cal
+    by_day = {d["day"]: d for d in days}
+    key = "units" if mode == "u" else "pl"
+    total = sum((d.get(key) or 0) for k, d in by_day.items() if k.startswith(f"{year:04d}{month:02d}"))
+    tot_txt = (f"{total:+.2f}u" if mode == "u" else money(total, signed=True))
+    cells = "".join(f"<div class='cal-dow'>{x}</div>" for x in "SMTWTFS")
+    for week in _cal.Calendar(firstweekday=6).monthdayscalendar(year, month):
+        for dnum in week:
+            if not dnum:
+                cells += "<div></div>"
+                continue
+            d = by_day.get(f"{year:04d}{month:02d}{dnum:02d}")
+            settled = d and (d["won"] + d["lost"])
+            cls, val = "", ""
+            if settled:
+                v = d.get(key) or 0
+                cls = "win" if v > 0.004 else "loss" if v < -0.004 else "flat"
+                val = _cal_amt(v, mode)
+            if (year, month, dnum) == (today.year, today.month, today.day):
+                cls += " today"
+            cells += f"<div class='cal-d {cls}'><span class='n'>{dnum}</span><span class='v'>{val}</span></div>"
+    month_name = datetime(year, month, 1).strftime("%b %Y")
+    return (f"<div class='cal'><div class='cal-h'><b>{month_name}</b>"
+            f"<span class='{tone(total)}'>{esc(tot_txt)}</span></div>"
+            f"<div class='cal-g'>{cells}</div></div>")
 
 
 def cards_html(items) -> str:
@@ -1221,7 +1273,27 @@ with tab_live:
             st.markdown(rows_html(_sport_row(g) for g in _sports), unsafe_allow_html=True)
         _days = _ls_daily.daily(live_rows)
         if _days:
-            st.markdown("<div class='section'><span>By day</span></div>", unsafe_allow_html=True)
+            st.markdown("<div class='section'><span>Calendar</span></div>", unsafe_allow_html=True)
+            _cm = st.session_state.setdefault("cal_month", (_today.year, _today.month))
+            _first = datetime.strptime(_days[0]["day"], "%Y%m%d")
+
+            def _cal_step(delta: int) -> None:
+                y, m = st.session_state["cal_month"]
+                m += delta
+                y, m = (y - 1, 12) if m < 1 else (y + 1, 1) if m > 12 else (y, m)
+                st.session_state["cal_month"] = (y, m)
+
+            with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+                st.button("‹", key="cal_prev", on_click=_cal_step, args=(-1,),
+                          disabled=_cm <= (_first.year, _first.month))
+                st.button("›", key="cal_next", on_click=_cal_step, args=(1,),
+                          disabled=_cm >= (_today.year, _today.month))
+                _cal_mode = st.segmented_control("Show in", ["$", "u"], default="$", key="cal_mode",
+                                                 label_visibility="collapsed")
+            st.markdown(pl_calendar(_days, _cm[0], _cm[1], _cal_mode or "$", _today), unsafe_allow_html=True)
+            st.caption("Settled profit by the day each bet settled (Eastern). u = units, each bet's "
+                       "profit divided by its bet size (\\$1 before Oct 18, \\$2 after).")
+            _day_list = st.expander("Day-by-day details")
             def _day_row(d):
                 dt = datetime.strptime(d["day"], "%Y%m%d")
                 rec = f"{d['won']}-{d['lost']}" if d["won"] + d["lost"] else "nothing settled"
@@ -1231,7 +1303,7 @@ with tab_live:
                 return (esc(dt.strftime("%a %b %-d")),
                         f"{rec}{roi}, running total {money(d['total'], signed=True)}{orders}",
                         f"<span class='num'>{money(d['pl'], signed=True)}</span>", tone(d["pl"]))
-            st.markdown(rows_html(_day_row(d) for d in reversed(_days)), unsafe_allow_html=True)
+            _day_list.markdown(rows_html(_day_row(d) for d in reversed(_days)), unsafe_allow_html=True)
         st.markdown(f"<div class='section'><span>Finished<span class='n'>{len(rest)}</span></span></div>", unsafe_allow_html=True)
         if rest:
             st.markdown(rows_html(_live_row(r) for r in rest), unsafe_allow_html=True)
