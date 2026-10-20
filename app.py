@@ -1708,6 +1708,7 @@ with tab_lab:
     _tools = [("Research_Lab_EV_Finder", "+EV Finder", "Best price across all your books vs Pinnacle"),
               ("Research_Lab_Best_Price", "Best Price", "Were your Sharp picks cheaper on Polymarket?"),
               ("Research_Lab_Heavy_Flow", "Heavy Flow test", "Do Sharp picks with 60+ whale trades do better?"),
+              ("Research_Lab_Trader_Follow", "Trader Follow", "Copy alerts when proven Polymarket bettors bet pre-game"),
               ("Research_Lab_Promo_Converter", "Promo Converter", "Turn bonus bets into cash")]
     st.markdown("<div class='hm-tiles'>" + "".join(
         f"<a class='hm-tile lab-tool' href='/{pg}' target='_self'><div class='v' style='font-size:1.05rem'>{esc(t)}</div>"

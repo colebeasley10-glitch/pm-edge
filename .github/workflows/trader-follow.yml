@@ -1,0 +1,52 @@
+name: Trader Follow (alerts + paper)
+
+# Watches followed Polymarket bettors and pushes copy alerts on big PRE-GAME bets.
+# Needs to run every 1-2 minutes to catch his price: trigger it from cron-job.org with a
+# repository_dispatch of type "follow-tick" (GitHub's own schedule below is only a backup;
+# it allows at most every 5 minutes and often skips runs).
+# No Kalshi keys: this workflow can't place orders.
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [follow-tick]
+  schedule:
+    - cron: "*/5 * * * *"
+
+concurrency:
+  group: trader-follow
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  follow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Check followed traders
+        env:
+          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
+          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
+        run: python -m trader_follow.run
+      - name: Save state
+        if: always()
+        run: |
+          git config user.name "pm-edge-bot"
+          git config user.email "pm-edge-bot@users.noreply.github.com"
+          git add trader_follow/data
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Trader Follow round [skip ci]"
+          # Only this job writes trader_follow/data, so a plain rebase never conflicts.
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep $((i * 3))
+          done
+          exit 1
