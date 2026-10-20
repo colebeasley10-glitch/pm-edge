@@ -281,3 +281,12 @@ def test_weather_closing_mark_freezes_at_day_start():
     settled = dict(mkt, result="no", status="finalized")
     book.update([row], lambda t: {row["ticker"]: settled}, now=late)
     assert row["status"] == "won" and row["clv_cents"] == 5.0
+
+
+def test_low_total_alert_once_a_day():
+    sent = {}
+    assert run.alert_low_total(80.0, sent, NOW) is True
+    assert run.alert_low_total(70.0, sent, NOW + timedelta(hours=2)) is False
+    assert run.alert_low_total(500.0, {}, NOW) is False
+    assert run.alert_low_total(None, {}, NOW) is False
+    assert run.alert_low_total(80.0, sent, NOW + timedelta(days=1)) is True

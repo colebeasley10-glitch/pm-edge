@@ -69,7 +69,7 @@ def test_size():
 def test_env_cannot_raise_caps():
     os.environ.update({"LIVE_SHARP_MAX_PER_BET": "50", "LIVE_SHARP_DAILY_BUDGET": "1000",})
     try:
-        assert live_sharp.per_bet() == 5.0 and live_sharp.daily_budget() == 105.0
+        assert live_sharp.per_bet() == 5.0 and live_sharp.daily_budget() == 300.0
     finally:
         for k in ("LIVE_SHARP_MAX_PER_BET", "LIVE_SHARP_DAILY_BUDGET"):
             os.environ.pop(k)
@@ -79,7 +79,7 @@ def test_daily_budget_and_order_cap():
     c, rows = FakeClient(), []
     out = live_sharp.place([paper(i) for i in range(60)], c, now=NOW, rows=rows)
     spent = sum(float(r["cost"]) + float(r["fee"]) for r in rows)
-    assert spent <= 105.0 + 1e-9, spent
+    assert spent <= 300.0 + 1e-9, spent
     assert all(o["count"] * o["price"] <= 5.0 + 1e-9 for o in c.orders)
     assert out["skipped"].get("daily_budget", 0) == 60 - out["placed"]
     # next Eastern day the budget resets
@@ -88,7 +88,7 @@ def test_daily_budget_and_order_cap():
 
 
 def test_kalshi_history_counts_toward_budget():
-    c = FakeClient(prior_spend=104.80)   # e.g. a ledger commit was lost
+    c = FakeClient(prior_spend=299.80)   # e.g. a ledger commit was lost
     out = live_sharp.place([paper(1)], c, now=NOW, rows=[])
     assert out["placed"] == 0 and out["skipped"] == {"daily_budget": 1}
 
@@ -614,3 +614,22 @@ def test_new_orders_record_their_unit():
     c, rows = FakeClient(), []
     live_sharp.place([paper(900)], c, now=NOW, rows=rows)
     assert float(rows[0]["unit"]) == live_sharp.per_bet()
+
+
+def test_balance_log_hourly(tmp_path):
+    p = tmp_path / "bal.csv"
+    rows = [{"status": "open", "cost": "4.90"}, {"status": "won", "cost": "5.00"}]
+    assert live_sharp.log_balance(250.0, {0: 100.0, 3: 150.0}, rows, NOW, path=p)
+    assert not live_sharp.log_balance(240.0, {}, rows, NOW + timedelta(minutes=30), path=p)  # same hour
+    assert live_sharp.log_balance(230.0, {}, rows, NOW + timedelta(hours=1), path=p)
+    assert not live_sharp.log_balance(None, {}, rows, NOW + timedelta(hours=2), path=p)
+    log = live_sharp.balance_log(p)
+    assert [b["cash"] for b in log] == ["250.0", "230.0"] and log[0]["open_bets"] == "1"
+    assert log[0]["pools"] == "0:100.00 3:150.00" and log[0]["open_cost"] == "4.9"
+
+
+def test_low_total_flag():
+    c = PoolClient({0: 60.0, 3: 60.0}, {})
+    assert live_sharp.place([], c, now=NOW, rows=[])["low_total"] is True
+    c = PoolClient({0: 200.0, 3: 200.0}, {})
+    assert live_sharp.place([], c, now=NOW, rows=[])["low_total"] is False

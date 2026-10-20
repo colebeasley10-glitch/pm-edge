@@ -3,7 +3,7 @@
 Real money, so every limit is enforced here in code, not just in config:
 
 * at most $5.00 of contracts per bet (fee on top, a few cents);
-* at most $105.00 spent per Eastern day, fees included (no limit on the number of bets);
+* at most $300.00 spent per Eastern day, fees included (no limit on the number of bets);
 * the daily spend is the larger of this ledger and Kalshi's own order history,
   so a lost ledger commit can't double the budget;
 * orders are immediate-or-cancel at the price the paper pick saw, so we never
@@ -35,7 +35,7 @@ PREFIX = "pmls-"
 
 # Hard ceilings. Env can lower these, never raise them.
 CEIL_PER_BET = 5.00  # $1 Oct 13, $2 Oct 18, $5 from Oct 20 2026
-CEIL_DAILY = 105.00
+CEIL_DAILY = 300.00  # $105 until Oct 20 2026
 
 FIELDS = [
     "trade_id", "paper_trade_id", "client_order_id", "placed_at", "day", "ticker", "title", "side",
@@ -236,7 +236,44 @@ def reconcile_unconfirmed(rows: list[dict], client, *, now: datetime | None = No
 
 POOL_NAMES = {0: "Default", 1: "Combos", 2: "Crypto & Commodities", 3: "Tennis, Baseball, Basketball"}
 WATCH_POOLS = {0, 3}   # where Sharp picks land (most are tennis -> 3)
-LOW_POOL = 20.0        # alert below this many dollars
+LOW_POOL = 50.0        # alert below this many dollars in a pool (~10 bets at $5)
+LOW_TOTAL = 150.0      # alert when total Kalshi cash can't cover half a day's cap
+BALANCE_LOG = Path(os.getenv("LIVE_SHARP_BALANCE_LOG", "kalshi_balance_log.csv"))
+BALANCE_FIELDS = ["at", "day", "cash", "pools", "open_bets", "open_cost"]
+
+
+def log_balance(cash, pools: dict, rows: list[dict], now: datetime, path: Path | None = None) -> bool:
+    """Append one balance reading per hour, so cash over time can be charted. Returns True if written."""
+    if cash is None:
+        return False
+    path = path or BALANCE_LOG
+    hour = now.astimezone(timezone.utc).strftime("%Y-%m-%dT%H")
+    try:
+        last = path.read_text().strip().splitlines()[-1] if path.exists() else ""
+    except Exception:
+        last = ""
+    if last.startswith(hour):
+        return False
+    opn = [r for r in rows if r.get("status") == "open"]
+    row = {"at": book.iso(now), "day": et_day(now), "cash": round(cash, 2),
+           "pools": " ".join(f"{k}:{v:.2f}" for k, v in sorted(pools.items())),
+           "open_bets": len(opn),
+           "open_cost": round(sum((book.f(r.get("cost"), 0) or 0) for r in opn), 2)}
+    new = not path.exists()
+    with path.open("a", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=BALANCE_FIELDS)
+        if new:
+            w.writeheader()
+        w.writerow(row)
+    return True
+
+
+def balance_log(path: Path | None = None) -> list[dict]:
+    path = path or BALANCE_LOG
+    if not path.exists():
+        return []
+    with path.open(newline="") as fh:
+        return list(csv.DictReader(fh))
 
 
 def _read_pools(client) -> tuple[dict[int, float], float | None]:
@@ -284,6 +321,11 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
     out["cash"] = None if total is None else round(total, 2)
     out["pools"] = {str(k): round(v, 2) for k, v in sorted(pools.items())}
     print("LIVE_SHARP_BALANCE", out["cash"], "POOLS", out["pools"])
+    out["low_total"] = total is not None and total < LOW_TOTAL
+    try:
+        log_balance(total, pools, rows, now)
+    except Exception as exc:
+        print("LIVE_SHARP_BALANCE_LOG_ERROR", type(exc).__name__, str(exc)[:120])
     needed: set[int] = set()
     if not picks:
         out["spent_today"] = round(_spent(rows, day)[0], 2)

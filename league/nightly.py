@@ -4,7 +4,7 @@ Sent by the first league round at or after 11pm Eastern (or, if GitHub skipped
 those runs, the first round before 6am for the day before). It covers:
 
 * Live $5 Sharp: orders sent, filled, missed (price moved), blocked by Kalshi,
-  bets settled that day and their profit, spend vs the $105 budget, all-time P/L;
+  bets settled that day and their profit, spend vs the daily budget, Kalshi cash and how it moved, all-time P/L;
 * Paper: picks opened and bets settled that day per strategy, Sharp all-time;
 * a warning when the Odds API is out of credits (Sportsbooks can't price anything).
 """
@@ -63,6 +63,16 @@ def build(day: str, paper: list[dict], live: list[dict], watch_state: dict | Non
     l_pl = sum(f(r.get("pl"), 0) or 0 for r in settled)
     l_w = sum(r["status"] == "won" for r in settled)
     summ = live_sharp.summary(live)
+    bal = [b for b in live_sharp.balance_log() if b.get("cash")]
+    today_bal = [b for b in bal if b.get("day") == day]
+    before = [b for b in bal if (b.get("day") or "") < day]
+    cash_line = None
+    if bal:
+        now_cash = float(bal[-1]["cash"])
+        start = float((before[-1] if before else (today_bal or bal)[0])["cash"])
+        low = min(float(b["cash"]) for b in (today_bal or bal[-1:]))
+        cash_line = (f"Kalshi cash ${now_cash:.2f} ({_money(now_cash - start)} today, low ${low:.2f})"
+                     + (" ⚠️ under $" + f"{live_sharp.LOW_TOTAL:.0f}" if now_cash < live_sharp.LOW_TOTAL else ""))
 
     # ---- paper ----
     opened = [r for r in paper if _et_day(r.get("opened_at")) == day]
@@ -83,6 +93,7 @@ def build(day: str, paper: list[dict], live: list[dict], watch_state: dict | Non
         + (f", {len(blocked)} blocked by Kalshi" if blocked else "")
         + (f", {len(errors)} other errors" if errors else ""),
         f"Spent {_money(spent).lstrip('+')} of ${live_sharp.daily_budget():.0f}",
+        *([cash_line] if cash_line else []),
         f"Settled {l_w}-{len(settled) - l_w} for {_money(l_pl)}; all-time {_money(summ['pl'])} "
         f"({summ['won']}-{summ['lost']}), {summ['open']} open",
         "",

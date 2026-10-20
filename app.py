@@ -1135,11 +1135,31 @@ with tab_live:
     _ls_on = (league_status.get("live_sharp") or {}).get("enabled")
     st.markdown(
         "<div class='pe-lede' style='font-size:.8rem'>" + ("" if _ls_on else "<b>Off.</b> ")
-        + "Copies every Sharp pick with a real Kalshi order · $5 per bet · $105/day cap · "
+        + "Copies every Sharp pick with a real Kalshi order · $5 per bet · $300/day cap · "
           "buys only at the price the pick saw."
         + ("" if _ls_on else " Turn it on with the LIVE_SHARP_ENABLED repo variable.")
         + "</div>", unsafe_allow_html=True)
     _lsr = league_status.get("live_sharp") or {}
+    _cash = _lsr.get("cash")
+    if _cash is not None:
+        from league import live_sharp as _lsm
+        _bets_left = int(_cash // (_lsm.per_bet() * 1.03))
+        _days = _cash / _lsm.daily_budget()
+        _pools = " · ".join(f"{_lsm.POOL_NAMES.get(int(k), 'Exchange ' + k)} ${v:.2f}"
+                            for k, v in (_lsr.get("pools") or {}).items())
+        _bl = _lsm.balance_log()
+        _prev = [b for b in _bl if (b.get('day') or '') < _lsm.et_day(_lsm.book.now_utc())]
+        _chg = (f" · {_cash - float(_prev[-1]['cash']):+.2f} today" if _prev else "")
+        (st.error if _cash < _lsm.LOW_TOTAL else st.info)(
+            f"**Kalshi cash: ${_cash:.2f}**{_chg} — covers about {_bets_left} more ${_lsm.per_bet():g} bets "
+            f"({_days:.1f}× the ${_lsm.daily_budget():.0f} daily cap)."
+            + (f" Deposit soon: you get a push alert under ${_lsm.LOW_TOTAL:.0f}." if _cash < _lsm.LOW_TOTAL else "")
+            + (f"\n\n{_pools}" if _pools else ""))
+        if len(_bl) >= 2:
+            import pandas as _pd
+            _df = _pd.DataFrame(_bl)
+            _df["at"] = _pd.to_datetime(_df["at"]); _df["cash"] = _pd.to_numeric(_df["cash"], errors="coerce")
+            st.line_chart(_df.set_index("at")[["cash"]], height=160)
     for _lp in _lsr.get("low_pools") or []:
         st.warning(f"Kalshi pool low: **{_lp['name']}** (Exchange {_lp['pool']}) has ${_lp['cash']:.2f}. "
                    "Bets on those markets are skipped until you move cash there at "

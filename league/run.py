@@ -20,7 +20,7 @@ STATUS = Path(os.getenv("LEAGUE_STATUS_PATH", "league_status.json"))
 DAILY_CAP = int(os.getenv("LEAGUE_DAILY_CAP_PER_STRATEGY", "12"))
 # Per-strategy overrides of DAILY_CAP; env LEAGUE_DAILY_CAP_<NAME> (e.g. LEAGUE_DAILY_CAP_SHARP) wins.
 UNCAPPED = 10**9
-# Sharp has no bet-count cap: Live $5 Sharp is limited only by its $105/day spend, and it
+# Sharp has no bet-count cap: Live $5 Sharp is limited only by its $300/day spend, and it
 # copies every paper pick until that budget runs out.
 STRATEGY_CAPS = {"sharp": UNCAPPED}
 # Benched strategies still run and report what they would have picked (status "shadow"),
@@ -182,6 +182,22 @@ def alert_low_pools(low: list[dict], sent: dict, now: datetime) -> list[dict]:
     return fresh
 
 
+def alert_low_total(cash, sent: dict, now: datetime) -> bool:
+    """One push per Eastern day when total Kalshi cash drops under LOW_TOTAL."""
+    if cash is None or cash >= live_sharp.LOW_TOTAL:
+        return False
+    day = live_sharp.et_day(now)
+    if sent.get("total") == day:
+        return False
+    per, cap = live_sharp.per_bet(), live_sharp.daily_budget()
+    _pushover("⚠️ Kalshi cash low: deposit soon",
+              [f"Cash: ${cash:.2f} — about {int(cash // (per * 1.03))} more ${per:g} bets",
+               f"Daily cap is ${cap:.0f}; keep at least ${live_sharp.LOW_TOTAL:.0f} in there",
+               "Bets that can't be covered are skipped, not placed."])
+    sent["total"] = day
+    return True
+
+
 def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict:
     now = now or datetime.now(timezone.utc)
     kalshi = kalshi or LeagueKalshi()
@@ -247,6 +263,7 @@ def run_round(now: datetime | None = None, strategies=None, kalshi=None) -> dict
                 # real $5 copies go out right away, before slower strategies run
                 status["live_sharp"] = run_live_sharp(live_candidates, kalshi, now)
                 alert_low_pools(status["live_sharp"].get("low_pools") or [], status["pool_alerts"], now)
+                alert_low_total(status["live_sharp"].get("cash"), status["pool_alerts"], now)
         except Exception as exc:
             st["error"] = f"{type(exc).__name__}: {str(exc)[:200]}"
             traceback.print_exc()
