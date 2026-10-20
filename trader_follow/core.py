@@ -439,18 +439,45 @@ def settle(ledger: list[dict], now: datetime, market: Callable[[str], dict | Non
 
 # ------------------------------------------------------------------ dashboard math
 
-def summarize(rows: list[dict], only_band: bool = True) -> list[dict]:
-    out = []
-    for name in sorted({r["trader"] for r in rows} | {t.name for t in TRADERS}):
-        mine = [r for r in rows if r["trader"] == name and (not only_band or str(r.get("in_band")) == "True")]
-        done = [r for r in mine if r.get("status") in ("won", "lost")]
-        wins = sum(r["status"] == "won" for r in done)
-        pl_copy = sum(_float(r.get("pl_copy")) or 0 for r in done)
-        pl_his = sum(_float(r.get("pl_his")) or 0 for r in done)
-        staked = PAPER_STAKE * len(done)
-        out.append({
-            "trader": name, "signals": len(mine), "open": sum(r.get("status") == "open" for r in mine),
+SOCCER = {"epl", "ucl", "uel", "uecl", "lal", "sea", "bun", "fl1", "unl", "efl", "mls", "fifwc", "ere", "por", "facup"}
+SPORT_NAMES = {"nfl": "NFL", "cfb": "College football", "ncaaf": "College football", "nba": "NBA",
+               "cbb": "College basketball", "wnba": "WNBA", "nhl": "NHL", "mlb": "MLB", "atp": "Tennis",
+               "wta": "Tennis", "boxing": "Boxing", "ufc": "UFC/MMA", "mma": "UFC/MMA"}
+
+
+def sport_group(row: dict) -> str:
+    code = str(row.get("sport") or "").lower()
+    if code in SOCCER:
+        return "Soccer"
+    return SPORT_NAMES.get(code, code.upper() or "Other")
+
+
+def _stats(rows: list[dict]) -> dict:
+    done = [r for r in rows if r.get("status") in ("won", "lost")]
+    wins = sum(r["status"] == "won" for r in done)
+    pl_copy = sum(_float(r.get("pl_copy")) or 0 for r in done)
+    pl_his = sum(_float(r.get("pl_his")) or 0 for r in done)
+    staked = PAPER_STAKE * len(done)
+    return {"signals": len(rows), "open": sum(r.get("status") == "open" for r in rows),
             "wins": wins, "losses": len(done) - wins, "pl_copy": round(pl_copy, 2), "pl_his": round(pl_his, 2),
-            "roi_copy": pl_copy / staked if staked else None, "roi_his": pl_his / staked if staked else None,
-        })
-    return out
+            "roi_copy": pl_copy / staked if staked else None, "roi_his": pl_his / staked if staked else None}
+
+
+def _alerted(rows: list[dict], only_band: bool) -> list[dict]:
+    return [r for r in rows if not only_band or str(r.get("in_band")) == "True"]
+
+
+def summarize(rows: list[dict], only_band: bool = True) -> list[dict]:
+    rows = _alerted(rows, only_band)
+    return [{"trader": name, **_stats([r for r in rows if r["trader"] == name])}
+            for name in sorted({r["trader"] for r in rows} | {t.name for t in TRADERS})]
+
+
+def summarize_by_sport(rows: list[dict], only_band: bool = True) -> list[dict]:
+    """One line per trader + sport, biggest sample first, so losing sports are easy to cut."""
+    rows = _alerted(rows, only_band)
+    groups: dict[tuple[str, str], list[dict]] = {}
+    for r in rows:
+        groups.setdefault((r["trader"], sport_group(r)), []).append(r)
+    out = [{"trader": t, "sport": s, **_stats(g)} for (t, s), g in groups.items()]
+    return sorted(out, key=lambda x: (x["trader"], -(x["wins"] + x["losses"]), -x["signals"]))

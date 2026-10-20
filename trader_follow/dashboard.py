@@ -38,6 +38,16 @@ def render() -> None:
     st.caption("“ROI copying” is what matters: it uses the price you could get when the alert arrived. "
                "If it trails “ROI at his price” by a lot, the alerts are arriving too late.")
 
+    st.subheader("By sport")
+    by_sport = core.summarize_by_sport(rows)
+    if by_sport:
+        st.dataframe([{"Trader": s["trader"], "Sport": s["sport"], "Alerts": s["signals"],
+                       "W-L": f"{s['wins']}-{s['losses']}", "P/L copying": _money(s["pl_copy"]),
+                       "ROI copying": _pct(s["roi_copy"])} for s in by_sport], hide_index=True, width="stretch")
+        st.caption("Wait for about 20 settled bets in a sport before cutting it; fewer than that is mostly luck.")
+    else:
+        st.caption("Fills in as alerts settle.")
+
     with st.expander("Who we follow"):
         for t in core.TRADERS:
             st.markdown(f"**{t.name}** — {t.note} · [profile](https://polymarket.com/profile/{t.wallet})")

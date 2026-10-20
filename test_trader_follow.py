@@ -122,3 +122,16 @@ def test_american_odds():
     assert core.american(0.40) == "+150"
     assert core.american(2 / 3) == "-200"
     assert core.in_band(0.52) and not core.in_band(0.80) and not core.in_band(0.30)
+
+
+def test_by_sport_groups_soccer_and_ranks_by_sample():
+    rows = [
+        {"trader": "A", "sport": "NFL", "in_band": "True", "status": "won", "pl_copy": "9", "pl_his": "10"},
+        {"trader": "A", "sport": "NFL", "in_band": "True", "status": "lost", "pl_copy": "-10", "pl_his": "-10"},
+        {"trader": "A", "sport": "EPL", "in_band": "True", "status": "won", "pl_copy": "8", "pl_his": "9"},
+        {"trader": "A", "sport": "UCL", "in_band": "True", "status": "open", "pl_copy": "", "pl_his": ""},
+        {"trader": "A", "sport": "NBA", "in_band": "False", "status": "won", "pl_copy": "5", "pl_his": "5"},
+    ]
+    out = core.summarize_by_sport(rows)
+    assert [(x["sport"], x["wins"], x["losses"], x["signals"]) for x in out] == [("NFL", 1, 1, 2), ("Soccer", 1, 0, 2)]
+    assert out[0]["roi_copy"] == -0.05
