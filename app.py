@@ -1720,6 +1720,18 @@ with tab_lab:
                        {"won": _tfs["wins"], "lost": _tfs["losses"], "roi": _tfs["roi_copy"], "open": _tfs["open"]}, None))
     except Exception:
         pass
+    try:  # NCAA Model Grader: every FBS game graded at a frozen line (Strong + Lean shown)
+        for _m in [k for k in _lsys.modules if k == "ncaa_grader" or k.startswith("ncaa_grader.")]:
+            del _lsys.modules[_m]
+        from ncaa_grader import core as _ng
+        _ngr = _ng.load_ledger()
+        _ngsrc = "live" if any(r.get("source") == "live" and r.get("result") for r in _ngr) else "backtest"
+        _ngs = _ng.summarize(_ngr, source=_ngsrc, model="core_v1")[0]
+        _cards.append(("Research_Lab_NCAA_Grader", "NCAA Model Grader",
+                       "Every FBS pick graded at a frozen line" + (" (backtest)" if _ngsrc == "backtest" else ""),
+                       {"won": _ngs["w"], "lost": _ngs["l"], "roi": _ngs["roi"], "open": _ngs["open"]}, None))
+    except Exception:
+        pass
     for _spec in _lcfg.RESEARCH_STRATEGIES:
         try:
             _sm = _lmet.summarize(_LStore(_spec.key).positions)

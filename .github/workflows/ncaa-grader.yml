@@ -1,0 +1,73 @@
+name: NCAA Model Grader (paper)
+
+# PAPER ONLY. Logs the NCAA model's side of every FBS spread, total and moneyline,
+# freezes the line at that moment, and grades it after the game (W-L, units, CLV).
+# Runs every 6 hours: early enough to catch the line when it's posted, light on the
+# free CFBD quota (shares the NCAA beta's cache file). No Kalshi keys, no Pushover.
+#
+# One-time backtest of weeks already played: Actions -> NCAA Model Grader -> Run
+# workflow -> set "backtest season" to 2026.
+on:
+  workflow_dispatch:
+    inputs:
+      backtest_season:
+        description: "Backtest a season (e.g. 2026). Leave blank for a normal run."
+        required: false
+        default: ""
+  schedule:
+    - cron: "20 */6 * * *"
+
+concurrency:
+  group: ncaa-grader
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+
+      - name: Restore CFBD cache (falls back to the NCAA beta's copy)
+        uses: actions/cache@v4
+        with:
+          path: .ncaa_beta_cfbd_cache.json
+          key: ncaa-grader-${{ github.run_id }}
+          restore-keys: |
+            ncaa-grader-
+            ncaa-beta-
+
+      - name: Grade
+        env:
+          CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
+          BACKTEST: ${{ github.event.inputs.backtest_season }}
+        run: |
+          if [ -n "$BACKTEST" ]; then
+            python -m ncaa_grader.run --backtest "$BACKTEST"
+          else
+            python -m ncaa_grader.run
+          fi
+
+      - name: Save picks
+        if: always()
+        run: |
+          git config user.name "pm-edge-bot"
+          git config user.email "pm-edge-bot@users.noreply.github.com"
+          git add ncaa_grader/data
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "NCAA grader round [skip ci]"
+          # Only this job writes ncaa_grader/data, so a plain rebase never conflicts.
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep $((i * 5))
+          done
+          exit 1
