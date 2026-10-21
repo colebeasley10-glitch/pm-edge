@@ -15,6 +15,8 @@ on:
         description: "Replay this season's played weeks (no look-ahead)"
         type: boolean
         default: false
+  repository_dispatch:
+    types: [tick]   # same cron-job.org tick that drives the NCAA beta (GitHub's schedule skips runs)
   schedule:
     - cron: "20 * * * *"
 
