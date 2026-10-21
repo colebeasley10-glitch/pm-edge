@@ -38,6 +38,10 @@ jobs:
           KALSHI_WRITE_API_KEY_ID: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_API_KEY_ID || '' }}
           KALSHI_WRITE_PRIVATE_KEY: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_PRIVATE_KEY || '' }}
           PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
+          # Day 1 mechanics check (Oct 21, 2026): $1 unit, $5/day. Next step: $5 unit, $25/day
+          # (delete these two lines). Code ceilings in maker_bot/core.py cap anything set here.
+          MAKER_BOT_UNIT: "1"
+          MAKER_BOT_DAILY_BUDGET: "5"
         run: python -m maker_bot.run
       - name: Save orders
         if: always()
