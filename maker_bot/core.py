@@ -377,7 +377,7 @@ def plan(candidates: list[dict], rows: list[dict], now: datetime, mode: str) -> 
     ranked.sort(key=lambda x: x["edge"] + (SHARP_BONUS if x.get("sharp") else 0), reverse=True)
     picked = []
     for c in ranked:
-        if len(picked) >= MAX_NEW_PER_RUN:
+        if mode == "live" and len(picked) >= MAX_NEW_PER_RUN:   # dry run: no count or money limits
             skips["run_limit"] = skips.get("run_limit", 0) + 1
             continue
         if c["event"] in busy:

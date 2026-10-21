@@ -176,3 +176,9 @@ def test_lab_exporter_tags_sharp_and_keeps_pregame_only():
     rows = mc.build([pk("A", NOW + timedelta(hours=2)), pk("B", NOW + timedelta(minutes=5)),
                      pk("C", NOW + timedelta(hours=1))], markets, flows, NOW)
     assert [r["ticker"] for r in rows] == ["A", "C"] and rows[0]["sharp"] and rows[1]["sharp"] is None
+
+
+def test_dry_run_has_no_budget_or_count_limit():
+    cs = [cand(ticker=f"T{i}", event=f"E{i}") for i in range(40)]
+    picked, skips = core.plan(cs, [], NOW, "dry")
+    assert len(picked) == 40 and sum(c["stake"] for c in picked) > core.CEIL_DAILY and not skips
