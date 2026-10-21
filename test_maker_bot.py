@@ -16,22 +16,36 @@ def cand(ticker="KXNCAAFGAME-X-ALA", side="YES", fair=0.60, bid=0.50, ask=0.58, 
             "market": "moneyline", "starts": core.iso(starts), "fair": fair, "bid": bid, "ask": ask, "sharp": sharp}
 
 
-def test_price_leaves_edge_after_fee_and_never_crosses():
-    p, why = core.quote(cand(fair=0.60, ask=0.58, bid=0.50), 1.0)
-    assert why == "ok" and p <= 0.57 and core.edge_at(0.60, p, 1.0) >= core.MIN_EDGE - 1e-9
-    assert p == 0.55     # 0.60 - 0.04 = 0.56 leaves < 4% after the fee, so 55c
+def test_prices_one_cent_over_best_bid_never_at_ask():
+    p, n, e, why = core.quote(cand(fair=0.60, bid=0.50, ask=0.58), 5.0)
+    assert why == "ok" and p == 0.51 and e >= core.MIN_EDGE
+    p, n, e, why = core.quote(cand(fair=0.62, bid=0.56, ask=0.57), 5.0)
+    assert p == 0.56                      # bid + 1 would touch the ask, so join the bid
 
 
-def test_sharp_needs_less_edge():
-    p_ev, _ = core.quote(cand(fair=0.60, ask=0.70, bid=0.50), 1.0)
-    p_sh, _ = core.quote(cand(fair=0.60, ask=0.70, bid=0.50, sharp={"flow_trades": 30}), 1.0)
-    assert p_sh > p_ev
+def test_size_scales_with_edge():
+    # ~1.3% edge -> about 1/6 unit; ~8% edge -> full unit
+    _, n_small, e_small, _ = core.quote(cand(fair=0.5778, bid=0.55, ask=0.57), 5.0)
+    _, n_big, e_big, _ = core.quote(cand(fair=0.64, bid=0.55, ask=0.60), 5.0)
+    assert 0.01 <= e_small < 0.02 and 1 <= n_small <= 2
+    assert e_big >= core.FULL_EDGE and n_big == 8 and n_big * 0.56 <= 5.0   # 9 would be $5.04
+    assert core.stake_for(0.035, False, 5.0) == pytest.approx(5 * (1/6 + 5/6 * 0.5), abs=0.01)
 
 
-def test_skips_below_best_bid_and_outside_band():
-    assert core.quote(cand(fair=0.60, bid=0.58, ask=0.60), 1.0) == (None, "below_best_bid")
-    assert core.quote(cand(fair=0.85, bid=0.70, ask=0.80), 1.0)[1] == "outside_+150_-200"
-    assert core.quote(cand(fair=0.30, bid=0.20, ask=0.28), 1.0)[1] in ("outside_+150_-200", "no_edge")
+def test_sharp_flow_sizes_up_but_doesnt_lower_floor():
+    base = cand(fair=0.5778, bid=0.55, ask=0.57)
+    _, n0, _, _ = core.quote(base, 5.0)
+    _, n1, _, _ = core.quote({**base, "sharp": {"flow_trades": 40}}, 5.0)
+    assert n1 > n0
+    # below 1% raw edge: still skipped with Sharp
+    assert core.quote({**cand(fair=0.555, bid=0.54, ask=0.56), "sharp": {"x": 1}}, 5.0)[3] == "edge_under_1pct"
+
+
+def test_skips_tiny_huge_and_extreme_prices():
+    assert core.quote(cand(fair=0.552, bid=0.54, ask=0.56), 5.0)[3] == "edge_under_1pct"
+    assert core.quote(cand(fair=0.75, bid=0.55, ask=0.60), 5.0)[3] == "edge_too_big_check_match"
+    assert core.quote(cand(fair=0.97, bid=0.93, ask=0.95), 5.0)[3] == "outside_10c_90c"
+    assert core.quote(cand(fair=0.80, bid=0.75, ask=0.78), 5.0)[3] == "ok"   # no more +150/-200 band
 
 
 def test_order_expires_before_kickoff_never_after():
@@ -51,18 +65,18 @@ def test_one_bet_per_game_and_daily_budget(monkeypatch):
     cs = [cand(ticker=f"T{i}", event=f"E{i}") for i in range(30)] + [cand(ticker="T0b", event="E0")]
     picked, skips = core.plan(cs, [], NOW, "live")
     assert len({c["event"] for c in picked}) == len(picked) <= core.MAX_NEW_PER_RUN
-    # budget: $20/day ceiling; 25 resting $0.55x1 orders already today -> nothing new fits?
+    # budget: $25/day ceiling; resting orders already committing ~$24.7 today -> nothing new fits
     rows = [{**core.new_row({**cand(ticker=f"R{i}", event=f"R{i}"), "price": 0.55, "contracts": 1, "edge": 0.04,
-                             "expires_at": core.iso(NOW + timedelta(minutes=40))}, NOW, "live")} for i in range(36)]
-    assert core.committed_today(rows, core.et_day(NOW)) > 19.5
+                             "expires_at": core.iso(NOW + timedelta(minutes=40))}, NOW, "live")} for i in range(44)]
+    assert 24.5 < core.committed_today(rows, core.et_day(NOW)) <= 25
     picked, skips = core.plan(cs, rows, NOW, "live")
     assert not picked and skips.get("daily_budget")
 
 
 def test_env_can_lower_but_not_raise_limits(monkeypatch):
-    monkeypatch.setenv("MAKER_BOT_MAX_PER_ORDER", "50")
+    monkeypatch.setenv("MAKER_BOT_UNIT", "50")
     monkeypatch.setenv("MAKER_BOT_DAILY_BUDGET", "1000")
-    assert core.per_order() == 1.0 and core.daily_budget() == 20.0
+    assert core.unit() == 5.0 and core.daily_budget() == 25.0
     monkeypatch.setenv("MAKER_BOT_DAILY_BUDGET", "5")
     assert core.daily_budget() == 5.0
 
@@ -89,6 +103,15 @@ def test_reconcile_fill_partial_and_expiry():
     assert filled["status"] == "filled" and filled["cost"] == 0.55 and filled["fee"] == 0.01
     assert empty["status"] == "expired" and empty["pl"] == 0.0
     assert partial["status"] == "resting" and partial["filled"] == 1.0 and out["still_resting"] == 1
+
+
+def test_markout_recorded_once_before_start():
+    r = _resting(status="filled", filled=1.0, cost=0.55, fee=0.01)
+    m = {r["ticker"]: {"yes_bid": 0.52, "yes_ask": 0.54}}
+    assert core.mark([r], m, NOW + timedelta(minutes=20)) == 1 and r["markout"] == -2.0
+    assert core.mark([r], {r["ticker"]: {"yes_bid": 0.7, "yes_ask": 0.72}}, NOW + timedelta(minutes=40)) == 0
+    late = _resting(status="filled", filled=1.0, cost=0.55, fee=0.01)
+    assert core.mark([late], m, NOW + timedelta(hours=4)) == 0     # game started: in-play mid isn't a markout
 
 
 def test_settle_pl():

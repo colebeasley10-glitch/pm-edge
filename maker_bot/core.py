@@ -7,20 +7,24 @@ Each round (right after a Research Lab round, see .github/workflows/maker-bot.ym
 
 1. RECONCILE. Look up every order we posted on Kalshi. Contracts that filled become a
    bet; an order that expired with nothing filled cost nothing and is dropped from stats.
+   On the first round after a fill, record the market's mid price (the "markout"): if it
+   is usually below what we paid, we're only getting filled when we're wrong.
 2. SETTLE filled bets from Kalshi's official market result.
 3. POST new orders from research_lab/data/maker_candidates.json (pre-game markets with a
    Pinnacle fair price fetched minutes ago):
-     * price = the best price that still leaves MIN_EDGE after Kalshi's maker fee
-       (4%, or 2% when big Sharp flow is on the same side), never above one cent under
-       the ask (post-only: it can only rest, never take);
-     * posted only if that price is at or above the current best bid. A bid below the
-       market only gets filled when the price crashes toward it, i.e. when we're wrong;
-     * only priced +150 to -200 (40c to 66.7c);
+     * PRICE: one cent above the best bid (front of the queue), never at or above the ask
+       (post-only: it can only rest, never take). No bid at all -> fair minus 3c;
+     * EDGE = Pinnacle fair - price - Kalshi maker fee per contract. Posted only from 1% to
+       10% (bigger "edges" are almost always a mismatched market);
+     * SIZE scales with edge: 1/6 unit at 1% up to a full unit at 6%+, in a straight line
+       (big Sharp flow on the same side counts as +1% edge for sizing only);
+     * only contracts priced 10c to 90c;
      * KALSHI EXPIRES THE ORDER ITSELF at the earlier of ORDER_TTL from now or
        START_BUFFER before the game starts. Nothing can rest into the game, even if this
        bot never runs again. Next round re-prices from a fresh Pinnacle line.
-4. Limits enforced here: $1 per order, $20 per Eastern day counting resting orders at
+4. Limits enforced here: $5 full unit, $25 per Eastern day counting resting orders at
    full price, one bet per game, at most MAX_NEW_PER_RUN new orders per round.
+   To scale up, raise CEIL_UNIT / CEIL_DAILY in code (env can only lower them).
 """
 from __future__ import annotations
 
@@ -42,12 +46,17 @@ CANDIDATES = ROOT / "research_lab" / "data" / "maker_candidates.json"
 PREFIX = "pmmk-"
 
 # Hard ceilings. Env can lower these, never raise them.
-CEIL_PER_ORDER = 1.00
-CEIL_DAILY = 20.00
+CEIL_UNIT = 5.00           # a full unit (6%+ edge)
+CEIL_DAILY = 25.00
+CEIL_PER_ORDER = CEIL_UNIT  # kept for older callers
 
-MIN_EDGE = 0.04            # fair - price - maker fee, EV-only
-MIN_EDGE_SHARP = 0.02      # when big Sharp flow agrees
-BAND_LOW, BAND_HIGH = 0.40, 2.0 / 3.0     # +150 .. -200
+MIN_EDGE = 0.01            # fair - price - maker fee; below this nothing is posted
+MAX_EDGE = 0.10            # above this the "edge" is almost always a bad market match
+FULL_EDGE = 0.06           # edge at which the stake reaches a full unit
+MIN_FRACTION = 1 / 6       # stake at MIN_EDGE
+SHARP_BONUS = 0.01         # Sharp flow on our side counts as this much extra edge (sizing only)
+NO_BID_EDGE = 0.03         # empty book: rest at fair minus this
+BAND_LOW, BAND_HIGH = 0.10, 0.90
 ORDER_TTL = timedelta(minutes=50)
 START_BUFFER = timedelta(minutes=5)
 MIN_LIFE = timedelta(minutes=5)           # don't bother posting an order that would live < 5 min
@@ -57,7 +66,8 @@ MAKER_FEE_RATE = 0.0175                   # Kalshi maker fee: ceil(0.0175 * C * 
 
 FIELDS = ["client_order_id", "order_id", "placed_at", "day", "mode", "ticker", "side", "event", "label",
           "game", "sport", "market", "starts", "expires_at", "fair", "price", "contracts", "edge", "sharp",
-          "bid", "ask", "status", "filled", "cost", "fee", "result", "pl", "settled_at", "note"]
+          "bid", "ask", "status", "filled", "cost", "fee", "result", "pl", "settled_at", "note",
+          "mark_mid", "markout", "marked_at"]
 RESTING, FILLED, EXPIRED, DRY = "resting", "filled", "expired", "dry_run"
 DONE = {"won", "lost", "void"}
 
@@ -71,8 +81,11 @@ def _env_float(name, default, ceiling):
     return max(0.0, min(v, ceiling))
 
 
-def per_order() -> float:
-    return _env_float("MAKER_BOT_MAX_PER_ORDER", CEIL_PER_ORDER, CEIL_PER_ORDER)
+def unit() -> float:
+    return _env_float("MAKER_BOT_UNIT", CEIL_UNIT, CEIL_UNIT)
+
+
+per_order = unit
 
 
 def daily_budget() -> float:
@@ -121,36 +134,61 @@ def contracts_for(price: float, cap: float) -> int:
     return int(math.floor(cap / price + 1e-9)) if 0 < price < 1 else 0
 
 
-def edge_at(fair: float, price: float, cap: float) -> float:
-    n = contracts_for(price, cap)
-    if n < 1:
+def edge_at(fair: float, price: float, contracts: int) -> float:
+    """Expected profit per contract as a share of $1, after the maker fee on this order."""
+    if contracts < 1:
         return -1.0
-    return fair - price - maker_fee(price, n) / n
+    return fair - price - maker_fee(price, contracts) / contracts
 
 
-def quote(c: dict, cap: float) -> tuple[float | None, str]:
-    """Price to post for a candidate, or (None, reason)."""
+def stake_for(edge: float, sharp: bool, full_unit: float) -> float:
+    """Dollars to put up: 1/6 unit at MIN_EDGE rising linearly to a full unit at FULL_EDGE."""
+    e = edge + (SHARP_BONUS if sharp else 0.0)
+    if e < MIN_EDGE:
+        return 0.0
+    frac = MIN_FRACTION + (1 - MIN_FRACTION) * (e - MIN_EDGE) / (FULL_EDGE - MIN_EDGE)
+    return round(full_unit * max(MIN_FRACTION, min(1.0, frac)), 2)
+
+
+def size(fair: float, price: float, sharp: bool, full_unit: float) -> tuple[int, float]:
+    """(contracts, edge) for an order at this price. Never more than a full unit of cost."""
+    n = max(1, contracts_for(price, full_unit))
+    for _ in range(3):   # fee rounding depends on size; settle on a stable size
+        e = edge_at(fair, price, n)
+        stake = stake_for(e, sharp, full_unit)
+        if stake <= 0:
+            return 0, e
+        new_n = max(1, int(round(stake / price)))
+        while new_n > 1 and new_n * price > full_unit + 1e-9:
+            new_n -= 1
+        if new_n == n:
+            break
+        n = new_n
+    if n * price > full_unit + 1e-9:
+        return 0, edge_at(fair, price, n)
+    return n, edge_at(fair, price, n)
+
+
+def quote(c: dict, full_unit: float) -> tuple[float | None, int, float, str]:
+    """(price, contracts, edge, reason). price None = skip."""
     fair, ask, bid = f(c.get("fair")), f(c.get("ask")), f(c.get("bid"))
     if fair is None or ask is None:
-        return None, "no_price"
-    need = MIN_EDGE_SHARP if c.get("sharp") else MIN_EDGE
-    ceiling = round(ask - 0.01, 2)                       # post-only: never cross the ask
-    price = None
-    p = min(ceiling, round(math.floor((fair - need) * 100) / 100, 2))
-    while p >= 0.01:
-        if edge_at(fair, p, cap) + 1e-9 >= need:
-            price = round(p, 2)
-            break
-        p = round(p - 0.01, 2)
-    if price is None:
-        return None, "no_edge"
+        return None, 0, 0.0, "no_price"
+    ceiling = round(ask - 0.01, 2)                       # post-only: never touch the ask
+    if bid is not None and bid > 0:
+        price = round(min(bid + 0.01, ceiling), 2)       # front of the queue
+    else:
+        price = round(min(math.floor((fair - NO_BID_EDGE) * 100) / 100, ceiling), 2)
+    if price < 0.01:
+        return None, 0, 0.0, "no_price"
     if not (BAND_LOW - 1e-9 <= price <= BAND_HIGH + 1e-9):
-        return None, "outside_+150_-200"
-    if bid is not None and price + 1e-9 < bid:
-        return None, "below_best_bid"
-    if contracts_for(price, cap) < 1:
-        return None, "size"
-    return price, "ok"
+        return None, 0, 0.0, "outside_10c_90c"
+    n, e = size(fair, price, bool(c.get("sharp")), full_unit)
+    if e > MAX_EDGE:
+        return None, 0, e, "edge_too_big_check_match"
+    if n < 1 or e + 1e-9 < MIN_EDGE:
+        return None, 0, e, "edge_under_1pct"
+    return price, n, e, "ok"
 
 
 def client_id(c: dict, now: datetime) -> str:
@@ -248,6 +286,34 @@ def reconcile(rows: list[dict], orders: list[dict], now: datetime) -> dict:
     return out
 
 
+def side_mid(m: dict, side: str) -> float | None:
+    bid, ask = (m.get("yes_bid"), m.get("yes_ask")) if side == "YES" else (m.get("no_bid"), m.get("no_ask"))
+    bid, ask = f(bid), f(ask)
+    if bid is None or ask is None or not (0 < bid <= ask < 1):
+        return None
+    return (bid + ask) / 2
+
+
+def mark(rows: list[dict], markets: dict, now: datetime) -> int:
+    """First pre-game look after a fill: mid price minus what we paid (in cents per contract).
+    Consistently negative = we only get filled when the market has moved against us."""
+    n = 0
+    for r in rows:
+        if r.get("status") != FILLED or r.get("markout") not in ("", None):
+            continue
+        start = parse_dt(r.get("starts"))
+        if start is None or now >= start:
+            continue
+        m = markets.get(r["ticker"]) or {}
+        mid = side_mid(m, r["side"])
+        if mid is None:
+            continue
+        r.update({"mark_mid": round(mid, 4), "markout": round((mid - f(r.get("price"), 0.0)) * 100, 2),
+                  "marked_at": iso(now)})
+        n += 1
+    return n
+
+
 def settle(rows: list[dict], markets: dict, now: datetime) -> int:
     n = 0
     for r in rows:
@@ -302,14 +368,13 @@ def plan(candidates: list[dict], rows: list[dict], now: datetime, mode: str) -> 
         if c.get("event") in busy:
             skips["already_on_game"] = skips.get("already_on_game", 0) + 1
             continue
-        price, why = quote(c, cap)
+        price, n, e, why = quote(c, cap)
         if price is None:
             skips[why] = skips.get(why, 0) + 1
             continue
-        n = contracts_for(price, cap)
-        ranked.append({**c, "price": price, "contracts": n, "edge": round(edge_at(c["fair"], price, cap), 4),
-                       "expires_at": iso(expires)})
-    ranked.sort(key=lambda x: (bool(x.get("sharp")), x["edge"]), reverse=True)
+        ranked.append({**c, "price": price, "contracts": n, "edge": round(e, 4),
+                       "stake": round(n * price, 2), "expires_at": iso(expires)})
+    ranked.sort(key=lambda x: x["edge"] + (SHARP_BONUS if x.get("sharp") else 0), reverse=True)
     picked = []
     for c in ranked:
         if len(picked) >= MAX_NEW_PER_RUN:
@@ -373,4 +438,7 @@ def summarize(rows: list[dict], mode: str = "live", sharp: bool | None = None) -
             "won": sum(r["status"] == "won" for r in done), "lost": sum(r["status"] == "lost" for r in done),
             "open": sum(r.get("status") == FILLED for r in fills), "pl": round(pl, 2),
             "roi": pl / staked if staked else None,
-            "avg_edge": (sum(f(r.get("edge"), 0) for r in fills) / len(fills)) if fills else None}
+            "avg_edge": (sum(f(r.get("edge"), 0) for r in fills) / len(fills)) if fills else None,
+            "staked": round(staked, 2),
+            "avg_markout": (lambda m: sum(m) / len(m) if m else None)(
+                [f(r.get("markout")) for r in fills if f(r.get("markout")) is not None])}

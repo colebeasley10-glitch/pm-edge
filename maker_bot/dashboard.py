@@ -32,9 +32,11 @@ def render() -> None:
     (st.warning if live else st.info)(
         ("💵 **LIVE, real money.** " if live else "📝 **DRY RUN.** Logs the orders it would post; "
          "set the repo variable MAKER_BOT_ENABLED to 1 to go live. ")
-        + f"Posts ${core.CEIL_PER_ORDER:.0f} resting Kalshi orders priced at least {core.MIN_EDGE:.0%} better than "
-          f"Pinnacle's fair line ({core.MIN_EDGE_SHARP:.0%} when big Sharp flow agrees), +150 to -200 only. "
-          "Kalshi cancels each order by itself 5 minutes before the game starts. Only fills count as bets.")
+        + f"Rests Kalshi orders one cent above the best bid when that's {core.MIN_EDGE:.0%}-{core.MAX_EDGE:.0%} under "
+          f"Pinnacle's fair line after fees. Size grows with edge: 1/6 unit at {core.MIN_EDGE:.0%} to a full "
+          f"${core.unit():.0f} unit at {core.FULL_EDGE:.0%}+ (Sharp flow counts +{core.SHARP_BONUS:.0%}). "
+          f"${core.CEIL_DAILY:.0f}/day cap. Kalshi cancels each order by itself 5 minutes before the game starts. "
+          "Only fills count as bets.")
 
     for mode, title in (("live", "Live"), ("dry", "Dry run (would-have-posted)")):
         if not any(r.get("mode") == mode for r in rows):
@@ -46,11 +48,23 @@ def render() -> None:
             table.append({"": name, "Posted": s["posted"], "Resting": s["resting"], "Fill rate": _pct(s["fill_rate"], False),
                           "Filled": s["fills"], "W-L": f"{s['won']}-{s['lost']}", "Open": s["open"],
                           "P/L": _money(s["pl"]) if mode == "live" else "—", "ROI": _pct(s["roi"]) if mode == "live" else "—",
-                          "Avg edge": _pct(s["avg_edge"])})
+                          "Avg edge": _pct(s["avg_edge"]),
+                          "Markout": "—" if s["avg_markout"] is None else f"{s['avg_markout']:+.1f}¢"})
         st.dataframe(table, hide_index=True, width="stretch")
     st.caption("Dry-run orders can't know whether they would have filled, so only live rows show fills and P/L. "
-               "Watch fill rate next to ROI: if fills mostly lose, the orders are only getting hit when the market "
-               "moves against them.")
+               "**Markout** = the market's price shortly after a fill minus what we paid. Around zero or positive is "
+               "healthy; clearly negative means we only get filled when the market is moving against us.")
+    with st.expander("When to scale up"):
+        s = core.summarize(rows, "live")
+        checks = [("100+ settled fills", s["won"] + s["lost"] >= 100),
+                  ("ROI above zero", (s["roi"] or 0) > 0),
+                  ("Average markout at or above 0¢", s["avg_markout"] is not None and s["avg_markout"] >= 0),
+                  ("Fill rate under 60% (fills on every order = priced too generously)",
+                   s["fill_rate"] is not None and s["fill_rate"] < 0.6)]
+        for label, ok in checks:
+            st.markdown(f"{'✅' if ok else '⬜'} {label}")
+        st.caption("All four: raise the unit and daily cap in maker_bot/core.py (CEIL_UNIT, CEIL_DAILY). "
+                   "Any one failing: keep size where it is.")
 
     if status:
         st.subheader("Last round")
@@ -66,7 +80,8 @@ def render() -> None:
     if recent:
         st.subheader("Orders")
         st.dataframe([{"Placed": (r.get("placed_at") or "")[5:16].replace("T", " "), "Mode": r.get("mode"),
-                       "Play": r.get("label"), "Game": r.get("game"), "Price": f"{float(r['price']) * 100:.0f}¢",
+                       "Play": r.get("label"), "Game": r.get("game"), "Qty": r.get("contracts"),
+                       "Price": f"{float(r['price']) * 100:.0f}¢", "Edge": _pct(core.f(r.get("edge"))),
                        "Fair": f"{float(r['fair']) * 100:.1f}¢", "Sharp": "✓" if r.get("sharp") else "",
                        "Expires": (r.get("expires_at") or "")[11:16] + "Z", "Status": r.get("status"),
                        "P/L": r.get("pl")} for r in recent], hide_index=True, width="stretch")

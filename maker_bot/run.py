@@ -45,7 +45,7 @@ def main() -> dict:
     rows = core.load()
     live = core.live_enabled()
     mode = "live" if live else "dry"
-    status: dict = {"at": core.iso(now), "mode": mode, "per_order": core.per_order(),
+    status: dict = {"at": core.iso(now), "mode": mode, "unit": core.unit(),
                     "daily_budget": core.daily_budget()}
 
     client, orders = None, []
@@ -61,6 +61,7 @@ def main() -> dict:
         from research_lab.public_data import PublicKalshi
         try:
             markets = PublicKalshi().markets(open_tickers)
+            status["marked"] = core.mark(rows, markets, now)      # markout before the result
             status["settled"] = core.settle(rows, markets, now)
         except Exception as exc:
             status["settle_error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
@@ -91,7 +92,8 @@ def main() -> dict:
         if live:
             core.place(client, c, row)
         rows.append(row)
-        posted.append(f'{row["label"]} @ {float(row["price"]) * 100:.0f}¢ (fair {float(row["fair"]) * 100:.1f}¢'
+        posted.append(f'{row["label"]}: {row["contracts"]} @ {float(row["price"]) * 100:.0f}¢ '
+                      f'(fair {float(row["fair"]) * 100:.1f}¢, edge {float(row["edge"]) * 100:.1f}%'
                       f'{", sharp" if row["sharp"] else ""}) until {row["expires_at"][11:16]}Z')
     status.update(posted=len(posted), orders=posted, skips=skips,
                   summary={"live": core.summarize(rows, "live"), "dry": core.summarize(rows, "dry")})
