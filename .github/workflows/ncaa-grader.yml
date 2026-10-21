@@ -3,8 +3,9 @@ name: NCAA Model Grader (paper)
 # PAPER ONLY. Logs the NCAA model's side of every FBS spread, total and moneyline,
 # freezes the line at that moment, and grades it after the game (W-L, units, CLV).
 # Schedule, scores and odds come from ESPN's free scoreboard (no key, no quota).
-# CFBD is optional (CORE ratings only, ~1 call/day); the grader runs fine without it.
-# Every 6 hours: early enough to catch the line when it's posted. No Kalshi keys.
+# CFBD is optional (CORE ratings ~1 call/day); the grader runs fine without it.
+# Hourly: the first read freezes the pick, the last read before kickoff is the closing line.
+# The season backtest runs by itself once CFBD answers (needs its historical lines). No Kalshi keys.
 #
 # Backtest weeks already played: Actions -> NCAA Model Grader -> Run workflow -> tick "backtest".
 on:
@@ -15,7 +16,7 @@ on:
         type: boolean
         default: false
   schedule:
-    - cron: "20 */6 * * *"
+    - cron: "20 * * * *"
 
 concurrency:
   group: ncaa-grader

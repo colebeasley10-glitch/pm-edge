@@ -61,7 +61,7 @@ TOTAL_SD = _env_float("NCAA_BETA_TOTAL_SD", 14.0)
 SPREAD_TOTAL_ODDS = -110          # CFBD has no spread/total juice; assume standard -110
 LOOKAHEAD_DAYS = _env_float("NCAA_GRADER_LOOKAHEAD_DAYS", 7)
 MIN_LEAD = timedelta(minutes=10)  # don't log a game that's about to kick off
-SETTLE_AFTER = timedelta(hours=4)  # wait so the closing line has been recorded
+SETTLE_AFTER = timedelta(hours=4)  # final scores have settled in the feed
 
 RECOMMENDED = ("STRONG", "LEAN")
 FIELDS = ["pick_id", "source", "model", "logged_at", "season", "week", "game_id", "kickoff",
@@ -374,6 +374,21 @@ def run_live(*, games: list[dict], lines: dict, models: list, now: datetime | No
                     by_id[pick["pick_id"]] = pick
                     logged += 1
 
+    # Closing line: keep re-reading the market until kickoff. The last pre-game read is
+    # the close (feeds drop odds once a game starts, and in-game lines aren't the close).
+    closed = 0
+    for r in by_id.values():
+        if r.get("source") != "live" or r.get("result"):
+            continue
+        g = games_by_id.get(str(r.get("game_id")))
+        ko = _parse_dt(r.get("kickoff") or "")
+        gl = lines.get(str(r.get("game_id")))
+        if g and gl and ko and now < ko and not g.get("completed"):
+            cl, co, v = clv(r, consensus(gl))
+            if v != "":
+                r["close_line"], r["close_odds"], r["clv"] = cl, co, v
+                closed += 1
+
     settled = 0
     for r in list(by_id.values()):
         if r.get("source") != "live" or r.get("result"):
@@ -385,13 +400,10 @@ def run_live(*, games: list[dict], lines: dict, models: list, now: datetime | No
         hp, ap = float(g["homePoints"]), float(g["awayPoints"])
         r["result"], r["units"] = grade(r, hp, ap)
         r["home_pts"], r["away_pts"] = int(hp), int(ap)
-        gl = lines.get(str(g.get("id")))
-        if gl:
-            r["close_line"], r["close_odds"], r["clv"] = clv(r, consensus(gl))
         r["settled_at"] = stamp
         settled += 1
 
-    return {"rows": list(by_id.values()), "logged": logged, "settled": settled,
+    return {"rows": list(by_id.values()), "logged": logged, "settled": settled, "close_updates": closed,
             "upcoming_games": len(upcoming),
             "games_with_lines": sum(1 for g in upcoming if str(g.get("id")) in lines),
             "not_projected": sorted(unmatched)[:40], "workbook_games": len(workbook)}
@@ -422,6 +434,9 @@ def run_backtest(*, season: int, games: list[dict], lines: dict, model_builders:
                 if not p:
                     continue
                 opening, closing = consensus(gl, opening=True), consensus(gl)
+                for k in ("spread", "total"):     # no opening line recorded -> use the close
+                    if opening[k] is None:
+                        opening[k] = closing[k]
                 mkt = {**opening, "home_ml": closing["home_ml"], "away_ml": closing["away_ml"]}
                 g = {**g, "season": g.get("season") or season}
                 for pick in make_picks(game=g, market=mkt, home_margin=p.home_margin, total=p.total,

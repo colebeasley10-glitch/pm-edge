@@ -72,9 +72,10 @@ def test_settles_after_final_with_clv():
     ko = NOW + timedelta(days=1)
     lines = {9: [{"id": 1, "lines": [line_row(-20.5, 50.5, -2000, 1100)]}]}
     rows = live([game(1, 9, ko)], lines, NOW, [])["rows"]
-    lines[9][0]["lines"] = [line_row(-17.5, 52.5, -1200, 800)]   # closing numbers
+    lines[9][0]["lines"] = [line_row(-17.5, 52.5, -1200, 800)]   # last pre-game read = close
+    rows = live([game(1, 9, ko)], lines, ko - timedelta(minutes=30), rows)["rows"]
     later = ko + timedelta(hours=5)
-    out = live([game(1, 9, ko, True, 35, 10)], lines, later, rows)
+    out = live([game(1, 9, ko, True, 35, 10)], {}, later, rows)    # feed has no odds post-game
     by = {r["market"]: r for r in out["rows"]}
     assert out["settled"] == 3
     sp = by["SPREAD"]

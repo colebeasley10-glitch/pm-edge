@@ -105,9 +105,33 @@ def test_end_to_end_runner_with_fake_espn(tmp_path, monkeypatch, capsys):
     assert {r["market"] for r in rows if r["game_id"] == "99"} == {"SPREAD", "TOTAL", "ML"}
     status = json.loads((tmp_path / "status.json").read_text())["live"]
     assert status["models"] == ["scores_v1"] and "cfbd_unavailable" in status
+    assert "backtest_waiting" in status          # no CFBD yet -> backtest waits, nothing breaks
+    # CFBD history (what the backtest uses), built from the same games with opening lines
+    hist_games = [espn_cfb.parse_event(e)[0] for w in range(1, 9) for e in weeks[w]]
+    hist_lines = {g["id"]: {"id": g["id"], "lines": [{"spread": -3.5, "spreadOpen": -3.0, "overUnder": 44.5,
+                                                      "overUnderOpen": 45.5}]} for g in hist_games}
+    monkeypatch.setattr(run, "_cfbd_history", lambda season, status: (hist_games, hist_lines))
     monkeypatch.setattr("sys.argv", ["run", "--backtest"])
     run.main()
     rows = core.load_ledger(tmp_path / "picks.csv")
     assert any(r["source"] == "backtest" and r["result"] for r in rows)
     assert any(r["source"] == "live" for r in rows)       # backtest didn't wipe live picks
     assert "Graded picks" in capsys.readouterr().out
+
+
+def test_auto_backtest_runs_once(tmp_path, monkeypatch):
+    monkeypatch.setattr(core, "LEDGER_PATH", tmp_path / "picks.csv")
+    monkeypatch.setattr(core, "STATUS_PATH", tmp_path / "status.json")
+    monkeypatch.setattr(core, "WORKBOOK_PATH", tmp_path / "none.csv")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("CFBD_API_KEY", raising=False)
+    import espn_cfb
+    from ncaa_grader import run
+    sess = FakeSession({})
+    monkeypatch.setattr(run, "ESPNCFB", lambda: espn_cfb.ESPNCFB(path=tmp_path / "c.json", session=sess))
+    calls = []
+    monkeypatch.setattr(run, "_cfbd_history", lambda season, status: calls.append(1) or ([], {}))
+    monkeypatch.setattr("sys.argv", ["run"])
+    run.main()
+    run.main()
+    assert calls == [1]
