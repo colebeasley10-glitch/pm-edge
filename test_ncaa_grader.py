@@ -19,19 +19,32 @@ def line_row(spread, total, hml=None, aml=None, s_open=None, t_open=None):
             "spreadOpen": s_open, "overUnderOpen": t_open}
 
 
-class FakeCFBD:
-    def __init__(self, games, lines, core_rows=CORE_ROWS):
-        self._games, self._lines, self._core = games, lines, core_rows
-        self.calls, self.errors = 0, []
+from ncaa_predictive import project, ratings_map
 
-    def games(self, year):
-        return self._games
 
-    def core(self, year):
-        return self._core
+def core_model(through_week=None):
+    rm = ratings_map(CORE_ROWS, through_week=through_week)
+    return lambda h, a, n: project(h, a, rm, neutral=n)
 
-    def lines(self, year, week):
-        return self._lines.get(week, [])
+
+MODELS = [("core_v1", core_model())]
+
+
+def flat(lines):  # {week: [gl]} -> {id: gl}
+    return {str(gl["id"]): gl for gls in lines.values() for gl in gls}
+
+
+def live(games, lines, now, rows, workbook=None, models=MODELS):
+    return core.run_live(games=games, lines=flat(lines), models=models, now=now, rows=rows,
+                         workbook=workbook or {})
+
+
+def backtest(games, lines, rows, core_rows=CORE_ROWS):
+    def build(w, prior):
+        rm = ratings_map(core_rows, through_week=w)
+        return (lambda h, a, n: project(h, a, rm, neutral=n)) if rm else None
+    return core.run_backtest(season=2026, games=games, lines=flat(lines), model_builders={"core_v1": build},
+                             rows=rows)
 
 
 def game(gid, week, ko, completed=False, hp=None, ap=None):
@@ -43,13 +56,13 @@ def game(gid, week, ko, completed=False, hp=None, ap=None):
 def test_live_logs_every_market_and_freezes_the_line():
     ko = NOW + timedelta(days=3)
     lines = {9: [{"id": 1, "lines": [line_row(-20.5, 50.5, -2000, 1100)]}]}
-    out = core.run_live(FakeCFBD([game(1, 9, ko)], lines), NOW, rows=[], workbook={})
+    out = live([game(1, 9, ko)], lines, NOW, [])
     picks = {r["market"]: r for r in out["rows"]}
     assert set(picks) == {"SPREAD", "TOTAL", "ML"} and out["logged"] == 3
     assert picks["SPREAD"]["line"] in (-20.5, 20.5)
     # the line moves; a second run must NOT overwrite the frozen pick
     lines[9][0]["lines"] = [line_row(-27.5, 44.5, -5000, 1800)]
-    out2 = core.run_live(FakeCFBD([game(1, 9, ko)], lines), NOW + timedelta(hours=6), rows=out["rows"], workbook={})
+    out2 = live([game(1, 9, ko)], lines, NOW + timedelta(hours=6), out["rows"])
     again = {r["market"]: r for r in out2["rows"]}
     assert out2["logged"] == 0
     assert again["SPREAD"]["line"] == picks["SPREAD"]["line"] and again["TOTAL"]["line"] == 50.5
@@ -58,10 +71,10 @@ def test_live_logs_every_market_and_freezes_the_line():
 def test_settles_after_final_with_clv():
     ko = NOW + timedelta(days=1)
     lines = {9: [{"id": 1, "lines": [line_row(-20.5, 50.5, -2000, 1100)]}]}
-    rows = core.run_live(FakeCFBD([game(1, 9, ko)], lines), NOW, rows=[], workbook={})["rows"]
+    rows = live([game(1, 9, ko)], lines, NOW, [])["rows"]
     lines[9][0]["lines"] = [line_row(-17.5, 52.5, -1200, 800)]   # closing numbers
     later = ko + timedelta(hours=5)
-    out = core.run_live(FakeCFBD([game(1, 9, ko, True, 35, 10)], lines), later, rows=rows, workbook={})
+    out = live([game(1, 9, ko, True, 35, 10)], lines, later, rows)
     by = {r["market"]: r for r in out["rows"]}
     assert out["settled"] == 3
     sp = by["SPREAD"]
@@ -75,9 +88,8 @@ def test_settles_after_final_with_clv():
 def test_not_settled_until_closing_line_window():
     ko = NOW + timedelta(days=1)
     lines = {9: [{"id": 1, "lines": [line_row(-20.5, 50.5)]}]}
-    rows = core.run_live(FakeCFBD([game(1, 9, ko)], lines), NOW, rows=[], workbook={})["rows"]
-    out = core.run_live(FakeCFBD([game(1, 9, ko, True, 35, 10)], lines), ko + timedelta(hours=2),
-                        rows=rows, workbook={})
+    rows = live([game(1, 9, ko)], lines, NOW, [])["rows"]
+    out = live([game(1, 9, ko, True, 35, 10)], lines, ko + timedelta(hours=2), rows)
     assert out["settled"] == 0
 
 
@@ -101,27 +113,26 @@ def test_backtest_uses_only_prior_ratings_and_opening_line():
     ko = NOW - timedelta(days=4)
     g = game(1, 8, ko, True, 31, 17)
     lines = {8: [{"id": 1, "lines": [line_row(-17.5, 51.5, -900, 600, s_open=-14.5, t_open=54.5)]}]}
-    out = core.run_backtest(FakeCFBD([g], lines), 2026, rows=[])
+    out = backtest([g], lines, [])
     sp = next(r for r in out["rows"] if r["market"] == "SPREAD")
     assert abs(float(sp["line"])) == 14.5          # opening line, not closing
     assert sp["result"] and out["graded"] == 3
     # week-8 games must use the through-week-7 snapshot (Alabama off 20), not week 8 (off 25)
-    from ncaa_predictive import project, ratings_map
     p7 = project("Alabama", "Vanderbilt", ratings_map(CORE_ROWS, through_week=8))
     assert sp["proj"].endswith(f"{p7.total / 2 + p7.home_margin / 2:.1f}")
 
 
 def test_backtest_refuses_without_weekly_snapshots():
-    flat = [{k: v for k, v in r.items() if k != "throughWeek"} for r in CORE_ROWS]
+    flatc = [{k: v for k, v in r.items() if k != "throughWeek"} for r in CORE_ROWS]
     g = game(1, 8, NOW - timedelta(days=4), True, 31, 17)
-    out = core.run_backtest(FakeCFBD([g], {8: []}, core_rows=flat), 2026, rows=[])
-    assert out["leak_guard_tripped"] and out["graded"] == 0
+    out = backtest([g], {8: [{'id': 1, 'lines': [line_row(-17.5, 51.5, s_open=-14.5, t_open=54.5)]}]}, [], core_rows=flatc)
+    assert out["skipped_weeks"] == {"core_v1": [8]} and out["graded"] == 0
 
 
 def test_backtest_rerun_replaces_old_backtest_rows_but_keeps_live():
-    live = {"pick_id": "live:x", "source": "live", "season": "2026"}
+    live_row = {"pick_id": "live:x", "source": "live", "season": "2026"}
     old = {"pick_id": "backtest:old", "source": "backtest", "season": "2026"}
-    out = core.run_backtest(FakeCFBD([], {}), 2026, rows=[live, old])
+    out = backtest([], {}, [live_row, old])
     ids = [r["pick_id"] for r in out["rows"]]
     assert "live:x" in ids and "backtest:old" not in ids
 
@@ -141,7 +152,7 @@ def test_workbook_csv_matches_games_and_logs_separately(tmp_path):
     wb = core.load_workbook_model(p)
     ko = NOW + timedelta(days=2)
     lines = {9: [{"id": 1, "lines": [line_row(-20.5, 50.5)]}]}
-    out = core.run_live(FakeCFBD([game(1, 9, ko)], lines), NOW, rows=[], workbook=wb)
+    out = live([game(1, 9, ko)], lines, NOW, [], workbook=wb)
     wbp = [r for r in out["rows"] if r["model"] == "workbook"]
     assert {r["market"] for r in wbp} == {"SPREAD", "TOTAL"}
     sp = next(r for r in wbp if r["market"] == "SPREAD")

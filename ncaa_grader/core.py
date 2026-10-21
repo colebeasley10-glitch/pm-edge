@@ -15,12 +15,10 @@ Every run (see .github/workflows/ncaa-grader.yml):
 3. SETTLE. After the final score, grade W/L/P at 1 unit flat, and record the
    closing line so we can measure closing-line value (CLV).
 
-A one-time BACKTEST mode replays weeks already played using only ratings that
-existed before each week (CFBD CORE `throughWeek` snapshots) and the opening line.
-If the ratings feed has no weekly snapshots the backtest refuses to run, because
-grading old games with today's ratings would leak the answers.
+A BACKTEST mode replays weeks already played. Each model is rebuilt from games
+before that week only (no look-ahead) and graded at the opening line.
 
-Nothing here can place a bet. Only CollegeFootballData (read-only) is used.
+Data: ESPN's free scoreboard (schedule, scores, odds). Nothing here can place a bet.
 """
 from __future__ import annotations
 
@@ -34,7 +32,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable
 
-from ncaa_predictive import project, ratings_map
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 LEDGER_PATH = DATA_DIR / "picks.csv"
@@ -128,7 +125,14 @@ def consensus(game_lines: dict, opening: bool = False) -> dict:
     pairs = [(h, a) for h, a in pairs if h is not None and a is not None and h != 0 and a != 0]
     home_ml = _median(h for h, _ in pairs)
     away_ml = _median(a for _, a in pairs)
-    return {"spread": spread, "total": total, "home_ml": home_ml, "away_ml": away_ml, "providers": len(rows)}
+    juice = {}
+    if not opening:  # actual spread/total prices when the feed has them (ESPN does), else -110
+        for k, src in (("home_spread_odds", "homeSpreadOdds"), ("away_spread_odds", "awaySpreadOdds"),
+                       ("over_odds", "overOdds"), ("under_odds", "underOdds")):
+            v = _median(r.get(src) for r in rows)
+            juice[k] = v if v is not None and abs(v) >= 100 else None
+    return {"spread": spread, "total": total, "home_ml": home_ml, "away_ml": away_ml,
+            "providers": len(rows), **juice}
 
 
 def fmt_line(x: float) -> str:
@@ -174,20 +178,22 @@ def make_picks(*, game: dict, market: dict, home_margin: float, total: float, ho
     if s is not None:
         edge = home_margin + s                       # >0: home covers the market line
         team, line = (home, s) if edge >= 0 else (away, -s)
+        odds = market.get("home_spread_odds" if team == home else "away_spread_odds") or SPREAD_TOTAL_ODDS
         prob = cdf(abs(edge) / MARGIN_SD)
         add("SPREAD", side=f"{team} {fmt_line(line)}", pick_team=team, direction="", line=line,
-            odds=SPREAD_TOTAL_ODDS, model_prob=round(prob, 4), market_prob="",
-            edge_pts=round(abs(edge), 1), edge_prob=round(prob - implied(SPREAD_TOTAL_ODDS), 4),
+            odds=odds, model_prob=round(prob, 4), market_prob="",
+            edge_pts=round(abs(edge), 1), edge_prob=round(prob - implied(odds), 4),
             tier=tier_spread(abs(edge)))
 
     t = market.get("total")
     if t is not None:
         diff = total - t
         direction = "OVER" if diff >= 0 else "UNDER"
+        odds = market.get("over_odds" if direction == "OVER" else "under_odds") or SPREAD_TOTAL_ODDS
         prob = cdf(abs(diff) / TOTAL_SD)
         add("TOTAL", side=f"{direction} {t:g}", pick_team="", direction=direction, line=t,
-            odds=SPREAD_TOTAL_ODDS, model_prob=round(prob, 4), market_prob="",
-            edge_pts=round(abs(diff), 1), edge_prob=round(prob - implied(SPREAD_TOTAL_ODDS), 4),
+            odds=odds, model_prob=round(prob, 4), market_prob="",
+            edge_pts=round(abs(diff), 1), edge_prob=round(prob - implied(odds), 4),
             tier=tier_total(abs(diff)))
 
     hm, am = market.get("home_ml"), market.get("away_ml")
@@ -244,7 +250,8 @@ def clv(row: dict, close: dict) -> tuple[str, str, str]:
 
 
 # ---------------------------------------------------------------- ledger
-def load_ledger(path: Path = LEDGER_PATH) -> list[dict]:
+def load_ledger(path: Path | None = None) -> list[dict]:
+    path = path or LEDGER_PATH
     try:
         with open(path, newline="") as f:
             return list(csv.DictReader(f))
@@ -252,7 +259,8 @@ def load_ledger(path: Path = LEDGER_PATH) -> list[dict]:
         return []
 
 
-def save_ledger(rows: list[dict], path: Path = LEDGER_PATH) -> None:
+def save_ledger(rows: list[dict], path: Path | None = None) -> None:
+    path = path or LEDGER_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
     rows = sorted(rows, key=lambda r: (str(r.get("source")), str(r.get("kickoff")), str(r.get("pick_id"))))
     with open(path, "w", newline="") as f:
@@ -286,13 +294,13 @@ def team_key(name: str, aliases: dict[str, str] | None = None) -> str:
     return (aliases or {}).get(c, c)
 
 
-def load_workbook_model(path: Path = WORKBOOK_PATH) -> dict[tuple[str, str], dict]:
+def load_workbook_model(path: Path | None = None) -> dict[tuple[str, str], dict]:
     """Optional: your own numbers. CSV columns: home, away, home_margin, total
     (optional home_win_prob). Paste each week's projections from the Excel model.
     Games are matched by team name (data/team_aliases.csv fixes spellings)."""
     aliases = _aliases()
     out = {}
-    for r in load_ledger(path):
+    for r in load_ledger(path or WORKBOOK_PATH):
         hm, tot = _num(r.get("home_margin")), _num(r.get("total"))
         if hm is None or tot is None:
             continue
@@ -317,19 +325,21 @@ def _is_fbs_game(g: dict) -> bool:
 
 
 # ---------------------------------------------------------------- live round
-def run_live(cfbd, now: datetime | None = None, rows: list[dict] | None = None,
-             workbook: dict | None = None) -> dict:
-    """Log new picks and settle finished ones. Returns a small summary."""
+def run_live(*, games: list[dict], lines: dict, models: list, now: datetime | None = None,
+             rows: list[dict] | None = None, workbook: dict | None = None) -> dict:
+    """Log new picks and settle finished ones.
+
+    games:  every game of the season so far (ESPN/CFBD shape)
+    lines:  {game_id: {"lines": [...]}} current market (closing line once the game is over)
+    models: [(name, project(home, away, neutral) -> obj with home_margin/total/home_win_prob or None)]
+    """
     now = now or datetime.now(timezone.utc)
-    year = now.year if now.month >= 7 else now.year - 1
     rows = load_ledger() if rows is None else rows
     workbook = load_workbook_model() if workbook is None else workbook
     aliases = _aliases()
     by_id = {r["pick_id"]: r for r in rows}
-
-    games = cfbd.games(year)
-    rm = ratings_map(cfbd.core(year))
     games_by_id = {str(g.get("id")): g for g in games}
+    lines = {str(k): v for k, v in lines.items()}
 
     upcoming = []
     for g in games:
@@ -339,40 +349,25 @@ def run_live(cfbd, now: datetime | None = None, rows: list[dict] | None = None,
         if ko and now + MIN_LEAD <= ko <= now + timedelta(days=LOOKAHEAD_DAYS):
             upcoming.append(g)
 
-    unsettled = [r for r in rows if r.get("source") == "live" and not r.get("result")]
-    to_settle = []
-    for r in unsettled:
-        g = games_by_id.get(str(r.get("game_id")))
-        ko = _parse_dt(r.get("kickoff") or "")
-        if g and g.get("completed") and g.get("homePoints") is not None and ko and now >= ko + SETTLE_AFTER:
-            to_settle.append((r, g))
-
-    weeks = {int(g["week"]) for g in upcoming if g.get("week") is not None}
-    weeks |= {int(g["week"]) for _, g in to_settle if g.get("week") is not None}
-    lines = {}
-    for w in sorted(weeks):
-        try:
-            for gl in cfbd.lines(year, w):
-                lines[str(gl.get("id") or gl.get("gameId"))] = gl
-        except Exception as exc:  # keep going with what we have
-            print("NCAA_GRADER_LINES_FAILED", w, type(exc).__name__, str(exc)[:160])
-
     logged = 0
     stamp = now.isoformat(timespec="seconds")
+    unmatched = set()
     for g in upcoming:
         gl = lines.get(str(g.get("id")))
         if not gl:
             continue
         mkt = consensus(gl)
-        g = {**g, "season": g.get("season") or year}
-        models = []
-        p = project(g["homeTeam"], g["awayTeam"], rm, neutral=bool(g.get("neutralSite")))
-        if p:
-            models.append(("core_v1", p.home_margin, p.total, p.home_win_prob))
+        projs = []
+        for name, fn in models:
+            p = fn(g["homeTeam"], g["awayTeam"], bool(g.get("neutralSite")))
+            if p:
+                projs.append((name, p.home_margin, p.total, p.home_win_prob))
+            else:
+                unmatched.add(f'{name}: {g["awayTeam"]} @ {g["homeTeam"]}')
         wb = workbook.get((team_key(g["homeTeam"], aliases), team_key(g["awayTeam"], aliases)))
         if wb:
-            models.append(("workbook", wb["home_margin"], wb["total"], wb["home_win_prob"]))
-        for name, hmgn, tot, wp in models:
+            projs.append(("workbook", wb["home_margin"], wb["total"], wb["home_win_prob"]))
+        for name, hmgn, tot, wp in projs:
             for pick in make_picks(game=g, market=mkt, home_margin=hmgn, total=tot, home_win_prob=wp,
                                    model=name, source="live", logged_at=stamp):
                 if pick["pick_id"] not in by_id:      # frozen: never overwrite a logged pick
@@ -380,8 +375,13 @@ def run_live(cfbd, now: datetime | None = None, rows: list[dict] | None = None,
                     logged += 1
 
     settled = 0
-    for r, g in to_settle:
-        r = by_id[r["pick_id"]]
+    for r in list(by_id.values()):
+        if r.get("source") != "live" or r.get("result"):
+            continue
+        g = games_by_id.get(str(r.get("game_id")))
+        ko = _parse_dt(r.get("kickoff") or "")
+        if not (g and g.get("completed") and g.get("homePoints") is not None and ko and now >= ko + SETTLE_AFTER):
+            continue
         hp, ap = float(g["homePoints"]), float(g["awayPoints"])
         r["result"], r["units"] = grade(r, hp, ap)
         r["home_pts"], r["away_pts"] = int(hp), int(ap)
@@ -391,57 +391,50 @@ def run_live(cfbd, now: datetime | None = None, rows: list[dict] | None = None,
         r["settled_at"] = stamp
         settled += 1
 
-    out_rows = list(by_id.values())
-    return {"rows": out_rows, "logged": logged, "settled": settled, "upcoming_games": len(upcoming),
+    return {"rows": list(by_id.values()), "logged": logged, "settled": settled,
+            "upcoming_games": len(upcoming),
             "games_with_lines": sum(1 for g in upcoming if str(g.get("id")) in lines),
-            "workbook_games": len(workbook)}
+            "not_projected": sorted(unmatched)[:40], "workbook_games": len(workbook)}
 
 
-# ---------------------------------------------------------------- backtest
-def run_backtest(cfbd, season: int, rows: list[dict] | None = None) -> dict:
-    """Replay finished weeks with ratings frozen before each week and the OPENING line.
-    Replaces any earlier backtest rows for that season."""
+def run_backtest(*, season: int, games: list[dict], lines: dict, model_builders: dict,
+                 rows: list[dict] | None = None) -> dict:
+    """Replay finished weeks. For week w each model is built only from games BEFORE w
+    (model_builders[name](week, prior_games) -> project fn, or None to skip that week).
+    Spreads/totals are graded at the OPENING line, moneylines at the closing price.
+    Replaces any earlier backtest rows for that season; live rows are untouched."""
     rows = load_ledger() if rows is None else rows
     keep = [r for r in rows if not (r.get("source") == "backtest" and str(r.get("season")) == str(season))]
-    games = [g for g in cfbd.games(season) if g.get("completed") and g.get("homePoints") is not None
-             and _is_fbs_game(g)]
-    core = cfbd.core(season)
-    weeks = sorted({int(g["week"]) for g in games if g.get("week") is not None})
-    new, skipped_weeks = [], []
+    lines = {str(k): v for k, v in lines.items()}
+    done = [g for g in games if g.get("completed") and g.get("homePoints") is not None and _is_fbs_game(g)]
+    weeks = sorted({int(g["week"]) for g in done if g.get("week") is not None})
+    new, skipped = [], {}
     for w in weeks:
-        rm = ratings_map(core, through_week=w)       # only ratings from BEFORE week w
-        if not rm:
-            skipped_weeks.append(w)
-            continue
-        try:
-            lines = {str(gl.get("id") or gl.get("gameId")): gl for gl in cfbd.lines(season, w)}
-        except Exception as exc:
-            print("NCAA_GRADER_BACKTEST_LINES_FAILED", w, type(exc).__name__, str(exc)[:160])
-            continue
-        for g in games:
-            if g.get("week") != w:
+        prior = [g for g in done if g.get("week") is not None and int(g["week"]) < w]
+        for name, build in model_builders.items():
+            fn = build(w, prior)
+            if fn is None:
+                skipped.setdefault(name, []).append(w)
                 continue
-            gl = lines.get(str(g.get("id")))
-            p = project(g["homeTeam"], g["awayTeam"], rm, neutral=bool(g.get("neutralSite")))
-            if not gl or not p:
-                continue
-            opening, closing = consensus(gl, opening=True), consensus(gl)
-            # moneylines in CFBD are closing prices; spread/total use the opening line
-            mkt = {**opening, "home_ml": closing["home_ml"], "away_ml": closing["away_ml"]}
-            g = {**g, "season": g.get("season") or season}
-            for pick in make_picks(game=g, market=mkt, home_margin=p.home_margin, total=p.total,
-                                   home_win_prob=p.home_win_prob, model="core_v1", source="backtest",
-                                   logged_at="backtest"):
-                hp, ap = float(g["homePoints"]), float(g["awayPoints"])
-                pick["result"], pick["units"] = grade(pick, hp, ap)
-                pick["home_pts"], pick["away_pts"] = int(hp), int(ap)
-                if pick["market"] != "ML":
-                    pick["close_line"], pick["close_odds"], pick["clv"] = clv(pick, closing)
-                pick["settled_at"] = "backtest"
-                new.append(pick)
-    leak_guard = bool(weeks) and len(skipped_weeks) == len(weeks)
-    return {"rows": keep + new, "graded": len(new), "weeks": weeks, "skipped_weeks": skipped_weeks,
-            "leak_guard_tripped": leak_guard}
+            for g in (x for x in done if int(x.get("week") or -1) == w):
+                gl = lines.get(str(g.get("id")))
+                p = fn(g["homeTeam"], g["awayTeam"], bool(g.get("neutralSite"))) if gl else None
+                if not p:
+                    continue
+                opening, closing = consensus(gl, opening=True), consensus(gl)
+                mkt = {**opening, "home_ml": closing["home_ml"], "away_ml": closing["away_ml"]}
+                g = {**g, "season": g.get("season") or season}
+                for pick in make_picks(game=g, market=mkt, home_margin=p.home_margin, total=p.total,
+                                       home_win_prob=p.home_win_prob, model=name, source="backtest",
+                                       logged_at="backtest"):
+                    hp, ap = float(g["homePoints"]), float(g["awayPoints"])
+                    pick["result"], pick["units"] = grade(pick, hp, ap)
+                    pick["home_pts"], pick["away_pts"] = int(hp), int(ap)
+                    if pick["market"] != "ML":
+                        pick["close_line"], pick["close_odds"], pick["clv"] = clv(pick, closing)
+                    pick["settled_at"] = "backtest"
+                    new.append(pick)
+    return {"rows": keep + new, "graded": len(new), "weeks": weeks, "skipped_weeks": skipped}
 
 
 # ---------------------------------------------------------------- reporting
@@ -488,7 +481,7 @@ def by_market(rows: list[dict], *, source: str | None = None, model: str | None 
     return out
 
 
-def format_table(rows: list[dict], *, source: str, model: str = "core_v1") -> str:
+def format_table(rows: list[dict], *, source: str, model: str = "scores_v1") -> str:
     sel = [r for r in rows if r.get("source") == source and r.get("model") == model]
     graded = sum(1 for r in sel if r.get("result"))
     lines = [f"[{source} / {model}]  Graded picks: {graded}   still pending (games not played yet): {len(sel) - graded}",
@@ -499,11 +492,12 @@ def format_table(rows: list[dict], *, source: str, model: str = "core_v1") -> st
         clv_txt = "" if s["clv_pts"] is None else f"{s['clv_pts']:+.2f}"
         lines.append(f"{s['group']:<40}{s['picks']:>6}  {s['w']}-{s['l']}-{s['p']:<5}"
                      f"{s['units']:>+8.2f}{roi:>9}{clv_txt:>8}")
-    lines += ["", "Only Strong + Lean are real recommendations. 1 unit flat per pick; spreads/totals at -110.",
+    lines += ["", "Only Strong + Lean are real recommendations. 1 unit flat per pick at the posted price.",
               "CLV = points you beat the closing line by (spreads/totals). Under ~200 picks, trust CLV over W-L."]
     return "\n".join(lines)
 
 
-def write_status(summary: dict, path: Path = STATUS_PATH) -> None:
+def write_status(summary: dict, path: Path | None = None) -> None:
+    path = path or STATUS_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(summary, indent=2, sort_keys=True, default=str))

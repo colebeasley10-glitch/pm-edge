@@ -4,6 +4,8 @@ from pathlib import Path
 import json, math, os, re, statistics, requests
 import approval_links
 from cfbd_client import CachedCFBD
+from espn_cfb import ESPNCFB
+from ncaa_grader.core import _aliases, team_key
 from ncaa_predictive import ratings_map, project
 from watcher import fetch_open_kalshi_sports_markets, inferred_sport_rule, parse_market
 
@@ -192,9 +194,18 @@ def match_kalshi(signal,markets,home,away,home_spread):
     return None
 
 def main():
-    now=datetime.now(timezone.utc); year=now.year
-    c=CachedCFBD(); games=c.games(year); core=c.core(year); rm=ratings_map(core)
-    upcoming=[]; weeks=set()
+    now=datetime.now(timezone.utc)
+    # Schedule + lines from ESPN (free, no quota). CFBD is only used for CORE ratings,
+    # cached 12h, so the beta stays far inside CFBD's free monthly allowance.
+    espn=ESPNCFB(); year,week=espn.current()
+    games,by_id=[],{}
+    for w in (week,week+1):
+        gs,ls=espn.week(year,w); games+=gs; by_id.update(ls)
+    espn.save()
+    c=CachedCFBD(); core=c.core(year)
+    aliases=_aliases(); key=lambda n: team_key(n,aliases)
+    rm={key(t):r for t,r in ratings_map(core).items()}
+    upcoming=[]
     for g in games:
         if g.get("completed"): continue
         start=g.get("startDate") or g.get("startTime")
@@ -203,17 +214,12 @@ def main():
         except ValueError: continue
         hours=(dt-now).total_seconds()/3600
         if 0 <= hours <= 18:
-            p=project(g["homeTeam"],g["awayTeam"],rm,neutral=bool(g.get("neutralSite")))
+            p=project(key(g["homeTeam"]),key(g["awayTeam"]),rm,neutral=bool(g.get("neutralSite")))
             if p:
+                p.home,p.away=g["homeTeam"],g["awayTeam"]   # display/match with the real names
                 upcoming.append((dt,g,p))
-                if g.get("week") is not None: weeks.add(int(g["week"]))
-    line_rows=[]
-    for w in sorted(weeks):
-        try: line_rows.extend(c.lines(year,w))
-        except Exception as e: print("CFBD lines fetch failed",w,e)
-    by_id={str(x.get("id") or x.get("gameId")):x for x in line_rows}
     c.save()
-    print({"cfbd_calls":c.calls,"cfbd_errors":c.errors})
+    print({"cfbd_calls":c.calls,"cfbd_errors":c.errors,"espn_calls":espn.calls,"espn_errors":espn.errors})
     if not upcoming:
         print("No FBS games in the next 18 hours; skipping Kalshi scan.")
         return
@@ -274,7 +280,7 @@ def main():
     priced.sort(key=lambda s:(s["prob"],s["price_edge"],s["edge_pts"]),reverse=True)
 
     print({"ncaa_beta":"ok","core_rows":len(core),"upcoming_projectable":len(upcoming),
-           "line_games":len(line_rows),"model_qualified":len(signals),"kalshi_priced":len(priced),
+           "line_games":len(by_id),"model_qualified":len(signals),"kalshi_priced":len(priced),
            "kalshi_markets":len(kalshi_markets),"kalshi_game_events":kalshi_stats.get("kalshi_events_seen")})
 
     sent=0
@@ -312,10 +318,10 @@ if __name__=="__main__":
     try:
         main()
     except RuntimeError as exc:
-        if "CFBD unavailable" not in str(exc):
+        if "unavailable and nothing cached" not in str(exc):
             print(f"::error title=NCAA beta failed::{type(exc).__name__}: {str(exc)[:400]}")
             raise
-        # CFBD quota used up / outage with nothing cached: skip quietly so GitHub
+        # CFBD quota used up / ESPN outage with nothing cached: skip quietly so GitHub
         # doesn't email a failure every half hour; it resumes once CFBD answers again.
         print(f"::warning title=NCAA beta skipped::{str(exc)[:400]}")
     except Exception as exc:

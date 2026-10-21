@@ -1726,7 +1726,7 @@ with tab_lab:
         from ncaa_grader import core as _ng
         _ngr = _ng.load_ledger()
         _ngsrc = "live" if any(r.get("source") == "live" and r.get("result") for r in _ngr) else "backtest"
-        _ngs = _ng.summarize(_ngr, source=_ngsrc, model="core_v1")[0]
+        _ngs = _ng.summarize(_ngr, source=_ngsrc, model="scores_v1")[0]
         _cards.append(("Research_Lab_NCAA_Grader", "NCAA Model Grader",
                        "Every FBS pick graded at a frozen line" + (" (backtest)" if _ngsrc == "backtest" else ""),
                        {"won": _ngs["w"], "lost": _ngs["l"], "roi": _ngs["roi"], "open": _ngs["open"]}, None))

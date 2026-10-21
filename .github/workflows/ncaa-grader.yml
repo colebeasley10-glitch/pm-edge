@@ -2,18 +2,18 @@ name: NCAA Model Grader (paper)
 
 # PAPER ONLY. Logs the NCAA model's side of every FBS spread, total and moneyline,
 # freezes the line at that moment, and grades it after the game (W-L, units, CLV).
-# Runs every 6 hours: early enough to catch the line when it's posted, light on the
-# free CFBD quota (shares the NCAA beta's cache file). No Kalshi keys, no Pushover.
+# Schedule, scores and odds come from ESPN's free scoreboard (no key, no quota).
+# CFBD is optional (CORE ratings only, ~1 call/day); the grader runs fine without it.
+# Every 6 hours: early enough to catch the line when it's posted. No Kalshi keys.
 #
-# One-time backtest of weeks already played: Actions -> NCAA Model Grader -> Run
-# workflow -> set "backtest season" to 2026.
+# Backtest weeks already played: Actions -> NCAA Model Grader -> Run workflow -> tick "backtest".
 on:
   workflow_dispatch:
     inputs:
-      backtest_season:
-        description: "Backtest a season (e.g. 2026). Leave blank for a normal run."
-        required: false
-        default: ""
+      backtest:
+        description: "Replay this season's played weeks (no look-ahead)"
+        type: boolean
+        default: false
   schedule:
     - cron: "20 */6 * * *"
 
@@ -37,10 +37,12 @@ jobs:
           python-version: "3.12"
       - run: pip install requests
 
-      - name: Restore CFBD cache (falls back to the NCAA beta's copy)
+      - name: Restore ESPN/CFBD cache (falls back to the NCAA beta's copy)
         uses: actions/cache@v4
         with:
-          path: .ncaa_beta_cfbd_cache.json
+          path: |
+            .ncaa_beta_cfbd_cache.json
+            .espn_cfb_cache.json
           key: ncaa-grader-${{ github.run_id }}
           restore-keys: |
             ncaa-grader-
@@ -49,10 +51,10 @@ jobs:
       - name: Grade
         env:
           CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
-          BACKTEST: ${{ github.event.inputs.backtest_season }}
+          BACKTEST: ${{ github.event.inputs.backtest }}
         run: |
-          if [ -n "$BACKTEST" ]; then
-            python -m ncaa_grader.run --backtest "$BACKTEST"
+          if [ "$BACKTEST" = "true" ]; then
+            python -m ncaa_grader.run --backtest
           else
             python -m ncaa_grader.run
           fi

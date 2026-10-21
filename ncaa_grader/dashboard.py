@@ -33,13 +33,16 @@ def render() -> None:
         pass
     st.title("NCAA Model Grader")
     st.info("📝 **PAPER ONLY.** Every FBS game gets the model's side of the spread, total and moneyline, "
-            "with the line frozen when it's logged. 1 unit flat per pick, spreads/totals at -110. "
+            "with the line frozen when it's logged. 1 unit flat per pick at the posted price (-110 if none). "
             "Only **Strong + Lean** are recommendations; everything else is tracked to test the model honestly.")
 
     rows = core.load_ledger()
-    models = sorted({r.get("model") for r in rows if r.get("model")}) or ["core_v1"]
+    order = ("scores_v1", "core_v1", "workbook")
+    have = {r.get("model") for r in rows if r.get("model")}
+    models = [m for m in order if m in have] or ["scores_v1"]
     model = st.radio("Model", models, horizontal=True,
-                     format_func=lambda m: {"core_v1": "SharpIQ (CFBD CORE)", "workbook": "My workbook"}.get(m, m))
+                     format_func=lambda m: {"scores_v1": "Scores model (free)", "core_v1": "CFBD CORE",
+                                             "workbook": "My workbook"}.get(m, m))
 
     for source, title in (("live", "Live (frozen pre-game lines)"), ("backtest", "Backtest (weeks already played)")):
         sel = [r for r in rows if r.get("source") == source and r.get("model") == model]
@@ -50,7 +53,7 @@ def render() -> None:
         st.dataframe(_table(core.by_market(rows, source=source, model=model, recommended_only=True), "Market (Strong + Lean)"),
                      hide_index=True, width="stretch")
         if source == "backtest":
-            st.caption("Backtest picks use ratings from before each week and the opening line. "
+            st.caption("Backtest picks use only games before each week and the opening line (-110). "
                        "Moneylines in the backtest are closing prices, so they get no CLV.")
 
     st.caption("**How to read this:** under ~200 settled picks, W-L is mostly luck. "
