@@ -65,7 +65,7 @@ LEDGER_FIELDS = [
     "signal_id", "trader", "wallet", "sport", "market_type", "event", "question", "outcome",
     "outcome_index", "condition_id", "event_slug", "game_start", "first_buy", "alert_time",
     "his_usdc", "his_price", "copy_price", "in_band", "pushed", "status", "settled_time",
-    "pl_copy", "pl_his",
+    "pl_copy", "pl_his", "settled_by",
 ]
 
 
@@ -287,6 +287,7 @@ def run_round(
     push: Callable[[str, str, str | None], bool] = send_push,
     state_path: Path = STATE_PATH,
     ledger_path: Path = LEDGER_PATH,
+    get_score: Callable[[dict], str | None] | None = None,
 ) -> dict:
     now = now or utcnow()
     state = load_state(state_path)
@@ -394,7 +395,7 @@ def run_round(
             ledger.append(row)
             signal_ids.add(sid)
 
-    summary["settled"] = settle(ledger, now, market)
+    summary["settled"] = settle(ledger, now, market, get_score)
 
     # prune old state
     cutoff = (now - KEEP_POSITIONS).timestamp()
@@ -412,7 +413,10 @@ def _pl(price: float | None, won: bool) -> float | None:
     return round(PAPER_STAKE * (1 / price - 1), 2) if won else -PAPER_STAKE
 
 
-def settle(ledger: list[dict], now: datetime, market: Callable[[str], dict | None]) -> int:
+def settle(ledger: list[dict], now: datetime, market: Callable[[str], dict | None],
+           get_score: Callable[[dict], str | None] | None = None) -> int:
+    """Polymarket's official result when it has one; otherwise the final score (Polymarket can
+    take a day or more to resolve a finished game)."""
     n = 0
     for row in ledger:
         if row.get("status") != "open":
@@ -421,18 +425,28 @@ def settle(ledger: list[dict], now: datetime, market: Callable[[str], dict | Non
         if not start or now - start < SETTLE_AFTER:
             continue
         m = market(row["condition_id"])
-        if not m:
-            continue
-        w = winner_index(m)
-        if w is None:
-            continue
-        if w == "void":
+        w = winner_index(m) if m else None
+        if w is not None:
+            outcome = "void" if w == "void" else ("won" if int(row["outcome_index"]) == w else "lost")
+            source = "polymarket"
+        else:
+            outcome = None
+            if get_score is not None:
+                try:
+                    outcome = get_score(row)
+                except Exception:
+                    outcome = None
+            if outcome is None:
+                continue
+            source = "final score"
+        if outcome == "void":
             row.update(status="void", pl_copy=0.0, pl_his=0.0)
         else:
-            won = int(row["outcome_index"]) == w
+            won = outcome == "won"
             copy = _float(row.get("copy_price")) or _float(row.get("his_price"))
-            row.update(status="won" if won else "lost", pl_copy=_pl(copy, won), pl_his=_pl(_float(row["his_price"]), won))
+            row.update(status=outcome, pl_copy=_pl(copy, won), pl_his=_pl(_float(row["his_price"]), won))
         row["settled_time"] = iso(now)
+        row["settled_by"] = source
         n += 1
     return n
 
