@@ -1720,6 +1720,18 @@ with tab_lab:
                        {"won": _tfs["wins"], "lost": _tfs["losses"], "roi": _tfs["roi_copy"], "open": _tfs["open"]}, None))
     except Exception:
         pass
+    try:  # Maker Bot: $1 resting Kalshi orders priced better than Pinnacle (live or dry run)
+        for _m in [k for k in _lsys.modules if k == "maker_bot" or k.startswith("maker_bot.")]:
+            del _lsys.modules[_m]
+        from maker_bot import core as _mb
+        _mbr = _mb.load()
+        _mbmode = "live" if any(r.get("mode") == "live" for r in _mbr) else "dry"
+        _mbs = _mb.summarize(_mbr, _mbmode)
+        _cards.append(("Research_Lab_Maker_Bot", "Maker Bot" + (" (dry run)" if _mbmode == "dry" else ""),
+                       "$1 resting orders below Pinnacle's fair line; cancels before start",
+                       {"won": _mbs["won"], "lost": _mbs["lost"], "roi": _mbs["roi"], "open": _mbs["open"] + _mbs["resting"]}, None))
+    except Exception:
+        pass
     try:  # NCAA Model Grader: every FBS game graded at a frozen line (Strong + Lean shown)
         for _m in [k for k in _lsys.modules if k == "ncaa_grader" or k.startswith("ncaa_grader.")]:
             del _lsys.modules[_m]

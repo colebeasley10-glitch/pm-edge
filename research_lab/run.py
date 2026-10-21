@@ -15,7 +15,7 @@ from collections import Counter
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from research_lab import best_price, config, ev_data, metrics, my_bets, pinnacle, report
+from research_lab import best_price, config, ev_data, maker_candidates, metrics, my_bets, pinnacle, report
 from research_lab.fills import taker_fee
 from research_lab.strategies.ev_finder import push_alerts, run_ev_finder, run_plays
 from research_lab.context import RunContext
@@ -182,6 +182,11 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
             out["ev"] = ev_round(ctx, base, poly_fetch=poly_fetch, odds_session=odds_session, odds_key=odds_key)
         except Exception as exc:  # only affects the +EV Finder
             out["ev"] = {"errors": [f"{type(exc).__name__}: {str(exc)[:160]}"]}
+        try:   # read-only export for the keyed Maker Bot workflow (no orders here)
+            out["maker_candidates"] = maker_candidates.write(base, ctx.picks, ctx.markets, ctx.flows, now,
+                                                             ctx.flow_complete)
+        except Exception as exc:
+            out["maker_candidates"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
         try:   # read-only: was each new live Sharp pick cheaper on Polymarket?
             out["best_price"] = best_price.record(now, base, poly_fetch=poly_fetch)
         except Exception as exc:
