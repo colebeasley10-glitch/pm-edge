@@ -1,6 +1,6 @@
 name: Maker Bot
 
-# REAL MONEY when the repo variable MAKER_BOT_ENABLED is "1"; otherwise a dry run that
+# REAL MONEY when MAKER_BOT_ENABLED is "1" (repo variable or secret); otherwise a dry run that
 # only logs what it would have posted. Runs right after each Research Lab round so the
 # Pinnacle fair prices in research_lab/data/maker_candidates.json are minutes old.
 # Posts $1 post-only Kalshi limit orders priced better than Pinnacle's fair line.
@@ -34,7 +34,7 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Maker round
         env:
-          MAKER_BOT_ENABLED: ${{ github.ref == 'refs/heads/main' && vars.MAKER_BOT_ENABLED || '0' }}
+          MAKER_BOT_ENABLED: ${{ github.ref == 'refs/heads/main' && (vars.MAKER_BOT_ENABLED || secrets.MAKER_BOT_ENABLED) || '0' }}
           KALSHI_WRITE_API_KEY_ID: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_API_KEY_ID || '' }}
           KALSHI_WRITE_PRIVATE_KEY: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_PRIVATE_KEY || '' }}
           PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
