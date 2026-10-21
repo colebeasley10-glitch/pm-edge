@@ -38,12 +38,14 @@ jobs:
           LIVE_SHARP_ENABLED: ${{ github.ref == 'refs/heads/main' && vars.LIVE_SHARP_ENABLED || '0' }}
           KALSHI_WRITE_API_KEY_ID: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_API_KEY_ID || '' }}
           KALSHI_WRITE_PRIVATE_KEY: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_PRIVATE_KEY || '' }}
-          # Oct 21, 2026: sized down to fit a ~$135 Kalshi balance (about 1.5% per bet).
-          # Code ceilings ($5/bet, $300/day in league/live_sharp.py) cap anything set here.
-          # Go back up when the balance grows: ~$250-300 supports $5 bets again.
-          LIVE_SHARP_MAX_PER_BET: "2"
-          LIVE_SHARP_DAILY_BUDGET: "60"
-        run: python -m league.run
+        # From Oct 22, 2026 (Eastern): $2/bet, $60/day to fit a ~$135 Kalshi balance (~1.5% per bet).
+        # Code ceilings ($5/bet, $300/day in league/live_sharp.py) cap anything set here.
+        # Go back up when the balance grows: ~$250-300 supports $5 bets again.
+        run: |
+          if [ "$(TZ=America/New_York date +%Y%m%d)" -ge 20261022 ]; then
+            export LIVE_SHARP_MAX_PER_BET=2 LIVE_SHARP_DAILY_BUDGET=60
+          fi
+          python -m league.run
       - name: Save league results
         if: always()
         run: |
