@@ -135,3 +135,11 @@ def test_auto_backtest_runs_once(tmp_path, monkeypatch):
     run.main()
     run.main()
     assert calls == [1]
+
+
+def test_blowout_cap_keeps_the_total():
+    games = [{"completed": True, "homeTeam": "A", "awayTeam": "B", "homePoints": 63, "awayPoints": 0,
+              "neutralSite": True} for _ in range(4)]
+    r = ScoreRatings(games, ridge=0, min_games=1)
+    p = r.project("A", "B", neutral=True)
+    assert abs(p.total - 63) < 0.5 and abs(p.home_margin - 28) < 0.5

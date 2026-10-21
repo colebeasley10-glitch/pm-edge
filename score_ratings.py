@@ -16,7 +16,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Callable
 
-MARGIN_CAP = 28.0     # a 63-0 counts as 28-0 + the loser's points
+MARGIN_CAP = 28.0     # a 63-0 counts as a 28-point win with the same 63 total
 RIDGE = 3.0           # shrink each team toward average by ~3 games' worth
 MIN_GAMES = 3         # don't project a team with fewer games in the fit
 ITERATIONS = 150
@@ -49,10 +49,12 @@ class ScoreRatings:
             if not g.get("completed") or hp is None or ap is None:
                 continue
             hp, ap = float(hp), float(ap)
-            if hp - ap > self.cap:
-                hp = ap + self.cap
-            elif ap - hp > self.cap:
-                ap = hp + self.cap
+            excess = abs(hp - ap) - self.cap      # trim the margin, keep the total
+            if excess > 0:
+                if hp > ap:
+                    hp, ap = hp - excess / 2, ap + excess / 2
+                else:
+                    hp, ap = hp + excess / 2, ap - excess / 2
             h, a = self.key(g["homeTeam"]), self.key(g["awayTeam"])
             s = 0 if g.get("neutralSite") else 1
             obs.append((h, a, s, hp))
