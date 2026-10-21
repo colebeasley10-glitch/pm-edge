@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-10-21T13:00:45.706837Z",
+ "ran_at": "2026-10-21T13:14:49.123330Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -26,17 +26,13 @@
    "diag": {
     "poly_events": 600,
     "poly_games": 265,
-    "kalshi_events": 1768,
-    "matched": 173,
-    "priced": 321,
+    "kalshi_events": 1766,
+    "matched": 171,
+    "priced": 320,
     "best_gaps": [
      [
       0.025,
       "KXUFCFIGHT-26OCT24OKISAN-OKI"
-     ],
-     [
-      0.02,
-      "KXWNBAGAME-26OCT22GSATL-GS"
      ],
      [
       0.015,
@@ -52,15 +48,19 @@
      ],
      [
       0.015,
-      "KXLIGAMXGAME-26OCT21TOLTIJ-TOL"
-     ],
-     [
-      0.015,
-      "KXLIGAMXGAME-26OCT21SLAPUM-PUM"
+      "KXEGYPLGAME-26OCT21GHAITT-GHA"
      ],
      [
       0.015,
       "KXEFLL1GAME-26OCT21REALEY-REA"
+     ],
+     [
+      0.015,
+      "KXDOTA2GAME-26OCT211100HULSAL-HUL"
+     ],
+     [
+      0.005,
+      "KXWNBAGAME-26OCT22GSATL-ATL"
      ]
     ]
    }
@@ -81,50 +81,57 @@
    }
   },
   "crypto": {
-   "picks_found": 1,
+   "picks_found": 2,
    "opened": 0,
    "skipped": {},
    "benched": true,
    "shadow": [
     {
-     "ticker": "KXETHD-26OCT2110-T2454.99",
-     "side": "NO",
-     "ask": 0.11,
-     "fair": 0.173,
-     "edge": 0.0561
+     "ticker": "KXBTCD-26OCT2110-T83399.99",
+     "side": "YES",
+     "ask": 0.84,
+     "fair": 0.9072,
+     "edge": 0.0572
+    },
+    {
+     "ticker": "KXBTCD-26OCT2110-T83499.99",
+     "side": "YES",
+     "ask": 0.77,
+     "fair": 0.8335,
+     "edge": 0.051
     }
    ],
    "shadow_opened": 0,
    "diag": {
     "markets_priced": 608,
     "vol": {
-     "BTC-USD": 0.0030891206329425993,
-     "ETH-USD": 0.00528889778593062
+     "BTC-USD": 0.003106497578253718,
+     "ETH-USD": 0.005212776167505427
     },
     "best": [
      [
-      -0.97,
-      "KXETHD-26OCT2110-T2544.99"
+      -0.084,
+      "KXBTCD-26OCT2110-T84199.99"
      ],
      [
-      -0.75,
-      "KXETHD-26OCT2110-T2529.99"
+      0.067,
+      "KXBTCD-26OCT2110-T83399.99"
      ],
      [
-      -0.72,
-      "KXETHD-26OCT2110-T2654.99"
+      -0.066,
+      "KXBTCD-26OCT2110-T84099.99"
      ],
      [
-      -0.71,
-      "KXETHD-26OCT2110-T2539.99"
+      0.064,
+      "KXBTCD-26OCT2110-T83499.99"
      ],
      [
-      -0.71,
-      "KXETHD-26OCT2110-T2649.99"
+      0.06,
+      "KXBTCD-26OCT2110-T83599.99"
      ],
      [
-      -0.71,
-      "KXETHD-26OCT2110-T2664.99"
+      -0.059,
+      "KXBTCD-26OCT2110-T83999.99"
      ]
     ]
    }
@@ -136,12 +143,12 @@
   "3": "20261021"
  },
  "update": {
-  "marked": 11,
-  "settled": 3
+  "marked": 14,
+  "settled": 0
  },
  "shadow_update": {
   "marked": 3,
-  "settled": 0
+  "settled": 1
  },
  "live_sharp": {
   "enabled": true,
@@ -151,32 +158,32 @@
   "skipped": {
    "thin_flow": 1
   },
-  "spent_today": 108.82,
-  "cash": 143.09,
+  "spent_today": 118.91,
+  "cash": 133.49,
   "pools": {
    "0": 83.28,
    "1": 0.0,
    "2": 8.39,
-   "3": 51.42
+   "3": 41.82
   },
   "low_total": true,
   "low_pools": [
    {
     "pool": 3,
     "name": "Tennis, Baseball, Basketball",
-    "cash": 41.74
+    "cash": 31.73
    }
   ],
-  "settled": 1,
+  "settled": 0,
   "summary": {
    "won": 172,
    "lost": 118,
-   "open": 4,
+   "open": 6,
    "pl": -16.31,
    "staked": 399.78,
    "roi": -0.040797438591225164,
-   "spent_today": 108.09,
-   "orders_today": 24,
+   "spent_today": 118.18,
+   "orders_today": 26,
    "budget": 300.0,
    "no_fill": 96,
    "units": 4.91,
@@ -186,8 +193,8 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 706,
-   "open": 14,
+   "picks": 709,
+   "open": 17,
    "won": 407,
    "lost": 285,
    "pl": 70.9700000000004,
@@ -241,15 +248,15 @@
   {
    "strategy": "weather",
    "picks": 32,
-   "open": 22,
-   "won": 8,
+   "open": 21,
+   "won": 9,
    "lost": 2,
-   "pl": 10.320000000000002,
-   "risked": 97.68000000000002,
-   "clv_sum": -24.0,
-   "clv_n": 8,
-   "roi": 0.10565110565110565,
-   "clv": -3.0
+   "pl": 12.700000000000005,
+   "risked": 107.30000000000003,
+   "clv_sum": -18.5,
+   "clv_n": 9,
+   "roi": 0.11835973904939423,
+   "clv": -2.0555555555555554
   },
   {
    "strategy": "polymarket",
