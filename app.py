@@ -227,8 +227,8 @@ st.markdown(
     .lc-top { display:flex; justify-content:space-between; gap:.8rem; align-items:flex-start; }
     .lc-name { font-weight:800; font-size:1rem; } .lc-desc { color:var(--muted); font-size:.78rem; margin-top:.15rem; line-height:1.35; }
     .lc-bank { font-weight:800; color:var(--gold); white-space:nowrap; }
-    .lc-stats { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.4rem; margin-top:.7rem; padding-top:.65rem; border-top:1px solid var(--line); }
-    .lc-stats b { display:block; font-weight:800; font-size:1.02rem; white-space:nowrap; }
+    .lc-stats { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:.3rem; margin-top:.7rem; padding-top:.65rem; border-top:1px solid var(--line); }
+    .lc-stats b { display:block; font-weight:800; font-size:.95rem; white-space:nowrap; }
     .lc-stats span { color:var(--muted); font-size:.7rem; }
     /* section headers */
     .section { font-family:'Manrope', sans-serif !important; font-weight:800; font-size:1.08rem; letter-spacing:-.01em;
@@ -1760,6 +1760,10 @@ with tab_lab:
         _n = _sm["won"] + _sm["lost"]
         _wr = f"{100 * _sm['won'] / _n:.0f}%" if _n else "—"
         _roi = pct(_sm["roi"], signed=True) if _sm["roi"] is not None else "—"
+        _u = _sm.get("units")
+        if _u is None and _sm["roi"] is not None and _n:
+            _u = _sm["roi"] * _n  # cards without per-bet data: 1u flat estimate
+        _units = f"{_u:+.2f}u" if _u is not None else "—"
         _html.append(
             f"<a class='lab-card' href='/{_pg}' target='_self'>"
             f"<div class='lc-top'><div><div class='lc-name'>{esc(_name)}</div><div class='lc-desc'>{esc(_desc)}</div></div>"
@@ -1767,6 +1771,7 @@ with tab_lab:
             f"<div class='lc-stats'><div><b>{_sm['won']}–{_sm['lost']}</b><span>Record</span></div>"
             f"<div><b>{_wr}</b><span>Win rate</span></div>"
             f"<div><b class='{tone(_sm['roi'] or 0)}'>{_roi}</b><span>ROI</span></div>"
+            f"<div><b class='{tone(_u or 0)}'>{_units}</b><span>Units</span></div>"
             f"<div><b>{_sm['open']}</b><span>Open</span></div></div></a>")
     st.markdown("<div class='section'><span>Strategies</span></div><div class='lab-cards'>" + "".join(_html) + "</div>",
                 unsafe_allow_html=True)

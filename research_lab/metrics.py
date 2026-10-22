@@ -124,7 +124,16 @@ def summarize(positions: list[dict], *, starting_bankroll: float | None = config
         sig["avg_quote_age_s"] = sum(ages) / len(ages) if ages else None
 
     fairs = [f(p.get("fair")) for p in positions if f(p.get("fair")) is not None]
+    # flat 1 unit on every settled bet: each bet's P/L divided by its own stake
+    units = 0.0
+    for p in settled:
+        stake = f(p.get("committed"), None)
+        if stake is None:
+            stake = f(p.get("cost"), 0.0) + f(p.get("fee"), 0.0)
+        if stake:
+            units += f(p.get("pl"), 0.0) / stake
     return {
+        "units": round(units, 2),
         "trades": len(positions), "won": sum(p.get("status") == "won" for p in settled),
         "lost": sum(p.get("status") == "lost" for p in settled),
         "voids": sum(p.get("status") in {"void", "closed"} for p in settled),
