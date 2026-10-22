@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-10-22T07:00:42.232657Z",
+ "ran_at": "2026-10-22T07:30:43.795156Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -9,75 +9,27 @@
    "shadow": [],
    "shadow_opened": 0,
    "diag": {
-    "events": 58,
+    "events": 0,
     "priced": 0,
     "skipped_far_from_market": 0,
-    "skipped_same_day": 44,
+    "skipped_same_day": 0,
     "samples": []
    }
   },
   "polymarket": {
-   "picks_found": 2,
+   "picks_found": 0,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [
-    {
-     "ticker": "KXMLSGAME-26OCT25LAFCLAG-LAG",
-     "side": "YES",
-     "ask": 0.19,
-     "fair": 0.62,
-     "edge": 0.419
-    },
-    {
-     "ticker": "KXCS2GAME-26OCT220400TSAG1-TSA",
-     "side": "YES",
-     "ask": 0.56,
-     "fair": 0.595,
-     "edge": 0.0174
-    }
-   ],
+   "shadow": [],
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 300,
-    "kalshi_events": 1899,
-    "matched": 198,
-    "priced": 378,
-    "best_gaps": [
-     [
-      0.43,
-      "KXMLSGAME-26OCT25LAFCLAG-LAG"
-     ],
-     [
-      0.035,
-      "KXCS2GAME-26OCT220400TSAG1-TSA"
-     ],
-     [
-      0.025,
-      "KXCS2GAME-26OCT221230APOGEEUNITY-APOGEE"
-     ],
-     [
-      0.015,
-      "KXUFCFIGHT-26OCT24KRYYAK-KRY"
-     ],
-     [
-      0.015,
-      "KXLOLGAME-26OCT220800SLYGAL-SLY"
-     ],
-     [
-      0.015,
-      "KXDOTA2GAME-26OCT220700LEGTS-TS"
-     ],
-     [
-      0.015,
-      "KXCS2GAME-26OCT221230MZPSNG-SNG"
-     ],
-     [
-      0.015,
-      "KXCS2GAME-26OCT220900FAZEBCG-FAZE"
-     ]
-    ]
+    "poly_games": 299,
+    "kalshi_events": 0,
+    "matched": 0,
+    "priced": 0,
+    "best_gaps": []
    }
   },
   "books": {
@@ -86,12 +38,10 @@
    "skipped": {}
   },
   "sharp": {
-   "picks_found": 4,
-   "opened": 1,
-   "skipped": {
-    "same_game": 1,
-    "already_holding": 2
-   },
+   "picks_found": 0,
+   "opened": 0,
+   "skipped": {},
+   "error": "HTTPError: 503 Server Error: Service Unavailable for url: https://external-api.kalshi.com/trade-api/v2/markets/trades?limit=1000&min_ts=1792651543",
    "diag": {
     "skipped_settles_late": 0
    }
@@ -106,8 +56,8 @@
    "diag": {
     "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.003418945695412214,
-     "ETH-USD": 0.004952886908833711
+     "BTC-USD": 0.0034319234745810627,
+     "ETH-USD": 0.0049580814859691
     },
     "best": []
    }
@@ -119,46 +69,12 @@
   "3": "20261021"
  },
  "update": {
-  "marked": 12,
+  "marked": 0,
   "settled": 0
  },
  "shadow_update": {
-  "marked": 5,
+  "marked": 0,
   "settled": 0
- },
- "live_sharp": {
-  "enabled": true,
-  "kalshi_ok": true,
-  "placed": 0,
-  "filled": 0,
-  "skipped": {
-   "thin_flow": 1
-  },
-  "spent_today": 10.78,
-  "cash": 168.35,
-  "pools": {
-   "0": 64.92,
-   "1": 0.0,
-   "2": 0.0,
-   "3": 103.43
-  },
-  "low_total": false,
-  "low_pools": [],
-  "settled": 0,
-  "summary": {
-   "won": 199,
-   "lost": 129,
-   "open": 3,
-   "pl": -1.25,
-   "staked": 539.72,
-   "roi": -0.0023160157118505896,
-   "spent_today": 10.76,
-   "orders_today": 6,
-   "budget": 60.0,
-   "no_fill": 100,
-   "units": 10.32,
-   "units_today": 3.75
-  }
  },
  "standings": [
   {
