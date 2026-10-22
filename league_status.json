@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-10-22T07:30:43.795156Z",
+ "ran_at": "2026-10-22T08:00:49.146853Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -9,27 +9,89 @@
    "shadow": [],
    "shadow_opened": 0,
    "diag": {
-    "events": 0,
+    "events": 48,
     "priced": 0,
     "skipped_far_from_market": 0,
-    "skipped_same_day": 0,
+    "skipped_same_day": 44,
     "samples": []
    }
   },
   "polymarket": {
-   "picks_found": 0,
+   "picks_found": 4,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [],
-   "shadow_opened": 0,
+   "shadow": [
+    {
+     "ticker": "KXMLSGAME-26OCT25LAFCLAG-LAG",
+     "side": "YES",
+     "ask": 0.19,
+     "fair": 0.62,
+     "edge": 0.419
+    },
+    {
+     "ticker": "KXCS2GAME-26OCT220945QUIRYV-QUI",
+     "side": "NO",
+     "ask": 0.4,
+     "fair": 0.45,
+     "edge": 0.0329
+    },
+    {
+     "ticker": "KXCS2GAME-26OCT221230APOGEEUNITY-APOGEE",
+     "side": "YES",
+     "ask": 0.53,
+     "fair": 0.575,
+     "edge": 0.0272
+    },
+    {
+     "ticker": "KXCS2GAME-26OCT221200EFSIN-SIN",
+     "side": "YES",
+     "ask": 0.51,
+     "fair": 0.545,
+     "edge": 0.0171
+    }
+   ],
+   "shadow_opened": 1,
    "diag": {
     "poly_events": 600,
-    "poly_games": 299,
-    "kalshi_events": 0,
-    "matched": 0,
-    "priced": 0,
-    "best_gaps": []
+    "poly_games": 304,
+    "kalshi_events": 1899,
+    "matched": 205,
+    "priced": 388,
+    "best_gaps": [
+     [
+      0.43,
+      "KXMLSGAME-26OCT25LAFCLAG-LAG"
+     ],
+     [
+      0.045,
+      "KXCS2GAME-26OCT221230APOGEEUNITY-APOGEE"
+     ],
+     [
+      0.035,
+      "KXCS2GAME-26OCT221200EFSIN-SIN"
+     ],
+     [
+      0.025,
+      "KXSERIECGAME-26OCT24P98RAV-RAV"
+     ],
+     [
+      0.015,
+      "KXIDNSLGAME-26OCT22MAKPER-PER"
+     ],
+     [
+      0.015,
+      "KXDOTA2GAME-26OCT220700LEGTS-TS"
+     ],
+     [
+      0.015,
+      "KXCS2GAME-26OCT221230MZPSNG-SNG"
+     ],
+     [
+      0.015,
+      "KXCS2GAME-26OCT220900FAZEBCG-FAZE"
+     ]
+    ]
    }
   },
   "books": {
@@ -41,7 +103,6 @@
    "picks_found": 0,
    "opened": 0,
    "skipped": {},
-   "error": "HTTPError: 503 Server Error: Service Unavailable for url: https://external-api.kalshi.com/trade-api/v2/markets/trades?limit=1000&min_ts=1792651543",
    "diag": {
     "skipped_settles_late": 0
    }
@@ -56,8 +117,8 @@
    "diag": {
     "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.0034319234745810627,
-     "ETH-USD": 0.0049580814859691
+     "BTC-USD": 0.0034357088225530266,
+     "ETH-USD": 0.004949785787661653
     },
     "best": []
    }
@@ -69,12 +130,44 @@
   "3": "20261021"
  },
  "update": {
-  "marked": 0,
+  "marked": 13,
   "settled": 0
  },
  "shadow_update": {
-  "marked": 0,
+  "marked": 5,
   "settled": 0
+ },
+ "live_sharp": {
+  "enabled": true,
+  "kalshi_ok": true,
+  "placed": 0,
+  "filled": 0,
+  "skipped": {},
+  "spent_today": 10.76,
+  "cash": 168.35,
+  "pools": {
+   "0": 64.92,
+   "1": 0.0,
+   "2": 0.0,
+   "3": 103.43
+  },
+  "low_total": false,
+  "low_pools": [],
+  "settled": 0,
+  "summary": {
+   "won": 199,
+   "lost": 129,
+   "open": 3,
+   "pl": -1.25,
+   "staked": 539.72,
+   "roi": -0.0023160157118505896,
+   "spent_today": 10.76,
+   "orders_today": 6,
+   "budget": 60.0,
+   "no_fill": 100,
+   "units": 10.32,
+   "units_today": 3.75
+  }
  },
  "standings": [
   {
@@ -159,8 +252,8 @@
   },
   {
    "strategy": "polymarket",
-   "picks": 28,
-   "open": 5,
+   "picks": 29,
+   "open": 6,
    "won": 9,
    "lost": 14,
    "pl": -47.610000000000014,
