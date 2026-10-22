@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-10-22T08:30:40.109895Z",
+ "ran_at": "2026-10-22T09:00:47.606964Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -17,7 +17,7 @@
    }
   },
   "polymarket": {
-   "picks_found": 4,
+   "picks_found": 3,
    "opened": 0,
    "skipped": {},
    "benched": true,
@@ -28,13 +28,6 @@
      "ask": 0.19,
      "fair": 0.62,
      "edge": 0.419
-    },
-    {
-     "ticker": "KXCS2GAME-26OCT221230APOGEEUNITY-APOGEE",
-     "side": "YES",
-     "ask": 0.53,
-     "fair": 0.595,
-     "edge": 0.0472
     },
     {
      "ticker": "KXDOTA2GAME-26OCT220700LEGTS-TS",
@@ -51,21 +44,17 @@
      "edge": 0.0171
     }
    ],
-   "shadow_opened": 1,
+   "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
     "poly_games": 293,
-    "kalshi_events": 1899,
-    "matched": 192,
-    "priced": 361,
+    "kalshi_events": 1889,
+    "matched": 195,
+    "priced": 369,
     "best_gaps": [
      [
       0.43,
       "KXMLSGAME-26OCT25LAFCLAG-LAG"
-     ],
-     [
-      0.065,
-      "KXCS2GAME-26OCT221230APOGEEUNITY-APOGEE"
      ],
      [
       0.035,
@@ -77,7 +66,15 @@
      ],
      [
       0.025,
+      "KXLOLGAME-26OCT220800SLYGAL-SLY"
+     ],
+     [
+      0.025,
       "KXDOTA2GAME-26OCT220700LEGTS-TS"
+     ],
+     [
+      0.025,
+      "KXARGPREMDIVGAME-26OCT24CATDYJ-CAT"
      ],
      [
       0.015,
@@ -85,11 +82,7 @@
      ],
      [
       0.015,
-      "KXCS2GAME-26OCT221230MZPSNG-SNG"
-     ],
-     [
-      0.015,
-      "KXCS2GAME-26OCT220900FAZEBCG-FAZE"
+      "KXLOLGAME-26OCT231400CFOTL-TL"
      ]
     ]
    }
@@ -100,27 +93,84 @@
    "skipped": {}
   },
   "sharp": {
-   "picks_found": 0,
-   "opened": 0,
-   "skipped": {},
+   "picks_found": 4,
+   "opened": 2,
+   "skipped": {
+    "same_game": 1,
+    "already_holding": 1
+   },
    "diag": {
     "skipped_settles_late": 0
    }
   },
   "crypto": {
-   "picks_found": 0,
+   "picks_found": 4,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [],
-   "shadow_opened": 0,
-   "diag": {
-    "markets_priced": 0,
-    "vol": {
-     "BTC-USD": 0.0034522770231279827,
-     "ETH-USD": 0.005002728543083781
+   "shadow": [
+    {
+     "ticker": "KXBTCD-26OCT2206-T81499.99",
+     "side": "NO",
+     "ask": 0.13,
+     "fair": 0.2596,
+     "edge": 0.1216
     },
-    "best": []
+    {
+     "ticker": "KXETHD-26OCT2206-T2394.99",
+     "side": "NO",
+     "ask": 0.17,
+     "fair": 0.277,
+     "edge": 0.097
+    },
+    {
+     "ticker": "KXETHD-26OCT2206-T2414.99",
+     "side": "YES",
+     "ask": 0.13,
+     "fair": 0.2317,
+     "edge": 0.0937
+    },
+    {
+     "ticker": "KXBTCD-26OCT2206-T81399.99",
+     "side": "NO",
+     "ask": 0.08,
+     "fair": 0.1764,
+     "edge": 0.0913
+    }
+   ],
+   "shadow_opened": 4,
+   "diag": {
+    "markets_priced": 488,
+    "vol": {
+     "BTC-USD": 0.0034754182156249785,
+     "ETH-USD": 0.005053714606776517
+    },
+    "best": [
+     [
+      -0.45,
+      "KXETHD-26OCT2206-T2459.99"
+     ],
+     [
+      -0.45,
+      "KXETHD-26OCT2206-T2519.99"
+     ],
+     [
+      -0.45,
+      "KXETHD-26OCT2206-T2554.99"
+     ],
+     [
+      -0.44,
+      "KXETHD-26OCT2206-T2454.99"
+     ],
+     [
+      -0.44,
+      "KXETHD-26OCT2206-T2504.99"
+     ],
+     [
+      -0.44,
+      "KXETHD-26OCT2206-T2509.99"
+     ]
+    ]
    }
   }
  },
@@ -134,7 +184,7 @@
   "settled": 0
  },
  "shadow_update": {
-  "marked": 6,
+  "marked": 7,
   "settled": 0
  },
  "live_sharp": {
@@ -142,8 +192,10 @@
   "kalshi_ok": true,
   "placed": 0,
   "filled": 0,
-  "skipped": {},
-  "spent_today": 10.76,
+  "skipped": {
+   "thin_flow": 2
+  },
+  "spent_today": 10.78,
   "cash": 168.35,
   "pools": {
    "0": 64.92,
@@ -172,8 +224,8 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 784,
-   "open": 13,
+   "picks": 786,
+   "open": 15,
    "won": 458,
    "lost": 313,
    "pl": 106.18000000000036,
@@ -239,8 +291,8 @@
   },
   {
    "strategy": "crypto",
-   "picks": 40,
-   "open": 0,
+   "picks": 44,
+   "open": 4,
    "won": 3,
    "lost": 37,
    "pl": -207.63000000000005,
