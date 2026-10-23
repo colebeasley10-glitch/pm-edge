@@ -834,6 +834,19 @@ with tab_home:
     _h_paper_pl = float(pd.to_numeric(_h_paper_done.get("pl"), errors="coerce").fillna(0).sum()) if not _h_paper_done.empty else 0.0
     _h_paper_rec = (f"{int((_h_paper_done['status'] == 'won').sum())}–{int((_h_paper_done['status'] == 'lost').sum())}"
                     if not _h_paper_done.empty else "0–0")
+    try:   # Live $5 Today's Plays (Kalshi auto + Polymarket logged by hand)
+        import sys as _lpsys
+        for _m in [k for k in _lpsys.modules if k == "live_plays" or k.startswith("live_plays.")]:
+            del _lpsys.modules[_m]
+        from live_plays import core as _lp
+        from research_lab import my_bets as _lpmb
+        _lp_rows = _lp.load()
+        _lp_s = _lp.live_record(_lp_rows, _lp.match_logged(_lp_rows, _lpmb.load_log(), _lpmb.load_results()))
+        _lp_tile = (f"<div class='hm-tile'><div class='v {tone(_lp_s['pl'])}'>{money(_lp_s['pl'], signed=True)}</div>"
+                    f"<div class='l'>Live Today's Plays · {_lp_s['won']}–{_lp_s['lost']}"
+                    f"{' · ' + str(_lp_s['open']) + ' open' if _lp_s['open'] else ''}</div></div>")
+    except Exception:
+        _lp_tile = ""
     _h_budget = float(_h_ls.get("budget") or 0)
     _h_fill = max(0.0, min(100.0, 100.0 * float(_h_ls.get("spent_today") or 0) / _h_budget)) if _h_budget else 0.0
     st.markdown(
@@ -858,6 +871,7 @@ with tab_home:
         <div class='hm-tiles'>
           <div class='hm-tile'><div class='v'>{money(_h_risk)}</div><div class='l'>At risk now</div></div>
           <div class='hm-tile'><div class='v {tone(_h_paper_pl)}'>{money(_h_paper_pl, signed=True)}</div><div class='l'>Paper Sharp · {_h_paper_rec}</div></div>
+          {_lp_tile}
         </div>
         """,
         unsafe_allow_html=True,
