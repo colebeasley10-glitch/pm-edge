@@ -51,8 +51,9 @@ def render() -> None:
     live = status.get("mode") == "live"
     (st.warning if live or not status else st.info)(
         ("💵 **LIVE, real money.** " if live or not status else "📝 **DRY RUN** (Kalshi keys missing or switched off). ")
-        + f"Copies both Today's Plays lanes, **one bet per game**. Kalshi picks are bought automatically at "
-          f"${core.per_bet():.0f}; Polymarket picks send a phone alert to bet ${core.per_bet():.0f} by hand. "
+        + f"Copies both Today's Plays lanes, **one bet per game**. Every bet is one "
+          f"${core.per_bet():.0f} unit: risk ${core.per_bet():.0f} on underdogs, bet to win ${core.per_bet():.0f} on favorites. "
+          "Kalshi picks are bought automatically; Polymarket picks send a phone alert to bet by hand. "
           f"${core.daily_budget():.0f}/day cap on Kalshi spend.")
 
     logged, results = _logged_bets()

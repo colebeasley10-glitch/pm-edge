@@ -32,9 +32,9 @@ def pushover(new_rows: list[dict]) -> None:
     kal = [r for r in new_rows if r.get("venue") == "Kalshi"]
     if poly:
         lines = [f"{r['title'].split(': ', 1)[-1]} at {r.get('paper_price')} · {r['game']} · {_when(r.get('commence_time'))}"
-                 for r in poly]
+                 f" · {r.get('note', '').split(' by hand')[0]}" for r in poly]
         payload = {"token": token, "user": user, "priority": 1,
-                   "title": f"🎯 Bet ${core.per_bet():.0f} on Polymarket ({len(poly)}) · Today's Plays",
+                   "title": f"🎯 1u (${core.per_bet():.0f}) on Polymarket ({len(poly)}) · Today's Plays",
                    "message": ("\n".join(lines) + "\nOnly bet at this price or better. Then log it on the "
                                "Home tab (Log a bet) so it counts.")[:1024]}
         if url:

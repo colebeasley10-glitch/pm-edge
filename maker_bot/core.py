@@ -16,9 +16,8 @@ Each round (right after a Research Lab round, see .github/workflows/maker-bot.ym
        (post-only: it can only rest, never take). No bid at all -> fair minus 3c;
      * EDGE = Pinnacle fair - price - Kalshi maker fee per contract. Posted only from 1% to
        10% (bigger "edges" are almost always a mismatched market);
-     * SIZE: bet to win one unit. Contracts = unit / (1 - price), rounded, at least 1, so a
-       30c buy risks about 43c to win $1 and an 80c buy risks about $4 to win $1
-       (Oct 23, 2026: replaced the old edge-scaled stake);
+     * SIZE: one unit (unit_sizing.py). Underdogs under 50c risk one unit; favorites risk
+       what it takes to win one unit (an 80c buy risks about $4 to win $1);
      * only contracts priced 10c to 90c;
      * KALSHI EXPIRES THE ORDER ITSELF at the earlier of ORDER_TTL from now or
        START_BUFFER before the game starts. Nothing can rest into the game, even if this
@@ -143,16 +142,10 @@ def edge_at(fair: float, price: float, contracts: int) -> float:
     return fair - price - maker_fee(price, contracts) / contracts
 
 
-def to_win_contracts(price: float, to_win: float) -> int:
-    """Whole contracts whose profit if it wins is closest to `to_win` (at least 1)."""
-    if not (0 < price < 1) or to_win <= 0:
-        return 0
-    return max(1, int(round(to_win / (1 - price))))
-
-
 def size(fair: float, price: float, sharp: bool, full_unit: float) -> tuple[int, float]:
-    """(contracts, edge) for an order at this price, sized to win one unit."""
-    n = to_win_contracts(price, full_unit)
+    """(contracts, edge) for one unit: risk a unit on underdogs, win a unit on favorites."""
+    from unit_sizing import contracts_for_unit
+    n = contracts_for_unit(price, full_unit)
     return n, edge_at(fair, price, n)
 
 

@@ -1288,7 +1288,7 @@ with tab_live:
     _ls_on = (league_status.get("live_sharp") or {}).get("enabled")
     st.markdown(
         "<div class='pe-lede' style='font-size:.8rem'>" + ("" if _ls_on else "<b>Off.</b> ")
-        + f"Copies every Sharp pick with a real Kalshi order · ${float(ls.get('per_bet') or 0):g} per bet · "
+        + f"Copies every Sharp pick with a real Kalshi order · ${float(ls.get('per_bet') or 0):g} unit (risk 1u on dogs, win 1u on favorites) · "
           f"${float(ls.get('budget') or 0):g}/day cap · "
           "buys only at the price the pick saw."
         + ("" if _ls_on else " Turn it on with the LIVE_SHARP_ENABLED repo variable.")

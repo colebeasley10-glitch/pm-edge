@@ -58,10 +58,12 @@ def paper(i, price=0.50, side="YES", trades=50):
 
 
 def test_size():
-    assert live_sharp.size(0.50) == 10          # $5.00 of contracts
-    assert live_sharp.size(0.33) == 15          # $4.95
-    assert live_sharp.size(0.07) == 71          # $4.97
-    assert live_sharp.size(0.97) == 5
+    # one unit: dogs risk $5, favorites win $5, nothing risks more than 3 units ($15)
+    assert live_sharp.size(0.50) == 10          # $5.00 to win $5
+    assert live_sharp.size(0.33) == 15          # $4.95 risked
+    assert live_sharp.size(0.07) == 71          # $4.97 risked
+    assert live_sharp.size(0.60) == 12          # $7.20 to win $4.80
+    assert live_sharp.size(0.97) == 15          # capped at ~3 units
     assert live_sharp.size(0.50, budget=0.60) == 1   # only room for one today
     assert live_sharp.size(0.50, budget=0.40) == 0
 

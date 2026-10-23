@@ -23,12 +23,13 @@ def test_prices_one_cent_over_best_bid_never_at_ask():
     assert p == 0.56                      # bid + 1 would touch the ask, so join the bid
 
 
-def test_size_bets_to_win_one_unit():
-    # to win $1: 51c -> 2 contracts (wins $0.98), 30c -> 1 (wins $0.70), 80c -> 5 (wins $1.00)
+def test_size_one_unit_dogs_risk_favorites_win():
+    # favorites win ~$1: 51c -> 2 (wins $0.98), 80c -> 5, 90c -> 10; dogs risk $1: 30c -> 3, 45c -> 2
     assert core.size(0.60, 0.51, False, 1.0)[0] == 2
-    assert core.size(0.40, 0.30, False, 1.0)[0] == 1
-    assert core.size(0.86, 0.80, False, 1.0)[0] == 5
-    assert core.size(0.95, 0.90, False, 1.0)[0] == 10
+    assert core.size(0.40, 0.30, False, 1.0)[0] == 3
+    assert core.size(0.50, 0.45, False, 1.0)[0] == 2
+    assert core.size(0.86, 0.80, False, 1.0)[0] == 3   # 5 would risk $4; capped at 3 units
+    assert core.size(0.95, 0.90, False, 1.0)[0] == 3
     _, n, e, why = core.quote(cand(fair=0.64, bid=0.55, ask=0.60), 1.0)
     assert why == "ok" and n == 2   # 56c: 1/(0.44) = 2.27 -> 2
 

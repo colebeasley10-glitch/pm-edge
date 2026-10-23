@@ -2,7 +2,7 @@
 
 Real money, so every limit is enforced here in code, not just in config:
 
-* at most $5.00 of contracts per bet (fee on top, a few cents);
+* one unit per bet: risk a unit on underdogs, bet to win a unit on favorites (fee on top);
 * at most $300.00 spent per Eastern day, fees included (no limit on the number of bets);
 * the daily spend is the larger of this ledger and Kalshi's own order history,
   so a lost ledger commit can't double the budget;
@@ -95,11 +95,12 @@ def et_day(now: datetime) -> str:
 
 
 def size(price: float, budget: float | None = None) -> int:
-    """Whole contracts whose price total stays at or under the per-bet cap (and the room left today)."""
-    cap = per_bet() if budget is None else min(per_bet(), budget)
-    if not (0 < price < 1) or cap <= 0:
+    """One unit: risk a unit on underdogs, bet to win a unit on favorites (unit_sizing),
+    trimmed so price + fee fits the room left today."""
+    from unit_sizing import contracts_for_unit
+    if budget is not None and budget <= 0:
         return 0
-    n = int(math.floor(cap / price + 1e-9))
+    n = contracts_for_unit(price, per_bet())
     # the fee comes on top; just make sure stake + fee still fits what's left today
     while n > 0 and budget is not None and n * price + book.taker_fee(price, n) > budget + 1e-9:
         n -= 1
@@ -388,7 +389,7 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
             continue
         count = size(price, room)
         if count < 1:
-            skip("daily_budget" if room < per_bet() else "too_expensive")
+            skip("daily_budget")
             continue
         # don't send an order the account can't pay for in full (it just errors or fills crumbs);
         # 3% headroom covers Kalshi's fee

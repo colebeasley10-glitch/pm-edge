@@ -10,7 +10,7 @@ ONE live bet, from whichever lane picked it first.
                     the app's Home tab ("Log a bet") and it counts in the live record.
 
 Hard limits enforced here in code (env can lower, never raise):
-* $5 of contracts per bet (fee on top, a few cents);
+* one $5 unit per bet: risk $5 on underdogs, bet to win $5 on favorites (fee on top);
 * $50 per Eastern day of Kalshi spend, fees included; the day's spend is the larger of
   this ledger and Kalshi's own order history;
 * client_order_id comes from the paper position id, so a retried round can't double-bet;
@@ -100,14 +100,25 @@ def taker_fee(price: float, contracts: int, rate: float = 0.07) -> float:
 
 
 def size(price: float, room: float) -> int:
-    """Whole contracts within the per-bet cap whose price + fee also fits today's room."""
-    cap = min(per_bet(), room)
-    if not (0 < price < 1) or cap <= 0:
+    """One full unit or nothing: risk a unit on underdogs, bet to win a unit on favorites
+    (unit_sizing). 0 when price + fee doesn't fit what's left of today's cap."""
+    from unit_sizing import contracts_for_unit
+    n = contracts_for_unit(price, per_bet())
+    if n < 1 or n * price + taker_fee(price, n) > room + 1e-9:
         return 0
-    n = int(math.floor(cap / price + 1e-9))
-    while n > 0 and n * price + taker_fee(price, n) > room + 1e-9:
-        n -= 1
     return n
+
+
+def hand_bet_note(p: dict) -> str:
+    """'risk $5.00 to win $5' on a dog, 'risk $7.50 to win $5' on a 60c favorite."""
+    from unit_sizing import risk_for_unit
+    price = kalshi_price(p)
+    if price is None:
+        dec = f(p.get("decimal"))
+        price = 1 / dec if dec and dec > 1 else None
+    if price is None:
+        return f"bet to win ${per_bet():.0f} (risk ${per_bet():.0f} if underdog) by hand at {p.get('shown')}"
+    return f"risk ${risk_for_unit(price, per_bet()):.2f} to win ${per_bet():.0f} by hand at {p.get('shown')}"
 
 
 def game_of(title: str) -> str:
@@ -294,7 +305,7 @@ def place(picks: list[dict], rows: list[dict], client, now: datetime, *, live: b
     for p in picks:
         if p["venue"] == "Polymarket":
             r = {**_base_row(p, now, "Polymarket"), "trade_id": f"pmtp-poly-{p['position_id']}",
-                 "status": "alert", "note": f"bet ${per_bet():.0f} by hand at {p.get('shown')}"}
+                 "status": "alert", "note": hand_bet_note(p)}
             rows.append(r)
             out["alerts"] += 1
             out["new"].append(r)
@@ -304,12 +315,12 @@ def place(picks: list[dict], rows: list[dict], client, now: datetime, *, live: b
             skip("bad_price")
             continue
         room = daily_budget() - spent
-        # only full-size bets: when less than one bet's worth is left today, stop for the day
-        count = size(price, room) if room + 1e-9 >= per_bet() else 0
+        # only full-size bets: if one unit at this price doesn't fit what's left today, skip it
+        count = size(price, room)
         if count < 1:
-            skip("daily_budget" if room < per_bet() else "too_expensive")
+            skip("daily_budget")
             rows.append({**_base_row(p, now, "Kalshi"), "trade_id": f"{PREFIX}{day}-{p['position_id']}",
-                         "status": "skipped", "note": "daily $ cap reached" if room < per_bet() else "price too high"})
+                         "status": "skipped", "note": "daily $ cap reached"})
             continue
         if cash is not None and count * price * 1.03 > cash:
             skip("low_cash")
