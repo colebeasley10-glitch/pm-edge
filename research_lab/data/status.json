@@ -26,7 +26,7 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 10/22"
  },
  "last_run": {
-  "at": "2026-10-23T22:32:30.262473Z",
+  "at": "2026-10-23T23:02:45.265821Z",
   "best_price": {
    "compared": 0,
    "new_picks": 0,
@@ -35,6 +35,7 @@
   "book_errors": 0,
   "data_failures": [],
   "ev": {
+   "book_offers": 0,
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
@@ -45,11 +46,13 @@
     "taken_at": null
    },
    "errors": [],
-   "games": 0,
-   "picks": 0
+   "games": 85,
+   "kalshi_offers": 82,
+   "picks": 782,
+   "polymarket_offers": 136
   },
   "maker_candidates": {
-   "candidates": 0,
+   "candidates": 422,
    "sharp_agrees": 0
   },
   "my_bets": {
@@ -63,22 +66,35 @@
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [],
-   "kalshi_markets": 0,
-   "matched": 0,
-   "note": "no Pinnacle fetch due this round",
-   "pinnacle_games": 0,
-   "requests_today": 58,
-   "samples": [],
-   "skipped": [
-    "football: next in 15 min",
-    "basketball: next in 0 min",
-    "hockey: next in 30 min",
-    "baseball: next in 30 min",
-    "soccer: next in 150 min",
-    "tennis: next in 90 min"
+   "fetched": [
+    "football",
+    "basketball",
+    "hockey"
    ],
-   "unmatched": {}
+   "kalshi_markets": 6058,
+   "matched": 389,
+   "pinnacle_games": 87,
+   "requests_today": 61,
+   "samples": [
+    "no_moneyline: North Carolina Central vs Delaware St.: Delaware St. wins",
+    "no_moneyline: North Carolina Central vs Delaware St.: North Carolina Central wins",
+    "no_pinnacle_match: Duke vs Virginia: Virginia wins",
+    "no_pinnacle_match: Duke vs Virginia: Duke wins",
+    "no_pinnacle_match: UMass vs UConn: UConn wins",
+    "no_pinnacle_match: UMass vs UConn: UMass wins",
+    "no_moneyline: Yale vs Penn: Penn wins",
+    "no_moneyline: Yale vs Penn: Yale wins"
+   ],
+   "skipped": [
+    "baseball: next round",
+    "soccer: next in 120 min",
+    "tennis: next in 60 min"
+   ],
+   "unmatched": {
+    "no_moneyline": 4,
+    "no_pinnacle_match": 4210,
+    "pinnacle_line_not_offered": 1455
+   }
   },
   "reconciled": true,
   "snapshot": {
@@ -99,8 +115,8 @@
     "pushed": 0,
     "qualified": 0,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 120,
+    "scanned": 71,
     "settle": {
      "marked": 2,
      "pending": 2,
@@ -112,14 +128,14 @@
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 6,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 6,
+    "scanned": 782,
     "settle": {
      "marked": 15,
-     "pending": 16,
-     "settled": 0
+     "pending": 15,
+     "settled": 1
     }
    },
    "EV_FINDER_v3": {
@@ -127,14 +143,14 @@
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 5,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 5,
+    "scanned": 782,
     "settle": {
-     "marked": 21,
-     "pending": 22,
-     "settled": 0
+     "marked": 20,
+     "pending": 21,
+     "settled": 1
     }
    },
    "HYBRID_SHARP_VALUE_v1": {
@@ -157,8 +173,8 @@
     "ok": true,
     "qualified": 0,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 329,
+    "scanned": 329,
     "settle": {
      "marked": 0,
      "pending": 0,
@@ -200,8 +216,8 @@
     "ok": true,
     "qualified": 0,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 329,
+    "scanned": 329,
     "settle": {
      "marked": 0,
      "pending": 0,
@@ -218,6 +234,6 @@
    "scanned": 400
   }
  },
- "last_success": "2026-10-23T22:32:30.262473Z",
+ "last_success": "2026-10-23T23:02:45.265821Z",
  "report_sent": "20261022"
 }
