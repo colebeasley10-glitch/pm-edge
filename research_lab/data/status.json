@@ -26,33 +26,33 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 10/22"
  },
  "last_run": {
-  "at": "2026-10-23T04:03:03.997293Z",
+  "at": "2026-10-23T04:32:55.401417Z",
   "best_price": {
    "compared": 0,
-   "new_picks": 1,
+   "new_picks": 2,
    "poly_cheaper": 0
   },
   "book_errors": 0,
   "data_failures": [],
   "ev": {
+   "book_offers": 0,
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
-    "errors": [
-     "americanfootball_ncaaf: HTTP 401",
-     "americanfootball_nfl: HTTP 401",
-     "basketball_nba: HTTP 401"
-    ],
+    "errors": [],
     "fresh": false,
     "remaining": "0",
+    "skipped": "lab odds budget used or account nearly empty",
     "taken_at": null
    },
    "errors": [],
-   "games": 0,
-   "picks": 0
+   "games": 76,
+   "kalshi_offers": 68,
+   "picks": 726,
+   "polymarket_offers": 132
   },
   "maker_candidates": {
-   "candidates": 0,
+   "candidates": 192,
    "sharp_agrees": 0
   },
   "my_bets": {
@@ -66,22 +66,34 @@
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [],
-   "kalshi_markets": 0,
-   "matched": 0,
-   "note": "no Pinnacle fetch due this round",
-   "pinnacle_games": 0,
-   "requests_today": 0,
-   "samples": [],
-   "skipped": [
-    "football: next in 14 min",
-    "basketball: next in 29 min",
-    "hockey: next in 0 min",
-    "baseball: next in 0 min",
-    "soccer: next in 0 min",
-    "tennis: next in 61 min"
+   "fetched": [
+    "football",
+    "basketball",
+    "hockey"
    ],
-   "unmatched": {}
+   "kalshi_markets": 6090,
+   "matched": 355,
+   "pinnacle_games": 77,
+   "requests_today": 3,
+   "samples": [
+    "no_pinnacle_match: North Carolina Central vs Delaware St.: Delaware St. wins",
+    "no_pinnacle_match: North Carolina Central vs Delaware St.: North Carolina Central wins",
+    "no_pinnacle_match: UMass vs UConn: UConn wins",
+    "no_pinnacle_match: UMass vs UConn: UMass wins",
+    "no_pinnacle_match: Yale vs Penn: Penn wins",
+    "no_pinnacle_match: Yale vs Penn: Yale wins",
+    "no_pinnacle_match: Akron vs Kent St.: Kent St. wins",
+    "no_pinnacle_match: Akron vs Kent St.: Akron wins"
+   ],
+   "skipped": [
+    "baseball: next round",
+    "soccer: next round",
+    "tennis: next in 31 min"
+   ],
+   "unmatched": {
+    "no_pinnacle_match": 4260,
+    "pinnacle_line_not_offered": 1475
+   }
   },
   "reconciled": true,
   "snapshot": {
@@ -102,8 +114,8 @@
     "pushed": 0,
     "qualified": 0,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 132,
+    "scanned": 74,
     "settle": {
      "marked": 2,
      "pending": 2,
@@ -111,29 +123,29 @@
     }
    },
    "EV_FINDER_v2": {
-    "filled": 0,
-    "no_fill": 0,
+    "filled": 2,
+    "no_fill": 1,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 4,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 1,
+    "scanned": 726,
     "settle": {
      "marked": 12,
      "pending": 12,
-     "settled": 1
+     "settled": 0
     }
    },
    "EV_FINDER_v3": {
-    "filled": 0,
+    "filled": 1,
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 2,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 1,
+    "scanned": 726,
     "settle": {
      "marked": 17,
      "pending": 17,
@@ -160,8 +172,8 @@
     "ok": true,
     "qualified": 0,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 349,
+    "scanned": 349,
     "settle": {
      "marked": 0,
      "pending": 0,
@@ -203,8 +215,8 @@
     "ok": true,
     "qualified": 0,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 349,
+    "scanned": 349,
     "settle": {
      "marked": 0,
      "pending": 0,
@@ -221,6 +233,6 @@
    "scanned": 400
   }
  },
- "last_success": "2026-10-23T04:03:03.997293Z",
+ "last_success": "2026-10-23T04:32:55.401417Z",
  "report_sent": "20261022"
 }
