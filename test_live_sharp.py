@@ -633,3 +633,13 @@ def test_low_total_flag():
     assert live_sharp.place([], c, now=NOW, rows=[])["low_total"] is True
     c = PoolClient({0: 200.0, 3: 200.0}, {})
     assert live_sharp.place([], c, now=NOW, rows=[])["low_total"] is False
+
+
+def test_tennis_underdogs_skipped_live_only():
+    c, rows = FakeClient(), []
+    dog = {**paper(901, price=0.35), "ticker": "KXITFWMATCH-26OCT23ABCDEF-ABC", "event_ticker": "KXITF901"}
+    fav = {**paper(902, price=0.62), "ticker": "KXATPMATCH-26OCT23ABCDEF-DEF", "event_ticker": "KXATP902"}
+    other_dog = {**paper(903, price=0.30), "ticker": "KXNBAGAME-26OCT23DETMIA-MIA", "event_ticker": "KXNBA903"}
+    out = live_sharp.place([dog, fav, other_dog], c, now=NOW, rows=rows)
+    assert out["skipped"].get("tennis_underdog") == 1
+    assert {o["ticker"] for o in c.orders} == {fav["ticker"], other_dog["ticker"]}

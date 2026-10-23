@@ -238,6 +238,22 @@ POOL_NAMES = {0: "Default", 1: "Combos", 2: "Crypto & Commodities", 3: "Tennis, 
 WATCH_POOLS = {0, 3}   # where Sharp picks land (most are tennis -> 3)
 LOW_POOL = 50.0        # alert below this many dollars in a pool (~10 bets at $5)
 LOW_TOTAL = 150.0      # alert when total Kalshi cash can't cover half a day's cap
+
+# Oct 23, 2026: live tennis underdogs went 9-34 (-$39) while every other lane was ~even, and
+# under 40c is longer than +150 (outside the band Cole bets). Live skips them; paper Sharp keeps
+# taking them so the "bets live couldn't place" row shows whether they come back.
+TENNIS_PREFIXES = ("KXATP", "KXWTA", "KXITF", "KXCHALL")
+
+
+def tennis_min_price() -> float:
+    try:
+        return float(os.getenv("LIVE_SHARP_TENNIS_MIN_PRICE", "0.40"))
+    except ValueError:
+        return 0.40
+
+
+def is_tennis(ticker: str) -> bool:
+    return str(ticker or "").upper().startswith(TENNIS_PREFIXES)
 BALANCE_LOG = Path(os.getenv("LIVE_SHARP_BALANCE_LOG", "kalshi_balance_log.csv"))
 BALANCE_FIELDS = ["at", "day", "cash", "pools", "open_bets", "open_cost"]
 
@@ -366,6 +382,9 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
         price = book.f(p.get("entry_price"))
         if price is None or not (0 < price < 1):
             skip("bad_price")
+            continue
+        if is_tennis(p.get("ticker")) and price < tennis_min_price():
+            skip("tennis_underdog")
             continue
         count = size(price, room)
         if count < 1:
