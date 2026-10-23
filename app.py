@@ -1303,7 +1303,7 @@ with tab_live:
             st.error(f"Kalshi cash is low (\\${_cash:.2f}). Deposit soon to keep live Sharp betting.")
     for _lp in _lsr.get("low_pools") or []:
         st.warning(f"Kalshi pool low: **{_lp['name']}** (Exchange {_lp['pool']}) has ${_lp['cash']:.2f}. "
-                   "Bets on those markets are skipped until you move cash there at "
+                   "Bets keep going until it can't cover a full bet; top up at "
                    "kalshi.com/account/exchange-indexes → Transfer.")
     if _lsr.get("kalshi_ok") is False:
         st.caption(f"⚠️ Kalshi key check failed last round: {_lsr.get('kalshi_error', '')}")

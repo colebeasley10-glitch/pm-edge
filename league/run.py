@@ -175,7 +175,7 @@ def alert_low_pools(low: list[dict], sent: dict, now: datetime) -> list[dict]:
         return []
     _pushover("⚠️ Kalshi pool low: top it up",
               [f"{p['name']} (Exchange {p['pool']}): ${p['cash']:.2f}" for p in fresh]
-              + ["Live bets on these markets will be skipped until you move cash there:",
+              + ["Live bets keep going until a pool can't cover a full bet. Top up here:",
                  "kalshi.com/account/exchange-indexes → Transfer"])
     for p in fresh:
         sent[str(p["pool"])] = day
