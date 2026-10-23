@@ -618,7 +618,9 @@ def summary(rows: list[dict], now: datetime | None = None) -> dict:
     return {"won": sum(r["status"] == "won" for r in done), "lost": sum(r["status"] == "lost" for r in done),
             "open": sum(r.get("status") == "open" for r in rows), "pl": round(pl, 2), "staked": round(staked, 2),
             "roi": pl / staked if staked else None, "spent_today": round(spent, 2), "orders_today": n,
-            "budget": daily_budget(), "no_fill": sum(r.get("status") == "no_fill" for r in rows),
+            "budget": daily_budget(), "per_bet": per_bet(),
+            "fees": round(sum(book.f(r.get("fee"), 0.0) or 0.0 for r in done), 2),
+            "no_fill": sum(r.get("status") == "no_fill" for r in rows),
             "units": round(units(rows), 2),
             "units_today": round(sum((book.f(r.get("pl"), 0.0) or 0.0) / unit_of(r) for r in done
                                      if (t := book.parse_dt(r.get("settled_at"))) and et_day(t) == day), 2)}
@@ -726,17 +728,23 @@ def scorecard(rows: list[dict]) -> dict:
     a negative last-RECENT-bets ROI says step back down."""
     done = [r for r in rows if r.get("status") in {"won", "lost"}]
     done.sort(key=lambda r: str(r.get("settled_at") or r.get("placed_at") or ""))
-    rets, staked, pl = [], 0.0, 0.0
+    rets, staked, pl, fees = [], 0.0, 0.0, 0.0
     for r in done:
-        c = (book.f(r.get("cost"), 0.0) or 0.0) + (book.f(r.get("fee"), 0.0) or 0.0)
+        fee = book.f(r.get("fee"), 0.0) or 0.0
+        c = (book.f(r.get("cost"), 0.0) or 0.0) + fee
         if c <= 0:
             continue
         p = book.f(r.get("pl"), 0.0) or 0.0
-        staked, pl = staked + c, pl + p
+        staked, pl, fees = staked + c, pl + p, fees + fee
         rets.append((c, p))
     n = len(rets)
     n_settled = len(done)  # includes crumb fills too small to carry a cost, so it matches the record
     roi = pl / staked if staked else None
+    # what the picks earned before Kalshi's fees: shows whether a flat/negative ROI is the picks
+    # or just the fee drag (~7% x (1 - price) per contract on taker orders)
+    pre_fee_base = staked - fees
+    roi_pre_fee = (pl + fees) / pre_fee_base if pre_fee_base > 0 else None
+    fee_drag = fees / staked if staked else None
     # spread of per-bet returns around the stake-weighted ROI
     half = None
     if n >= 2 and staked:
@@ -772,6 +780,7 @@ def scorecard(rows: list[dict]) -> dict:
         verdict, tone = (f"Enough bets, but ROI or drift is under its goal "
                          f"(+{TARGET_ROI * 100:.0f}% / +{TARGET_DRIFT:.0f}¢) — hold at ${per_bet():g}."), "bad"
     return {"n": n_settled, "n_priced": n, "staked": round(staked, 2), "pl": round(pl, 2), "roi": roi, "roi_half": half,
+            "roi_pre_fee": roi_pre_fee, "fees": round(fees, 2), "fee_drag": fee_drag,
             "drift": drift_m, "drift_half": drift_h, "n_drift": n_drift, "recent_roi": recent_roi,
             "stage": stage, "next": nxt, "verdict": verdict, "tone": tone,
             "target_roi": TARGET_ROI, "target_drift": TARGET_DRIFT,

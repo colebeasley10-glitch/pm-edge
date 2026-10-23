@@ -459,7 +459,19 @@ def load_live_sharp():
         rows = _ls.load()
     except Exception:
         rows = []
-    return rows, _ls.summary(rows)
+    out = _ls.summary(rows)
+    # The Streamlit app doesn't see the workflow's LIVE_SHARP_* settings, so its own budget/size
+    # fall back to the code ceilings. Use what the last live round actually ran with.
+    try:
+        import json as _json
+        from pathlib import Path as _P
+        ran = (_json.loads(_P("league_status.json").read_text()).get("live_sharp") or {}).get("summary") or {}
+        for k in ("budget", "per_bet"):
+            if ran.get(k):
+                out[k] = ran[k]
+    except Exception:
+        pass
+    return rows, out
 
 
 def _refresh_live_sharp() -> None:
@@ -1213,6 +1225,9 @@ with tab_live:
     _roi_v = pct(_sc["roi"], signed=True) if _sc["roi"] is not None else "—"
     _roi_sub = (f"likely {pct(_sc['roi'] - _sc['roi_half'], signed=True)} to {pct(_sc['roi'] + _sc['roi_half'], signed=True)}"
                 if _sc["roi"] is not None and _sc["roi_half"] is not None else "")
+    if _sc.get("roi_pre_fee") is not None:
+        _roi_sub += (("<br>" if _roi_sub else "") + f"before fees {pct(_sc['roi_pre_fee'], signed=True)} · "
+                     f"fees {money(_sc['fees'])}")
     _dr_v = f"{_sc['drift']:+.1f}¢" if _sc["drift"] is not None else "—"
     _dr_sub = (f"±{_sc['drift_half']:.1f}¢ · {_sc['n_drift']} bet{'s' if _sc['n_drift'] != 1 else ''}" if _sc["drift_half"] is not None
                else f"{_sc['n_drift']} bet{'s' if _sc['n_drift'] != 1 else ''} so far" if _sc["drift"] is not None else "collecting")
@@ -1259,7 +1274,8 @@ with tab_live:
     _ls_on = (league_status.get("live_sharp") or {}).get("enabled")
     st.markdown(
         "<div class='pe-lede' style='font-size:.8rem'>" + ("" if _ls_on else "<b>Off.</b> ")
-        + "Copies every Sharp pick with a real Kalshi order · $5 per bet · $300/day cap · "
+        + f"Copies every Sharp pick with a real Kalshi order · ${float(ls.get('per_bet') or 0):g} per bet · "
+          f"${float(ls.get('budget') or 0):g}/day cap · "
           "buys only at the price the pick saw."
         + ("" if _ls_on else " Turn it on with the LIVE_SHARP_ENABLED repo variable.")
         + "</div>", unsafe_allow_html=True)
