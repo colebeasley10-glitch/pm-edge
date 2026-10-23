@@ -46,7 +46,7 @@ def main() -> dict:
     live = core.live_enabled()
     mode = "live" if live else "dry"
     status: dict = {"at": core.iso(now), "mode": mode, "unit": core.unit(),
-                    "daily_budget": core.daily_budget()}
+                    "daily_budget": None if core.daily_budget() == float("inf") else core.daily_budget()}
 
     client, orders = None, []
     if live:

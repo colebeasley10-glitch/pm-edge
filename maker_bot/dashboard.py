@@ -33,9 +33,8 @@ def render() -> None:
         ("💵 **LIVE, real money.** " if live else "📝 **DRY RUN.** Logs the orders it would post; "
          "set the repo variable MAKER_BOT_ENABLED to 1 to go live. ")
         + f"Rests Kalshi orders one cent above the best bid when that's {core.MIN_EDGE:.0%}-{core.MAX_EDGE:.0%} under "
-          f"Pinnacle's fair line after fees. Size grows with edge: 1/6 unit at {core.MIN_EDGE:.0%} to a full "
-          f"${core.unit():.0f} unit at {core.FULL_EDGE:.0%}+ (Sharp flow counts +{core.SHARP_BONUS:.0%}). "
-          f"${core.CEIL_DAILY:.0f}/day cap. Kalshi cancels each order by itself 5 minutes before the game starts. "
+          f"Pinnacle's fair line after fees. Every bet is sized to win "
+          f"${core.unit():.0f} (one unit), no daily cap. Kalshi cancels each order by itself 5 minutes before the game starts. "
           "Only fills count as bets.")
 
     for mode, title in (("live", "Live"), ("dry", "Dry run (would-have-posted)")):
@@ -63,7 +62,7 @@ def render() -> None:
                    s["fill_rate"] is not None and s["fill_rate"] < 0.6)]
         for label, ok in checks:
             st.markdown(f"{'✅' if ok else '⬜'} {label}")
-        st.caption("All four: raise the unit and daily cap in maker_bot/core.py (CEIL_UNIT, CEIL_DAILY). "
+        st.caption("All four: raise the unit (MAKER_BOT_UNIT, up to CEIL_UNIT in maker_bot/core.py). "
                    "Any one failing: keep size where it is.")
 
     if status:
@@ -74,7 +73,9 @@ def render() -> None:
             st.caption("Skipped: " + ", ".join(f"{k.replace('_', ' ')} {v}" for k, v in
                                                sorted(status["skips"].items(), key=lambda x: -x[1])))
         if status.get("spent_today"):
-            st.caption(f"Committed today: ${max(status['spent_today'].values()):.2f} of ${status.get('daily_budget', 0):.2f}")
+            cap = status.get("daily_budget")
+            st.caption(f"Committed today: ${max(status['spent_today'].values()):.2f}"
+                       + (f" of ${cap:.2f}" if cap else " (no daily cap)"))
 
     recent = sorted(rows, key=lambda r: r.get("placed_at") or "", reverse=True)[:60]
     if recent:

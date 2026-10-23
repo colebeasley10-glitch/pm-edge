@@ -16,15 +16,16 @@ Each round (right after a Research Lab round, see .github/workflows/maker-bot.ym
        (post-only: it can only rest, never take). No bid at all -> fair minus 3c;
      * EDGE = Pinnacle fair - price - Kalshi maker fee per contract. Posted only from 1% to
        10% (bigger "edges" are almost always a mismatched market);
-     * SIZE scales with edge: 1/6 unit at 1% up to a full unit at 6%+, in a straight line
-       (big Sharp flow on the same side counts as +1% edge for sizing only);
+     * SIZE: bet to win one unit. Contracts = unit / (1 - price), rounded, at least 1, so a
+       30c buy risks about 43c to win $1 and an 80c buy risks about $4 to win $1
+       (Oct 23, 2026: replaced the old edge-scaled stake);
      * only contracts priced 10c to 90c;
      * KALSHI EXPIRES THE ORDER ITSELF at the earlier of ORDER_TTL from now or
        START_BUFFER before the game starts. Nothing can rest into the game, even if this
        bot never runs again. Next round re-prices from a fresh Pinnacle line.
-4. Limits enforced here: $5 full unit, $25 per Eastern day counting resting orders at
-   full price, one bet per game, at most MAX_NEW_PER_RUN new orders per round.
-   To scale up, raise CEIL_UNIT / CEIL_DAILY in code (env can only lower them).
+4. Limits enforced here: unit (to-win amount) at most CEIL_UNIT, one bet per game, at most
+   MAX_NEW_PER_RUN new orders per round. NO daily dollar cap by default (Oct 23, 2026);
+   setting MAKER_BOT_DAILY_BUDGET turns one back on (never above CEIL_DAILY).
 """
 from __future__ import annotations
 
@@ -46,15 +47,13 @@ CANDIDATES = ROOT / "research_lab" / "data" / "maker_candidates.json"
 PREFIX = "pmmk-"
 
 # Hard ceilings. Env can lower these, never raise them.
-CEIL_UNIT = 5.00           # a full unit (6%+ edge)
+CEIL_UNIT = 5.00           # most a single bet may aim to win
 CEIL_DAILY = 25.00
 CEIL_PER_ORDER = CEIL_UNIT  # kept for older callers
 
 MIN_EDGE = 0.01            # fair - price - maker fee; below this nothing is posted
 MAX_EDGE = 0.10            # above this the "edge" is almost always a bad market match
-FULL_EDGE = 0.06           # edge at which the stake reaches a full unit
-MIN_FRACTION = 1 / 6       # stake at MIN_EDGE
-SHARP_BONUS = 0.01         # Sharp flow on our side counts as this much extra edge (sizing only)
+SHARP_BONUS = 0.01         # Sharp flow on our side counts as this much extra edge when ranking
 NO_BID_EDGE = 0.03         # empty book: rest at fair minus this
 BAND_LOW, BAND_HIGH = 0.10, 0.90
 ORDER_TTL = timedelta(minutes=50)
@@ -89,6 +88,9 @@ per_order = unit
 
 
 def daily_budget() -> float:
+    """No cap unless MAKER_BOT_DAILY_BUDGET is set (then never above CEIL_DAILY)."""
+    if not os.getenv("MAKER_BOT_DAILY_BUDGET", "").strip():
+        return math.inf
     return _env_float("MAKER_BOT_DAILY_BUDGET", CEIL_DAILY, CEIL_DAILY)
 
 
@@ -141,31 +143,16 @@ def edge_at(fair: float, price: float, contracts: int) -> float:
     return fair - price - maker_fee(price, contracts) / contracts
 
 
-def stake_for(edge: float, sharp: bool, full_unit: float) -> float:
-    """Dollars to put up: 1/6 unit at MIN_EDGE rising linearly to a full unit at FULL_EDGE."""
-    e = edge + (SHARP_BONUS if sharp else 0.0)
-    if e < MIN_EDGE:
-        return 0.0
-    frac = MIN_FRACTION + (1 - MIN_FRACTION) * (e - MIN_EDGE) / (FULL_EDGE - MIN_EDGE)
-    return round(full_unit * max(MIN_FRACTION, min(1.0, frac)), 2)
+def to_win_contracts(price: float, to_win: float) -> int:
+    """Whole contracts whose profit if it wins is closest to `to_win` (at least 1)."""
+    if not (0 < price < 1) or to_win <= 0:
+        return 0
+    return max(1, int(round(to_win / (1 - price))))
 
 
 def size(fair: float, price: float, sharp: bool, full_unit: float) -> tuple[int, float]:
-    """(contracts, edge) for an order at this price. Never more than a full unit of cost."""
-    n = max(1, contracts_for(price, full_unit))
-    for _ in range(3):   # fee rounding depends on size; settle on a stable size
-        e = edge_at(fair, price, n)
-        stake = stake_for(e, sharp, full_unit)
-        if stake <= 0:
-            return 0, e
-        new_n = max(1, int(round(stake / price)))
-        while new_n > 1 and new_n * price > full_unit + 1e-9:
-            new_n -= 1
-        if new_n == n:
-            break
-        n = new_n
-    if n * price > full_unit + 1e-9:
-        return 0, edge_at(fair, price, n)
+    """(contracts, edge) for an order at this price, sized to win one unit."""
+    n = to_win_contracts(price, full_unit)
     return n, edge_at(fair, price, n)
 
 

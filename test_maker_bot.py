@@ -23,21 +23,17 @@ def test_prices_one_cent_over_best_bid_never_at_ask():
     assert p == 0.56                      # bid + 1 would touch the ask, so join the bid
 
 
-def test_size_scales_with_edge():
-    # ~1.3% edge -> about 1/6 unit; ~8% edge -> full unit
-    _, n_small, e_small, _ = core.quote(cand(fair=0.5778, bid=0.55, ask=0.57), 5.0)
-    _, n_big, e_big, _ = core.quote(cand(fair=0.64, bid=0.55, ask=0.60), 5.0)
-    assert 0.01 <= e_small < 0.02 and 1 <= n_small <= 2
-    assert e_big >= core.FULL_EDGE and n_big == 8 and n_big * 0.56 <= 5.0   # 9 would be $5.04
-    assert core.stake_for(0.035, False, 5.0) == pytest.approx(5 * (1/6 + 5/6 * 0.5), abs=0.01)
+def test_size_bets_to_win_one_unit():
+    # to win $1: 51c -> 2 contracts (wins $0.98), 30c -> 1 (wins $0.70), 80c -> 5 (wins $1.00)
+    assert core.size(0.60, 0.51, False, 1.0)[0] == 2
+    assert core.size(0.40, 0.30, False, 1.0)[0] == 1
+    assert core.size(0.86, 0.80, False, 1.0)[0] == 5
+    assert core.size(0.95, 0.90, False, 1.0)[0] == 10
+    _, n, e, why = core.quote(cand(fair=0.64, bid=0.55, ask=0.60), 1.0)
+    assert why == "ok" and n == 2   # 56c: 1/(0.44) = 2.27 -> 2
 
 
-def test_sharp_flow_sizes_up_but_doesnt_lower_floor():
-    base = cand(fair=0.5778, bid=0.55, ask=0.57)
-    _, n0, _, _ = core.quote(base, 5.0)
-    _, n1, _, _ = core.quote({**base, "sharp": {"flow_trades": 40}}, 5.0)
-    assert n1 > n0
-    # below 1% raw edge: still skipped with Sharp
+def test_sharp_flow_doesnt_lower_floor():
     assert core.quote({**cand(fair=0.555, bid=0.54, ask=0.56), "sharp": {"x": 1}}, 5.0)[3] == "edge_under_1pct"
 
 
@@ -61,10 +57,21 @@ def test_order_expires_before_kickoff_never_after():
     assert not picked and skips == {"too_close_to_start": 1}
 
 
-def test_one_bet_per_game_and_daily_budget(monkeypatch):
+def test_one_bet_per_game_and_no_daily_cap_by_default(monkeypatch):
+    monkeypatch.delenv("MAKER_BOT_DAILY_BUDGET", raising=False)
+    assert core.daily_budget() == float("inf")
     cs = [cand(ticker=f"T{i}", event=f"E{i}") for i in range(30)] + [cand(ticker="T0b", event="E0")]
     picked, skips = core.plan(cs, [], NOW, "live")
     assert len({c["event"] for c in picked}) == len(picked) <= core.MAX_NEW_PER_RUN
+    busy_rows = [{**core.new_row({**cand(ticker=f"R{i}", event=f"R{i}"), "price": 0.55, "contracts": 1,
+                                  "edge": 0.04, "expires_at": core.iso(NOW + timedelta(minutes=40))}, NOW, "live")}
+                 for i in range(200)]
+    assert core.plan(cs, busy_rows, NOW, "live")[0]          # $100+ committed, still posts
+
+
+def test_daily_budget_env_still_works(monkeypatch):
+    monkeypatch.setenv("MAKER_BOT_DAILY_BUDGET", "25")
+    cs = [cand(ticker=f"T{i}", event=f"E{i}") for i in range(30)]
     # budget: $25/day ceiling; resting orders already committing ~$24.7 today -> nothing new fits
     rows = [{**core.new_row({**cand(ticker=f"R{i}", event=f"R{i}"), "price": 0.55, "contracts": 1, "edge": 0.04,
                              "expires_at": core.iso(NOW + timedelta(minutes=40))}, NOW, "live")} for i in range(44)]

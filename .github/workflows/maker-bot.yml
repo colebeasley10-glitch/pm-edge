@@ -3,9 +3,9 @@ name: Maker Bot
 # REAL MONEY when MAKER_BOT_ENABLED is "1" (repo variable or secret); otherwise a dry run that
 # only logs what it would have posted. Runs right after each Research Lab round so the
 # Pinnacle fair prices in research_lab/data/maker_candidates.json are minutes old.
-# Posts $1 post-only Kalshi limit orders priced better than Pinnacle's fair line.
+# Posts post-only Kalshi limit orders priced better than Pinnacle's fair line, each sized to win $1.
 # Kalshi expires every order by itself at the earlier of 50 min or 5 min before start.
-# Hard limits in maker_bot/core.py: $1 per order, $20 per Eastern day, one bet per game.
+# Limits in maker_bot/core.py: one bet per game, unit capped by CEIL_UNIT. No daily cap (Oct 23, 2026).
 on:
   workflow_run:
     workflows: ["Strategy Research Lab (paper)"]
@@ -38,10 +38,9 @@ jobs:
           KALSHI_WRITE_API_KEY_ID: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_API_KEY_ID || '' }}
           KALSHI_WRITE_PRIVATE_KEY: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_PRIVATE_KEY || '' }}
           PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
-          # Day 1 mechanics check (Oct 21, 2026): $1 unit, $5/day. Next step: $5 unit, $25/day
-          # (delete these two lines). Code ceilings in maker_bot/core.py cap anything set here.
+          # Oct 23, 2026: every bet sized to win $1 (one unit), no daily cap.
+          # Add MAKER_BOT_DAILY_BUDGET here to bring a cap back (never above CEIL_DAILY).
           MAKER_BOT_UNIT: "1"
-          MAKER_BOT_DAILY_BUDGET: "5"
         run: python -m maker_bot.run
       - name: Save orders
         if: always()
