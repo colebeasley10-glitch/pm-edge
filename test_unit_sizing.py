@@ -11,7 +11,9 @@ def test_dogs_risk_a_unit_favorites_win_a_unit():
     assert risk_for_unit(0.30, 5) == 5.0 and risk_for_unit(0.60, 5) == 7.5
 
 
-def test_heavy_favorites_capped_at_three_units():
-    assert contracts_for_unit(0.75, 2) == 8                    # exactly 3 units, not trimmed
-    assert contracts_for_unit(0.97, 5) == 15                   # $14.55, not $161
-    assert risk_for_unit(0.97, 5) == 15.0
+def test_heavy_favorites_skipped():
+    assert contracts_for_unit(0.75, 2) == 8                    # -300 still bets, wins a full unit
+    assert contracts_for_unit(0.76, 2) == 0                    # over 75c: no bet
+    assert contracts_for_unit(0.90, 1) == 0                    # the Emerson Jones case
+    assert contracts_for_unit(0.97, 5) == 0
+    assert risk_for_unit(0.90, 5) == 0.0

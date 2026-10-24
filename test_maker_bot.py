@@ -24,12 +24,12 @@ def test_prices_one_cent_over_best_bid_never_at_ask():
 
 
 def test_size_one_unit_dogs_risk_favorites_win():
-    # favorites win ~$1: 51c -> 2 (wins $0.98), 80c -> 5, 90c -> 10; dogs risk $1: 30c -> 3, 45c -> 2
+    # favorites win ~$1: 51c -> 2 (wins $0.98), 75c -> 4; over 75c -> no bet; dogs risk $1: 30c -> 3, 45c -> 2
     assert core.size(0.60, 0.51, False, 1.0)[0] == 2
     assert core.size(0.40, 0.30, False, 1.0)[0] == 3
     assert core.size(0.50, 0.45, False, 1.0)[0] == 2
-    assert core.size(0.86, 0.80, False, 1.0)[0] == 3   # 5 would risk $4; capped at 3 units
-    assert core.size(0.95, 0.90, False, 1.0)[0] == 3
+    assert core.size(0.80, 0.75, False, 1.0)[0] == 4   # risk $3 to win $1
+    assert core.size(0.95, 0.90, False, 1.0)[0] == 0   # over 75c: skipped, not trimmed
     _, n, e, why = core.quote(cand(fair=0.64, bid=0.55, ask=0.60), 1.0)
     assert why == "ok" and n == 2   # 56c: 1/(0.44) = 2.27 -> 2
 
@@ -42,7 +42,8 @@ def test_skips_tiny_huge_and_extreme_prices():
     assert core.quote(cand(fair=0.552, bid=0.54, ask=0.56), 5.0)[3] == "edge_under_1pct"
     assert core.quote(cand(fair=0.75, bid=0.55, ask=0.60), 5.0)[3] == "edge_too_big_check_match"
     assert core.quote(cand(fair=0.97, bid=0.93, ask=0.95), 5.0)[3] == "outside_10c_90c"
-    assert core.quote(cand(fair=0.80, bid=0.75, ask=0.78), 5.0)[3] == "ok"   # no more +150/-200 band
+    assert core.quote(cand(fair=0.80, bid=0.75, ask=0.78), 5.0)[3] == "favorite_over_75c"  # posts at 76c
+    assert core.quote(cand(fair=0.77, bid=0.73, ask=0.75), 5.0)[3] == "ok"   # 74c still bets
 
 
 def test_order_expires_before_kickoff_never_after():

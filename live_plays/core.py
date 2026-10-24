@@ -302,7 +302,15 @@ def place(picks: list[dict], rows: list[dict], client, now: datetime, *, live: b
             cash = None
     out["cash"] = cash
 
+    from unit_sizing import too_chalky
     for p in picks:
+        hp = kalshi_price(p)
+        if hp is None:
+            dec = f(p.get("decimal"))
+            hp = 1 / dec if dec and dec > 1 else None
+        if hp is not None and too_chalky(hp):
+            skip("favorite_over_75c")
+            continue
         if p["venue"] == "Polymarket":
             r = {**_base_row(p, now, "Polymarket"), "trade_id": f"pmtp-poly-{p['position_id']}",
                  "status": "alert", "note": hand_bet_note(p)}

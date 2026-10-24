@@ -387,6 +387,10 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
         if is_tennis(p.get("ticker")) and price < tennis_min_price():
             skip("tennis_underdog")
             continue
+        from unit_sizing import too_chalky
+        if too_chalky(price):
+            skip("favorite_over_75c")
+            continue
         count = size(price, room)
         if count < 1:
             skip("daily_budget")

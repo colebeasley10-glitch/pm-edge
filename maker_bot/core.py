@@ -163,6 +163,9 @@ def quote(c: dict, full_unit: float) -> tuple[float | None, int, float, str]:
         return None, 0, 0.0, "no_price"
     if not (BAND_LOW - 1e-9 <= price <= BAND_HIGH + 1e-9):
         return None, 0, 0.0, "outside_10c_90c"
+    from unit_sizing import too_chalky
+    if too_chalky(price):
+        return None, 0, 0.0, "favorite_over_75c"
     n, e = size(fair, price, bool(c.get("sharp")), full_unit)
     if e > MAX_EDGE:
         return None, 0, e, "edge_too_big_check_match"
