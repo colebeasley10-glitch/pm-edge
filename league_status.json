@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-10-24T08:30:43.731566Z",
+ "ran_at": "2026-10-24T09:00:46.100371Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -23,23 +23,27 @@
    "benched": true,
    "shadow": [
     {
-     "ticker": "KXVALORANTGAME-26OCT240630FIREFUT-FIRE",
+     "ticker": "KXCS2GAME-26OCT240630REVPSNA-REV",
      "side": "YES",
-     "ask": 0.47,
-     "fair": 0.505,
-     "edge": 0.0174
+     "ask": 0.41,
+     "fair": 0.445,
+     "edge": 0.0179
     }
    ],
-   "shadow_opened": 0,
+   "shadow_opened": 1,
    "diag": {
     "poly_events": 600,
-    "poly_games": 265,
-    "kalshi_events": 1899,
-    "matched": 147,
-    "priced": 280,
+    "poly_games": 267,
+    "kalshi_events": 1890,
+    "matched": 148,
+    "priced": 283,
     "best_gaps": [
      [
       0.035,
+      "KXCS2GAME-26OCT240630REVPSNA-REV"
+     ],
+     [
+      0.025,
       "KXVALORANTGAME-26OCT240630FIREFUT-FIRE"
      ],
      [
@@ -48,27 +52,23 @@
      ],
      [
       0.015,
+      "KXVALORANTGAME-26OCT241700SKNSRGC-SKN"
+     ],
+     [
+      0.015,
       "KXUFCFIGHT-26OCT24KAVTEM-KAV"
      ],
      [
+      0.015,
+      "KXLALIGA2GAME-26OCT24COREIB-COR"
+     ],
+     [
       0.01,
-      "KXR6GAME-26OCT241500FAZELOS-LOS"
+      "KXLIGAPORTUGALGAME-26OCT26SCLBEN-BEN"
      ],
      [
       0.01,
       "KXBRASILEIROGAME-26OCT24PALRBB-PAL"
-     ],
-     [
-      0.005,
-      "KXVALORANTGAME-26OCT241700SKNSRGC-SRGC"
-     ],
-     [
-      0.005,
-      "KXVALORANTGAME-26OCT240700DRGTEC-TEC"
-     ],
-     [
-      0.005,
-      "KXUFCFIGHT-26OCT24YANDVA-YAN"
      ]
     ]
    }
@@ -80,29 +80,83 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 2,
+   "opened": 0,
    "skipped": {
-    "same_game": 1,
-    "already_holding": 1
+    "already_holding": 2,
+    "same_game": 2
    },
    "diag": {
     "skipped_settles_late": 0
    }
   },
   "crypto": {
-   "picks_found": 0,
+   "picks_found": 4,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [],
+   "shadow": [
+    {
+     "ticker": "KXBTCD-26OCT2406-T80399.99",
+     "side": "NO",
+     "ask": 0.13,
+     "fair": 0.3151,
+     "edge": 0.1771
+    },
+    {
+     "ticker": "KXBTCD-26OCT2406-T80299.99",
+     "side": "NO",
+     "ask": 0.05,
+     "fair": 0.2098,
+     "edge": 0.1564
+    },
+    {
+     "ticker": "KXBTCD-26OCT2406-T80799.99",
+     "side": "YES",
+     "ask": 0.05,
+     "fair": 0.2068,
+     "edge": 0.1534
+    },
+    {
+     "ticker": "KXBTCD-26OCT2406-T80699.99",
+     "side": "YES",
+     "ask": 0.16,
+     "fair": 0.3109,
+     "edge": 0.1413
+    }
+   ],
    "shadow_opened": 0,
    "diag": {
-    "markets_priced": 0,
+    "markets_priced": 488,
     "vol": {
-     "BTC-USD": 0.003095290417621341,
-     "ETH-USD": 0.004111158902795272
+     "BTC-USD": 0.00307614838463137,
+     "ETH-USD": 0.00411398621889211
     },
-    "best": []
+    "best": [
+     [
+      -0.78,
+      "KXETHD-26OCT2406-T2564.99"
+     ],
+     [
+      -0.78,
+      "KXETHD-26OCT2406-T2574.99"
+     ],
+     [
+      -0.77,
+      "KXETHD-26OCT2406-T2559.99"
+     ],
+     [
+      -0.77,
+      "KXETHD-26OCT2406-T2569.99"
+     ],
+     [
+      -0.76,
+      "KXETHD-26OCT2406-T2509.99"
+     ],
+     [
+      -0.75,
+      "KXETHD-26OCT2406-T2444.99"
+     ]
+    ]
    }
   }
  },
@@ -113,8 +167,8 @@
   "0": "20261024"
  },
  "update": {
-  "marked": 13,
-  "settled": 1
+  "marked": 15,
+  "settled": 0
  },
  "shadow_update": {
   "marked": 4,
@@ -123,18 +177,16 @@
  "live_sharp": {
   "enabled": true,
   "kalshi_ok": true,
-  "placed": 1,
-  "filled": 1,
-  "skipped": {
-   "tennis_underdog": 1
-  },
+  "placed": 0,
+  "filled": 0,
+  "skipped": {},
   "spent_today": 25.58,
-  "cash": 105.96,
+  "cash": 100.75,
   "pools": {
    "0": 27.96,
    "1": 0.0,
    "2": 0.0,
-   "3": 77.99
+   "3": 72.79
   },
   "low_total": true,
   "low_pools": [
@@ -245,8 +297,8 @@
   },
   {
    "strategy": "polymarket",
-   "picks": 40,
-   "open": 4,
+   "picks": 41,
+   "open": 5,
    "won": 15,
    "lost": 21,
    "pl": -88.66000000000001,
