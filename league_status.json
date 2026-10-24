@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-10-24T10:30:47.822918Z",
+ "ran_at": "2026-10-24T11:00:38.831543Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -17,7 +17,7 @@
    }
   },
   "polymarket": {
-   "picks_found": 2,
+   "picks_found": 3,
    "opened": 0,
    "skipped": {},
    "benched": true,
@@ -35,27 +35,34 @@
      "ask": 0.79,
      "fair": 0.825,
      "edge": 0.0233
+    },
+    {
+     "ticker": "KXCS2GAME-26OCT241000BRUTEINOX-INOX",
+     "side": "YES",
+     "ask": 0.55,
+     "fair": 0.585,
+     "edge": 0.0172
     }
    ],
    "shadow_opened": 1,
    "diag": {
     "poly_events": 600,
-    "poly_games": 256,
-    "kalshi_events": 1862,
-    "matched": 139,
-    "priced": 268,
+    "poly_games": 251,
+    "kalshi_events": 1852,
+    "matched": 137,
+    "priced": 264,
     "best_gaps": [
+     [
+      0.035,
+      "KXCS2GAME-26OCT241000BRUTEINOX-INOX"
+     ],
      [
       0.035,
       "KXCS2GAME-26OCT240600BBTS-TS"
      ],
      [
-      0.025,
+      0.015,
       "KXVALORANTGAME-26OCT240630FIREFUT-FIRE"
-     ],
-     [
-      0.025,
-      "KXCS2GAME-26OCT241000BRUTEINOX-INOX"
      ],
      [
       0.015,
@@ -63,11 +70,11 @@
      ],
      [
       0.015,
-      "KXLALIGA2GAME-26OCT24COREIB-COR"
+      "KXEFLCHAMPIONSHIPGAME-26OCT24PNEWBA-WBA"
      ],
      [
       0.015,
-      "KXEFLCHAMPIONSHIPGAME-26OCT24PNEWBA-WBA"
+      "KXDOTA2GAME-26OCT241000BBTS-BB"
      ],
      [
       0.01,
@@ -75,7 +82,7 @@
      ],
      [
       0.01,
-      "KXEFLL1GAME-26OCT24HUDWIG-HUD"
+      "KXMLSGAME-26OCT24NYRBMIA-NYRB"
      ]
     ]
    }
@@ -87,9 +94,8 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 1,
+   "opened": 3,
    "skipped": {
-    "same_game": 2,
     "already_holding": 1
    },
    "diag": {
@@ -97,19 +103,73 @@
    }
   },
   "crypto": {
-   "picks_found": 0,
+   "picks_found": 4,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [],
+   "shadow": [
+    {
+     "ticker": "KXBTCD-26OCT2408-T80399.99",
+     "side": "NO",
+     "ask": 0.08,
+     "fair": 0.2797,
+     "edge": 0.1946
+    },
+    {
+     "ticker": "KXBTCD-26OCT2408-T80699.99",
+     "side": "YES",
+     "ask": 0.15,
+     "fair": 0.3476,
+     "edge": 0.1886
+    },
+    {
+     "ticker": "KXETHD-26OCT2408-T2374.99",
+     "side": "YES",
+     "ask": 0.1,
+     "fair": 0.2913,
+     "edge": 0.185
+    },
+    {
+     "ticker": "KXBTCD-26OCT2408-T80799.99",
+     "side": "YES",
+     "ask": 0.05,
+     "fair": 0.2369,
+     "edge": 0.1835
+    }
+   ],
    "shadow_opened": 0,
    "diag": {
-    "markets_priced": 0,
+    "markets_priced": 608,
     "vol": {
-     "BTC-USD": 0.0030790077671462674,
-     "ETH-USD": 0.0041143395688550055
+     "BTC-USD": 0.0030708064266780633,
+     "ETH-USD": 0.004061376626457533
     },
-    "best": []
+    "best": [
+     [
+      -0.78,
+      "KXETHD-26OCT2408-T2499.99"
+     ],
+     [
+      -0.77,
+      "KXETHD-26OCT2408-T2504.99"
+     ],
+     [
+      -0.77,
+      "KXETHD-26OCT2408-T2509.99"
+     ],
+     [
+      -0.77,
+      "KXETHD-26OCT2408-T2519.99"
+     ],
+     [
+      -0.76,
+      "KXETHD-26OCT2408-T2474.99"
+     ],
+     [
+      -0.76,
+      "KXETHD-26OCT2408-T2479.99"
+     ]
+    ]
    }
   }
  },
@@ -124,64 +184,64 @@
   "settled": 1
  },
  "shadow_update": {
-  "marked": 5,
+  "marked": 6,
   "settled": 0
  },
  "live_sharp": {
   "enabled": true,
   "kalshi_ok": true,
-  "placed": 0,
-  "filled": 0,
+  "placed": 1,
+  "filled": 1,
   "skipped": {
-   "tennis_underdog": 1
+   "thin_flow": 2
   },
-  "spent_today": 38.87,
-  "cash": 97.48,
+  "spent_today": 42.01,
+  "cash": 104.48,
   "pools": {
    "0": 27.96,
    "1": 0.0,
    "2": 0.0,
-   "3": 69.51
+   "3": 76.51
   },
   "low_total": true,
   "low_pools": [
    {
     "pool": 0,
     "name": "Default",
-    "cash": 27.96
+    "cash": 24.82
    }
   ],
-  "settled": 0,
+  "settled": 1,
   "summary": {
-   "won": 241,
+   "won": 242,
    "lost": 173,
    "open": 5,
-   "pl": -39.44,
-   "staked": 715.92,
-   "roi": -0.05508995418482512,
-   "spent_today": 38.86,
-   "orders_today": 10,
+   "pl": -37.51,
+   "staked": 717.99,
+   "roi": -0.052243067452192926,
+   "spent_today": 42.0,
+   "orders_today": 11,
    "budget": 150.0,
    "per_bet": 2.0,
-   "fees": 22.27,
+   "fees": 22.34,
    "no_fill": 117,
-   "units": -7.99,
-   "units_today": -0.81
+   "units": -7.03,
+   "units_today": 0.16
   }
  },
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 978,
-   "open": 16,
-   "won": 556,
+   "picks": 981,
+   "open": 18,
+   "won": 557,
    "lost": 406,
-   "pl": -179.25999999999965,
-   "risked": 9637.930000000002,
-   "clv_sum": -448.9,
-   "clv_n": 932,
-   "roi": -0.018599429545555903,
-   "clv": -0.4816523605150214
+   "pl": -169.60999999999964,
+   "risked": 9648.280000000002,
+   "clv_sum": -411.4,
+   "clv_n": 933,
+   "roi": -0.017579299108234796,
+   "clv": -0.44094319399785636
   },
   {
    "strategy": "weather",
@@ -252,8 +312,8 @@
   },
   {
    "strategy": "polymarket",
-   "picks": 42,
-   "open": 6,
+   "picks": 43,
+   "open": 7,
    "won": 15,
    "lost": 21,
    "pl": -88.66000000000001,
