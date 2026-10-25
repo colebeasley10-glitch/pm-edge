@@ -853,7 +853,7 @@ with tab_home:
         f"""
         <div class='pe-hero'>
           <div class='top'>
-            <div><div class='k'>Live {money(ls["per_bet"])} Sharp · real money</div>
+            <div><div class='k'>Live {money(_h_ls["per_bet"])} Sharp · real money</div>
               <div class='big {tone(_h_ls["pl"])}'>{money(_h_ls["pl"], signed=True)}</div>
               {units_line(_h_ls.get("units"))}</div>
             <div class='mid {tone(_h_today_pl)}'>{money(_h_today_pl, signed=True)}<div class='k' style='text-align:right'>today{(" · " + f"{_h_ls['units_today']:+.1f} units") if _h_ls.get("units_today") is not None else ""}</div></div>
