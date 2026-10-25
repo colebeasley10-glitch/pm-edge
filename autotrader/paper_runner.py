@@ -1586,7 +1586,7 @@ def main():
         quick_whale_v3_interval,
         int(os.environ.get("WHALE_QUICK_V3_RATE_LIMIT_BACKOFF_SECONDS", "180")),
     )
-    quick_whale_v3_max_settled = max(1, int(os.environ.get("WHALE_QUICK_V3_MAX_SETTLED_TRADES", "25")))
+    quick_whale_v2_max_settled = max(1, int(os.environ.get("WHALE_QUICK_V2_MAX_SETTLED_TRADES", "25")))\n    quick_whale_v3_max_settled = max(1, int(os.environ.get("WHALE_QUICK_V3_MAX_SETTLED_TRADES", "25")))
     quick_whale_v3_max_loss = os.environ.get("WHALE_QUICK_V3_MAX_REALIZED_LOSS", "50")
     quick_whale_v3_max_wait = max(
         0, min(30, int(os.environ.get("WHALE_QUICK_V3_MAX_REACTION_WAIT_SECONDS", "12")))
