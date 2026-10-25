@@ -58,11 +58,12 @@ def paper(i, price=0.50, side="YES", trades=50):
 
 
 def test_size():
-    # one unit: dogs risk $5, favorites win $5, nothing over 75c
-    assert live_sharp.size(0.50) == 10          # $5.00 to win $5
+    # flat risk (Oct 25, 2026): every bet risks at most one unit ($5 here), nothing over 75c
+    assert live_sharp.size(0.50) == 10          # $5.00 risked
     assert live_sharp.size(0.33) == 15          # $4.95 risked
     assert live_sharp.size(0.07) == 71          # $4.97 risked
-    assert live_sharp.size(0.60) == 12          # $7.20 to win $4.80
+    assert live_sharp.size(0.60) == 8           # $4.80 risked (not $7.20 to win a unit)
+    assert live_sharp.size(0.75) == 6           # $4.50 risked
     assert live_sharp.size(0.97) == 0           # over 75c: no bet
     assert live_sharp.size(0.50, budget=0.60) == 1   # only room for one today
     assert live_sharp.size(0.50, budget=0.40) == 0
@@ -637,11 +638,12 @@ def test_low_total_flag():
     assert live_sharp.place([], c, now=NOW, rows=[])["low_total"] is False
 
 
-def test_tennis_underdogs_skipped_live_only():
+def test_underdogs_under_40c_skipped_live_every_sport():
     c, rows = FakeClient(), []
     dog = {**paper(901, price=0.35), "ticker": "KXITFWMATCH-26OCT23ABCDEF-ABC", "event_ticker": "KXITF901"}
     fav = {**paper(902, price=0.62), "ticker": "KXATPMATCH-26OCT23ABCDEF-DEF", "event_ticker": "KXATP902"}
     other_dog = {**paper(903, price=0.30), "ticker": "KXNBAGAME-26OCT23DETMIA-MIA", "event_ticker": "KXNBA903"}
     out = live_sharp.place([dog, fav, other_dog], c, now=NOW, rows=rows)
     assert out["skipped"].get("tennis_underdog") == 1
-    assert {o["ticker"] for o in c.orders} == {fav["ticker"], other_dog["ticker"]}
+    assert out["skipped"].get("underdog_under_40c") == 1
+    assert {o["ticker"] for o in c.orders} == {fav["ticker"]}

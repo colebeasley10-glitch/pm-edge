@@ -42,6 +42,9 @@ jobs:
         # filling bets. Oct 22, 2026: daily budget raised from $60 to $150.
         # Code ceilings ($5/bet, $300/day in league/live_sharp.py) cap anything set here.
         # Go back up when the balance grows: ~$250-300 supports $5 bets again.
+        # Oct 25, 2026: flat $2 RISK per bet (favorites no longer bet to win a unit) and no picks
+        # under 40c on any sport. Don't raise this after a hot streak -- only once "Wins vs
+        # expected" on the dashboard stays ~3%+ ahead over 300+ more bets.
         run: |
           export LIVE_SHARP_MAX_PER_BET=2
           export LIVE_SHARP_DAILY_BUDGET=150

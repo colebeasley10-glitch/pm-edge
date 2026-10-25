@@ -95,12 +95,15 @@ def et_day(now: datetime) -> str:
 
 
 def size(price: float, budget: float | None = None) -> int:
-    """One unit: risk a unit on underdogs, bet to win a unit on favorites (unit_sizing),
-    trimmed so price + fee fits the room left today."""
-    from unit_sizing import contracts_for_unit
+    """Flat risk (Oct 25, 2026): every live Sharp bet risks at most one unit, favorite or
+    underdog. Win-a-unit sizing on 60-75c favorites put $3-6 on single bets, and those 72 bets
+    lost $44 while the small bets were up. Trimmed so price + fee fits the room left today."""
+    from unit_sizing import too_chalky
     if budget is not None and budget <= 0:
         return 0
-    n = contracts_for_unit(price, per_bet())
+    if not (0 < price < 1) or too_chalky(price):
+        return 0
+    n = int(math.floor(per_bet() / price + 1e-9))
     # the fee comes on top; just make sure stake + fee still fits what's left today
     while n > 0 and budget is not None and n * price + book.taker_fee(price, n) > budget + 1e-9:
         n -= 1
@@ -243,14 +246,19 @@ LOW_TOTAL = 150.0      # alert when total Kalshi cash can't cover half a day's c
 # Oct 23, 2026: live tennis underdogs went 9-34 (-$39) while every other lane was ~even, and
 # under 40c is longer than +150 (outside the band Cole bets). Live skips them; paper Sharp keeps
 # taking them so the "bets live couldn't place" row shows whether they come back.
+# Oct 25, 2026: extended to every sport -- Kalshi's fee is ~7% x (1 - price) of the stake, so
+# it eats ~5% of a 30c bet; paper Sharp under 40c was -8.8% over 174 bets.
 TENNIS_PREFIXES = ("KXATP", "KXWTA", "KXITF", "KXCHALL")
 
 
-def tennis_min_price() -> float:
+def min_price() -> float:
     try:
-        return float(os.getenv("LIVE_SHARP_TENNIS_MIN_PRICE", "0.40"))
+        return float(os.getenv("LIVE_SHARP_MIN_PRICE", os.getenv("LIVE_SHARP_TENNIS_MIN_PRICE", "0.40")))
     except ValueError:
         return 0.40
+
+
+tennis_min_price = min_price  # old name, kept for callers/tests
 
 
 def is_tennis(ticker: str) -> bool:
@@ -384,8 +392,8 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
         if price is None or not (0 < price < 1):
             skip("bad_price")
             continue
-        if is_tennis(p.get("ticker")) and price < tennis_min_price():
-            skip("tennis_underdog")
+        if price < min_price():
+            skip("tennis_underdog" if is_tennis(p.get("ticker")) else "underdog_under_40c")
             continue
         from unit_sizing import too_chalky
         if too_chalky(price):
@@ -639,7 +647,11 @@ def summary(rows: list[dict], now: datetime | None = None) -> dict:
     staked = sum((book.f(r.get("cost"), 0.0) or 0.0) + (book.f(r.get("fee"), 0.0) or 0.0) for r in done)
     pl = sum(book.f(r.get("pl"), 0.0) or 0.0 for r in done)
     spent, n = _spent(rows, day)
-    return {"won": sum(r["status"] == "won" for r in done), "lost": sum(r["status"] == "lost" for r in done),
+    # the market's own forecast: a contract bought at 60c should win 60% of the time. Beating
+    # this count consistently is the only sign of a real edge (Oct 25, 2026).
+    expected = sum(book.f(r.get("avg_price"), 0.0) or 0.0 for r in done)
+    return {"won": sum(r["status"] == "won" for r in done),
+            "expected_wins": round(expected, 1), "lost": sum(r["status"] == "lost" for r in done),
             "open": sum(r.get("status") == "open" for r in rows), "pl": round(pl, 2), "staked": round(staked, 2),
             "roi": pl / staked if staked else None, "spent_today": round(spent, 2), "orders_today": n,
             "budget": daily_budget(), "per_bet": per_bet(),

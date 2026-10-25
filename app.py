@@ -853,7 +853,7 @@ with tab_home:
         f"""
         <div class='pe-hero'>
           <div class='top'>
-            <div><div class='k'>Live $5 Sharp · real money</div>
+            <div><div class='k'>Live {money(ls["per_bet"])} Sharp · real money</div>
               <div class='big {tone(_h_ls["pl"])}'>{money(_h_ls["pl"], signed=True)}</div>
               {units_line(_h_ls.get("units"))}</div>
             <div class='mid {tone(_h_today_pl)}'>{money(_h_today_pl, signed=True)}<div class='k' style='text-align:right'>today{(" · " + f"{_h_ls['units_today']:+.1f} units") if _h_ls.get("units_today") is not None else ""}</div></div>
@@ -1088,13 +1088,14 @@ with tab_live:
         f"""
         <div class='pe-hero'>
           <div class='top'>
-            <div><div class='k'>Live $5 Sharp · real money</div>
+            <div><div class='k'>Live {money(ls["per_bet"])} Sharp · real money</div>
               <div class='big {tone(ls["pl"])}'>{money(ls["pl"], signed=True)}</div>
               {units_line(ls.get("units"))}</div>
           </div>
           <div class='stats'>
             <div class='stat'><div class='k'>Record</div><div class='v'>{ls["won"]}–{ls["lost"]}</div></div>
             <div class='stat'><div class='k'>ROI</div><div class='v {tone(ls["roi"] or 0)}'>{pct(ls["roi"], signed=True)}</div></div>
+            <div class='stat'><div class='k'>Wins vs expected</div><div class='v {tone(ls["won"] - (ls.get("expected_wins") or 0))}'>{ls["won"] - (ls.get("expected_wins") or 0):+.1f}</div></div>
             <div class='stat'><div class='k'>Paper, same days</div><div class='v {tone(_sharp_roi or 0)}'>{pct(_sharp_roi, signed=True) if _sharp_roi is not None else "—"}</div></div>
           </div>
           <div class='bar'>
