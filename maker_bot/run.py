@@ -43,9 +43,10 @@ def kalshi_committed_today(orders: list[dict], rows: list[dict], now: datetime) 
 def main() -> dict:
     now = datetime.now(timezone.utc)
     rows = core.load()
-    live = core.live_enabled()
-    mode = "live" if live else "dry"
-    status: dict = {"at": core.iso(now), "mode": mode, "unit": core.unit(),
+    live = core.live_enabled()              # keys + switch: still reconcile real orders
+    post_live = live and not core.PAUSED    # only post new real orders when not paused
+    mode = "live" if post_live else "dry"
+    status: dict = {"at": core.iso(now), "mode": mode, "paused": core.PAUSED, "unit": core.unit(),
                     "daily_budget": None if core.daily_budget() == float("inf") else core.daily_budget()}
 
     client, orders = None, []
@@ -70,7 +71,7 @@ def main() -> dict:
     status["candidates"] = len(candidates)
     status["candidates_note"] = why
     picked, skips = core.plan(candidates, rows, now, mode)
-    if live:
+    if post_live:
         # never trust the ledger alone for money: stop if Kalshi shows more spent today
         ledger_today = core.committed_today(rows, core.et_day(now))
         kalshi_today = kalshi_committed_today(orders, rows, now)
@@ -89,7 +90,7 @@ def main() -> dict:
     posted = []
     for c in picked:
         row = core.new_row(c, now, mode)
-        if live:
+        if post_live:
             core.place(client, c, row)
         rows.append(row)
         posted.append(f'{row["label"]}: {row["contracts"]} @ {float(row["price"]) * 100:.0f}¢ '

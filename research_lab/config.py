@@ -147,10 +147,16 @@ EV_FINDER_V3 = StrategySpec(
     },
 )
 
-RESEARCH_STRATEGIES = [VALUE_ONLY, HYBRID_SHARP_VALUE, STRUCTURAL_ARB, VALUE_ONLY_V2, HYBRID_SHARP_VALUE_V2,
-                       EV_FINDER, EV_FINDER_V2, EV_FINDER_V3]
+ALL_STRATEGIES = [VALUE_ONLY, HYBRID_SHARP_VALUE, STRUCTURAL_ARB, VALUE_ONLY_V2, HYBRID_SHARP_VALUE_V2,
+                  EV_FINDER, EV_FINDER_V2, EV_FINDER_V3]
+# Retired Oct 25, 2026 (ledgers kept, no longer run or shown): Value Only / Hybrid v1 need
+# sportsbook consensus that stopped when the Odds API credits ran out; the Pinnacle v2s took
+# 1 trade in ~63k markets; Structural Arb found 0 in ~194k; +EV Finder v1 took 3 in ~18k.
+RETIRED = {VALUE_ONLY.key, HYBRID_SHARP_VALUE.key, STRUCTURAL_ARB.key, VALUE_ONLY_V2.key,
+           HYBRID_SHARP_VALUE_V2.key, EV_FINDER.key}
+RESEARCH_STRATEGIES = [s for s in ALL_STRATEGIES if s.key not in RETIRED]
 # Odds band for the plays you see and log (decimal 1.5 = -200, 2.5 = +150)
 PLAY_MIN_DECIMAL, PLAY_MAX_DECIMAL = 1.5, 2.5
-BY_KEY = {s.key: s for s in RESEARCH_STRATEGIES}
+BY_KEY = {s.key: s for s in ALL_STRATEGIES}
 
 SHARP_EXISTING_LABEL = "Existing Sharp (paper)"

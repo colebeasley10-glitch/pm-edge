@@ -30,8 +30,11 @@ def render() -> None:
         status = {}
     live = status.get("mode") == "live"
     (st.warning if live else st.info)(
-        ("💵 **LIVE, real money.** " if live else "📝 **DRY RUN.** Logs the orders it would post; "
-         "set the repo variable MAKER_BOT_ENABLED to 1 to go live. ")
+        ("💵 **LIVE, real money.** " if live else
+         ("⏸️ **PAUSED (paper only).** Paused Oct 25 after 7-8 on 18 fills with negative markout; "
+          "new orders are logged as dry runs. " if status.get("paused") else
+          "📝 **DRY RUN.** Logs the orders it would post; "
+          "set the repo variable MAKER_BOT_ENABLED to 1 to go live. "))
         + f"Rests Kalshi orders one cent above the best bid when that's {core.MIN_EDGE:.0%}-{core.MAX_EDGE:.0%} under "
           f"Pinnacle's fair line after fees. Every bet is one "
           f"${core.unit():.0f} unit (risk it on underdogs, win it on favorites), no daily cap. Kalshi cancels each order by itself 5 minutes before the game starts. "

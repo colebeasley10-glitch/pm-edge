@@ -93,6 +93,12 @@ def daily_budget() -> float:
     return _env_float("MAKER_BOT_DAILY_BUDGET", CEIL_DAILY, CEIL_DAILY)
 
 
+# Oct 25, 2026: paused after 18 fills in 772 orders with negative markout (fills skew
+# toward the side that was wrong). New orders are paper (dry) until this is set back to
+# False; existing live orders are still reconciled and settled.
+PAUSED = True
+
+
 def live_enabled() -> bool:
     if os.getenv("MAKER_BOT_ENABLED", "").strip().lower() not in {"1", "true", "on", "yes"}:
         return False

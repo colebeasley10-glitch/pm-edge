@@ -315,6 +315,12 @@ def run_round(
             summary["errors"].append(f"{trader.name}: {exc}")
             continue
         first_look = trader.wallet not in state["seeded"]
+        # health check (Oct 25, 2026): kch123 had zero tracked buys in 5 days, so record what the
+        # API actually returns per wallet; an empty list every round means a wrong/inactive wallet
+        state.setdefault("fetch_health", {})[trader.name] = {
+            "at": iso(now) if now else None, "trades": len(trades),
+            "buys": sum(str(t.get("side", "")).upper() == "BUY" for t in trades),
+            "newest": max((t.get("timestamp") or 0 for t in trades), default=None)}
         touched: set[str] = set()
         for t in sorted(trades, key=lambda x: x.get("timestamp") or 0):
             key = trade_key(t)

@@ -214,7 +214,14 @@ def test_bankroll_and_exposure_limits(tmp_path):
     assert portfolio.check_limits(st2, event="G", ticker="T9", committed=9.0, now=NOW)[1] == "bankroll_insufficient"
 
 
-def test_full_value_round_opens_once_and_no_duplicates(tmp_path):
+def _run_retired(monkeypatch):
+    # Value/Hybrid/Structural were retired Oct 25, 2026; their engines stay tested so they can return
+    monkeypatch.setattr(config, "RESEARCH_STRATEGIES", list(config.ALL_STRATEGIES))
+    monkeypatch.setattr(config, "RETIRED", set())
+
+
+def test_full_value_round_opens_once_and_no_duplicates(tmp_path, monkeypatch):
+    _run_retired(monkeypatch)
     m = market()
     k = FakeKalshi(markets={m["ticker"]: m}, books={m["ticker"]: book()})
     snap = _write_snapshot(tmp_path, [quote()])
@@ -536,7 +543,8 @@ def test_daily_schedule_fits_free_plan():
     assert per_day <= 100
 
 
-def test_v2_round_end_to_end_with_pinnacle(tmp_path):
+def test_v2_round_end_to_end_with_pinnacle(tmp_path, monkeypatch):
+    _run_retired(monkeypatch)
     hou = kmarket("KXNCAAFGAME-26OCT17OKSTHOU-HOU", "Oklahoma State at Houston: Houston wins", "Houston",
                   yes_ask=0.58, yes_bid=0.56)
 

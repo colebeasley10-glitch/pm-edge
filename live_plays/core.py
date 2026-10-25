@@ -294,13 +294,14 @@ def place(picks: list[dict], rows: list[dict], client, now: datetime, *, live: b
         except Exception as exc:
             out["error"] = f"kalshi unreachable: {type(exc).__name__}"
             picks = [p for p in picks if p["venue"] != "Kalshi"]
-    cash = None
+    # Kalshi checks each order only against the cash in its market's pool (and API orders
+    # never pull cash across pools), so check the pool, not the account total. Oct 25: three
+    # NFL spread orders errored "insufficient_balance" with $90 in the account.
+    cash, pools = None, {}
     if live and client is not None:
-        try:
-            cash = client.get_balance_dollars()
-        except Exception:
-            cash = None
+        pools, cash = live_sharp._read_pools(client)
     out["cash"] = cash
+    region_blocked = False
 
     from unit_sizing import too_chalky
     for p in picks:
@@ -330,10 +331,19 @@ def place(picks: list[dict], rows: list[dict], client, now: datetime, *, live: b
             rows.append({**_base_row(p, now, "Kalshi"), "trade_id": f"{PREFIX}{day}-{p['position_id']}",
                          "status": "skipped", "note": "daily $ cap reached"})
             continue
-        if cash is not None and count * price * 1.03 > cash:
-            skip("low_cash")
+        if region_blocked:
+            # Kalshi already refused this round's location; we don't resend from elsewhere
+            skip("region_blocked")
             rows.append({**_base_row(p, now, "Kalshi"), "trade_id": f"{PREFIX}{day}-{p['position_id']}",
-                         "status": "skipped", "note": f"Kalshi cash too low (${cash:.2f})"})
+                         "status": "skipped", "note": "not sent: Kalshi blocked this run's location"})
+            continue
+        pool = live_sharp._pool_of(client, p["ticker"]) if pools else None
+        pool_cash = pools.get(pool, 0.0) if pool is not None else cash
+        if pool_cash is not None and count * price * 1.03 > pool_cash:
+            skip("low_cash")
+            where = f" in {live_sharp.POOL_NAMES.get(pool, f'pool {pool}')} pool" if pool is not None else ""
+            rows.append({**_base_row(p, now, "Kalshi"), "trade_id": f"{PREFIX}{day}-{p['position_id']}",
+                         "status": "skipped", "note": f"Kalshi cash too low{where} (${pool_cash:.2f})"})
             continue
         cid = f"{PREFIX}{day}-{p['position_id']}"
         r = {**_base_row(p, now, "Kalshi"), "trade_id": cid, "client_order_id": cid,
@@ -358,6 +368,7 @@ def place(picks: list[dict], rows: list[dict], client, now: datetime, *, live: b
                 live_sharp._confirm_unknown(r, client, exc)
             if r["status"] == "error":
                 skip("order_error")
+                region_blocked = region_blocked or live_sharp.is_region_block(exc)
         rows.append(r)
         if r["status"] not in {"error", "no_fill"}:
             out["placed"] += 1
@@ -365,6 +376,8 @@ def place(picks: list[dict], rows: list[dict], client, now: datetime, *, live: b
             spent += used
             if cash is not None:
                 cash -= used
+            if pool is not None and pool in pools:
+                pools[pool] -= used
         if r["status"] == "open":
             out["filled"] += 1
             out["new"].append(r)

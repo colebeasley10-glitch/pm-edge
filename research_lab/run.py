@@ -163,9 +163,7 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
             out["my_bets"] = {"error": f"{type(exc).__name__}: {str(exc)[:120]}"}
         # 2. shared data
         ctx = RunContext(now=now, kalshi=kalshi, quotes=quotes, markets=markets)
-        if not quotes:
-            ctx.notes.append("No sportsbook prices this round: the main scanner priced 0 markets "
-                             "(Odds API credits may be used up). Value and Hybrid can't evaluate anything.")
+
         try:
             trades, complete = kalshi.trades(
                 min_ts=int((now - timedelta(minutes=config.HYBRID_SHARP_VALUE.params["flow_lookback_min"])).timestamp()))
@@ -191,10 +189,11 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
             out["best_price"] = best_price.record(now, base, poly_fetch=poly_fetch)
         except Exception as exc:
             out["best_price"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
-        try:
-            ctx.events = kalshi.open_events(config.STRUCTURAL_ARB.params["max_events"])
-        except PublicDataError:
-            ctx.notes.append("open events unavailable; Structural skipped this round")
+        if config.STRUCTURAL_ARB.key not in config.RETIRED:
+            try:
+                ctx.events = kalshi.open_events(config.STRUCTURAL_ARB.params["max_events"])
+            except PublicDataError:
+                ctx.notes.append("open events unavailable; Structural skipped this round")
         # 3. independent strategy decisions
         for spec in config.RESEARCH_STRATEGIES:
             st = stores.get(spec.key)

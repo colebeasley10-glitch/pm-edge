@@ -134,7 +134,7 @@ def save(rows: list[dict], path: Path | None = None) -> None:
 def _spent(rows: list[dict], day: str) -> tuple[float, int]:
     total, n = 0.0, 0
     for r in rows:
-        if r.get("day") != day or r.get("status") in {"skipped", "error"}:
+        if r.get("day") != day or r.get("status") in {"skipped", "error", "alert"}:
             continue
         # an order that never filled cost nothing and isn't a bet, so it doesn't count toward today's orders
         if r.get("status") == "no_fill":
@@ -199,6 +199,11 @@ def _record_fill(r: dict, order: dict, client) -> None:
 
 UNCONFIRMED = "Unconfirmed:"
 UNCONFIRMED_WINDOW = timedelta(hours=48)
+
+
+def is_region_block(exc: Exception) -> bool:
+    """Kalshi refused the order because of where the request came from (e.g. Washington)."""
+    return "not_currently_allowed_in" in str(exc).lower() or "not currently allowed in" in str(exc).lower()
 
 
 def _is_rejection(exc: Exception) -> bool:
@@ -330,14 +335,58 @@ def _low_pools(pools: dict[int, float], needed: set[int]) -> list[dict]:
             for i in sorted(WATCH_POOLS | needed) if pools.get(i, 0.0) < LOW_POOL]
 
 
+# Oct 25, 2026: when the same pick is clearly cheaper on Polymarket at the moment we'd buy it,
+# send a phone alert to bet it there by hand instead of buying on Kalshi. Game/match winners
+# only (what the Best Price matcher can price). Any Polymarket problem -> buy on Kalshi as usual.
+POLY_ROUTE_CENTS = 2.0       # Polymarket all-in at least this many cents cheaper per contract
+
+
+def poly_route_enabled() -> bool:
+    return os.getenv("LIVE_SHARP_POLY_ROUTE", "1").strip().lower() not in {"0", "false", "off", "no"}
+
+
+def poly_better(p: dict, price: float, count: int, now: datetime, cache: dict, poly_fetch=None) -> dict | None:
+    """Polymarket quote for this pick if it beats Kalshi's all-in price by POLY_ROUTE_CENTS, else None.
+
+    `cache` holds this round's Polymarket events (fetched at most once; None after a failure)."""
+    try:
+        from league.strategies.polymarket import GAME_SERIES_RE, kalshi_start
+        from research_lab import best_price, config as lab_cfg
+        from research_lab.fills import taker_fee
+        ticker = str(p.get("ticker") or "")
+        series, event_ticker = ticker.split("-", 1)[0], ticker.rsplit("-", 1)[0]
+        team, ks = best_price.team_of(p.get("title")), kalshi_start(event_ticker)
+        if not GAME_SERIES_RE.match(series) or not team or ticker.endswith("-TIE") or not ks:
+            return None
+        if "events" not in cache:
+            try:
+                cache["events"] = (poly_fetch or (lambda n: best_price.fetch_poly_events(best_price._session(), n)))(now)
+            except Exception as exc:
+                print("LIVE_SHARP_POLY_FETCH_ERROR", type(exc).__name__)
+                cache["events"] = None
+        if not cache["events"]:
+            return None
+        q = best_price.poly_quote(team, str(p.get("side") or "YES").upper(), ks[0], ks[1], cache["events"])
+        if "ask" not in q:
+            return None
+        k_cost = price + taker_fee(price, count) / count
+        p_cost = q["ask"] * (1 + lab_cfg.EV_FINDER.params["polymarket_fee_rate"])
+        diff = (k_cost - p_cost) * 100
+        return {**q, "diff_cents": round(diff, 2)} if diff >= POLY_ROUTE_CENTS else None
+    except Exception as exc:   # never let the price check block a bet
+        print("LIVE_SHARP_POLY_CHECK_ERROR", type(exc).__name__, str(exc)[:120])
+        return None
+
+
 def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
-          rows: list[dict] | None = None) -> dict:
+          rows: list[dict] | None = None, poly_fetch=None) -> dict:
     """Place real orders for the new Sharp paper picks. Returns a summary; never raises on one bad order."""
     now = now or book.now_utc()
     rows = load() if rows is None else rows
     day = et_day(now)
     picks = [p for p in new_paper_rows if p.get("strategy") == "sharp"]
-    out = {"placed": 0, "filled": 0, "skipped": {}, "spent_today": 0.0, "new": []}
+    out = {"placed": 0, "filled": 0, "skipped": {}, "spent_today": 0.0, "new": [], "poly_alerts": []}
+    poly_cache: dict = {}
     # Cash per Kalshi pool (exchange shard). An order is checked only against the cash in its
     # market's pool, and API orders never pull cash across pools, so the total balance can look
     # fine while e.g. the tennis pool is empty. Read every round so low pools get flagged even
@@ -371,9 +420,15 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
     def skip(why: str) -> None:
         out["skipped"][why] = out["skipped"].get(why, 0) + 1
 
+    region_blocked = False
     for p in picks:
         if p.get("trade_id") in seen:
             skip("already_placed")
+            continue
+        if region_blocked:
+            # Kalshi already refused this run's location. Every other sports order would be
+            # refused too, so don't send them (and never resend from somewhere else).
+            skip("region_blocked")
             continue
         n_tr = flow_trades(p)
         if min_trades() and (n_tr is None or n_tr < min_trades()):
@@ -403,6 +458,23 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
         if count < 1:
             skip("daily_budget")
             continue
+        if poly_route_enabled():
+            q = poly_better(p, price, count, now, poly_cache, poly_fetch)
+            if q is not None:
+                cid = f"{PREFIX}{day}-{p['trade_id']}"
+                stake = count * q["ask"]
+                r = {"trade_id": cid, "paper_trade_id": p["trade_id"], "client_order_id": "",
+                     "placed_at": book.iso(now), "day": day, "ticker": p["ticker"], "event_ticker": ev,
+                     "title": p.get("title", ""), "side": p["side"], "limit_price": round(price, 4),
+                     "contracts_wanted": count, "unit": per_bet(), "status": "alert", "pl": 0.0,
+                     "close_time": p.get("close_time", ""), "paper_entry": p.get("entry_price", ""),
+                     "note": (f"Polymarket {q['diff_cents']:.1f}¢ cheaper: buy {q['outcome']} at "
+                              f"{q['ask'] * 100:.0f}¢ by hand (~${stake:.2f}) {q.get('url', '')}").strip()}
+                rows.append(r)
+                seen.add(p["trade_id"])
+                out["poly_alerts"].append(r)
+                skip("cheaper_on_polymarket")
+                continue
         # don't send an order the account can't pay for in full (it just errors or fills crumbs);
         # 3% headroom covers Kalshi's fee
         pool = _pool_of(client, p["ticker"]) if pools else None
@@ -436,6 +508,7 @@ def place(new_paper_rows: list[dict], client, *, now: datetime | None = None,
                 _confirm_unknown(r, client, exc)
             if r["status"] == "error":
                 skip("order_error")
+                region_blocked = region_blocked or is_region_block(exc)
         rows.append(r)
         seen.add(p["trade_id"])
         if r["status"] != "error":

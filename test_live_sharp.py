@@ -647,3 +647,59 @@ def test_underdogs_under_40c_skipped_live_every_sport():
     assert out["skipped"].get("tennis_underdog") == 1
     assert out["skipped"].get("underdog_under_40c") == 1
     assert {o["ticker"] for o in c.orders} == {fav["ticker"]}
+
+
+class GeoBlockError(Exception):
+    status_code = 403
+
+
+class GeoBlockedClient(FakeClient):
+    def create_buy_order(self, **kw):
+        self.calls += 1
+        raise GeoBlockError("{'code': 'Trading_is_not_currently_allowed_in_Washington_on_markets_in_Sports'}")
+
+
+def test_region_block_stops_the_round_without_resending():
+    c, rows = GeoBlockedClient(), []
+    out = live_sharp.place([paper(i) for i in range(5)], c, now=NOW, rows=rows)
+    assert c.calls == 1                                  # first refusal stops the round
+    assert out["skipped"].get("region_blocked") == 4
+    assert out["placed"] == 0
+    assert live_sharp.is_region_block(GeoBlockError("not_currently_allowed_in_Washington"))
+    assert not live_sharp.is_region_block(GeoBlockError("insufficient_balance"))
+
+
+def _poly_events(ask):
+    return [{"title": "Bulls vs. Bucks", "slug": "nba-chi-mil", "markets": [{
+        "sportsMarketType": "moneyline", "gameStartTime": "2026-10-13 23:00:00+00",
+        "outcomes": '["Chicago", "Milwaukee"]', "bestBid": ask - 0.01, "bestAsk": ask, "liquidityNum": 5000}]}]
+
+
+def _game_pick(i, price):
+    p = paper(i, price=price)
+    p.update(ticker="KXNBAGAME-26OCT13CHIMIL-CHI", event_ticker="KXNBAGAME-26OCT13CHIMIL", title="Chicago wins")
+    return p
+
+
+def test_cheaper_on_polymarket_alerts_instead_of_buying():
+    c, rows = FakeClient(), []
+    out = live_sharp.place([_game_pick(500, 0.55)], c, now=NOW, rows=rows,
+                           poly_fetch=lambda now: _poly_events(0.50))
+    assert c.calls == 0 and out["placed"] == 0
+    assert rows[0]["status"] == "alert" and "Polymarket" in rows[0]["note"]
+    assert len(out["poly_alerts"]) == 1 and out["skipped"]["cheaper_on_polymarket"] == 1
+
+
+def test_small_polymarket_gap_still_buys_on_kalshi():
+    c, rows = FakeClient(), []
+    out = live_sharp.place([_game_pick(501, 0.55)], c, now=NOW, rows=rows,
+                           poly_fetch=lambda now: _poly_events(0.545))
+    assert c.calls == 1 and out["placed"] == 1 and not out["poly_alerts"]
+
+
+def test_polymarket_failure_never_blocks_a_bet():
+    def boom(now):
+        raise RuntimeError("down")
+    c, rows = FakeClient(), []
+    out = live_sharp.place([_game_pick(502, 0.55)], c, now=NOW, rows=rows, poly_fetch=boom)
+    assert c.calls == 1 and out["placed"] == 1

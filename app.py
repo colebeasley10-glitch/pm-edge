@@ -1739,7 +1739,8 @@ with tab_lab:
     _cards = []
     try:
         _sh = _lmet.sharp_summary()
-        _cards.append(("Research_Lab_Compare", "Sharp (benchmark)", "Follows big public Kalshi trades", _sh, None))
+        _cards.append(("Research_Lab_Compare", "Sharp (benchmark)", "Follows big public Kalshi trades",
+                       {**_sh, "clv": _sh.get("clv_avg")}, None))
     except Exception:
         pass
     try:  # Trader Follow: alerts on proven Polymarket bettors' pre-game bets ($10 paper each)
@@ -1760,7 +1761,8 @@ with tab_lab:
         _mbs = _mb.summarize(_mbr, _mbmode)
         _cards.append(("Research_Lab_Maker_Bot", "Maker Bot" + (" (dry run)" if _mbmode == "dry" else ""),
                        "$1 resting orders below Pinnacle's fair line; cancels before start",
-                       {"won": _mbs["won"], "lost": _mbs["lost"], "roi": _mbs["roi"], "open": _mbs["open"] + _mbs["resting"]}, None))
+                       {"won": _mbs["won"], "lost": _mbs["lost"], "roi": _mbs["roi"], "open": _mbs["open"] + _mbs["resting"],
+                        "clv": _mbs.get("avg_markout")}, None))
     except Exception:
         pass
     try:  # NCAA Model Grader: every FBS game graded at a frozen line (Strong + Lean shown)
@@ -1772,7 +1774,8 @@ with tab_lab:
         _ngs = _ng.summarize(_ngr, source=_ngsrc, model="scores_v1")[0]
         _cards.append(("Research_Lab_NCAA_Grader", "NCAA Model Grader",
                        "Every FBS pick graded at a frozen line" + (" (backtest)" if _ngsrc == "backtest" else ""),
-                       {"won": _ngs["w"], "lost": _ngs["l"], "roi": _ngs["roi"], "open": _ngs["open"]}, None))
+                       {"won": _ngs["w"], "lost": _ngs["l"], "roi": _ngs["roi"], "open": _ngs["open"],
+                        "beat_close": _ngs.get("beat_close")}, None))
     except Exception:
         pass
     for _spec in _lcfg.RESEARCH_STRATEGIES:
@@ -1785,11 +1788,18 @@ with tab_lab:
                   "HYBRID_SHARP_VALUE_v2": "Pinnacle value + trade flow", "EV_FINDER_v1": "Best price on any of your books",
                   "EV_FINDER_v2": "Every +1% play, any odds",
                   "EV_FINDER_v3": "+1% plays priced -200 to +150 (what you bet)"}
-        _cards.append((_pages.get(_spec.key, "Research_Lab_Compare"), _spec.label, _short.get(_spec.key, ""), _sm, _sm["bankroll"]))
+        _cards.append((_pages.get(_spec.key, "Research_Lab_Compare"), _spec.label, _short.get(_spec.key, ""),
+                       {**_sm, "clv": _sm.get("clv_avg")}, _sm["bankroll"]))
     _html = []
     for _pg, _name, _desc, _sm, _bank in _cards:
         _n = _sm["won"] + _sm["lost"]
-        _wr = f"{100 * _sm['won'] / _n:.0f}%" if _n else "—"
+        # CLV is the headline (Oct 25, 2026): did we buy cheaper than the closing price? It shows
+        # real edge in ~100 bets; W-L needs 1,000+. Cents per contract; NCAA shows % beating the close.
+        _clv, _clv_tone = "—", 0
+        if _sm.get("clv") is not None:
+            _clv, _clv_tone = f"{_sm['clv']:+.1f}¢", _sm["clv"]
+        elif _sm.get("beat_close") is not None:
+            _clv, _clv_tone = f"{100 * _sm['beat_close']:.0f}%", _sm["beat_close"] - 0.5
         _roi = pct(_sm["roi"], signed=True) if _sm["roi"] is not None else "—"
         _u = _sm.get("units")
         if _u is None and _sm["roi"] is not None and _n:
@@ -1800,7 +1810,7 @@ with tab_lab:
             f"<div class='lc-top'><div><div class='lc-name'>{esc(_name)}</div><div class='lc-desc'>{esc(_desc)}</div></div>"
             f"<div class='lc-bank'>{('$' + format(_bank, ',.0f')) if _bank is not None else ''}</div></div>"
             f"<div class='lc-stats'><div><b>{_sm['won']}–{_sm['lost']}</b><span>Record</span></div>"
-            f"<div><b>{_wr}</b><span>Win rate</span></div>"
+            f"<div><b class='{tone(_clv_tone)}'>{_clv}</b><span>CLV</span></div>"
             f"<div><b class='{tone(_sm['roi'] or 0)}'>{_roi}</b><span>ROI</span></div>"
             f"<div><b class='{tone(_u or 0)}'>{_units}</b><span>Units</span></div>"
             f"<div><b>{_sm['open']}</b><span>Open</span></div></div></a>")

@@ -146,6 +146,10 @@ def run_live_sharp(new_sharp_rows: list[dict], kalshi, now: datetime, client=Non
         except Exception as exc:
             out["error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
     live_sharp.save(rows)
+    poly = out.pop("poly_alerts", [])
+    if poly:
+        _pushover(f"🟣 Sharp pick cheaper on Polymarket: bet {len(poly)} by hand",
+                  [f"{r['side']} {str(r['title'] or r['ticker'])[:50]} — {r['note']}" for r in poly])
     new = out.pop("new", [])
     if new:
         _pushover(f"💵 Live $5 Sharp: {len(new)} real bet{'s' if len(new) != 1 else ''} placed",
