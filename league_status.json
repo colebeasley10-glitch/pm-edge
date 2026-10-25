@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-10-25T09:00:37.832444Z",
+ "ran_at": "2026-10-25T09:30:45.877040Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -17,18 +17,11 @@
    }
   },
   "polymarket": {
-   "picks_found": 3,
+   "picks_found": 2,
    "opened": 0,
    "skipped": {},
    "benched": true,
    "shadow": [
-    {
-     "ticker": "KXITFMATCH-26OCT25CONPIA-PIA",
-     "side": "NO",
-     "ask": 0.02,
-     "fair": 0.69,
-     "edge": 0.6686
-    },
     {
      "ticker": "KXMLSGAME-26OCT25LAFCLAG-LAG",
      "side": "YES",
@@ -47,10 +40,10 @@
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 218,
-    "kalshi_events": 1681,
-    "matched": 143,
-    "priced": 278,
+    "poly_games": 226,
+    "kalshi_events": 1677,
+    "matched": 151,
+    "priced": 294,
     "best_gaps": [
      [
       0.445,
@@ -73,16 +66,16 @@
       "KXDENSUPERLIGAGAME-26OCT25SILNJA-NJA"
      ],
      [
-      0.015,
-      "KXCS2GAME-26OCT251000AURG2-AUR"
-     ],
-     [
-      0.015,
-      "KXCHNL1GAME-26OCT25GUASUD-GUA"
+      0.005,
+      "KXSWISSLEAGUEGAME-26OCT25THULUG-LUG"
      ],
      [
       0.005,
-      "KXSWISSLEAGUEGAME-26OCT25THULUG-LUG"
+      "KXSUPERLIGGAME-26OCT26RIZTRA-RIZ"
+     ],
+     [
+      0.005,
+      "KXSERIEAGAME-26OCT28MONNAP-NAP"
      ]
     ]
    }
@@ -94,80 +87,29 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 4,
-   "skipped": {},
+   "opened": 2,
+   "skipped": {
+    "same_game": 1,
+    "already_holding": 1
+   },
    "diag": {
     "skipped_settles_late": 0
    }
   },
   "crypto": {
-   "picks_found": 4,
+   "picks_found": 0,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [
-    {
-     "ticker": "KXBTCD-26OCT2506-T80499.99",
-     "side": "YES",
-     "ask": 0.08,
-     "fair": 0.2088,
-     "edge": 0.1236
-    },
-    {
-     "ticker": "KXBTCD-26OCT2506-T80399.99",
-     "side": "YES",
-     "ask": 0.21,
-     "fair": 0.3308,
-     "edge": 0.1091
-    },
-    {
-     "ticker": "KXBTCD-26OCT2506-T80099.99",
-     "side": "NO",
-     "ask": 0.14,
-     "fair": 0.247,
-     "edge": 0.0986
-    },
-    {
-     "ticker": "KXETHD-26OCT2506-T2339.99",
-     "side": "YES",
-     "ask": 0.14,
-     "fair": 0.2432,
-     "edge": 0.0947
-    }
-   ],
+   "shadow": [],
    "shadow_opened": 0,
    "diag": {
-    "markets_priced": 488,
+    "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.0026806246702921616,
-     "ETH-USD": 0.004355172528902105
+     "BTC-USD": 0.00268840973373384,
+     "ETH-USD": 0.004372511947778288
     },
-    "best": [
-     [
-      -0.62,
-      "KXETHD-26OCT2506-T2389.99"
-     ],
-     [
-      -0.5,
-      "KXETHD-26OCT2506-T2374.99"
-     ],
-     [
-      -0.5,
-      "KXETHD-26OCT2506-T2379.99"
-     ],
-     [
-      0.129,
-      "KXBTCD-26OCT2506-T80499.99"
-     ],
-     [
-      0.121,
-      "KXBTCD-26OCT2506-T80399.99"
-     ],
-     [
-      -0.117,
-      "KXBTCD-26OCT2506-T80099.99"
-     ]
-    ]
+    "best": []
    }
   }
  },
@@ -178,8 +120,8 @@
   "0": "20261025"
  },
  "update": {
-  "marked": 18,
-  "settled": 1
+  "marked": 20,
+  "settled": 0
  },
  "shadow_update": {
   "marked": 2,
@@ -192,8 +134,7 @@
   "filled": 0,
   "skipped": {
    "tennis_underdog": 1,
-   "favorite_over_75c": 1,
-   "thin_flow": 2
+   "order_error": 1
   },
   "spent_today": 20.84,
   "cash": 97.54,
@@ -211,7 +152,7 @@
     "cash": 5.13
    }
   ],
-  "settled": 1,
+  "settled": 0,
   "summary": {
    "won": 258,
    "lost": 190,
@@ -232,16 +173,16 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 1086,
-   "open": 22,
+   "picks": 1088,
+   "open": 23,
    "won": 615,
-   "lost": 449,
-   "pl": -130.1899999999996,
-   "risked": 10663.860000000017,
-   "clv_sum": -124.89999999999998,
-   "clv_n": 1033,
-   "roi": -0.012208524868105863,
-   "clv": -0.12090997095837365
+   "lost": 450,
+   "pl": -140.2199999999996,
+   "risked": 10673.890000000018,
+   "clv_sum": -180.89999999999998,
+   "clv_n": 1034,
+   "roi": -0.013136728971349656,
+   "clv": -0.17495164410058026
   },
   {
    "strategy": "weather",
