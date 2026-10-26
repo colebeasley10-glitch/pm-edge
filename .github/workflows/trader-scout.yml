@@ -9,7 +9,7 @@ on:
         required: false
         default: ""
       mode:
-        description: "polymarket (default), kalshi_probe, or kalshi"
+        description: "polymarket (default), kalshi_probe, kalshi, or props_probe"
         required: false
         default: "polymarket"
 
@@ -36,7 +36,7 @@ jobs:
         if: github.event.inputs.mode != 'kalshi_probe'
         run: python -m trader_follow.scout ${{ github.event.inputs.wallets }}
       - name: Probe Kalshi social data
-        if: github.event.inputs.mode == 'kalshi_probe' || github.event.inputs.mode == 'kalshi'
+        if: github.event.inputs.mode != 'polymarket' && github.event.inputs.mode != ''
         run: python -m trader_follow.${{ github.event.inputs.mode }}
       - name: Save report
         if: always()
