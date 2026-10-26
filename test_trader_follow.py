@@ -135,3 +135,12 @@ def test_by_sport_groups_soccer_and_ranks_by_sample():
     out = core.summarize_by_sport(rows)
     assert [(x["sport"], x["wins"], x["losses"], x["signals"]) for x in out] == [("NFL", 1, 1, 2), ("Soccer", 1, 0, 2)]
     assert out[0]["roi_copy"] == -0.05
+
+
+def test_sized_lane_scales_flat_result_and_caps():
+    from trader_follow import core
+    rows = [{"status": "won", "pl_copy": 10.0, "his_usdc": 25000, "trader": "X"},     # 0.5u -> +5
+            {"status": "lost", "pl_copy": -10.0, "his_usdc": 400000, "trader": "X"}]  # capped 3u -> -30
+    s = core._stats(rows)
+    assert s["pl_sized"] == -25.0 and s["staked_sized"] == 35.0
+    assert core.sized_units({"his_usdc": 100000}) == 2.0

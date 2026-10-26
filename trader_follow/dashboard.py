@@ -35,6 +35,15 @@ def render() -> None:
               "ROI copying": _pct(s["roi_copy"]), "ROI at his price": _pct(s["roi_his"])}
              for s in core.summarize(rows)]
     st.dataframe(table, hide_index=True, width="stretch")
+    st.markdown("**Sized like him (paper)**")
+    st.dataframe([{"Trader": s["trader"], "W-L": f"{s['wins']}-{s['losses']}",
+                   "Flat $10 P/L": _money(s["pl_copy"]), "Flat ROI": _pct(s["roi_copy"]),
+                   "Sized P/L": _money(s["pl_sized"]), "Sized ROI": _pct(s["roi_sized"]),
+                   "Sized risked": _money(s["staked_sized"])} for s in core.summarize(rows)],
+                 hide_index=True, width="stretch")
+    st.caption(f"Sized: every ${core.SIZED_UNIT_USDC:,.0f} he bets = one ${core.PAPER_STAKE:.0f} unit for you, "
+               f"capped at {core.SIZED_MAX_UNITS:.0f} units (so his $20k bet = $4, his $300k bet = $30). "
+               "Compare the two ROIs after 100+ bets before changing anything real.")
     st.caption("“ROI copying” is what matters: it uses the price you could get when the alert arrived. "
                "If it trails “ROI at his price” by a lot, the alerts are arriving too late.")
 
@@ -65,5 +74,6 @@ def render() -> None:
         "In band": "✓" if str(r.get("in_band")) == "True" else "—",
         "Result": r.get("status", ""),
         "P/L ($10)": _money(core._float(r.get("pl_copy"))) if r.get("pl_copy") not in (None, "") else "—",
+        "Units (sized)": f"{core.sized_units(r):.1f}u",
     } for r in recent], hide_index=True, width="stretch")
     st.caption("Out-of-band signals are logged but never pushed, so you can see if the price filter helps.")

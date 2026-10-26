@@ -56,6 +56,11 @@ BAND_LOW = 0.40              # +150
 BAND_HIGH = 2.0 / 3.0        # -200
 CHASE_CENTS = 0.02           # alert says "don't pay more than his price + 2¢"
 PAPER_STAKE = 10.0           # paper dollars per signal
+# Sized lane (Oct 25, 2026, paper only): treat SIZED_UNIT_USDC of his stake as 1 unit and copy
+# that many $10 units, capped at SIZED_MAX_UNITS. Computed from the flat copy result, so it
+# covers every past alert too. Backtest on 46 bets: +1.3% capped vs -4.2% uncapped.
+SIZED_UNIT_USDC = 50_000.0
+SIZED_MAX_UNITS = 3.0
 MAX_PUSHES_PER_RUN = 6
 SETTLE_AFTER = timedelta(hours=2)   # start checking results 2h after kickoff
 KEEP_POSITIONS = timedelta(days=7)
@@ -472,13 +477,21 @@ def sport_group(row: dict) -> str:
     return SPORT_NAMES.get(code, code.upper() or "Other")
 
 
+def sized_units(row: dict) -> float:
+    """His stake in units (SIZED_UNIT_USDC each), capped at SIZED_MAX_UNITS."""
+    return min((_float(row.get("his_usdc")) or 0.0) / SIZED_UNIT_USDC, SIZED_MAX_UNITS)
+
+
 def _stats(rows: list[dict]) -> dict:
     done = [r for r in rows if r.get("status") in ("won", "lost")]
     wins = sum(r["status"] == "won" for r in done)
     pl_copy = sum(_float(r.get("pl_copy")) or 0 for r in done)
     pl_his = sum(_float(r.get("pl_his")) or 0 for r in done)
     staked = PAPER_STAKE * len(done)
-    return {"signals": len(rows), "open": sum(r.get("status") == "open" for r in rows),
+    pl_sized = sum((_float(r.get("pl_copy")) or 0) * sized_units(r) for r in done)
+    staked_sized = sum(PAPER_STAKE * sized_units(r) for r in done)
+    return {"pl_sized": round(pl_sized, 2), "staked_sized": round(staked_sized, 2),
+            "roi_sized": pl_sized / staked_sized if staked_sized else None,"signals": len(rows), "open": sum(r.get("status") == "open" for r in rows),
             "wins": wins, "losses": len(done) - wins, "pl_copy": round(pl_copy, 2), "pl_his": round(pl_his, 2),
             "roi_copy": pl_copy / staked if staked else None, "roi_his": pl_his / staked if staked else None}
 
