@@ -210,7 +210,7 @@ def update(pinnacle_events: dict, now: datetime, base: Path | None = None, *, pu
     """pinnacle_events: {sport_id: [PinEvent]} fetched this round (may be empty)."""
     hist, rows = _hist(base), load(base)
     by_id = {r["play_id"]: r for r in rows}
-    info = {"games": 0, "new_plays": 0, "pushed": 0, "settled": 0}
+    info = {"games": 0, "new_plays": 0, "pushed": 0, "settled": 0, "new": []}
     today = now.strftime("%Y-%m-%d")
     sent_today = sum(1 for r in rows if (r.get("alert_time") or "")[:10] == today)
     games_alerted = {r["play_id"].rsplit("-", 1)[0] for r in rows}
@@ -260,6 +260,7 @@ def update(pinnacle_events: dict, now: datetime, base: Path | None = None, *, pu
                 play["pushed"] = False
         info["pushed"] += play["pushed"] is True
         rows.append(play)
+        info["new"].append(play)
         info["new_plays"] += 1
     # settle finished games from ESPN
     if scores is not None:

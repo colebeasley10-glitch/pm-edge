@@ -197,7 +197,7 @@ def update(payloads: dict, now: datetime, base: Path | None = None, *, push=None
     """payloads: raw PinnWire fixtures fetched this round. box(play) -> actual stat value or None."""
     hist, rows = _hist(base), load(base)
     by_id = {r["play_id"]: r for r in rows}
-    info = {"props": 0, "new_plays": 0, "pushed": 0, "settled": 0}
+    info = {"props": 0, "new_plays": 0, "pushed": 0, "settled": 0, "new": []}
     props = props_from(payloads, now)
     info["props"] = len(props)
     if props:
@@ -242,6 +242,7 @@ def update(payloads: dict, now: datetime, base: Path | None = None, *, push=None
                     play["pushed"] = False
             info["pushed"] += play["pushed"] is True
             rows.append(play)
+            info["new"].append(play)
             players_today.add((play["player"], play["game"]))
             sent += 1
             info["new_plays"] += 1

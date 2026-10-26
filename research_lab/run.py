@@ -124,9 +124,10 @@ def run_ev(spec, store, ctx) -> dict:
 
 def run_ev_plays(spec, store, ctx) -> dict:
     res = run_plays(spec, store, ctx)
-    alerts = res.pop("alerts", [])
+    res.pop("alerts", [])
     # only the newest Today's Plays version sends phone alerts (no duplicates across versions)
-    res["pushed"] = push_alerts(alerts, store, ctx.now) if spec.key == config.EV_FINDER_V3.key else 0
+    # Oct 25, 2026: price-gap alerts now go out through Odds Fam (one feed, no duplicates)
+    res["pushed"] = 0
     return res
 
 
@@ -151,6 +152,11 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
         for st in stores.values():
             tickers += tickers_to_check(st)
         tickers += my_bets.open_tickers(base)
+        try:
+            from research_lab import odds_fam as _of
+            tickers += _of.open_tickers(base)
+        except Exception:
+            pass
         try:
             markets = kalshi.markets(tickers) if tickers else {}
         except PublicDataError:
@@ -179,19 +185,17 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
             out["pinnacle"] = {"errors": [f"{type(exc).__name__}: {str(exc)[:160]}"]}
         try:   # Sharp Plays: Pinnacle steam -> shop-it-anywhere alerts (paper + push, no orders)
             from research_lab import sharp_plays
-            from trader_follow.core import send_push
             from trader_follow.scores import ScoreResolver
             out["sharp_plays"] = sharp_plays.update(
                 getattr(ctx, "pinnacle_events", {}) or {}, now, base,
-                push=(lambda t, m: send_push(t, m, None)) if send_report else None, scores=ScoreResolver())
+                push=None, scores=ScoreResolver())   # Odds Fam sends the alerts
         except Exception as exc:
             out["sharp_plays"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
         try:   # Prop Board: Pinnacle player props, fair prices + prop steam alerts (paper + push)
             from research_lab import prop_board
-            from trader_follow.core import send_push as _send
             out["prop_board"] = prop_board.update(
                 getattr(ctx, "pinnacle_payloads", {}) or {}, now, base,
-                push=(lambda t, m: _send(t, m, None)) if send_report else None,
+                push=None,                           # Odds Fam sends the alerts
                 box=prop_board.BoxScores() if send_report else None)
         except Exception as exc:
             out["prop_board"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
@@ -199,6 +203,18 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
             out["ev"] = ev_round(ctx, base, poly_fetch=poly_fetch, odds_session=odds_session, odds_key=odds_key)
         except Exception as exc:  # only affects the +EV Finder
             out["ev"] = {"errors": [f"{type(exc).__name__}: {str(exc)[:160]}"]}
+        try:   # Odds Fam: the daily 3-15 play feed (prop steam, line steam, Kalshi/Polymarket price gaps)
+            from research_lab import odds_fam
+            from trader_follow.core import send_push as _of_send
+            from trader_follow.scores import ScoreResolver as _OfScores
+            out["odds_fam"] = odds_fam.update(
+                now, base, new_props=(out.get("prop_board") or {}).pop("new", []),
+                new_lines=(out.get("sharp_plays") or {}).pop("new", []), picks=getattr(ctx, "picks", []) or [],
+                markets=ctx.markets,
+                push=(lambda t, m, u: _of_send(t, m, u, url_title="Open")) if send_report else None,
+                scores=_OfScores())
+        except Exception as exc:
+            out["odds_fam"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
         try:   # read-only export for the keyed Maker Bot workflow (no orders here)
             out["maker_candidates"] = maker_candidates.write(base, ctx.picks, ctx.markets, ctx.flows, now,
                                                              ctx.flow_complete)

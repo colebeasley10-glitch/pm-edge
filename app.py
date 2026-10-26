@@ -823,6 +823,20 @@ def _american_from_prob(p: float) -> str:
 
 # ------------------------------------------------------------------- home --
 with tab_home:
+    try:   # Odds Fam: today's sharp plays, front and center
+        import sys as _ofsys
+        for _m in [k for k in _ofsys.modules if k == "research_lab.odds_fam"]:
+            del _ofsys.modules[_m]
+        from research_lab import odds_fam as _of
+        _of_rows = _of.load()
+        _of_now = datetime.now(timezone.utc)
+        _of_live = [r for r in _of_rows if r["status"] == "open" and (_when(r["game_start"]) or _of_now) > _of_now]
+        _of_rec = _of.summary(_of_rows)
+        st.page_link("pages/Odds_Fam.py",
+                     label=f"Odds Fam · {len(_of_live)} open plays · paper {_of_rec['won']}-{_of_rec['lost']}",
+                     icon="🎯", use_container_width=True)
+    except Exception:
+        st.page_link("pages/Odds_Fam.py", label="Odds Fam", icon="🎯")
     _h_rows, _h_ls = load_live_sharp()
     _h_open = [r for r in _h_rows if r.get("status") == "open"]
     _h_risk = sum((_num(r.get("cost")) or 0) + (_num(r.get("fee")) or 0) for r in _h_open)
