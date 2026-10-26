@@ -8,6 +8,10 @@ on:
         description: "Extra wallets to include (space separated)"
         required: false
         default: ""
+      mode:
+        description: "polymarket (default), kalshi_probe, or kalshi"
+        required: false
+        default: "polymarket"
 
 concurrency:
   group: trader-scout
@@ -29,7 +33,11 @@ jobs:
           python-version: "3.12"
       - run: pip install requests
       - name: Scout traders
+        if: github.event.inputs.mode != 'kalshi_probe'
         run: python -m trader_follow.scout ${{ github.event.inputs.wallets }}
+      - name: Probe Kalshi social data
+        if: github.event.inputs.mode == 'kalshi_probe' || github.event.inputs.mode == 'kalshi'
+        run: python -m trader_follow.${{ github.event.inputs.mode }}
       - name: Save report
         if: always()
         run: |
