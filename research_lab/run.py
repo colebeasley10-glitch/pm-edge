@@ -67,6 +67,7 @@ def reconcile(store: Store) -> list[str]:
 def pinnacle_round(ctx: RunContext, kalshi, pinn, base: Path) -> dict:
     """Fetch Pinnacle prices (if due) and the matching Kalshi series; fill ctx.pinnacle_quotes."""
     payloads, info = pinnacle.fetch_due(pinn, ctx.now, base)
+    ctx.pinnacle_payloads = payloads
     kalshi_events: dict[int, list] = {}
     for sid in payloads:
         evs = []
@@ -185,6 +186,15 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
                 push=(lambda t, m: send_push(t, m, None)) if send_report else None, scores=ScoreResolver())
         except Exception as exc:
             out["sharp_plays"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
+        try:   # Prop Board: Pinnacle player props, fair prices + prop steam alerts (paper + push)
+            from research_lab import prop_board
+            from trader_follow.core import send_push as _send
+            out["prop_board"] = prop_board.update(
+                getattr(ctx, "pinnacle_payloads", {}) or {}, now, base,
+                push=(lambda t, m: _send(t, m, None)) if send_report else None,
+                box=prop_board.BoxScores() if send_report else None)
+        except Exception as exc:
+            out["prop_board"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
         try:
             out["ev"] = ev_round(ctx, base, poly_fetch=poly_fetch, odds_session=odds_session, odds_key=odds_key)
         except Exception as exc:  # only affects the +EV Finder

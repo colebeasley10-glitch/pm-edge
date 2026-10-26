@@ -16,6 +16,7 @@ class RunContext:
     kalshi: object                            # research_lab.public_data.PublicKalshi (or a test fake)
     quotes: list = field(default_factory=list)   # snapshot.FairQuote (main scanner, v1)
     pinnacle_quotes: list = field(default_factory=list)  # FairQuote priced off Pinnacle (v2)
+    pinnacle_payloads: dict = field(default_factory=dict)  # sport_id -> raw PinnWire payload (props live here)
     pinnacle_events: dict = field(default_factory=dict)  # sport_id -> [PinEvent] fetched this round
     ev_games: list = field(default_factory=list)          # ev_data.Game, original sports only (EV_FINDER v1)
     picks: list = field(default_factory=list)             # ev_data.Pick, every sport/market (EV_FINDER v2)

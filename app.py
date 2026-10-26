@@ -1725,7 +1725,8 @@ with tab_lab:
     from research_lab.ledger import Store as _LStore
     st.markdown("<div class='pe-lede'>Strategies tested side by side on <b>paper</b>, each with its own "
                 "$500 virtual bankroll. Tap one for its bets, misses and model checks.</div>", unsafe_allow_html=True)
-    _tools = [("Research_Lab_Sharp_Plays", "Sharp Plays", "Pinnacle steam: bet it anywhere at the target price"),
+    _tools = [("Research_Lab_Prop_Board", "Prop Board", "Every Pinnacle player prop: fair odds to shop against"),
+              ("Research_Lab_Sharp_Plays", "Sharp Plays", "Pinnacle steam: bet it anywhere at the target price"),
               ("Research_Lab_EV_Finder", "+EV Finder", "Best price across all your books vs Pinnacle"),
               ("Research_Lab_Best_Price", "Best Price", "Were your Sharp picks cheaper on Polymarket?"),
               ("Research_Lab_Heavy_Flow", "Heavy Flow test", "Do Sharp picks with 60+ whale trades do better?"),
@@ -1761,6 +1762,16 @@ with tab_lab:
         _cards.append(("Research_Lab_Sharp_Plays", "Sharp Plays", "Pinnacle line moves, shopped on any book",
                        {"won": _sps["won"], "lost": _sps["lost"], "roi": _sps["roi"], "open": _sps["open"],
                         "clv": _sps["clv_avg"]}, None))
+    except Exception:
+        pass
+    try:  # Prop steam plays (Prop Board)
+        for _m in [k for k in _lsys.modules if k == "research_lab.prop_board"]:
+            del _lsys.modules[_m]
+        from research_lab import prop_board as _pb
+        _pbs = _pb.summary(_pb.load())
+        _cards.append(("Research_Lab_Prop_Board", "Prop Plays", "Pinnacle prop line moves, shopped on any book",
+                       {"won": _pbs["won"], "lost": _pbs["lost"], "roi": _pbs["roi"], "open": _pbs["open"],
+                        "clv": _pbs["clv_avg"]}, None))
     except Exception:
         pass
     try:  # Kalshi Follow: same idea on Kalshi's public social feed

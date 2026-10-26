@@ -52,6 +52,9 @@ ORIGINAL_SPORTS = ("football", "basketball")
 LAB_ALIASES = Path(__file__).parent / "pinnacle_aliases.csv"
 
 
+PROP_SPORTS = {3, 4, 5}   # basketball, hockey, football: fetch Pinnacle player props too
+
+
 class PinnacleError(RuntimeError):
     pass
 
@@ -88,7 +91,10 @@ class PinnWire:
         if not self.key:
             raise PinnacleError("PINNWIRE_KEY is not set")
         for attempt in range(2):
-            r = self.session.get(f"{BASE}/kit/v1/prematch/fixtures", params={"sport_id": sport_id},
+            params = {"sport_id": sport_id}
+            if sport_id in PROP_SPORTS:
+                params["include_specials"] = 1   # player props ride along in the same request (free key)
+            r = self.session.get(f"{BASE}/kit/v1/prematch/fixtures", params=params,
                                  headers={"x-api-key": self.key}, timeout=self.timeout)
             if r.status_code == 429 and attempt == 0:
                 time.sleep(min(30, int(r.headers.get("Retry-After") or 5)))
