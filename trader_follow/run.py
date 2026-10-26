@@ -12,6 +12,11 @@ def main() -> None:
     summary = run_round(get_score=scores)
     if scores.errors:
         summary.setdefault("errors", []).extend(scores.errors[:5])
+    try:   # Kalshi traders (separate ledger; one failure never stops the Polymarket side)
+        from trader_follow import kalshi_follow
+        summary["kalshi"] = kalshi_follow.run_round()
+    except Exception as exc:
+        summary["kalshi"] = {"error": f"{type(exc).__name__}: {str(exc)[:200]}"}
     print(json.dumps(summary, indent=2))
 
 

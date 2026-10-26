@@ -248,14 +248,15 @@ def trade_key(t: dict) -> str:
 
 # ------------------------------------------------------------------ alerts
 
-def send_push(title: str, message: str, url: str | None = None, post=requests.post) -> bool:
+def send_push(title: str, message: str, url: str | None = None, post=requests.post,
+              url_title: str = "Open on Polymarket") -> bool:
     user, token = os.getenv("PUSHOVER_USER_KEY"), os.getenv("PUSHOVER_APP_TOKEN")
     if not user or not token:
         print("PUSH SKIPPED (no Pushover secrets):", title, "|", message.replace("\n", " | "))
         return False
     payload = {"token": token, "user": user, "title": title[:250], "message": message[:1024], "priority": "1"}
     if url:
-        payload["url"], payload["url_title"] = url, "Open on Polymarket"
+        payload["url"], payload["url_title"] = url, url_title
     try:
         r = post(PUSH_URL, data=payload, timeout=15)
     except requests.RequestException as exc:

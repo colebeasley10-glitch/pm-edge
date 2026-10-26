@@ -1752,6 +1752,16 @@ with tab_lab:
                        {"won": _tfs["wins"], "lost": _tfs["losses"], "roi": _tfs["roi_copy"], "open": _tfs["open"]}, None))
     except Exception:
         pass
+    try:  # Kalshi Follow: same idea on Kalshi's public social feed
+        from trader_follow import kalshi_follow as _kf
+        _kfs = _kf.stats(_kf.load_ledger())
+        _kw, _kl = sum(x["wins"] for x in _kfs), sum(x["losses"] for x in _kfs)
+        _kpl = sum(x["pl_copy"] for x in _kfs)
+        _cards.append(("Research_Lab_Trader_Follow", "Kalshi Follow", "Copies big pre-game bets from top Kalshi sports traders",
+                       {"won": _kw, "lost": _kl, "roi": (_kpl / (10.0 * (_kw + _kl))) if (_kw + _kl) else None,
+                        "open": sum(x["open"] for x in _kfs)}, None))
+    except Exception:
+        pass
     try:  # Maker Bot: $1 resting Kalshi orders priced better than Pinnacle (live or dry run)
         for _m in [k for k in _lsys.modules if k == "maker_bot" or k.startswith("maker_bot.")]:
             del _lsys.modules[_m]

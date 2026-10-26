@@ -64,6 +64,8 @@ def render() -> None:
             st.markdown(f"**{t.name}** — alerts on {sports}, ${t.min_usdc:,.0f}+ · {t.note} · "
                         f"[profile](https://polymarket.com/profile/{t.wallet})")
 
+    _kalshi_section()
+
     st.subheader("Recent signals")
     if not rows:
         st.write("No signals yet. Alerts start with his next big pre-game bet.")
@@ -82,3 +84,27 @@ def render() -> None:
     } for r in recent], hide_index=True, width="stretch")
     st.caption("Signals outside the price band, or outside a trader's proven sports, are logged on paper "
                "but never pushed, so you can see whether each filter helps.")
+
+
+def _kalshi_section() -> None:
+    from trader_follow import kalshi_follow as kf
+    st.subheader("Kalshi traders")
+    st.caption("Same rules on Kalshi's public feed (only traders who show their trades). Paper $10 at the "
+               "Kalshi price in the alert; the alert also gives the worst odds worth taking on any book.")
+    rows = kf.load_ledger()
+    st.dataframe([{"Trader": s["trader"], "Alerts": s["signals"], "Open": s["open"],
+                   "W-L": f"{s['wins']}-{s['losses']}", "P/L copying": _money(s["pl_copy"]),
+                   "ROI copying": _pct(s["roi_copy"])} for s in kf.stats(rows)], hide_index=True, width="stretch")
+    with st.expander("Who we follow on Kalshi"):
+        for t in kf.KALSHI_TRADERS:
+            st.markdown(f"**{t.nickname}** — ${t.min_usd:,.0f}+ pre-game · {t.note} · "
+                        f"[profile](https://kalshi.com/ideas/profiles/{t.nickname})")
+    if rows:
+        recent = sorted(rows, key=lambda r: r.get("alert_time") or "", reverse=True)[:30]
+        st.dataframe([{"When": (r.get("alert_time") or "")[:16].replace("T", " "), "Trader": r["trader"],
+                       "Bet": r["bet"], "His $": f"${float(r['his_usd']):,.0f}",
+                       "His price": f"{float(r['his_price']) * 100:.0f}¢ ({core.american(float(r['his_price']))})",
+                       "Alert price": f"{float(r['copy_price']) * 100:.0f}¢" if r.get("copy_price") else "—",
+                       "Result": r.get("status", ""),
+                       "P/L ($10)": _money(core._float(r.get("pl_copy"))) if r.get("pl_copy") not in (None, "") else "—"}
+                      for r in recent], hide_index=True, width="stretch")
