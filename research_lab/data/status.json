@@ -1,7 +1,7 @@
 {
  "day_stats": {
   "data_failures": 0,
-  "day": "20261025",
+  "day": "20261026",
   "structural_filled": 0,
   "structural_qualified": 0
  },
@@ -20,10 +20,10 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 10/25"
  },
  "last_run": {
-  "at": "2026-10-26T03:32:05.766251Z",
+  "at": "2026-10-26T04:02:34.535211Z",
   "best_price": {
    "compared": 0,
-   "new_picks": 0,
+   "new_picks": 1,
    "poly_cheaper": 0
   },
   "book_errors": 0,
@@ -33,20 +33,23 @@
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
-    "errors": [],
+    "errors": [
+     "americanfootball_ncaaf: HTTP 401",
+     "americanfootball_nfl: HTTP 401",
+     "basketball_nba: HTTP 401"
+    ],
     "fresh": false,
     "remaining": "0",
-    "skipped": "lab odds budget used or account nearly empty",
     "taken_at": null
    },
    "errors": [],
-   "games": 104,
-   "kalshi_offers": 28,
-   "picks": 208,
-   "polymarket_offers": 0
+   "games": 74,
+   "kalshi_offers": 66,
+   "picks": 710,
+   "polymarket_offers": 24
   },
   "maker_candidates": {
-   "candidates": 28,
+   "candidates": 92,
    "sharp_agrees": 0
   },
   "my_bets": {
@@ -56,8 +59,8 @@
   "notes": [],
   "odds_fam": {
    "bets_settled": 0,
-   "pushed": 0,
-   "sent": 0,
+   "pushed": 2,
+   "sent": 2,
    "settled": 0
   },
   "paper_only": true,
@@ -65,43 +68,45 @@
    "budget": 90,
    "errors": [],
    "fetched": [
-    "tennis"
+    "football",
+    "basketball",
+    "hockey"
    ],
-   "kalshi_markets": 108,
-   "matched": 28,
-   "pinnacle_games": 104,
-   "requests_today": 74,
+   "kalshi_markets": 4701,
+   "matched": 347,
+   "pinnacle_games": 76,
+   "requests_today": 3,
    "samples": [
-    "no_pinnacle_match: Berrettini vs Etcheverry: Matteo Berrettini wins",
-    "no_pinnacle_match: Berrettini vs Etcheverry: Tomas Martin Etcheverry wins",
-    "no_pinnacle_match: Cobolli vs Dimitrov: Flavio Cobolli wins",
-    "no_pinnacle_match: Cobolli vs Dimitrov: Grigor Dimitrov wins",
-    "no_pinnacle_match: Darderi vs Arnaldi: Luciano Darderi wins",
-    "no_pinnacle_match: Darderi vs Arnaldi: Matteo Arnaldi wins",
-    "no_pinnacle_match: Djokovic vs Humbert: Novak Djokovic wins",
-    "no_pinnacle_match: Djokovic vs Humbert: Ugo Humbert wins"
+    "no_pinnacle_match: Sam Houston vs Missouri St.: Missouri St. wins",
+    "no_pinnacle_match: Sam Houston vs Missouri St.: Sam Houston wins",
+    "no_pinnacle_match: Kennesaw St. vs Middle Tennessee: Middle Tennessee wins",
+    "no_pinnacle_match: Kennesaw St. vs Middle Tennessee: Kennesaw St. wins",
+    "no_pinnacle_match: South Carolina St. vs Morgan St.: Morgan St. wins",
+    "no_pinnacle_match: South Carolina St. vs Morgan St.: South Carolina St. wins",
+    "no_pinnacle_match: Harvard vs Dartmouth: Dartmouth wins",
+    "no_pinnacle_match: Harvard vs Dartmouth: Harvard wins"
    ],
    "skipped": [
-    "football: next in 15 min",
-    "basketball: next in 30 min",
-    "hockey: next in 30 min",
-    "baseball: next in 30 min",
-    "soccer: next in 113 min"
+    "baseball: next round",
+    "soccer: next in 82 min",
+    "tennis: next in 329 min"
    ],
    "unmatched": {
-    "no_pinnacle_match": 80
+    "no_moneyline": 2,
+    "no_pinnacle_match": 2835,
+    "pinnacle_line_not_offered": 1517
    }
   },
   "prop_board": {
    "new_plays": 0,
-   "props": 0,
+   "props": 42,
    "pushed": 0,
    "settled": 0
   },
   "reconciled": true,
   "sharp_plays": {
-   "games": 0,
-   "new_plays": 0,
+   "games": 9,
+   "new_plays": 2,
    "pushed": 0,
    "settled": 0
   },
@@ -116,14 +121,14 @@
   },
   "strategies": {
    "EV_FINDER_v2": {
-    "filled": 0,
+    "filled": 4,
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 7,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 208,
+    "rejected": 3,
+    "scanned": 710,
     "settle": {
      "marked": 2,
      "pending": 2,
@@ -131,14 +136,14 @@
     }
    },
    "EV_FINDER_v3": {
-    "filled": 0,
+    "filled": 4,
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 4,
     "reconcile_problems": [],
     "rejected": 0,
-    "scanned": 208,
+    "scanned": 710,
     "settle": {
      "marked": 3,
      "pending": 3,
@@ -147,6 +152,6 @@
    }
   }
  },
- "last_success": "2026-10-26T03:32:05.766251Z",
+ "last_success": "2026-10-26T04:02:34.535211Z",
  "report_sent": "20261025"
 }
