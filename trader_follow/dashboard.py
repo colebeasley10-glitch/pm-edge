@@ -24,7 +24,8 @@ def render() -> None:
         pass
     st.title("Trader Follow")
     st.info("📝 **PAPER + ALERTS ONLY.** Pushes you when a followed Polymarket bettor puts "
-            f"${core.MIN_USDC:,.0f}+ on one side **before** a game starts, priced +150 to -200. "
+            "a big stake (his own minimum, below) on one side **before** a game starts, in a sport "
+            "he's proven in, priced +150 to -200. "
             f"Paper P/L assumes ${core.PAPER_STAKE:.0f} at the price shown in the alert. Nothing bets automatically.")
 
     rows = core.load_ledger()
@@ -59,7 +60,9 @@ def render() -> None:
 
     with st.expander("Who we follow"):
         for t in core.TRADERS:
-            st.markdown(f"**{t.name}** — {t.note} · [profile](https://polymarket.com/profile/{t.wallet})")
+            sports = ", ".join(sorted(t.sports)) or "all sports"
+            st.markdown(f"**{t.name}** — alerts on {sports}, ${t.min_usdc:,.0f}+ · {t.note} · "
+                        f"[profile](https://polymarket.com/profile/{t.wallet})")
 
     st.subheader("Recent signals")
     if not rows:
@@ -68,12 +71,14 @@ def render() -> None:
     recent = sorted(rows, key=lambda r: r.get("alert_time") or "", reverse=True)[:60]
     st.dataframe([{
         "When": (r.get("alert_time") or "")[:16].replace("T", " "),
-        "Trader": r["trader"], "Bet": f"{r['outcome']} — {r['question']}",
+        "Trader": r["trader"], "Bet": core.bet_label(r),
         "His $": f"${float(r['his_usdc']):,.0f}", "His price": f"{float(r['his_price']) * 100:.0f}¢ ({core.american(float(r['his_price']))})",
         "Alert price": f"{float(r['copy_price']) * 100:.0f}¢" if r.get("copy_price") else "—",
         "In band": "✓" if str(r.get("in_band")) == "True" else "—",
+        "His sport": "—" if str(r.get("in_sports")) == "False" else "✓",
         "Result": r.get("status", ""),
         "P/L ($10)": _money(core._float(r.get("pl_copy"))) if r.get("pl_copy") not in (None, "") else "—",
         "Units (sized)": f"{core.sized_units(r):.1f}u",
     } for r in recent], hide_index=True, width="stretch")
-    st.caption("Out-of-band signals are logged but never pushed, so you can see if the price filter helps.")
+    st.caption("Signals outside the price band, or outside a trader's proven sports, are logged on paper "
+               "but never pushed, so you can see whether each filter helps.")

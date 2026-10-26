@@ -16,6 +16,8 @@ Nothing here can place an order. No keys besides Pushover are used.
 """
 from __future__ import annotations
 
+import re
+
 import csv
 import json
 import os
@@ -35,23 +37,33 @@ GAMMA_MARKETS_URL = "https://gamma-api.polymarket.com/markets"
 PUSH_URL = "https://api.pushover.net/1/messages.json"
 
 
+MIN_USDC = 20_000.0          # default: his pre-game stake on one side before it counts as a signal
+
+
 @dataclass(frozen=True)
 class Trader:
     name: str
     wallet: str
     note: str = ""
+    min_usdc: float = MIN_USDC
+    sports: frozenset = frozenset()   # sport_group names to alert on; empty = every sport
 
 
-# Picked Oct 20, 2026 from Polymarket's all-time sports leaderboard: big volume with a
-# steady 2-4% return (not one lucky World Cup hit, not a ~1% market maker).
+# Oct 25, 2026, from the Trader Scout (closed + settled-but-held positions, by sport).
+# Signals outside a trader's sports are still logged on paper, just never pushed.
+# kch123 dropped: no trades since Jun 29, 2026.
 TRADERS: tuple[Trader, ...] = (
     Trader("BreakTheBank", "0xf0318c32136c2db7fec88b84869aee6a1106c80c",
-           "Mostly NFL sides and unders; ~$277M volume, 2-3% ROI"),
-    Trader("kch123", "0x6a72f61820b26b1fe4d956e17b6dc2a1ea3033ee",
-           "~$292M volume, ~4% ROI (sports mix not yet checked)"),
+           "1,223 games +6.4%: NFL +34.8% (240), soccer +4.4% (718); NBA -1.1%, MLB/tennis/UFC negative",
+           sports=frozenset({"NFL", "Soccer"})),
+    Trader("primm", "0xd38b71f3e8ed1af71983e5c309eac3dfa9b35029",
+           "3,245 games +16.6%: NFL +25.7% (1,246), college football +6.3% (1,911); median bet ~$1.4k",
+           min_usdc=5_000.0, sports=frozenset({"NFL", "College football"})),
+    Trader("ndb1", "0xfea31bc088000ff909be1dfd8d0e3f2c7ef2d227",
+           "863 games +5.1%: soccer +12.7% (435); NBA -15%, NHL -34%; median bet ~$4.6k on soccer",
+           min_usdc=10_000.0, sports=frozenset({"Soccer"})),
 )
 
-MIN_USDC = 20_000.0          # his pre-game stake on one side before it counts as a signal
 BAND_LOW = 0.40              # +150
 BAND_HIGH = 2.0 / 3.0        # -200
 CHASE_CENTS = 0.02           # alert says "don't pay more than his price + 2¢"
@@ -69,7 +81,7 @@ KEEP_SEEN = 4000
 LEDGER_FIELDS = [
     "signal_id", "trader", "wallet", "sport", "market_type", "event", "question", "outcome",
     "outcome_index", "condition_id", "event_slug", "game_start", "first_buy", "alert_time",
-    "his_usdc", "his_price", "copy_price", "in_band", "pushed", "status", "settled_time",
+    "his_usdc", "his_price", "copy_price", "in_band", "in_sports", "pushed", "status", "settled_time",
     "pl_copy", "pl_his", "settled_by",
 ]
 
@@ -264,14 +276,39 @@ def _eastern(dt: datetime) -> str:
     return local.strftime("%a %-I:%M %p ET")
 
 
+_SPREAD_Q = re.compile(r"^Spread:\s*(.+?)\s*\(([+-]?\d+(?:\.\d+)?)\)\s*$")
+_TOTAL_Q = re.compile(r"O/U\s*(\d+(?:\.\d+)?)")
+
+
+def bet_label(row: dict) -> str:
+    """The bet in plain words: 'Chiefs +2.5', 'Chiefs ML', 'Over 47.5'.
+
+    Polymarket names a spread market after the favorite ('Spread: Seahawks (-2.5)'), so buying
+    the other outcome means the underdog getting the points."""
+    q, out, mt = str(row.get("question") or ""), str(row.get("outcome") or ""), str(row.get("market_type") or "")
+    m = _SPREAD_Q.match(q)
+    if m:
+        team, line = m.group(1), float(m.group(2))
+        if out.lower() == team.lower():
+            return f"{out} {line:+g}"
+        return f"{out} {-line:+g}"
+    t = _TOTAL_Q.search(q)
+    if t and out.lower() in {"over", "under"}:
+        return f"{out} {t.group(1)}"
+    if mt == "moneyline" or " vs" in q:
+        return f"{out} ML"
+    return f"{out} — {q}"
+
+
 def alert_text(row: dict) -> tuple[str, str]:
     his = float(row["his_price"])
     copy = _float(row.get("copy_price"))
     max_pay = min(0.99, his + CHASE_CENTS)
-    title = f"Follow {row['trader']}: {row['outcome']}"
+    bet = bet_label(row)
+    title = f"Follow {row['trader']}: {bet}"
     lines = [
-        f"{row['question']} ({row['sport']} {row['market_type'] or 'game'})",
-        f"He bought ${float(row['his_usdc']):,.0f} on {row['outcome']} at {his * 100:.0f}¢ ({american(his)})",
+        f"Bet: {bet}  ({row['question']}, {row['sport']})",
+        f"He bought ${float(row['his_usdc']):,.0f} on {bet} at {his * 100:.0f}¢ ({american(his)})",
         f"Now: {copy * 100:.0f}¢ ({american(copy)})" if copy else "Now: price unavailable",
         f"Copy only at {max_pay * 100:.0f}¢ ({american(max_pay)}) or better",
         f"Starts {_eastern(parse_ts(row['game_start']))}",
@@ -303,6 +340,8 @@ def run_round(
     signal_ids = {r["signal_id"] for r in ledger}
     markets: dict[str, dict | None] = {}
     summary = {"new_trades": 0, "signals": 0, "pushed": 0, "settled": 0, "errors": []}
+    traders = tuple(traders)
+    by_wallet = {t.wallet: t for t in traders}
 
     def market(cid: str) -> dict | None:
         if cid not in markets:
@@ -372,7 +411,9 @@ def run_round(
 
         for pkey in touched:
             pos = positions[pkey]
-            if pos["alerted"] or pos["pre_usdc"] < MIN_USDC or not pos["pre_shares"]:
+            trader_cfg = by_wallet.get(pos["wallet"])
+            min_usdc = trader_cfg.min_usdc if trader_cfg else MIN_USDC
+            if pos["alerted"] or pos["pre_usdc"] < min_usdc or not pos["pre_shares"]:
                 continue
             start = parse_ts(pos.get("game_start"))
             if not start or start <= now:
@@ -396,8 +437,9 @@ def run_round(
                 "copy_price": copy if copy is not None else "", "in_band": in_band(his),
                 "pushed": False, "status": "open", "settled_time": "", "pl_copy": "", "pl_his": "",
             }
+            row["in_sports"] = not (trader_cfg and trader_cfg.sports) or sport_group(row) in trader_cfg.sports
             summary["signals"] += 1
-            if row["in_band"] and summary["pushed"] < MAX_PUSHES_PER_RUN:
+            if row["in_band"] and row["in_sports"] and summary["pushed"] < MAX_PUSHES_PER_RUN:
                 title, msg = alert_text(row)
                 url = f"https://polymarket.com/event/{row['event_slug']}" if row["event_slug"] else None
                 if push(title, msg, url):
@@ -464,7 +506,8 @@ def settle(ledger: list[dict], now: datetime, market: Callable[[str], dict | Non
 
 # ------------------------------------------------------------------ dashboard math
 
-SOCCER = {"epl", "ucl", "uel", "uecl", "lal", "sea", "bun", "fl1", "unl", "efl", "mls", "fifwc", "ere", "por", "facup"}
+SOCCER = {"epl", "ucl", "uel", "uecl", "lal", "sea", "bun", "fl1", "unl", "efl", "mls", "fifwc", "ere", "por", "facup",
+          "uslc", "bra", "arg", "mex", "tur", "spl", "jap", "kor", "elc", "efa", "ssc", "lib", "sud"}
 SPORT_NAMES = {"nfl": "NFL", "cfb": "College football", "ncaaf": "College football", "nba": "NBA",
                "cbb": "College basketball", "wnba": "WNBA", "nhl": "NHL", "mlb": "MLB", "atp": "Tennis",
                "wta": "Tennis", "boxing": "Boxing", "ufc": "UFC/MMA", "mma": "UFC/MMA"}
@@ -497,7 +540,9 @@ def _stats(rows: list[dict]) -> dict:
 
 
 def _alerted(rows: list[dict], only_band: bool) -> list[dict]:
-    return [r for r in rows if not only_band or str(r.get("in_band")) == "True"]
+    # rows from before Oct 25, 2026 have no in_sports value: they were alerted, so they count
+    return [r for r in rows if not only_band or (str(r.get("in_band")) == "True"
+                                                 and str(r.get("in_sports", "True")) != "False")]
 
 
 def summarize(rows: list[dict], only_band: bool = True) -> list[dict]:

@@ -144,3 +144,36 @@ def test_sized_lane_scales_flat_result_and_caps():
     s = core._stats(rows)
     assert s["pl_sized"] == -25.0 and s["staked_sized"] == 35.0
     assert core.sized_units({"his_usdc": 100000}) == 2.0
+
+
+def _run_with(tmp_path, trader, rounds, now):
+    pushes, feed = [], {"t": []}
+    for trades in rounds:
+        feed["t"] = trades
+        core.run_round(traders=[trader], now=now, get_trades=lambda w: feed["t"],
+                       get_market=lambda c: MARKETS.get(c), push=lambda a, b, c: pushes.append((a, b)) or True,
+                       state_path=tmp_path / "s.json", ledger_path=tmp_path / "l.csv")
+    return pushes, core.load_ledger(tmp_path / "l.csv")
+
+
+def test_outside_his_sports_logged_not_pushed(tmp_path):
+    nfl_only = core.Trader("BreakTheBank", W, sports=frozenset({"NFL", "Soccer"}))
+    first = [trade(CELTICS, 10, 0.5, "2026-10-19T12:00:00")]
+    big = first + [trade(CELTICS, 43285.75, 0.52, "2026-10-20T15:57:35")]
+    pushes, ledger = _run_with(tmp_path, nfl_only, [first, big], NOW)
+    assert pushes == [] and len(ledger) == 1 and ledger[0]["in_sports"] == "False"
+    assert core._alerted(ledger, True) == []
+
+
+def test_per_trader_minimum(tmp_path):
+    small = core.Trader("primm", W, min_usdc=5_000.0)
+    first = [trade(CELTICS, 10, 0.5, "2026-10-19T12:00:00")]
+    bet = first + [trade(CELTICS, 12000, 0.52, "2026-10-20T15:57:35")]   # ~$6.2k: under 20k, over 5k
+    pushes, ledger = _run_with(tmp_path, small, [first, bet], NOW)
+    assert len(pushes) == 1 and len(ledger) == 1
+
+
+def test_bet_label_reads_the_side_he_took():
+    assert core.bet_label({"question": "Spread: Seahawks (-2.5)", "outcome": "Chiefs", "market_type": "spreads"}) == "Chiefs +2.5"
+    assert core.bet_label({"question": "Spread: Thunder (-16.5)", "outcome": "Thunder", "market_type": "spreads"}) == "Thunder -16.5"
+    assert core.bet_label({"question": "Chiefs vs. Seahawks", "outcome": "Chiefs", "market_type": "moneyline"}) == "Chiefs ML"
