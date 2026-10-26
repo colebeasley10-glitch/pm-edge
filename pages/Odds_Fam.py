@@ -28,9 +28,9 @@ st.title("Odds Fam")
 st.caption("Sharp plays from free data: Pinnacle line moves on props and game lines, plus spots where Kalshi "
            "or Polymarket is already cheaper than fair. Bet only at the **bet at** price or better.")
 
-BOOKS = ["Betr", "Rebet", "Fliff", "DraftKings", "PrizePicks", "Underdog", "Kalshi", "Polymarket", "Novig",
+BOOKS = ["Sleeper", "Betr", "Rebet", "Fliff", "DraftKings", "PrizePicks", "Underdog", "Kalshi", "Polymarket", "Novig",
          "ProphetX", "Bovado", "Other"]
-ICON = {"Prop steam": "🎯", "Line steam": "📈", "Price gap": "💲"}
+ICON = {"Pick'em gap": "🔥", "Prop steam": "🎯", "Line steam": "📈", "Price gap": "💲"}
 now = datetime.now(timezone.utc)
 plays = of.load()
 
@@ -136,7 +136,7 @@ with tab_record:
                "Beat the close = Pinnacle's last price before the game moved further our way; "
                "above ~55% over 100+ plays means the edge is real.")
     table = []
-    for kind in (None, "Prop steam", "Line steam", "Price gap"):
+    for kind in (None, "Pick'em gap", "Prop steam", "Line steam", "Price gap"):
         s = of.summary(plays, kind)
         table.append({"Type": kind or "All plays", "Plays": s["plays"], "W-L": f"{s['won']}-{s['lost']}",
                       "P/L": f"${s['pl']:+,.2f}", "ROI": "—" if s["roi"] is None else f"{s['roi'] * 100:+.1f}%",

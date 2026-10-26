@@ -207,12 +207,17 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
             from research_lab import odds_fam
             from trader_follow.core import send_push as _of_send
             from trader_follow.scores import ScoreResolver as _OfScores
+            from research_lab import prop_board as _pbm, sleeper as _slp
+            try:
+                _edges, out["sleeper"] = _slp.scan(_pbm.load_board(base).get("rows") or [], now, base)
+            except Exception as exc:
+                _edges, out["sleeper"] = [], {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
             out["odds_fam"] = odds_fam.update(
                 now, base, new_props=(out.get("prop_board") or {}).pop("new", []),
                 new_lines=(out.get("sharp_plays") or {}).pop("new", []), picks=getattr(ctx, "picks", []) or [],
                 markets=ctx.markets,
                 push=(lambda t, m, u: _of_send(t, m, u, url_title="Open")) if send_report else None,
-                scores=_OfScores())
+                scores=_OfScores(), pickem=_edges, box=_pbm.BoxScores() if send_report else None)
         except Exception as exc:
             out["odds_fam"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
         try:   # read-only export for the keyed Maker Bot workflow (no orders here)

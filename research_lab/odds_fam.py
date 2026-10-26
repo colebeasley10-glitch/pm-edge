@@ -39,10 +39,10 @@ QUIET_START, QUIET_END = 23, 8   # ET: no phone pushes overnight; held plays go 
 GAP_MAX_AHEAD = timedelta(hours=30)   # price gaps only on games within ~a day (prices days out are noise)
 MIN_DEC, MAX_DEC = 1.5, 2.5  # -200 to +150, the range Cole bets
 ET = ZoneInfo("America/New_York")
-KIND_RANK = {"Prop steam": 3, "Line steam": 2, "Price gap": 1}
+KIND_RANK = {"Pick'em gap": 4, "Prop steam": 3, "Line steam": 2, "Price gap": 1}
 FIELDS = ["of_id", "sent_at", "kind", "league", "game", "pick", "market", "line", "why", "fair_prob", "fair_odds",
           "bet_at", "bet_at_decimal", "best_found", "best_decimal", "game_start", "source_id", "settle_ticker",
-          "settle_side", "pushed", "clv", "status", "pl", "settled_at"]
+          "settle_side", "pushed", "clv", "status", "pl", "settled_at", "player", "stat", "side", "actual"]
 BET_FIELDS = ["bet_id", "logged_at", "of_id", "pick", "book", "odds", "decimal", "stake", "line_taken"]
 
 
@@ -133,6 +133,23 @@ def from_prop(p: dict) -> dict:
             "game_start": p["game_start"], "source_id": f"prop:{p['play_id']}", "settle_ticker": "", "settle_side": ""}
 
 
+def from_pickem(e: dict) -> dict:
+    """Sleeper multiplier beats Pinnacle fair (research_lab.sleeper.edges row)."""
+    side = e["side"].title()
+    pick = f"{e['player']} {side} {e['sleeper_line']:g} {e['stat']}"
+    target = 1.02 / e["p"]
+    line_note = "" if e["sleeper_line"] == e["pin_line"] else f" (Pinnacle line {e['pin_line']:g})"
+    return {"kind": "Pick'em gap", "league": e["league"], "game": e["game"], "pick": pick, "market": "prop",
+            "line": e["sleeper_line"],
+            "why": f"Sleeper {e['mult']:.2f}x vs Pinnacle fair {american(1 / e['p'])}{line_note}: "
+                   f"+{e['ev'] * 100:.1f}% EV",
+            "fair_prob": round(e["p"], 4), "fair_odds": american(1 / e["p"]), "bet_at": american(target),
+            "bet_at_decimal": round(target, 4), "best_found": f"Sleeper {e['mult']:.2f}x ({american(e['mult'])})",
+            "best_decimal": round(e["mult"], 4), "game_start": e["starts"], "source_id": f"pickem:{e['key']}",
+            "settle_ticker": "", "settle_side": "", "player": e["player"], "stat": e["stat"], "side": e["side"],
+            "_ev": e["ev"]}
+
+
 def from_line(p: dict) -> dict:
     return {"kind": "Line steam", "league": p["league"], "game": p["game"], "pick": p["pick"], "market": p["market"],
             "line": p["line"], "why": p["move"], "fair_prob": p["fair_prob"], "fair_odds": p["fair_odds"],
@@ -178,7 +195,7 @@ def game_board(picks, now: datetime) -> list[dict]:
 def alert_text(play: dict) -> tuple[str, str]:
     from trader_follow.core import _eastern
     start = parse_dt(play["game_start"])
-    icon = {"Prop steam": "🎯", "Line steam": "📈", "Price gap": "💲"}[play["kind"]]
+    icon = {"Pick'em gap": "🔥", "Prop steam": "🎯", "Line steam": "📈", "Price gap": "💲"}[play["kind"]]
     lines = [f"{play['game']} · {play['league']} · {_eastern(start) if start else ''}",
              f"Why: {play['why']}",
              f"Fair {play['fair_odds']} · bet at {play['bet_at']} or better"]
@@ -192,7 +209,7 @@ def alert_text(play: dict) -> tuple[str, str]:
 
 # ------------------------------------------------------------------ one round
 def update(now: datetime, base: Path | None = None, *, new_props=(), new_lines=(), picks=(), markets=None,
-           push=None, scores=None) -> dict:
+           push=None, scores=None, pickem=(), box=None) -> dict:
     rows = load(base)
     info = {"sent": 0, "pushed": 0, "settled": 0, "bets_settled": 0}
     if picks:
@@ -207,7 +224,8 @@ def update(now: datetime, base: Path | None = None, *, new_props=(), new_lines=(
     hour = now.astimezone(ET).hour
     quiet = hour >= QUIET_START or hour < QUIET_END
     floor = FLOOR_HOUR_ET <= hour < QUIET_START and len(sent_today) < MIN_PER_DAY
-    cands = [from_prop(p) for p in new_props] + [from_line(p) for p in new_lines]
+    cands = ([from_pickem(e) for e in pickem] + [from_prop(p) for p in new_props]
+             + [from_line(p) for p in new_lines])
     for pk in picks or []:
         g = from_gap(pk, now)
         if g and g["_ev"] >= (GAP_EV_FLOOR if floor else GAP_EV):
@@ -239,7 +257,7 @@ def update(now: datetime, base: Path | None = None, *, new_props=(), new_lines=(
         info["pushed"] += play["pushed"] is True
     if push and not quiet:
         info["digest"] = morning_digest(rows, now, push)
-    info["settled"] = grade(rows, now, base, markets or {})
+    info["settled"] = grade(rows, now, base, markets or {}, box)
     _write_csv(_dir(base) / "plays.csv", rows, FIELDS)
     info["bets_settled"] = settle_bets(rows, now, base, scores)
     return info
@@ -276,13 +294,28 @@ def _leg(market: dict | None) -> str | None:
     return leg_outcome(market) if market else None
 
 
-def grade(rows: list[dict], now: datetime, base: Path | None, markets: dict) -> int:
+def grade(rows: list[dict], now: datetime, base: Path | None, markets: dict, box=None) -> int:
     src = _source_rows(base)
     n = 0
     for r in rows:
         if r["status"] != "open":
             continue
-        if r["kind"] == "Price gap":
+        if r["kind"] == "Pick'em gap":
+            start = parse_dt(r["game_start"])
+            if box is None or not start or now - start < timedelta(hours=4):
+                continue
+            try:
+                actual = box(r)
+            except Exception:
+                actual = None
+            if actual is None:
+                if now - start > timedelta(days=3):
+                    r.update(status="ungraded", settled_at=iso(now))
+                continue
+            r["actual"] = actual
+            line = float(r["line"])
+            res = "void" if actual == line else ("won" if (actual > line) == (r["side"] == "over") else "lost")
+        elif r["kind"] == "Price gap":
             out = _leg(markets.get(r.get("settle_ticker") or ""))
             if out is None:
                 continue
@@ -310,8 +343,8 @@ def open_tickers(base: Path | None = None) -> list[str]:
 
 def _regrade(play: dict, line: float, base: Path | None, scores) -> str | None:
     """His bet at a different line than the play (e.g. the old number): grade it at his line."""
-    if play["kind"] == "Prop steam":
-        src = _source_rows(base).get(play["source_id"]) or {}
+    if play["kind"] in {"Prop steam", "Pick'em gap"}:
+        src = play if play["kind"] == "Pick'em gap" else (_source_rows(base).get(play["source_id"]) or {})
         actual = src.get("actual")
         if actual in ("", None):
             return None
