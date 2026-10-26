@@ -66,3 +66,14 @@ def test_stat_value_reads_espn_boxes():
     assert pb.stat_value("Pts+Rebs+Asts", nba) == 48
     nfl = {"rushing": {"CAR": "18", "YDS": "74"}, "receiving": {"REC": "3", "YDS": "22"}}
     assert pb.stat_value("Rushing Yards", nfl) == 74 and pb.stat_value("Receptions", nfl) == 3
+
+
+def test_more_stats():
+    nfl = {"passing": {"C/ATT": "21/33", "YDS": "240", "TD": "2", "INT": "1"},
+           "rushing": {"CAR": "17", "YDS": "80", "TD": "1"}, "receiving": {"REC": "2", "TD": "1"}}
+    assert pb.stat_value("Rush Attempts", nfl) == 17 and pb.stat_value("Pass Completions", nfl) == 21
+    assert pb.stat_value("Pass Attempts", nfl) == 33 and pb.stat_value("Interceptions", nfl) == 1
+    assert pb.stat_value("Touchdowns", nfl) == 2
+    nhl = {"forwards": {"G": "1", "A": "2", "S": "4"}}
+    assert pb.stat_value("Goals", nhl) == 1 and pb.stat_value("Points", nhl) == 3
+    assert pb.stat_value("Shots On Goal", nhl) == 4

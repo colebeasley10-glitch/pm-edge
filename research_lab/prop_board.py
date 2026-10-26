@@ -313,6 +313,24 @@ def stat_value(stat: str, cats: dict[str, dict[str, str]]) -> float | None:
         except ValueError:
             return None
 
+    def frac(cat, label, i):
+        v = (cats.get(cat) or {}).get(label)
+        try:
+            return float(str(v).replace("-", "/").split("/")[i]) if v is not None else None
+        except (ValueError, IndexError):
+            return None
+
+    if "rush attempt" in s or "carries" in s:
+        return num("rushing", "CAR")
+    if "pass completion" in s or "completions" in s:
+        return frac("passing", "C/ATT", 0)
+    if "pass attempt" in s:
+        return frac("passing", "C/ATT", 1)
+    if "interception" in s:
+        return num("passing", "INT")
+    if s in {"touchdowns", "anytime touchdowns", "total touchdowns"}:
+        vals = [num(c, "TD") for c in ("rushing", "receiving")]
+        return sum(v for v in vals if v is not None) if any(v is not None for v in vals) else None
     if "yard" in s:
         cat = "passing" if "pass" in s else "rushing" if "rush" in s else "receiving" if "rec" in s else None
         return num(cat, "YDS") if cat else None
@@ -329,6 +347,13 @@ def stat_value(stat: str, cats: dict[str, dict[str, str]]) -> float | None:
             return float(str(v).split("-")[0]) if v is not None else None
         except ValueError:
             return None
+    if any(k in cats for k in ("forwards", "defenses", "defense", "skaters")) or ("G" in any_cat and "A" in any_cat
+                                                                                  and "PTS" not in any_cat):
+        sog = g("SOG") if g("SOG") is not None else g("S")
+        hockey = {"goals": g("G"), "assists": g("A"), "shots on goal": sog,
+                  "points": (g("G") + g("A")) if g("G") is not None and g("A") is not None else None}
+        if s in hockey:
+            return hockey[s]
     parts = []
     for word, label in (("point", "PTS"), ("rebound", "REB"), ("assist", "AST"), ("three", "3PT"),
                         ("steal", "STL"), ("block", "BLK"), ("shots on goal", "SOG"), ("goal", "G")):
