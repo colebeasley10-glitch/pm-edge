@@ -1725,7 +1725,8 @@ with tab_lab:
     from research_lab.ledger import Store as _LStore
     st.markdown("<div class='pe-lede'>Strategies tested side by side on <b>paper</b>, each with its own "
                 "$500 virtual bankroll. Tap one for its bets, misses and model checks.</div>", unsafe_allow_html=True)
-    _tools = [("Research_Lab_EV_Finder", "+EV Finder", "Best price across all your books vs Pinnacle"),
+    _tools = [("Research_Lab_Sharp_Plays", "Sharp Plays", "Pinnacle steam: bet it anywhere at the target price"),
+              ("Research_Lab_EV_Finder", "+EV Finder", "Best price across all your books vs Pinnacle"),
               ("Research_Lab_Best_Price", "Best Price", "Were your Sharp picks cheaper on Polymarket?"),
               ("Research_Lab_Heavy_Flow", "Heavy Flow test", "Do Sharp picks with 60+ whale trades do better?"),
               ("Research_Lab_Promo_Converter", "Promo Converter", "Turn bonus bets into cash")]
@@ -1750,6 +1751,16 @@ with tab_lab:
         _tfs = _tf._stats(_tf._alerted(_tf.load_ledger(), True))
         _cards.append(("Research_Lab_Trader_Follow", "Trader Follow", "Copies big pre-game bets from top Polymarket bettors",
                        {"won": _tfs["wins"], "lost": _tfs["losses"], "roi": _tfs["roi_copy"], "open": _tfs["open"]}, None))
+    except Exception:
+        pass
+    try:  # Sharp Plays: Pinnacle steam alerts, paper at the target price
+        for _m in [k for k in _lsys.modules if k == "research_lab.sharp_plays"]:
+            del _lsys.modules[_m]
+        from research_lab import sharp_plays as _sp
+        _sps = _sp.summary(_sp.load())
+        _cards.append(("Research_Lab_Sharp_Plays", "Sharp Plays", "Pinnacle line moves, shopped on any book",
+                       {"won": _sps["won"], "lost": _sps["lost"], "roi": _sps["roi"], "open": _sps["open"],
+                        "clv": _sps["clv_avg"]}, None))
     except Exception:
         pass
     try:  # Kalshi Follow: same idea on Kalshi's public social feed

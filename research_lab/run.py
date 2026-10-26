@@ -176,6 +176,15 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
             out["pinnacle"] = pinnacle_round(ctx, kalshi, pinn or pinnacle.PinnWire(), base)
         except Exception as exc:  # Pinnacle problems only affect the v2 strategies
             out["pinnacle"] = {"errors": [f"{type(exc).__name__}: {str(exc)[:160]}"]}
+        try:   # Sharp Plays: Pinnacle steam -> shop-it-anywhere alerts (paper + push, no orders)
+            from research_lab import sharp_plays
+            from trader_follow.core import send_push
+            from trader_follow.scores import ScoreResolver
+            out["sharp_plays"] = sharp_plays.update(
+                getattr(ctx, "pinnacle_events", {}) or {}, now, base,
+                push=(lambda t, m: send_push(t, m, None)) if send_report else None, scores=ScoreResolver())
+        except Exception as exc:
+            out["sharp_plays"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
         try:
             out["ev"] = ev_round(ctx, base, poly_fetch=poly_fetch, odds_session=odds_session, odds_key=odds_key)
         except Exception as exc:  # only affects the +EV Finder
