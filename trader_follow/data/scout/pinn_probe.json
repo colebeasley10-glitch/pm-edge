@@ -1,151 +1,1100 @@
 {
- "docs_paths": [
-  "/kit/v1/details",
-  "/kit/v1/markets",
-  "/kit/v1/prematch/fixtures",
-  "/kit/v1/prematch/lines",
-  "/kit/v1/prematch/markets"
- ],
- "docs_snippets": [
-  "ial SDKs Authentication Rate limits Errors Live odds GET /kit/v1/markets GET /kit/v1/details Prematch odds GET /kit/v1/prematch/fixtures GET /kit/v1/prematch/markets GET /kit/v1/prematch/lines Player props &amp; specials Dropping odds GET /api/drops SSE /odds-drop SSE /odds-drop-prematch WebSocket WS /ws real-time add-on Status GET /v1/health POST /signup Reference Sport IDs Markets &amp; periods Plans &amp; pricing PinnWire API Documentation This page is the full reference for PinnWire's real-t",
-  "hentication Rate limits Errors Live odds GET /kit/v1/markets GET /kit/v1/details Prematch odds GET /kit/v1/prematch/fixtures GET /kit/v1/prematch/markets GET /kit/v1/prematch/lines Player props &amp; specials Dropping odds GET /api/drops SSE /odds-drop SSE /odds-drop-prematch WebSocket WS /ws real-time add-on Status GET /v1/health POST /signup Reference Sport IDs Markets &amp; periods Plans &amp; pricing PinnWire API Documentation This page is the full reference for PinnWire's real-time Pinnacle",
-  "on Rate limits Errors Live odds GET /kit/v1/markets GET /kit/v1/details Prematch odds GET /kit/v1/prematch/fixtures GET /kit/v1/prematch/markets GET /kit/v1/prematch/lines Player props &amp; specials Dropping odds GET /api/drops SSE /odds-drop SSE /odds-drop-prematch WebSocket WS /ws real-time add-on Status GET /v1/health POST /signup Reference Sport IDs Markets &amp; periods Plans &amp; pricing PinnWire API Documentation This page is the full reference for PinnWire's real-time Pinnacle odds API",
-  "ive odds GET /kit/v1/markets GET /kit/v1/details Prematch odds GET /kit/v1/prematch/fixtures GET /kit/v1/prematch/markets GET /kit/v1/prematch/lines Player props &amp; specials Dropping odds GET /api/drops SSE /odds-drop SSE /odds-drop-prematch WebSocket WS /ws real-time add-on Status GET /v1/health POST /signup Reference Sport IDs Markets &amp; periods Plans &amp; pricing PinnWire API Documentation This page is the full reference for PinnWire's real-time Pinnacle odds API: REST endpoints, a que",
-  "t/v1/markets GET /kit/v1/details Prematch odds GET /kit/v1/prematch/fixtures GET /kit/v1/prematch/markets GET /kit/v1/prematch/lines Player props &amp; specials Dropping odds GET /api/drops SSE /odds-drop SSE /odds-drop-prematch WebSocket WS /ws real-time add-on Status GET /v1/health POST /signup Reference Sport IDs Markets &amp; periods Plans &amp; pricing PinnWire API Documentation This page is the full reference for PinnWire's real-time Pinnacle odds API: REST endpoints, a queryable drops buf",
-  "T /kit/v1/details Prematch odds GET /kit/v1/prematch/fixtures GET /kit/v1/prematch/markets GET /kit/v1/prematch/lines Player props &amp; specials Dropping odds GET /api/drops SSE /odds-drop SSE /odds-drop-prematch WebSocket WS /ws real-time add-on Status GET /v1/health POST /signup Reference Sport IDs Markets &amp; periods Plans &amp; pricing PinnWire API Documentation This page is the full reference for PinnWire's real-time Pinnacle odds API: REST endpoints, a queryable drops buffer, push-based",
-  "signup Reference Sport IDs Markets &amp; periods Plans &amp; pricing PinnWire API Documentation This page is the full reference for PinnWire's real-time Pinnacle odds API: REST endpoints, a queryable drops buffer, push-based SSE drop alerts and a raw WebSocket. The REST endpoints are testable right now with the public demo key (key=demo) \u2014 no signup; SSE and WebSocket need a plan key. The same content ships as plain text for LLM and agent use (llms-full.txt). Real-time live and prematch Pinnacle",
-  "rkets &amp; periods Plans &amp; pricing PinnWire API Documentation This page is the full reference for PinnWire's real-time Pinnacle odds API: REST endpoints, a queryable drops buffer, push-based SSE drop alerts and a raw WebSocket. The REST endpoints are testable right now with the public demo key (key=demo) \u2014 no signup; SSE and WebSocket need a plan key. The same content ships as plain text for LLM and agent use (llms-full.txt). Real-time live and prematch Pinnacle odds \u2014 REST snapshots, a que",
-  "mo) \u2014 no signup; SSE and WebSocket need a plan key. The same content ships as plain text for LLM and agent use (llms-full.txt). Real-time live and prematch Pinnacle odds \u2014 REST snapshots, a queryable drops buffer, push-based SSE drop alerts, and a raw Real-time WebSocket. REST and the SSE drop streams deliver decimal prices; the raw WebSocket is a verbatim feed passthrough, so its price fields keep the feed's native odds format. The /kit/v1/* endpoints mirror common third-party Pinnacle API form",
-  "ocket need a plan key. The same content ships as plain text for LLM and agent use (llms-full.txt). Real-time live and prematch Pinnacle odds \u2014 REST snapshots, a queryable drops buffer, push-based SSE drop alerts, and a raw Real-time WebSocket. REST and the SSE drop streams deliver decimal prices; the raw WebSocket is a verbatim feed passthrough, so its price fields keep the feed's native odds format. The /kit/v1/* endpoints mirror common third-party Pinnacle API formats: swap the base URL and ke",
-  "or LLM and agent use (llms-full.txt). Real-time live and prematch Pinnacle odds \u2014 REST snapshots, a queryable drops buffer, push-based SSE drop alerts, and a raw Real-time WebSocket. REST and the SSE drop streams deliver decimal prices; the raw WebSocket is a verbatim feed passthrough, so its price fields keep the feed's native odds format. The /kit/v1/* endpoints mirror common third-party Pinnacle API formats: swap the base URL and key in an existing client and it should just work. Need instant",
-  "only). Pass the key either way: x-api-key: YOUR_KEY header \u2014 recommended ?key=YOUR_KEY query parameter \u2014 handy for curl and browsers Failure \u2192 HTTP 401 {\"error\":\"invalid_key\"} . SSE needs a plan with drop alerts (Stream, Pro&nbsp;+&nbsp;Drops, Scale). WebSocket needs the WS add-on. Rate limits Plan REST limit Trial \u00b7 Stream 20/min, 100/day Demo key 10/min, 50/day Pro \u00b7 Pro + Drops 10 req/s Scale 30 req/s Over the limit \u2192 HTTP 429 with a Retry-After header and body {\"error\":\"rate_limited\",\"window",
-  "-key: YOUR_KEY header \u2014 recommended ?key=YOUR_KEY query parameter \u2014 handy for curl and browsers Failure \u2192 HTTP 401 {\"error\":\"invalid_key\"} . SSE needs a plan with drop alerts (Stream, Pro&nbsp;+&nbsp;Drops, Scale). WebSocket needs the WS add-on. Rate limits Plan REST limit Trial \u00b7 Stream 20/min, 100/day Demo key 10/min, 50/day Pro \u00b7 Pro + Drops 10 req/s Scale 30 req/s Over the limit \u2192 HTTP 429 with a Retry-After header and body {\"error\":\"rate_limited\",\"window\":\"minute\",\"limit\":20,\"retry_after_ms",
-  "SSE needs a plan with drop alerts (Stream, Pro&nbsp;+&nbsp;Drops, Scale). WebSocket needs the WS add-on. Rate limits Plan REST limit Trial \u00b7 Stream 20/min, 100/day Demo key 10/min, 50/day Pro \u00b7 Pro + Drops 10 req/s Scale 30 req/s Over the limit \u2192 HTTP 429 with a Retry-After header and body {\"error\":\"rate_limited\",\"window\":\"minute\",\"limit\":20,\"retry_after_ms\":41052} . Honor Retry-After . SSE connections are not counted against REST limits. Errors Status Error When 401 invalid_key Key missing or u",
-  "ms\":41052} . Honor Retry-After . SSE connections are not counted against REST limits. Errors Status Error When 401 invalid_key Key missing or unknown 403 plan_lacks_sse SSE endpoint on a plan without drop alerts 429 rate_limited Per-key rate limit exceeded 400 sport_id required \u00b7 bad_market_type Bad or missing parameter 404 not_found Unknown event_id or path WS 1008 invalid key / plan lacks ws JSON error frame, then close WS 1011 slow_consumer Client fell &gt;32&nbsp;MB behind GET /kit/v1/market",
-  "list ), or all for every sport in one call event_type no live (default) or prematch since no Only events changed after this ms timestamp \u2014 pass back the top-level last from your previous call include_specials no 1 = flat special rows \u00b7 nested = under each event's specials array ( details ) include_alt_units no 1 = also list each fixture's side markets (soccer corners and bookings, tennis games, volleyball points, esports kills) as their own events. Each event's units says what its lines count; p",
-  "ery sport in one call event_type no live (default) or prematch since no Only events changed after this ms timestamp \u2014 pass back the top-level last from your previous call include_specials no 1 = flat special rows \u00b7 nested = under each event's specials array ( details ) include_alt_units no 1 = also list each fixture's side markets (soccer corners and bookings, tennis games, volleyball points, esports kills) as their own events. Each event's units says what its lines count; parent_id is the main ",
-  "efault) or prematch since no Only events changed after this ms timestamp \u2014 pass back the top-level last from your previous call include_specials no 1 = flat special rows \u00b7 nested = under each event's specials array ( details ) include_alt_units no 1 = also list each fixture's side markets (soccer corners and bookings, tennis games, volleyball points, esports kills) as their own events. Each event's units says what its lines count; parent_id is the main event { \"sport_id\": 1, \"last\": 178757111638",
-  "e, minutes} , tennis sets/serving, etc.). Fields appear only when Pinnacle publishes them \u2014 iterate defensively. GET /kit/v1/details One event by ID: ?event_id=N \u2192 { events: [&lt;one event&gt;] } . A special's ID returns the special shape directly \u2014 no flag needed. GET /kit/v1/prematch/fixtures Every upcoming fixture for a sport with full markets. Equivalent to /kit/v1/markets?event_type=prematch . Params: sport_id (required; all for every sport), since , include_specials , include_alt_units . c",
-  "/serving, etc.). Fields appear only when Pinnacle publishes them \u2014 iterate defensively. GET /kit/v1/details One event by ID: ?event_id=N \u2192 { events: [&lt;one event&gt;] } . A special's ID returns the special shape directly \u2014 no flag needed. GET /kit/v1/prematch/fixtures Every upcoming fixture for a sport with full markets. Equivalent to /kit/v1/markets?event_type=prematch . Params: sport_id (required; all for every sport), since , include_specials , include_alt_units . curl \"https://pinnwire.com",
-  "T /kit/v1/prematch/fixtures Every upcoming fixture for a sport with full markets. Equivalent to /kit/v1/markets?event_type=prematch . Params: sport_id (required; all for every sport), since , include_specials , include_alt_units . curl \"https://pinnwire.com/kit/v1/prematch/fixtures?sport_id=1&amp;include_specials=1&amp;key=YOUR_KEY\" GET /kit/v1/prematch/markets Single prematch event by ID ( ?event_id=N ). Same shape as /kit/v1/details . GET /kit/v1/prematch/lines Compact line view for one event ",
-  "rkets?event_type=prematch . Params: sport_id (required; all for every sport), since , include_specials , include_alt_units . curl \"https://pinnwire.com/kit/v1/prematch/fixtures?sport_id=1&amp;include_specials=1&amp;key=YOUR_KEY\" GET /kit/v1/prematch/markets Single prematch event by ID ( ?event_id=N ). Same shape as /kit/v1/details . GET /kit/v1/prematch/lines Compact line view for one event \u2014 active full-game prices, no period structure. Lighter than /markets; ideal for tickers. Param Required D",
-  "\"home\": 1.935, \"away\": 1.8, \"max\": 250 } ], \"totals\": [ { \"points\": 2.5, \"over\": 1.9, \"under\": 1.98, \"max\": 250 } ], \"team_total\": { \"home\": { \"points\": 1.5, \"over\": 1.86, \"under\": 2.0 } } } } Player props &amp; specials Special-market events \u2014 Player Props, Team Props, Exact Scores, futures \u2014 ride alongside the main fixtures. Off by default; opt in with include_specials on /kit/v1/markets or /kit/v1/prematch/fixtures : 1 adds them as flat extra rows, nested groups them under each parent event's",
-  "5, \"away\": 1.8, \"max\": 250 } ], \"totals\": [ { \"points\": 2.5, \"over\": 1.9, \"under\": 1.98, \"max\": 250 } ], \"team_total\": { \"home\": { \"points\": 1.5, \"over\": 1.86, \"under\": 2.0 } } } } Player props &amp; specials Special-market events \u2014 Player Props, Team Props, Exact Scores, futures \u2014 ride alongside the main fixtures. Off by default; opt in with include_specials on /kit/v1/markets or /kit/v1/prematch/fixtures : 1 adds them as flat extra rows, nested groups them under each parent event's specials ar",
-  ": 1.8, \"max\": 250 } ], \"totals\": [ { \"points\": 2.5, \"over\": 1.9, \"under\": 1.98, \"max\": 250 } ], \"team_total\": { \"home\": { \"points\": 1.5, \"over\": 1.86, \"under\": 2.0 } } } } Player props &amp; specials Special-market events \u2014 Player Props, Team Props, Exact Scores, futures \u2014 ride alongside the main fixtures. Off by default; opt in with include_specials on /kit/v1/markets or /kit/v1/prematch/fixtures : 1 adds them as flat extra rows, nested groups them under each parent event's specials array. { \"e"
- ],
- "fixtures_specials": {
-  "status": 200,
-  "len": 215153,
-  "head": "{\"sport_id\":3,\"last\":1792977100954,\"generated_at\":\"2026-10-26T01:11:40.954Z\",\"events\":[{\"event_id\":1638776749,\"sport_id\":3,\"league_id\":565,\"league_name\":\"Sweden - Basketligan\",\"home\":\"Norrkoping Dolphins\",\"away\":\"Jamtland Basket\",\"starts\":\"2026-10-26T18:04:00Z\",\"start_ts\":\"2026-10-26T18:04:00Z\",\"event_type\":\"prematch\",\"units\":\"Regular\",\"parent_id\":null,\"is_have_odds\":true,\"is_have_periods\":true,\"periods\":{\"num_1\":{\"number\":1,\"money_line\":{\"home\":1.435,\"away\":2.63},\"spreads\":{\"-3\":{\"hdp\":-3,\"home\":1.877,\"away\":1.862,\"max\":50},\"-4\":{\"hdp\":-4,\"home\":2.05,\"away\":1.699,\"max\":50},\"-3.5\":{\"hdp\":-3.5,\"home\":1.962,\"away\":1.775,\"max\":50},\"-2.5\":{\"hdp\":-2.5,\"home\":1.794,\"away\":1.943,\"max\":50},\"-2\":{\"hdp\":-2,\"home\":1.699,\"away\":2.06,\"max\":50}},\"totals\":{\"91\":{\"points\":91,\"over\":1.84,\"under\":1.893,\"max\":50},\"92\":{\"points\":92,\"over\":2,\"under\":1.746,\"max\":50},\"91.5\":{\"points\":91.5,\"over\":1.917,\"under\":1.826,\"max\":50},\"90.5\":{\"points\":90.5,\"over\":1.775,\"under\":1.971,\"max\":50},\"92.5\":{\"points\":92.5,\"over\":2.08,\"under\":1.69,\"max\":50}},\"team_total\":{},\"team_totals\":{\"home\":{},\"away\":{}}},\"num_0\":{\"number\":0,\"money_line\":{\"home\":1.342,\"away\":2.97},\"spreads\":{\"-5.5\":{\"hdp\":-5.5,\"home\":1.847,\"away\":1.885,\"max\":125},\"-8\":{\"hdp\":-8,\"home\":2.24,\"away\":1.578,\"max\":125},\"-7.5\":{\"hdp\":-7.5,\"home\":2.16,\"away\":1.625,\"max\":125},\"-7\":{\"hdp\":-7,\"home\":2.08,\"away\":1.676,\"max\":125},\"-6.5\":{\"hdp\":-6.5,\"home\":2.01,\"away\":1.735,\"max\":125},\"-6\":{\"hdp\":-6,\"home\":1.926,\"away\":1.806,\"max\":125},\"-5\":{\"hdp\":-5,\"home\":1",
-  "keys": [
-   "sport_id",
-   "last",
-   "generated_at",
-   "events"
+ "3": {
+  "n": 126,
+  "n_with_parent": 37,
+  "event_types": [
+   [
+    "prematch",
+    126
+   ]
   ],
-  "event_keys": [
-   "event_id",
-   "sport_id",
-   "league_id",
-   "league_name",
-   "home",
-   "away",
-   "starts",
-   "start_ts",
-   "event_type",
-   "units",
-   "parent_id",
-   "is_have_odds",
-   "is_have_periods",
-   "periods"
+  "leagues": [
+   [
+    "WNBA",
+    39
+   ],
+   [
+    "Japan - B.League Premier",
+    9
+   ],
+   [
+    "NBA",
+    8
+   ],
+   [
+    "Sweden - Basketligan",
+    5
+   ],
+   [
+    "Philippines - NCAA",
+    4
+   ],
+   [
+    "Brazil - Novo Basquete Brasil",
+    4
+   ],
+   [
+    "Uruguay - Liga",
+    4
+   ],
+   [
+    "Austria - SuperLiga Women",
+    3
+   ],
+   [
+    "Lebanon - Lebanese Basketball League",
+    3
+   ],
+   [
+    "Serbia - Nasa Liga",
+    3
+   ],
+   [
+    "Austria - SuperLiga",
+    3
+   ],
+   [
+    "Argentina - Liga Nacional",
+    3
+   ],
+   [
+    "Iceland - Premier League Women",
+    3
+   ],
+   [
+    "Israel - Premier League Women",
+    2
+   ],
+   [
+    "Europe - VTB United League",
+    2
+   ],
+   [
+    "Philippines - PBA Governors Cup",
+    2
+   ],
+   [
+    "China - CBA",
+    2
+   ],
+   [
+    "Hong Kong BL",
+    2
+   ],
+   [
+    "Finland - Korisliiga",
+    2
+   ],
+   [
+    "Romania - Division A",
+    1
+   ],
+   [
+    "Lithuania - National Basketball League",
+    1
+   ],
+   [
+    "Greece - Elite League",
+    1
+   ],
+   [
+    "Israel - Premier League",
+    1
+   ],
+   [
+    "Germany - Pro A",
+    1
+   ],
+   [
+    "Serbia - 1 ZLS Women",
+    1
+   ],
+   [
+    "Korean - KBL",
+    1
+   ],
+   [
+    "Colombia - Baloncesto Profesional Colombiano",
+    1
+   ],
+   [
+    "Paraguay - Primera",
+    1
+   ],
+   [
+    "Romania - Liga 1",
+    1
+   ],
+   [
+    "Europe - Eurocup Women",
+    1
+   ]
   ],
-  "special_fields": "{}",
-  "events_with_specials": 164,
-  "n_events": 126,
-  "prop_names_seen": [
-   "\"Allisha Gray Total Threes Made\"",
-   "\"Threes Made\"",
-   "\"Allisha Gray Total Assists\"",
-   "\"Assists\"",
-   "\"Allisha Gray Total Points\"",
-   "\"Points\"",
-   "\"Allisha Gray Total Rebounds\"",
-   "\"Rebounds\"",
-   "\"Angel Reese Total Threes Made\"",
-   "\"Threes Made\"",
-   "\"Angel Reese Total Assists\"",
-   "\"Assists\"",
-   "\"Angel Reese Total Points\"",
-   "\"Points\"",
-   "\"Angel Reese Total Rebounds\"",
-   "\"Rebounds\"",
-   "\"Gabby Williams Total Assists\"",
-   "\"Assists\"",
-   "\"Jordin Canada Total Threes Made\"",
-   "\"Threes Made\""
-  ]
+  "prop_samples": [
+   {
+    "event_id": 1639255019,
+    "sport_id": 3,
+    "league_id": 578,
+    "league_name": "WNBA",
+    "special": "Allisha Gray Total Threes Made",
+    "special_category": "Player Props",
+    "special_units": "Threes Made",
+    "parent_id": 1638793142,
+    "starts": "2026-10-27T00:00:00Z",
+    "start_ts": "2026-10-27T00:00:00Z",
+    "event_type": "prematch",
+    "is_have_odds": true,
+    "special_markets": {
+     "num_0": [
+      {
+       "type": "total",
+       "key": "s;0;ou",
+       "side": null,
+       "max_risk": 150,
+       "prices": [
+        {
+         "name": "Over",
+         "participant_id": 1639255020,
+         "points": 1.5,
+         "price": 1.893
+        },
+        {
+         "name": "Under",
+         "participant_id": 1639255021,
+         "points": 1.5,
+         "price": 1.847
+        }
+       ]
+      }
+     ]
+    }
+   },
+   {
+    "event_id": 1639255022,
+    "sport_id": 3,
+    "league_id": 578,
+    "league_name": "WNBA",
+    "special": "Allisha Gray Total Assists",
+    "special_category": "Player Props",
+    "special_units": "Assists",
+    "parent_id": 1638793142,
+    "starts": "2026-10-27T00:00:00Z",
+    "start_ts": "2026-10-27T00:00:00Z",
+    "event_type": "prematch",
+    "is_have_odds": true,
+    "special_markets": {
+     "num_0": [
+      {
+       "type": "total",
+       "key": "s;0;ou",
+       "side": null,
+       "max_risk": 150,
+       "prices": [
+        {
+         "name": "Over",
+         "participant_id": 1639255023,
+         "points": 2.5,
+         "price": 2.07
+        },
+        {
+         "name": "Under",
+         "participant_id": 1639255024,
+         "points": 2.5,
+         "price": 1.704
+        }
+       ]
+      }
+     ]
+    }
+   },
+   {
+    "event_id": 1639255025,
+    "sport_id": 3,
+    "league_id": 578,
+    "league_name": "WNBA",
+    "special": "Allisha Gray Total Points",
+    "special_category": "Player Props",
+    "special_units": "Points",
+    "parent_id": 1638793142,
+    "starts": "2026-10-27T00:00:00Z",
+    "start_ts": "2026-10-27T00:00:00Z",
+    "event_type": "prematch",
+    "is_have_odds": true,
+    "special_markets": {
+     "num_0": [
+      {
+       "type": "total",
+       "key": "s;0;ou",
+       "side": null,
+       "max_risk": 150,
+       "prices": [
+        {
+         "name": "Over",
+         "participant_id": 1639255026,
+         "points": 14.5,
+         "price": 1.833
+        },
+        {
+         "name": "Under",
+         "participant_id": 1639255027,
+         "points": 14.5,
+         "price": 1.926
+        }
+       ]
+      }
+     ]
+    }
+   }
+  ],
+  "parent_sample": {
+   "event_id": 1638793142,
+   "sport_id": 3,
+   "league_id": 578,
+   "league_name": "WNBA",
+   "home": "Golden State Valkyries",
+   "away": "Atlanta Dream",
+   "starts": "2026-10-27T00:00:00Z",
+   "start_ts": "2026-10-27T00:00:00Z",
+   "event_type": "prematch",
+   "units": "Regular",
+   "parent_id": null,
+   "is_have_odds": true,
+   "is_have_periods": true,
+   "periods": {
+    "num_0": {
+     "number": 0,
+     "money_line": {
+      "home": 1.84,
+      "away": 1.98
+     },
+     "spreads": {
+      "1": {
+       "hdp": 1,
+       "home": 1.794,
+       "away": 2.01,
+       "max": 3000
+      },
+      "2": {
+       "hdp": 2,
+       "home": 1.699,
+       "away": 2.14,
+       "max": 3000
+      },
+      "-1": {
+       "hdp": -1,
+       "home": 1.909,
+       "away": 1.909,
+       "max": 3000
+      },
+      "1.5": {
+       "hdp": 1.5,
+       "home": 1.746,
+       "away": 2.06,
+       "max": 3000
+      },
+      "-1.5": {
+       "hdp": -1.5,
+       "home": 1.952,
+       "away": 1.84,
+       "max": 3000
+      },
+      "-2": {
+       "hdp": -2,
+       "home": 2.02,
+       "away": 1.775,
+       "max": 3000
+      },
+      "-2.5": {
+       "hdp": -2.5,
+       "home": 2.1,
+       "away": 1.725,
+       "max": 3000
+      }
+     },
+     "totals": {
+      "148": {
+       "points": 148,
+       "over": 1.746,
+       "under": 2.03,
+       "max": 2000
+      },
+      "149": {
+       "points": 149,
+       "over": 1.833,
+       "under": 1.926,
+       "max": 2000
+      },
+      "150": {
+       "points": 150,
+       "over": 1.926,
+       "under": 1.833,
+       "max": 2000
+      },
+      "151": {
+       "points": 151,
+       "over": 2.03,
+       "under": 1.746,
+       "max": 2000
+      },
+      "149.5": {
+       "points": 149.5,
+       "over": 1.893,
+       "under": 1.893,
+       "max": 2000
+      },
+      "148.5": {
+       "points": 148.5,
+       "over": 1.787,
+       "under": 1.971,
+       "max": 2000
+      },
+      "150.5": {
+       "points": 150.5,
+       "over": 1.971,
+       "under": 1.794,
+       "max": 2000
+      }
+     },
+     "team_total": {
+      "home": {
+       "points": 75,
+       "over": 1.877,
+       "under": 1.909
+      },
+      "away": {
+       "points": 74.5,
+       "over": 1.877,
+       "under": 1.909
+      }
+     },
+     "team_totals": {
+      "home": {
+       "75": {
+        "points": 75,
+        "over": 1.877,
+        "under": 1.909,
+        "max": 500
+       }
+      },
+      "away": {
+       "74.5": {
+        "points": 74.5,
+        "over": 1.877,
+        "under": 1.909,
+        "max": 500
+       }
+      }
+     }
+    }
+   }
+  },
+  "special_keys": [
+   "special",
+   "special_category",
+   "special_markets",
+   "special_units"
+  ],
+  "num0_keys": [
+   [
+    "number",
+    85
+   ],
+   [
+    "money_line",
+    85
+   ],
+   [
+    "spreads",
+    85
+   ],
+   [
+    "totals",
+    85
+   ],
+   [
+    "team_total",
+    85
+   ],
+   [
+    "team_totals",
+    85
+   ]
+  ],
+  "specials_in_num0": []
  },
- "markets_specials": {
-  "status": 200,
-  "len": 65984,
-  "head": "{\"sport_id\":3,\"last\":1792977101797,\"generated_at\":\"2026-10-26T01:11:41.797Z\",\"events\":[{\"event_id\":1639244213,\"sport_id\":3,\"league_id\":216284,\"league_name\":\"Puerto Rico - Superior Nacional Women\",\"home\":\"Gigantes de Carolina\",\"away\":\"Explosivas de Moca\",\"starts\":\"2026-10-26T00:01:00Z\",\"start_ts\":\"2026-10-26T00:01:00Z\",\"event_type\":\"live\",\"units\":\"Regular\",\"parent_id\":1639029199,\"is_have_odds\":true,\"is_have_periods\":true,\"periods\":{\"num_0\":{\"number\":0,\"money_line\":{\"home\":1.211,\"away\":4.09},\"spreads\":{\"-6.5\":{\"hdp\":-6.5,\"home\":1.855,\"away\":1.885,\"max\":200},\"-8.5\":{\"hdp\":-8.5,\"home\":2.25,\"away\":1.581,\"max\":200},\"-8\":{\"hdp\":-8,\"home\":2.16,\"away\":1.633,\"max\":200},\"-7.5\":{\"hdp\":-7.5,\"home\":2.05,\"away\":1.709,\"max\":200},\"-7\":{\"hdp\":-7,\"home\":1.952,\"away\":1.787,\"max\":200},\"-6\":{\"hdp\":-6,\"home\":1.763,\"away\":1.98,\"max\":200},\"-5.5\":{\"hdp\":-5.5,\"home\":1.694,\"away\":2.07,\"max\":200},\"-5\":{\"hdp\":-5,\"home\":1.606,\"away\":2.21,\"max\":200},\"-4.5\":{\"hdp\":-4.5,\"home\":1.549,\"away\":2.32,\"max\":200},\"-9.5\":{\"hdp\":-9.5,\"home\":2.24,\"away\":1.588,\"max\":200},\"-9\":{\"hdp\":-9,\"home\":2.15,\"away\":1.637,\"max\":200}},\"totals\":{\"136\":{\"points\":136,\"over\":1.649,\"under\":2.13,\"max\":200},\"137\":{\"points\":137,\"over\":1.775,\"under\":1.962,\"max\":200},\"138\":{\"points\":138,\"over\":1.917,\"under\":1.813,\"max\":200},\"139\":{\"points\":139,\"over\":2.08,\"under\":1.68,\"max\":200},\"140\":{\"points\":140,\"over\":2.13,\"under\":1.649,\"max\":200},\"141\":{\"points\":141,\"over\":2.19,\"under\":1.613,\"max\":200},\"142\":{\"points\":142,\"over\":2.13,\"under\":1.649,\"max\":2",
-  "keys": [
-   "sport_id",
-   "last",
-   "generated_at",
-   "events"
+ "5": {
+  "n": 210,
+  "n_with_parent": 140,
+  "event_types": [
+   [
+    "prematch",
+    210
+   ]
   ],
-  "event_keys": [
-   "event_id",
-   "sport_id",
-   "league_id",
-   "league_name",
-   "home",
-   "away",
-   "starts",
-   "start_ts",
-   "event_type",
-   "units",
-   "parent_id",
-   "is_have_odds",
-   "is_have_periods",
-   "periods",
-   "state"
+  "leagues": [
+   [
+    "NFL",
+    154
+   ],
+   [
+    "NCAA",
+    56
+   ]
   ],
-  "special_fields": "{}",
-  "events_with_specials": 164,
-  "n_events": 49,
-  "prop_names_seen": [
-   "\"Allisha Gray Total Threes Made\"",
-   "\"Threes Made\"",
-   "\"Allisha Gray Total Assists\"",
-   "\"Assists\"",
-   "\"Allisha Gray Total Points\"",
-   "\"Points\"",
-   "\"Allisha Gray Total Rebounds\"",
-   "\"Rebounds\"",
-   "\"Angel Reese Total Threes Made\"",
-   "\"Threes Made\"",
-   "\"Angel Reese Total Assists\"",
-   "\"Assists\"",
-   "\"Angel Reese Total Points\"",
-   "\"Points\"",
-   "\"Angel Reese Total Rebounds\"",
-   "\"Rebounds\"",
-   "\"Gabby Williams Total Assists\"",
-   "\"Assists\"",
-   "\"Jordin Canada Total Threes Made\"",
-   "\"Threes Made\""
-  ]
- },
- "drops": {
-  "status": 403,
-  "len": 5668,
-  "head": "<!DOCTYPE html><html lang=\"en-US\"><head><title>Just a moment...</title><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=Edge\"><meta name=\"robots\" content=\"noindex,nofollow\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta http-equiv=\"content-security-policy\" content=\"default-src &#39;none&#39;; script-src &#39;nonce-k7MfFRGvJRRHOXg3Itnajw&#39; &#39;unsafe-eval&#39; https://challenges.cloudflare.com; script-src-attr &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src &#39;self&#39; https://challenges.cloudflare.com; connect-src &#39;self&#39; https://challenges.cloudflare.com; frame-src &#39;self&#39; https://challenges.cloudflare.com blob:; child-src &#39;self&#39; https://challenges.cloudflare.com blob:; worker-src blob:; form-action http: https:; base-uri &#39;self&#39;\"><style>*{box-sizing:border-box;margin:0;padding:0}html{line-height:1.15;-webkit-text-size-adjust:100%;color:#313131;font-family:system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,\"Helvetica Neue\",Arial,\"Noto Sans\",sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Segoe UI Symbol\",\"Noto Color Emoji\"}body{display:flex;flex-direction:column;height:100vh;min-height:100vh}.main-content{margin:8rem auto;padding-left:1.5rem;max-width:60rem}@media (width <= 720px){.main-content{margin-top:4rem}}#challenge-error-text{background-image:url(\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zd"
- },
- "drops_football": {
-  "status": 403,
-  "len": 5668,
-  "head": "<!DOCTYPE html><html lang=\"en-US\"><head><title>Just a moment...</title><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=Edge\"><meta name=\"robots\" content=\"noindex,nofollow\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta http-equiv=\"content-security-policy\" content=\"default-src &#39;none&#39;; script-src &#39;nonce-MV12INDNSdloIjWlqkLQtf&#39; &#39;unsafe-eval&#39; https://challenges.cloudflare.com; script-src-attr &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src &#39;self&#39; https://challenges.cloudflare.com; connect-src &#39;self&#39; https://challenges.cloudflare.com; frame-src &#39;self&#39; https://challenges.cloudflare.com blob:; child-src &#39;self&#39; https://challenges.cloudflare.com blob:; worker-src blob:; form-action http: https:; base-uri &#39;self&#39;\"><style>*{box-sizing:border-box;margin:0;padding:0}html{line-height:1.15;-webkit-text-size-adjust:100%;color:#313131;font-family:system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,\"Helvetica Neue\",Arial,\"Noto Sans\",sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Segoe UI Symbol\",\"Noto Color Emoji\"}body{display:flex;flex-direction:column;height:100vh;min-height:100vh}.main-content{margin:8rem auto;padding-left:1.5rem;max-width:60rem}@media (width <= 720px){.main-content{margin-top:4rem}}#challenge-error-text{background-image:url(\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zd"
+  "prop_samples": [
+   {
+    "event_id": 1638938988,
+    "sport_id": 5,
+    "league_id": 889,
+    "league_name": "NFL",
+    "special": "Winning Margin Range",
+    "special_category": "Game Props",
+    "special_units": "Points",
+    "parent_id": 1638200263,
+    "starts": "2026-10-27T00:15:00Z",
+    "start_ts": "2026-10-27T00:15:00Z",
+    "event_type": "prematch",
+    "is_have_odds": true,
+    "special_markets": {
+     "num_0": [
+      {
+       "type": "moneyline",
+       "key": "s;0;m",
+       "side": null,
+       "max_risk": 250,
+       "prices": [
+        {
+         "name": "Dallas Cowboys By 1 - 6",
+         "participant_id": 1638938989,
+         "points": null,
+         "price": 4.2
+        },
+        {
+         "name": "Dallas Cowboys By 7 - 13",
+         "participant_id": 1638938990,
+         "points": null,
+         "price": 4.8
+        },
+        {
+         "name": "Dallas Cowboys By 14 - 20",
+         "participant_id": 1638938991,
+         "points": null,
+         "price": 6.75
+        },
+        {
+         "name": "Dallas Cowboys By 21 - 27",
+         "participant_id": 1638938992,
+         "points": null,
+         "price": 14
+        },
+        {
+         "name": "Dallas Cowboys By 28+",
+         "participant_id": 1638938993,
+         "points": null,
+         "price": 21
+        },
+        {
+         "name": "Philadelphia Eagles By 1 - 6",
+         "participant_id": 1638938994,
+         "points": null,
+         "price": 6.25
+        },
+        {
+         "name": "Philadelphia Eagles By 7 - 13",
+         "participant_id": 1638938995,
+         "points": null,
+         "price": 10
+        },
+        {
+         "name": "Philadelphia Eagles By 14 - 20",
+         "participant_id": 1638938996,
+         "points": null,
+         "price": 18
+        },
+        {
+         "name": "Philadelphia Eagles By 21 - 27",
+         "participant_id": 1638938997,
+         "points": null,
+         "price": 51
+        }
+       ]
+      }
+     ]
+    }
+   },
+   {
+    "event_id": 1638939002,
+    "sport_id": 5,
+    "league_id": 889,
+    "league_name": "NFL",
+    "special": "Total Points Range 1st Quarter",
+    "special_category": "Game Props",
+    "special_units": "Points",
+    "parent_id": 1638200263,
+    "starts": "2026-10-27T00:15:00Z",
+    "start_ts": "2026-10-27T00:15:00Z",
+    "event_type": "prematch",
+    "is_have_odds": true,
+    "special_markets": {
+     "num_3": [
+      {
+       "type": "moneyline",
+       "key": "s;3;m",
+       "side": null,
+       "max_risk": 250,
+       "prices": [
+        {
+         "name": "0 - 6",
+         "participant_id": 1638939003,
+         "points": null,
+         "price": 2.95
+        },
+        {
+         "name": "7 - 13",
+         "participant_id": 1638939004,
+         "points": null,
+         "price": 2.38
+        },
+        {
+         "name": "14 - 20",
+         "participant_id": 1638939005,
+         "points": null,
+         "price": 5.4
+        },
+        {
+         "name": "21+",
+         "participant_id": 1638939006,
+         "points": null,
+         "price": 10.25
+        }
+       ]
+      }
+     ]
+    }
+   },
+   {
+    "event_id": 1638939034,
+    "sport_id": 5,
+    "league_id": 889,
+    "league_name": "NFL",
+    "special": "Philadelphia Eagles Points Range 1st Quarter",
+    "special_category": "Game Props",
+    "special_units": "Points",
+    "parent_id": 1638200263,
+    "starts": "2026-10-27T00:15:00Z",
+    "start_ts": "2026-10-27T00:15:00Z",
+    "event_type": "prematch",
+    "is_have_odds": true,
+    "special_markets": {
+     "num_3": [
+      {
+       "type": "moneyline",
+       "key": "s;3;m",
+       "side": null,
+       "max_risk": 250,
+       "prices": [
+        {
+         "name": "0 - 5",
+         "participant_id": 1638939035,
+         "points": null,
+         "price": 1.513
+        },
+        {
+         "name": "6 - 10",
+         "participant_id": 1638939036,
+         "points": null,
+         "price": 3.2
+        },
+        {
+         "name": "11 - 15",
+         "participant_id": 1638939037,
+         "points": null,
+         "price": 19
+        },
+        {
+         "name": "16 - 20",
+         "participant_id": 1638939038,
+         "points": null,
+         "price": 56
+        }
+       ]
+      }
+     ]
+    }
+   }
+  ],
+  "parent_sample": {
+   "event_id": 1638200263,
+   "sport_id": 5,
+   "league_id": 889,
+   "league_name": "NFL",
+   "home": "Philadelphia Eagles",
+   "away": "Dallas Cowboys",
+   "starts": "2026-10-27T00:15:00Z",
+   "start_ts": "2026-10-27T00:15:00Z",
+   "event_type": "prematch",
+   "units": "Regular",
+   "parent_id": null,
+   "is_have_odds": true,
+   "is_have_periods": true,
+   "periods": {
+    "num_0": {
+     "number": 0,
+     "money_line": {
+      "home": 2.91,
+      "away": 1.45
+     },
+     "spreads": {
+      "2": {
+       "hdp": 2,
+       "home": 2.59,
+       "away": 1.532,
+       "max": 30000
+      },
+      "3": {
+       "hdp": 3,
+       "home": 2.3,
+       "away": 1.662,
+       "max": 30000
+      },
+      "4": {
+       "hdp": 4,
+       "home": 2.03,
+       "away": 1.855,
+       "max": 30000
+      },
+      "5": {
+       "hdp": 5,
+       "home": 1.917,
+       "away": 1.962,
+       "max": 30000
+      },
+      "6": {
+       "hdp": 6,
+       "home": 1.8,
+       "away": 2.08,
+       "max": 30000
+      },
+      "7": {
+       "hdp": 7,
+       "home": 1.633,
+       "away": 2.35,
+       "max": 30000
+      },
+      "4.5": {
+       "hdp": 4.5,
+       "home": 1.962,
+       "away": 1.926,
+       "max": 30000
+      },
+      "10.5": {
+       "hdp": 10.5,
+       "home": 1.347,
+       "away": 3.33,
+       "max": 30000
+      },
+      "6.5": {
+       "hdp": 6.5,
+       "home": 1.741,
+       "away": 2.16,
+       "max": 30000
+      },
+      "5.5": {
+       "hdp": 5.5,
+       "home": 1.87,
+       "away": 2,
+       "max": 30000
+      },
+      "3.5": {
+       "hdp": 3.5,
+       "home": 2.09,
+       "away": 1.8,
+       "max": 30000
+      },
+      "2.5": {
+       "hdp": 2.5,
+       "home": 2.48,
+       "away": 1.575,
+       "max": 30000
+      },
+      "-3.5": {
+       "hdp": -3.5,
+       "home": 4.65,
+       "away": 1.202,
+       "max": 30000
+      }
+     },
+     "totals": {
+      "42": {
+       "points": 42,
+       "over": 1.69,
+       "under": 2.21,
+       "max": 10000
+      },
+      "43": {
+       "points": 43,
+       "over": 1.794,
+       "under": 2.06,
+       "max": 10000
+      },
+      "44": {
+       "points": 44,
+       "over": 1.926,
+       "under": 1.926,
+       "max": 10000
+      },
+      "45": {
+       "points": 45,
+       "over": 2.07,
+       "under": 1.787,
+       "max": 10000
+      },
+      "46": {
+       "points": 46,
+       "over": 2.22,
+       "under": 1.685,
+       "max": 10000
+      },
+      "37.5": {
+       "points": 37.5,
+       "over": 1.382,
+       "under": 3.07,
+       "max": 10000
+      },
+      "41.5": {
+       "points": 41.5,
+       "over": 1.645,
+       "under": 2.29,
+       "max": 10000
+      },
+      "42.5": {
+       "points": 42.5,
+       "over": 1.741,
+       "under": 2.13,
+       "max": 10000
+      },
+      "43.5": {
+       "points": 43.5,
+       "over": 1.855,
+       "under": 1.99,
+       "max": 10000
+      },
+      "44.5": {
+       "points": 44.5,
+       "over": 1.99,
+       "under": 1.847,
+       "max": 10000
+      },
+      "45.5": {
+       "points": 45.5,
+       "over": 2.14,
+       "under": 1.735,
+       "max": 10000
+      },
+      "46.5": {
+       "points": 46.5,
+       "over": 2.3,
+       "under": 1.641,
+       "max": 10000
+      },
+      "50.5": {
+       "points": 50.5,
+       "over": 2.97,
+       "under": 1.405,
+       "max": 10000
+      }
+     },
+     "team_total": {
+      "home": {
+       "points": 19.5,
+       "over": 1.862,
+       "under": 1.99
+      },
+      "away": {
+       "points": 24.5,
+       "over": 2.07,
+       "under": 1.8
+      }
+     },
+     "team_totals": {
+      "home": {
+       "19.5": {
+        "points": 19.5,
+        "over": 1.862,
+        "under": 1.99,
+        "max": 2000
+       }
+      },
+      "away": {
+       "24.5": {
+        "points": 24.5,
+        "over": 2.07,
+        "under": 1.8,
+        "max": 2000
+       }
+      }
+     }
+    },
+    "num_3": {
+     "number": 3,
+     "money_line": {
+      "home": 2.36,
+      "away": 1.633
+     },
+     "spreads": {
+      "0.5": {
+       "hdp": 0.5,
+       "home": 1.806,
+       "away": 2.08,
+       "max": 5000
+      },
+      "1.5": {
+       "hdp": 1.5,
+       "home": 1.775,
+       "away": 2.09,
+       "max": 5000
+      },
+      "-0.5": {
+       "hdp": -0.5,
+       "home": 2.93,
+       "away": 1.418,
+       "max": 5000
+      }
+     },
+     "totals": {
+      "7": {
+       "points": 7,
+       "over": 1.613,
+       "under": 2.34,
+       "max": 3000
+      },
+      "7.5": {
+       "points": 7.5,
+       "over": 1.99,
+       "under": 1.862,
+       "max": 3000
+      },
+      "9.5": {
+       "points": 9.5,
+       "over": 2.12,
+       "under": 1.741,
+       "max": 3000
+      }
+     },
+     "team_total": {
+      "home": {
+       "points": 0.5,
+       "over": 1.763,
+       "under": 2.12
+      },
+      "away": {
+       "points": 3.5,
+       "over": 1.901,
+       "under": 1.952
+      }
+     },
+     "team_totals": {
+      "home": {
+       "0.5": {
+        "points": 0.5,
+        "over": 1.763,
+        "under": 2.12,
+        "max": 2000
+       }
+      },
+      "away": {
+       "3.5": {
+        "points": 3.5,
+        "over": 1.901,
+        "under": 1.952,
+        "max": 2000
+       }
+      }
+     }
+    },
+    "num_1": {
+     "number": 1,
+     "money_line": {
+      "home": 2.59,
+      "away": 1.552
+     },
+     "spreads": {
+      "3": {
+       "hdp": 3,
+       "home": 1.943,
+       "away": 1.943,
+       "max": 5000
+      },
+      "4": {
+       "hdp": 4,
+       "home": 1.685,
+       "away": 2.26,
+       "max": 5000
+      },
+      "6": {
+       "hdp": 6,
+       "home": 1.541,
+       "away": 2.57,
+       "max": 5000
+      },
+      "4.5": {
+       "hdp": 4.5,
+       "home": 1.617,
+       "away": 2.38,
+       "max": 5000
+      },
+      "3.5": {
+       "hdp": 3.5,
+       "home": 1.787,
+       "away": 2.11,
+       "max": 5000
+      },
+      "2.5": {
+       "hdp": 2.5,
+       "home": 2.12,
+       "away": 1.781,
+       "max": 5000
+      },
+      "1.5": {
+       "hdp": 1.5,
+       "home": 2.15,
+       "away": 1.746,
+       "max": 5000
+      },
+      "0.5": {
+       "hdp": 0.5,
+       "home": 2.24,
+       "away": 1.694,
+       "max": 5000
+      },
+      "-0.5": {
+       "hdp": -0.5,
+       "home": 2.8,
+       "away": 1.465,
+       "max": 5000
+      }
+     },
+     "totals": {
+      "20": {
+       "points": 20,
+       "over": 1.625,
+       "under": 2.34,
+       "max": 3000
+      },
+      "21": {
+       "points": 21,
+       "over": 1.82,
+       "under": 2.05,
+       "max": 3000
+      },
+      "22": {
+       "points": 22,
+       "over": 1.962,
+       "under": 1.893,
+       "max": 3000
+      },
+      "23": {
+       "points": 23,
+       "over": 2.1,
+       "under": 1.769,
+       "max": 3000
+      },
+      "21.5": {
+       "points": 21.5,
+       "over": 1.926,
+       "under": 1.943,
+       "max": 3000
+      },
+      "19.5": {
+       "points": 19.5,
+       "over": 1.559,
+       "under": 2.49,
+       "max": 3000
+      },
+      "20.5": {
+       "points": 20.5,
+       "over": 1.735,
+       "under": 2.15,
+       "max": 3000
+      },
+      "22.5": {
+       "points": 22.5,
+       "over": 1.99,
+       "under": 1.855,
+       "max": 3000
+      },
+      "23.5": {
+       "points": 23.5,
+       "over": 2.2,
+       "under": 1.704,
+       "max": 3000
+      }
+     },
+     "team_total": {
+      "home": {
+       "points": 9.5,
+       "over": 1.935,
+       "under": 1.935
+      },
+      "away": {
+       "points": 12.5,
+       "over": 1.901,
+       "under": 1.971
+      }
+     },
+     "team_totals": {
+      "home": {
+       "9.5": {
+        "points": 9.5,
+        "over": 1.935,
+        "under": 1.935,
+        "max": 2000
+       }
+      },
+      "away": {
+       "12.5": {
+        "points": 12.5,
+        "over": 1.901,
+        "under": 1.971,
+        "max": 2000
+       }
+      }
+     }
+    }
+   }
+  },
+  "special_keys": [
+   "special",
+   "special_category",
+   "special_markets",
+   "special_units"
+  ],
+  "num0_keys": [
+   [
+    "number",
+    66
+   ],
+   [
+    "money_line",
+    66
+   ],
+   [
+    "spreads",
+    66
+   ],
+   [
+    "totals",
+    66
+   ],
+   [
+    "team_total",
+    66
+   ],
+   [
+    "team_totals",
+    66
+   ]
+  ],
+  "specials_in_num0": []
  }
 }
