@@ -36,7 +36,7 @@ def test_better_number_uses_pinnacle_as_floor_worse_number_skipped():
     e = sl.edges(props, [board("Josh Jacobs", "Rushing Yards", 51.5, 0.46)], NOW)
     assert len(e) == 1 and e[0]["side"] == "under"           # Under 53.5 >= Pinnacle Under 51.5
     props = sl.sleeper_props([line("2", "receiving_yards", 74.5, 2.4, 1.5)], NAMES)
-    e = sl.edges(props, [board("CeeDee Lamb", "Receiving Yards", 78.5, 0.40)], NOW)
+    e = sl.edges(props, [board("CeeDee Lamb", "Receiving Yards", 78.5, 0.45)], NOW)
     assert e and e[0]["side"] == "over"                      # Over 74.5 <= Pinnacle Over 78.5
 
 
