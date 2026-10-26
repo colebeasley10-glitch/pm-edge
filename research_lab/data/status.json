@@ -7,34 +7,29 @@
  },
  "last_report_preview": {
   "lines": [
-   "PM EDGE STRATEGY RESEARCH LAB \u2014 2026-10-24 (PAPER)",
-   "Existing Sharp (paper): 596-436, \u2212$119.40, ROI -1.2%",
-   "Value Only: 0-0, $0.00, ROI \u2014",
-   "Hybrid: Value + Sharp: 0-0, $0.00, ROI \u2014",
-   "Structural Arbitrage: 0-0, $0.00, ROI \u2014",
-   "Value Only (Pinnacle): 0-1, \u2212$10.06, ROI -100.0%",
-   "Hybrid (Pinnacle): 0-0, $0.00, ROI \u2014",
-   "+EV Finder: 0-1, \u2212$10.00, ROI -100.0%",
-   "Today's Plays: 25-13, +$8.87, ROI +2.3%",
-   "Today's Plays (-200 to +150): 18-17, \u2212$15.47, ROI -4.4%",
+   "PM EDGE STRATEGY RESEARCH LAB \u2014 2026-10-25 (PAPER)",
+   "Existing Sharp (paper): 655-485, \u2212$153.34, ROI -1.3%",
+   "Today's Plays: 32-15, +$16.61, ROI +3.5%",
+   "Today's Plays (-200 to +150): 23-19, +$9.72, ROI +2.3%",
    "Structural: 0 quote-level opportunities, 0 fully executable today",
-   "New paper trades today: 10 \u00b7 fees $0.00 \u00b7 open exposure $120.00",
-   "Top rejections: edge_below_min 12750, ev_below_min 2284, kickoff_passed 126",
+   "New paper trades today: 10 \u00b7 fees $0.00 \u00b7 open exposure $50.00",
+   "Top rejections: daily_exposure_cap 63, already_holding_market 62, already_holding_event 44",
    "Data: 0 failed fetches today; sportsbook snapshot EMPTY (no sportsbook prices; check Odds API credits)",
    "Records reconciled: yes"
   ],
-  "title": "\ud83e\uddea Research Lab (PAPER) 10/24"
+  "title": "\ud83e\uddea Research Lab (PAPER) 10/25"
  },
  "last_run": {
-  "at": "2026-10-26T02:32:06.990327Z",
+  "at": "2026-10-26T03:02:11.080926Z",
   "best_price": {
    "compared": 0,
-   "new_picks": 0,
+   "new_picks": 1,
    "poly_cheaper": 0
   },
   "book_errors": 0,
   "data_failures": [],
   "ev": {
+   "book_offers": 0,
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
@@ -45,11 +40,13 @@
     "taken_at": null
    },
    "errors": [],
-   "games": 0,
-   "picks": 0
+   "games": 70,
+   "kalshi_offers": 60,
+   "picks": 686,
+   "polymarket_offers": 18
   },
   "maker_candidates": {
-   "candidates": 0,
+   "candidates": 72,
    "sharp_agrees": 0
   },
   "my_bets": {
@@ -59,40 +56,53 @@
   "notes": [],
   "odds_fam": {
    "bets_settled": 0,
-   "pushed": 0,
-   "sent": 0,
+   "pushed": 5,
+   "sent": 5,
    "settled": 0
   },
   "paper_only": true,
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [],
-   "kalshi_markets": 0,
-   "matched": 0,
-   "note": "no Pinnacle fetch due this round",
-   "pinnacle_games": 0,
-   "requests_today": 71,
-   "samples": [],
-   "skipped": [
-    "football: next in 15 min",
-    "basketball: next in 0 min",
-    "hockey: next in 90 min",
-    "baseball: next in 90 min",
-    "soccer: next in 173 min",
-    "tennis: next in 30 min"
+   "fetched": [
+    "football",
+    "basketball"
    ],
-   "unmatched": {}
+   "kalshi_markets": 4479,
+   "matched": 333,
+   "pinnacle_games": 71,
+   "requests_today": 73,
+   "samples": [
+    "no_pinnacle_match: Sam Houston vs Missouri St.: Missouri St. wins",
+    "no_pinnacle_match: Sam Houston vs Missouri St.: Sam Houston wins",
+    "no_pinnacle_match: Kennesaw St. vs Middle Tennessee: Middle Tennessee wins",
+    "no_pinnacle_match: Kennesaw St. vs Middle Tennessee: Kennesaw St. wins",
+    "no_pinnacle_match: South Carolina St. vs Morgan St.: Morgan St. wins",
+    "no_pinnacle_match: South Carolina St. vs Morgan St.: South Carolina St. wins",
+    "no_pinnacle_match: Harvard vs Dartmouth: Dartmouth wins",
+    "no_pinnacle_match: Harvard vs Dartmouth: Harvard wins"
+   ],
+   "skipped": [
+    "hockey: next in 60 min",
+    "baseball: next in 60 min",
+    "soccer: next in 143 min",
+    "tennis: next in 0 min"
+   ],
+   "unmatched": {
+    "no_moneyline": 2,
+    "no_pinnacle_match": 2627,
+    "pinnacle_line_not_offered": 1517
+   }
   },
   "prop_board": {
    "new_plays": 0,
-   "props": 0,
+   "props": 42,
    "pushed": 0,
    "settled": 0
   },
   "reconciled": true,
   "sharp_plays": {
-   "games": 0,
+   "games": 6,
    "new_plays": 0,
    "pushed": 0,
    "settled": 0
@@ -112,10 +122,10 @@
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 6,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 6,
+    "scanned": 686,
     "settle": {
      "marked": 2,
      "pending": 2,
@@ -127,10 +137,10 @@
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 5,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 5,
+    "scanned": 686,
     "settle": {
      "marked": 3,
      "pending": 3,
@@ -139,6 +149,6 @@
    }
   }
  },
- "last_success": "2026-10-26T02:32:06.990327Z",
- "report_sent": "20261024"
+ "last_success": "2026-10-26T03:02:11.080926Z",
+ "report_sent": "20261025"
 }
