@@ -48,6 +48,8 @@ def test_gap_needs_2pct_unless_late_and_short(tmp_path):
     small = gap(2, fair=0.53, dec=1.92)          # +1.8%
     assert of.update(NOW, tmp_path, picks=[small])["sent"] == 0
     late = NOW.replace(hour=20)                  # 4pm ET, nothing sent yet today
+    small = gap(2, fair=0.53, dec=1.92)
+    small.starts = late + timedelta(hours=5)
     assert of.update(late, tmp_path, picks=[small])["sent"] == 1
 
 
@@ -81,3 +83,29 @@ def test_prop_bet_at_the_old_line_regrades(tmp_path):
     of.update(START + timedelta(hours=5), tmp_path)
     assert of.load(tmp_path)[0]["status"] == "lost"
     assert of.load_results(tmp_path)["b2"]["status"] == "won"
+
+
+def test_quiet_hours_hold_then_morning_digest(tmp_path):
+    pushes = []
+    night = NOW.replace(hour=5)                  # 1am ET
+    g = gap(7)
+    g.starts = night + timedelta(hours=20)
+    info = of.update(night, tmp_path, picks=[g], push=lambda t, m, u: pushes.append((t, m)) or True)
+    assert info["sent"] == 1 and pushes == []
+    of.update(NOW.replace(hour=13), tmp_path, push=lambda t, m, u: pushes.append((t, m)) or True)   # 9am ET
+    assert len(pushes) == 1 and "overnight" in pushes[0][0] and "Team7 ML" in pushes[0][1]
+    of.update(NOW.replace(hour=14), tmp_path, push=lambda t, m, u: pushes.append((t, m)) or True)
+    assert len(pushes) == 1                      # digest only once
+
+
+def test_one_game_line_play_per_game_across_days(tmp_path):
+    a, b = gap(8), gap(9)
+    b.game = a.game
+    of.update(NOW, tmp_path, picks=[a])
+    assert of.update(NOW + timedelta(days=1), tmp_path, picks=[b])["sent"] == 0
+
+
+def test_gap_far_in_future_skipped(tmp_path):
+    g = gap(10)
+    g.starts = NOW + timedelta(days=5)
+    assert of.update(NOW, tmp_path, picks=[g])["sent"] == 0

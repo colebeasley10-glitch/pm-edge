@@ -35,6 +35,8 @@ MAX_PER_ROUND = 6
 GAP_EV = 0.02                # price gaps need +2% EV vs Pinnacle...
 GAP_EV_FLOOR = 0.01          # ...or +1% late in the day if fewer than MIN_PER_DAY went out
 FLOOR_HOUR_ET = 15
+QUIET_START, QUIET_END = 23, 8   # ET: no phone pushes overnight; held plays go out in one 8am digest
+GAP_MAX_AHEAD = timedelta(hours=30)   # price gaps only on games within ~a day (prices days out are noise)
 MIN_DEC, MAX_DEC = 1.5, 2.5  # -200 to +150, the range Cole bets
 ET = ZoneInfo("America/New_York")
 KIND_RANK = {"Prop steam": 3, "Line steam": 2, "Price gap": 1}
@@ -145,7 +147,8 @@ def best_offer(pick) -> tuple | None:
 
 def from_gap(pick, now: datetime) -> dict | None:
     o = best_offer(pick)
-    if o is None or not pick.fair or not pick.starts or pick.starts <= now + timedelta(minutes=15):
+    if (o is None or not pick.fair or not pick.starts or pick.starts <= now + timedelta(minutes=15)
+            or pick.starts > now + GAP_MAX_AHEAD):
         return None
     ev = pick.fair * o.decimal - 1
     if not (MIN_DEC <= o.decimal <= MAX_DEC):
@@ -198,8 +201,12 @@ def update(now: datetime, base: Path | None = None, *, new_props=(), new_lines=(
     day = et_day(now)
     sent_today = [r for r in rows if et_day(parse_dt(r["sent_at"]) or now) == day]
     seen = {r["source_id"] for r in rows}
-    games_today = {(r["game"], r["market"] != "prop") for r in sent_today}
-    floor = now.astimezone(ET).hour >= FLOOR_HOUR_ET and len(sent_today) < MIN_PER_DAY
+    # one game-line play per game, ever (Oct 26: Minnesota +17.5 and Indiana -20.5 both went out
+    # for the same game across midnight)
+    games_today = {(r["game"], r["market"] != "prop") for r in rows}
+    hour = now.astimezone(ET).hour
+    quiet = hour >= QUIET_START or hour < QUIET_END
+    floor = FLOOR_HOUR_ET <= hour < QUIET_START and len(sent_today) < MIN_PER_DAY
     cands = [from_prop(p) for p in new_props] + [from_line(p) for p in new_lines]
     for pk in picks or []:
         g = from_gap(pk, now)
@@ -217,7 +224,7 @@ def update(now: datetime, base: Path | None = None, *, new_props=(), new_lines=(
         c.pop("_ev", None)
         play = {**c, "of_id": c["source_id"].replace(":", "-")[:80], "sent_at": iso(now), "pushed": False,
                 "clv": "", "status": "open", "pl": "", "settled_at": ""}
-        if push:
+        if push and not quiet:
             t, m = alert_text(play)
             try:
                 play["pushed"] = bool(push(t, m, url))
@@ -230,10 +237,30 @@ def update(now: datetime, base: Path | None = None, *, new_props=(), new_lines=(
         sent_round += 1
         info["sent"] += 1
         info["pushed"] += play["pushed"] is True
+    if push and not quiet:
+        info["digest"] = morning_digest(rows, now, push)
     info["settled"] = grade(rows, now, base, markets or {})
     _write_csv(_dir(base) / "plays.csv", rows, FIELDS)
     info["bets_settled"] = settle_bets(rows, now, base, scores)
     return info
+
+
+def morning_digest(rows: list[dict], now: datetime, push) -> int:
+    """One push listing plays found overnight (quiet hours) that are still bettable."""
+    held = [r for r in rows if str(r.get("pushed")) in {"False", ""} and r["status"] == "open"
+            and (parse_dt(r["game_start"]) or now) > now]
+    if not held:
+        return 0
+    lines = [f"• {r['pick']} ({r['league']}) bet at {r['bet_at']}+" for r in held[:15]]
+    try:
+        ok = push(f"☀️ Odds Fam: {len(held)} play{'s' if len(held) != 1 else ''} from overnight",
+                  "\n".join(lines) + "\nDetails + log in Odds Fam", None)
+    except Exception:
+        ok = False
+    if ok:
+        for r in held:
+            r["pushed"] = "digest"
+    return len(held) if ok else 0
 
 
 # ------------------------------------------------------------------ grading
