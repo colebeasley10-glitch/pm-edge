@@ -97,6 +97,33 @@ def closed_positions(wallet: str, raw: dict) -> list[dict]:
     return out
 
 
+def resolved_open(wallet: str, raw: dict) -> list[dict]:
+    """Settled positions still sitting in the wallet (mostly losers that expired at 0, which never
+    show up as 'closed'). Converted to the closed-position shape so they can be scored together."""
+    out = []
+    for page in range(20):
+        rows = get("/positions", user=wallet, limit=500, offset=page * 500, sizeThreshold=0)
+        if not isinstance(rows, list) or not rows:
+            break
+        raw.setdefault("open_sample", rows[:2])
+        for r in rows:
+            cur = float(r.get("curPrice") or 0)
+            if cur not in (0.0, 1.0) and not r.get("redeemable"):
+                continue          # still live: not a result yet
+            out.append({**r, "totalBought": r.get("totalBought") or r.get("size"),
+                        "realizedPnl": r.get("cashPnl"), "timestamp": r.get("timestamp") or _end_ts(r)})
+        if len(rows) < 500:
+            break
+    return out
+
+
+def _end_ts(r: dict) -> float | None:
+    try:
+        return datetime.fromisoformat(str(r.get("endDate"))[:10]).replace(tzinfo=timezone.utc).timestamp()
+    except ValueError:
+        return None
+
+
 def score(positions: list[dict], now: datetime) -> dict:
     def block(ps):
         bought = sum(float(p.get("totalBought") or 0) * float(p.get("avgPrice") or 0) for p in ps)
@@ -136,8 +163,12 @@ def main() -> None:
     report = []
     for c in cands[:MAX_CANDIDATES + len(extra)]:
         try:
-            ps = closed_positions(c["wallet"], raw)
-            report.append({**c, **score(ps, now)})
+            closed = closed_positions(c["wallet"], raw)
+            ids = {(p.get("conditionId"), p.get("outcomeIndex")) for p in closed}
+            held = [p for p in resolved_open(c["wallet"], raw) if (p.get("conditionId"), p.get("outcomeIndex")) not in ids]
+            res = score(closed + held, now)
+            res["closed_n"], res["held_resolved_n"] = len(closed), len(held)
+            report.append({**c, **res})
         except Exception as exc:
             report.append({**c, "error": f"{type(exc).__name__}: {str(exc)[:160]}"})
         time.sleep(0.5)
