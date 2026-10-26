@@ -1,6 +1,7 @@
-"""One-off probe (READ-ONLY): does the free PinnWire key return Pinnacle player props and line drops?"""
+"""One-off probe (READ-ONLY): shape of Pinnacle player props in PinnWire fixtures (2 calls)."""
 from __future__ import annotations
 
+import collections
 import json
 import os
 import re
@@ -9,51 +10,35 @@ from pathlib import Path
 import requests
 
 OUT = Path("trader_follow/data/scout/pinn_probe.json")
-BASE = "https://pinnwire.com"
 
 
 def main() -> None:
     key = os.getenv("PINNWIRE_KEY", "").strip()
-    s = requests.Session()
     out: dict = {}
-    try:
-        doc = s.get(f"{BASE}/docs.html", timeout=25).text
-        text = re.sub(r"<[^>]+>", " ", doc)
-        text = re.sub(r"\s+", " ", text)
-        out["docs_paths"] = sorted(set(re.findall(r"/kit/v1/[a-z_/{}]+", doc)))
-        idx = [m.start() for m in re.finditer(r"special|prop|drop", text, re.I)]
-        out["docs_snippets"] = [text[max(0, i - 200): i + 300] for i in idx[:25]]
-    except Exception as exc:
-        out["docs_error"] = repr(exc)[:200]
-    tries = [("fixtures_specials", "/kit/v1/prematch/fixtures", {"sport_id": 3, "include_specials": 1}),
-             ("markets_specials", "/kit/v1/markets", {"sport_id": 3, "include_specials": 1}),
-             ("drops", "/kit/v1/drops", {"sport_id": 3}),
-             ("drops_football", "/kit/v1/drops", {"sport_id": 5})]
-    for name, path, params in tries:
-        try:
-            r = s.get(BASE + path, params=params, headers={"x-api-key": key}, timeout=30)
-            body = r.text
-            entry = {"status": r.status_code, "len": len(body), "head": body[:1500]}
-            if r.status_code == 200 and body.startswith("{"):
-                d = r.json()
-                entry["keys"] = list(d.keys())[:20]
-                evs = d.get("events") or d.get("data") or []
-                if isinstance(evs, list) and evs:
-                    e0 = evs[0]
-                    entry["event_keys"] = list(e0.keys())[:40]
-                    sp = {k: v for k, v in e0.items() if re.search(r"special|prop|player", k, re.I)}
-                    entry["special_fields"] = json.dumps(sp)[:4000]
-                    n_special = sum(1 for e in evs for k in e if re.search(r"special|prop", k, re.I) and e[k])
-                    entry["events_with_specials"] = n_special
-                    entry["n_events"] = len(evs)
-                found = re.findall(r'"[^"]*(?:Points|Rebounds|Assists|Yards|Receptions|Threes)[^"]*"', body)[:20]
-                entry["prop_names_seen"] = found
-            out[name] = entry
-        except Exception as exc:
-            out[name] = {"error": repr(exc)[:200]}
+    for sid in (3, 5):
+        r = requests.get("https://pinnwire.com/kit/v1/prematch/fixtures",
+                         params={"sport_id": sid, "include_specials": 1}, headers={"x-api-key": key}, timeout=40)
+        d = r.json()
+        evs = d.get("events") or []
+        prop = [e for e in evs if re.search(r"Total|Yards|Points|Assists|Rebounds|Receptions|Touchdowns",
+                                            json.dumps(e)) and e.get("parent_id")]
+        out[str(sid)] = {
+            "n": len(evs), "n_with_parent": sum(1 for e in evs if e.get("parent_id")),
+            "event_types": collections.Counter(str(e.get("event_type")) for e in evs).most_common(),
+            "leagues": collections.Counter(e.get("league_name") for e in evs).most_common(30),
+            "prop_samples": prop[:3],
+            "parent_sample": next((e for e in evs if prop and e.get("event_id") == prop[0].get("parent_id")), None),
+            "special_keys": sorted({k for e in evs for k in e if k not in
+                                    ("event_id", "sport_id", "league_id", "league_name", "home", "away", "starts",
+                                     "start_ts", "event_type", "units", "parent_id", "is_have_odds",
+                                     "is_have_periods", "periods")}),
+        }
+        sp = [e for e in evs if "special" in json.dumps(list(e.get("periods", {}).get("num_0", {}).keys()))]
+        out[str(sid)]["num0_keys"] = collections.Counter(k for e in evs for k in (e.get("periods") or {}).get("num_0", {}) ).most_common()
+        out[str(sid)]["specials_in_num0"] = sp[:2]
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(out, indent=1)[:400_000])
-    print({k: (v.get("status") if isinstance(v, dict) else None) for k, v in out.items()})
+    OUT.write_text(json.dumps(out, indent=1, default=str)[:600_000])
+    print("ok")
 
 
 if __name__ == "__main__":
