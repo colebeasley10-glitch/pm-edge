@@ -83,10 +83,24 @@ def lanes() -> list[dict]:
                      note="Turned off Oct 27, 2026"))
     out.append(grade("Live Today's Plays", _rows("live_plays/data/bets.csv"), clv="clv_cents", money="real",
                      note="Paused Oct 27, 2026; open bets still settle"))
-    out.append(grade("Maker Bot", _rows("maker_bot/data/orders.csv"), money="real", note="Off"))
+    out.append(grade("Maker Bot", _rows("maker_bot/data/orders.csv"), money="real",
+                     note="Live off; dry runs keep logging what it would post"))
 
     league = _rows("league_trades.csv")
-    out.append(grade("Paper Sharp (benchmark)", [r for r in league if r.get("strategy") == "sharp"], clv="clv_cents"))
+    sharp = [r for r in league if r.get("strategy") == "sharp"]
+    out.append(grade("Paper Sharp (benchmark)", sharp, clv="clv_cents"))
+    try:   # Heavy Flow test: Sharp picks backed by 60+ whale trades, scored from its start date
+        from research_lab import heavy_flow as hf
+        since = [r for r in sharp if (d := hf._dt(r.get("opened_at"))) and d >= hf.START]
+        heavy = [r for r in since if (hf.flow_trades(r) or 0) >= hf.MIN_TRADES]
+        out.append(grade(f"Heavy Flow Sharp ({hf.MIN_TRADES}+ trades)", heavy, clv="clv_cents"))
+        out.append(grade("Light Flow Sharp (the rest)", [r for r in since if r not in heavy], clv="clv_cents"))
+    except Exception:
+        pass
+    for strat, label in (("weather", "Weather"), ("crypto", "Crypto"), ("polymarket", "Polymarket league")):
+        mine = [r for r in league if r.get("strategy") == strat]
+        if mine:
+            out.append(grade(label, mine, clv="clv_cents", note="Benched; shadow picks still logged"))
 
     for key, label in (("EV_FINDER_v2", "Today's Plays (EV v2)"), ("EV_FINDER_v3", "Today's Plays -200/+150 (EV v3)")):
         out.append(grade(label, _rows(f"research_lab/data/{key}/positions.csv"), risk="committed", clv="clv_cents"))
@@ -95,9 +109,11 @@ def lanes() -> list[dict]:
     for trader in sorted({r.get("trader") for r in tf if r.get("trader")}):
         mine = [r for r in tf if r.get("trader") == trader]
         out.append(grade(f"Follow {trader}", mine, pl="pl_copy", risk=10.0, note="$10 paper per copy"))
-        nfl = [r for r in mine if r.get("sport") == "NFL"]
-        if nfl:
-            out.append(grade(f"Follow {trader} — NFL only", nfl, pl="pl_copy", risk=10.0))
+        for sport in sorted({r.get("sport") for r in mine if r.get("sport")}):
+            out.append(grade(f"Follow {trader} — {sport}", [r for r in mine if r.get("sport") == sport],
+                             pl="pl_copy", risk=10.0))
+    kf = _rows("trader_follow/data/kalshi_signals.csv")
+    out.append(grade("Kalshi Follow", kf, pl="pl_copy", risk=10.0, note="No pre-game signals yet" if not kf else ""))
 
     out.append(grade("Prop Board steam", _rows("research_lab/data/PROP_BOARD/plays.csv"), risk=10.0, clv="clv"))
     of = _rows("research_lab/data/ODDS_FAM/plays.csv")

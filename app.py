@@ -1759,6 +1759,19 @@ with tab_lab:
     st.markdown("<div class='hm-tiles'>" + "".join(
         f"<a class='hm-tile lab-tool' href='/{pg}' target='_self'><div class='v' style='font-size:1.05rem'>{esc(t)}</div>"
         f"<div class='l'>{esc(d)}</div></a>" for pg, t, d in _tools) + "</div>", unsafe_allow_html=True)
+    try:   # Oct 27, 2026: every lane we're testing, real money and paper, in one list
+        _lsys.modules.pop("scorecard", None)
+        import scorecard as _lsc
+        _all = _lsc.lanes()
+        st.markdown("<div class='section'><span>Everything we're testing</span></div>", unsafe_allow_html=True)
+        st.dataframe([{"Lane": _l["name"], "$": "Real" if _l["money"] == "real" else "Paper",
+                       "Record": f"{_l['won']}-{_l['lost']}", "ROI": "—" if _l["roi"] is None else f"{_l['roi'] * 100:+.1f}%",
+                       "P/L": f"{_l['pl']:+,.0f}", "Verdict": _l["verdict"]} for _l in _all],
+                     hide_index=True, width="stretch")
+        st.page_link("pages/Scorecard.py", label=f"Scorecard: go-live bar is {_lsc.MIN_BETS}+ bets, ROI > 0, CLV ≥ 0",
+                     icon="✅")
+    except Exception as _exc:
+        st.caption(f"Scorecard unavailable: {type(_exc).__name__}")
     _pages = {"VALUE_ONLY_v1": "Research_Lab_Value_Only", "HYBRID_SHARP_VALUE_v1": "Research_Lab_Hybrid",
               "STRUCTURAL_ARB_v1": "Research_Lab_Structural_Arb", "VALUE_ONLY_v2": "Research_Lab_Value_Pinnacle",
               "HYBRID_SHARP_VALUE_v2": "Research_Lab_Hybrid_Pinnacle", "EV_FINDER_v1": "Research_Lab_EV_Finder",

@@ -6,8 +6,12 @@ name: Maker Bot
 # Posts post-only Kalshi limit orders priced better than Pinnacle's fair line, each sized to win $1.
 # Kalshi expires every order by itself at the earlier of 50 min or 5 min before start.
 # Limits in maker_bot/core.py: one bet per game, unit capped by CEIL_UNIT. No daily cap (Oct 23, 2026).
-# OFF Oct 27, 2026: 772 live orders, 18 fills, -$8, negative markouts. Manual runs only, dry.
+# LIVE OFF Oct 27, 2026 (772 live orders, 18 fills, -$8, negative markouts). Still runs after
+# every Lab round as a dry run so it stays in the Lab.
 on:
+  workflow_run:
+    workflows: ["Strategy Research Lab (paper)"]
+    types: [completed]
   workflow_dispatch:
 
 concurrency:
