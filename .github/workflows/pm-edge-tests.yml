@@ -44,7 +44,7 @@ jobs:
           npm run typecheck
 
       - name: Compile approval, performance, hub, and mobile API code
-        run: python -m py_compile approval_links.py position_actions.py position_signals.py kalshi_readonly.py kalshi_submit.py performance_tracker.py signal_tracker.py dashboard_data.py signal_outcome_tracker.py mobile_backend.py app.py league/live_sharp.py pushover_status.py pm_edge_runner_v24.py pm_edge_runner_v25.py pm_edge_runner_v26.py pm_edge_runner_v27.py pm_edge_runner_v28.py pm_edge_runner_v29.py pinnacle_shadow.py candidate_tracker.py ncaa_beta_runner.py kalshispy_client.py whale_edge.py pages/Approve.py pages/Position_Action.py
+        run: python -m py_compile pages/All_Tools.py ui_theme.py scorecard.py quick_bets.py pages/Scorecard.py approval_links.py position_actions.py position_signals.py kalshi_readonly.py kalshi_submit.py performance_tracker.py signal_tracker.py dashboard_data.py signal_outcome_tracker.py mobile_backend.py app.py league/live_sharp.py pushover_status.py pm_edge_runner_v24.py pm_edge_runner_v25.py pm_edge_runner_v26.py pm_edge_runner_v27.py pm_edge_runner_v28.py pm_edge_runner_v29.py pinnacle_shadow.py candidate_tracker.py ncaa_beta_runner.py kalshispy_client.py whale_edge.py pages/Approve.py pages/Position_Action.py
 
       - name: Run Phase 0 golden equivalence
         run: python tests/phase0_golden_probe.py --verify-parent
