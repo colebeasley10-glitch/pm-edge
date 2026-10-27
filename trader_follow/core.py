@@ -47,15 +47,18 @@ class Trader:
     note: str = ""
     min_usdc: float = MIN_USDC
     sports: frozenset = frozenset()   # sport_group names to alert on; empty = every sport
+    unit: float = 0.0                 # your $ per copy (1 unit); 0 = PAPER_STAKE
 
 
 # Oct 25, 2026, from the Trader Scout (closed + settled-but-held positions, by sport).
 # Signals outside a trader's sports are still logged on paper, just never pushed.
 # kch123 dropped: no trades since Jun 29, 2026.
 TRADERS: tuple[Trader, ...] = (
+    # Oct 26, 2026: BreakTheBank followed on EVERY sport (was NFL + soccer only) at $1 units,
+    # so we can see everything he bets big on, NBA/MLB/tennis/UFC included.
     Trader("BreakTheBank", "0xf0318c32136c2db7fec88b84869aee6a1106c80c",
            "1,223 games +6.4%: NFL +34.8% (240), soccer +4.4% (718); NBA -1.1%, MLB/tennis/UFC negative",
-           sports=frozenset({"NFL", "Soccer"})),
+           unit=1.0),
     Trader("primm", "0xd38b71f3e8ed1af71983e5c309eac3dfa9b35029",
            "3,245 games +16.6%: NFL +25.7% (1,246), college football +6.3% (1,911); median bet ~$1.4k",
            min_usdc=5_000.0, sports=frozenset({"NFL", "College football"})),
@@ -73,6 +76,9 @@ PAPER_STAKE = 10.0           # paper dollars per signal
 # covers every past alert too. Backtest on 46 bets: +1.3% capped vs -4.2% uncapped.
 SIZED_UNIT_USDC = 50_000.0
 SIZED_MAX_UNITS = 3.0
+# "Huge" bets get a whale tag on the alert and their own dashboard section.
+HUGE_USDC = 100_000.0
+STAKE_TIERS = ((250_000.0, "$250k+"), (100_000.0, "$100k–250k"), (50_000.0, "$50k–100k"), (0.0, "Under $50k"))
 MAX_PUSHES_PER_RUN = 6
 SETTLE_AFTER = timedelta(hours=2)   # start checking results 2h after kickoff
 KEEP_POSITIONS = timedelta(days=7)
@@ -301,15 +307,35 @@ def bet_label(row: dict) -> str:
     return f"{out} — {q}"
 
 
+def unit_for(trader: str) -> float:
+    """Your $ per copy for this trader (1 unit)."""
+    for t in TRADERS:
+        if t.name == trader and t.unit:
+            return t.unit
+    return PAPER_STAKE
+
+
+def is_huge(row: dict) -> bool:
+    return (_float(row.get("his_usdc")) or 0.0) >= HUGE_USDC
+
+
+def stake_tier(row: dict) -> str:
+    usdc = _float(row.get("his_usdc")) or 0.0
+    return next(label for floor, label in STAKE_TIERS if usdc >= floor)
+
+
 def alert_text(row: dict) -> tuple[str, str]:
     his = float(row["his_price"])
     copy = _float(row.get("copy_price"))
     max_pay = min(0.99, his + CHASE_CENTS)
     bet = bet_label(row)
-    title = f"Follow {row['trader']}: {bet}"
+    whale = "🐋 HUGE " if is_huge(row) else ""
+    title = f"{whale}Follow {row['trader']}: {bet}"
+    unit = unit_for(row["trader"])
     lines = [
-        f"Bet: {bet}  ({row['question']}, {row['sport']})",
+        f"Bet: {bet}  ({row['question']}, {sport_group(row)})",
         f"He bought ${float(row['his_usdc']):,.0f} on {bet} at {his * 100:.0f}¢ ({american(his)})",
+        f"You: ${unit:,.2f} (1 unit)",
         f"Now: {copy * 100:.0f}¢ ({american(copy)})" if copy else "Now: price unavailable",
         f"Copy only at {max_pay * 100:.0f}¢ ({american(max_pay)}) or better",
         f"Starts {_eastern(parse_ts(row['game_start']))}",
@@ -537,7 +563,9 @@ def _stats(rows: list[dict]) -> dict:
     return {"pl_sized": round(pl_sized, 2), "staked_sized": round(staked_sized, 2),
             "roi_sized": pl_sized / staked_sized if staked_sized else None,"signals": len(rows), "open": sum(r.get("status") == "open" for r in rows),
             "wins": wins, "losses": len(done) - wins, "pl_copy": round(pl_copy, 2), "pl_his": round(pl_his, 2),
-            "roi_copy": pl_copy / staked if staked else None, "roi_his": pl_his / staked if staked else None}
+            "roi_copy": pl_copy / staked if staked else None, "roi_his": pl_his / staked if staked else None,
+            # ledger P/L is stored per $PAPER_STAKE; units make it stake-free
+            "units": round(pl_copy / PAPER_STAKE, 2), "units_his": round(pl_his / PAPER_STAKE, 2)}
 
 
 def _alerted(rows: list[dict], only_band: bool) -> list[dict]:
@@ -548,8 +576,29 @@ def _alerted(rows: list[dict], only_band: bool) -> list[dict]:
 
 def summarize(rows: list[dict], only_band: bool = True) -> list[dict]:
     rows = _alerted(rows, only_band)
-    return [{"trader": name, **_stats([r for r in rows if r["trader"] == name])}
-            for name in sorted({r["trader"] for r in rows} | {t.name for t in TRADERS})]
+    out = []
+    for name in sorted({r["trader"] for r in rows} | {t.name for t in TRADERS}):
+        s = _stats([r for r in rows if r["trader"] == name])
+        unit = unit_for(name)
+        out.append({"trader": name, "unit": unit, "pl_unit": round(s["units"] * unit, 2), **s})
+    return out
+
+
+def biggest_bets(rows: list[dict], trader: str, n: int = 25) -> list[dict]:
+    """His largest pre-game stakes, every sport and price, newest ties first."""
+    mine = [r for r in rows if r.get("trader") == trader]
+    return sorted(mine, key=lambda r: (_float(r.get("his_usdc")) or 0.0, r.get("alert_time") or ""), reverse=True)[:n]
+
+
+def summarize_by_stake(rows: list[dict], trader: str) -> list[dict]:
+    """Does he win more when he bets more? Every logged signal (any sport/price), at his price."""
+    mine = [r for r in rows if r.get("trader") == trader]
+    out = []
+    for _, label in STAKE_TIERS:
+        g = [r for r in mine if stake_tier(r) == label]
+        if g:
+            out.append({"tier": label, **_stats(g)})
+    return out
 
 
 def summarize_by_sport(rows: list[dict], only_band: bool = True) -> list[dict]:

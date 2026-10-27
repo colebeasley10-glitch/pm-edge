@@ -177,3 +177,27 @@ def test_bet_label_reads_the_side_he_took():
     assert core.bet_label({"question": "Spread: Seahawks (-2.5)", "outcome": "Chiefs", "market_type": "spreads"}) == "Chiefs +2.5"
     assert core.bet_label({"question": "Spread: Thunder (-16.5)", "outcome": "Thunder", "market_type": "spreads"}) == "Thunder -16.5"
     assert core.bet_label({"question": "Chiefs vs. Seahawks", "outcome": "Chiefs", "market_type": "moneyline"}) == "Chiefs ML"
+
+
+def test_breakthebank_all_sports_one_dollar_units():
+    btb = next(t for t in core.TRADERS if t.name == "BreakTheBank")
+    assert btb.sports == frozenset() and btb.unit == 1.0
+    assert core.unit_for("BreakTheBank") == 1.0 and core.unit_for("primm") == core.PAPER_STAKE
+    rows = [{"trader": "BreakTheBank", "sport": "NBA", "in_band": "True", "status": "won", "pl_copy": "10", "pl_his": "10"},
+            {"trader": "BreakTheBank", "sport": "NBA", "in_band": "True", "status": "lost", "pl_copy": "-10", "pl_his": "-10"},
+            {"trader": "BreakTheBank", "sport": "MLB", "in_band": "True", "status": "won", "pl_copy": "5", "pl_his": "5"}]
+    s = next(x for x in core.summarize(rows) if x["trader"] == "BreakTheBank")
+    assert s["units"] == 0.5 and s["pl_unit"] == 0.5
+
+
+def test_huge_bets_tagged_and_tiered():
+    row = {"trader": "BreakTheBank", "his_usdc": 150000, "his_price": 0.5, "copy_price": 0.5, "question": "Chiefs vs. Bills",
+           "outcome": "Chiefs", "market_type": "moneyline", "sport": "nfl", "game_start": "2026-10-27T00:00:00Z"}
+    title, msg = core.alert_text(row)
+    assert title.startswith("🐋 HUGE") and "$1.00 (1 unit)" in msg
+    rows = [dict(row, status="won", pl_copy="10", pl_his="10"),
+            dict(row, his_usdc=30000, status="lost", pl_copy="-10", pl_his="-10"),
+            dict(row, his_usdc=400000, status="open", pl_copy="", pl_his="")]
+    tiers = {t["tier"]: t for t in core.summarize_by_stake(rows, "BreakTheBank")}
+    assert tiers["$100k–250k"]["wins"] == 1 and tiers["Under $50k"]["losses"] == 1 and tiers["$250k+"]["open"] == 1
+    assert [float(r["his_usdc"]) for r in core.biggest_bets(rows, "BreakTheBank")] == [400000, 150000, 30000]
