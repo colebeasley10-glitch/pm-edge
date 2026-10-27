@@ -33,3 +33,11 @@ def risk_for_unit(price: float, unit: float) -> float:
     if not (0 < price < 1) or unit <= 0 or too_chalky(price):
         return 0.0
     return round(unit if price < 0.5 else unit * price / (1 - price), 2)
+
+
+def contracts_for_flat_risk(price: float, unit: float) -> int:
+    """Oct 27, 2026: flat risk on every live lane -- whole contracts costing at most one unit,
+    favorites included (a 74c favorite no longer risks ~3 units to win one). 0 over 75c."""
+    if not (0 < price < 1) or unit <= 0 or too_chalky(price):
+        return 0
+    return int(math.floor(unit / price + 1e-9))

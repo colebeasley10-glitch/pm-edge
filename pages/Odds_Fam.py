@@ -96,6 +96,47 @@ with tab_today:
         pass
 
 with tab_mine:
+    # ---- Quick log: any bet (Hunter's picks, your own), graded with one tap (Oct 27, 2026) ----
+    import quick_bets as qb
+    st.markdown("**Quick log any bet**")
+    with st.form("quick_log", clear_on_submit=True):
+        q_src = st.radio("From", qb.SOURCES, horizontal=True, label_visibility="collapsed")
+        q_pick = st.text_input("Bet", placeholder="e.g. Luka over 8.5 assists")
+        c1, c2, c3 = st.columns(3)
+        q_book = c1.selectbox("Book", qb.BOOKS)
+        q_odds = c2.text_input("Odds", placeholder="-110")
+        q_stake = c3.number_input("Amount ($)", min_value=1.0, value=10.0, step=5.0)
+        q_go = st.form_submit_button("Log it", type="primary", use_container_width=True)
+    if q_go:
+        try:
+            b = qb.append(qb.new_bet(q_src, q_pick, q_book, q_odds, q_stake))
+            st.success(f"Logged ${b['stake']:,.0f} on {b['pick']} at {b['odds']} ({b['book']}).")
+        except Exception as exc:
+            st.error(str(exc))
+    try:
+        q_rows = qb.read()[0]
+    except Exception as exc:
+        q_rows = []
+        st.caption(f"Couldn't load quick bets: {exc}")
+    q_open = [r for r in q_rows if r.get("status") == "open"]
+    for r in sorted(q_open, key=lambda r: r.get("logged_at", ""), reverse=True)[:15]:
+        with st.container(border=True):
+            st.markdown(f"**{r['pick']}** {r['odds']} · ${float(r['stake']):,.0f} at {r['book']} · {r['source']}")
+            g1, g2, g3 = st.columns(3)
+            for col, label, status in ((g1, "Won", "won"), (g2, "Lost", "lost"), (g3, "Push", "push")):
+                if col.button(label, key=f"g_{r['bet_id']}_{status}", use_container_width=True):
+                    try:
+                        qb.grade(r["bet_id"], status)
+                        st.rerun()
+                    except Exception as exc:
+                        st.error(str(exc))
+    if q_rows:
+        cols = st.columns(len(qb.SOURCES))
+        for col, src in zip(cols, qb.SOURCES):
+            s = qb.summary(q_rows, src)
+            col.metric(src, f"{s['won']}-{s['lost']}", f"${s['pl']:+,.2f}" if s["won"] + s["lost"] else None)
+    st.divider()
+
     bets = my_bets(bool(odds_fam_log.bet_log.token()))
     results = of.load_results()
     s = of.my_summary(bets, results)

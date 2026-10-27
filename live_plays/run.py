@@ -78,12 +78,16 @@ def main() -> dict:
         except Exception as exc:
             status["settle_error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
 
-    picks, skips = core.new_picks(core.paper_positions(), rows, now)
-    status["new_picks"] = len(picks)
-    res = core.place(picks, rows, client, now, live=live, notify=pushover)
-    res["skipped"] = {**skips, **res.get("skipped", {})}
-    res.pop("new", None)
-    status.update(res)
+    if core.paused():
+        # Oct 27, 2026: lane paused. Open bets keep settling above; no new bets, dry rows or alerts.
+        status["mode"] = "paused"
+    else:
+        picks, skips = core.new_picks(core.paper_positions(), rows, now)
+        status["new_picks"] = len(picks)
+        res = core.place(picks, rows, client, now, live=live, notify=pushover)
+        res["skipped"] = {**skips, **res.get("skipped", {})}
+        res.pop("new", None)
+        status.update(res)
     core.save(rows)
     (core.DATA / "status.json").write_text(json.dumps(status, indent=1, default=str))
     print("LIVE_PLAYS_ROUND", json.dumps(status, default=str))

@@ -5,7 +5,8 @@ name: Live Today's Plays
 #   * Kalshi picks     -> $5 immediate-or-cancel Kalshi order at the price the paper pick saw
 #   * Polymarket picks -> Pushover alert to bet $5 by hand (log it on the Home tab)
 # Hard limits in live_plays/core.py: $5 per bet, $50 per Eastern day (env can only lower them).
-# Kill switch: set the repo variable LIVE_PLAYS_ENABLED to 0 (then it only logs dry runs).
+# PAUSED Oct 27, 2026: no new live bets or hand-bet alerts until Today's Plays clears the go-live
+# bar on the Scorecard page. This job keeps running so the open live bets settle.
 on:
   workflow_run:
     workflows: ["Strategy Research Lab (paper)"]
@@ -34,7 +35,8 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Live plays round
         env:
-          LIVE_PLAYS_ENABLED: ${{ github.ref == 'refs/heads/main' && (vars.LIVE_PLAYS_ENABLED || '1') || '0' }}
+          LIVE_PLAYS_ENABLED: '0'
+          LIVE_PLAYS_PAUSED: '1'
           KALSHI_WRITE_API_KEY_ID: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_API_KEY_ID || '' }}
           KALSHI_WRITE_PRIVATE_KEY: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_PRIVATE_KEY || '' }}
           PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"

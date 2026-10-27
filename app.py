@@ -823,6 +823,17 @@ def _american_from_prob(p: float) -> str:
 
 # ------------------------------------------------------------------- home --
 with tab_home:
+    try:   # Scorecard: which lanes have earned real money (Oct 27, 2026)
+        import sys as _scsys
+        _scsys.modules.pop("scorecard", None)
+        import scorecard as _sc
+        _sc_all = _sc.lanes()
+        _sc_ok = sum(1 for _l in _sc_all if _l["verdict"].startswith("Clears"))
+        st.page_link("pages/Scorecard.py",
+                     label=f"Scorecard · {_sc_ok} of {len(_sc_all)} lanes clear the go-live bar",
+                     icon="✅", use_container_width=True)
+    except Exception:
+        st.page_link("pages/Scorecard.py", label="Scorecard", icon="✅")
     try:   # Odds Fam: today's sharp plays, front and center
         import sys as _ofsys
         for _m in [k for k in _ofsys.modules if k == "research_lab.odds_fam"]:

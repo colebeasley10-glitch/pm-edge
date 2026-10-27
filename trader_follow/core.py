@@ -59,12 +59,11 @@ TRADERS: tuple[Trader, ...] = (
     Trader("BreakTheBank", "0xf0318c32136c2db7fec88b84869aee6a1106c80c",
            "1,223 games +6.4%: NFL +34.8% (240), soccer +4.4% (718); NBA -1.1%, MLB/tennis/UFC negative",
            unit=1.0),
-    Trader("primm", "0xd38b71f3e8ed1af71983e5c309eac3dfa9b35029",
-           "3,245 games +16.6%: NFL +25.7% (1,246), college football +6.3% (1,911); median bet ~$1.4k",
-           min_usdc=5_000.0, sports=frozenset({"NFL", "College football"})),
-    Trader("ndb1", "0xfea31bc088000ff909be1dfd8d0e3f2c7ef2d227",
-           "863 games +5.1%: soccer +12.7% (435); NBA -15%, NHL -34%; median bet ~$4.6k on soccer",
-           min_usdc=10_000.0, sports=frozenset({"Soccer"})),
+    # Oct 27, 2026: primm and ndb1 dropped -- zero copyable signals since Oct 25. primm now bets
+    # only in-game (31 positions, $0 pre-game), ndb1 only politics/futures. Re-add from the Scout
+    # if either goes back to big pre-game sports bets:
+    #   primm 0xd38b71f3e8ed1af71983e5c309eac3dfa9b35029 (NFL/CFB, min $5k)
+    #   ndb1  0xfea31bc088000ff909be1dfd8d0e3f2c7ef2d227 (soccer, min $10k)
 )
 
 BAND_LOW = 0.40              # +150

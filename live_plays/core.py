@@ -10,7 +10,7 @@ ONE live bet, from whichever lane picked it first.
                     the app's Home tab ("Log a bet") and it counts in the live record.
 
 Hard limits enforced here in code (env can lower, never raise):
-* one $5 unit per bet: risk $5 on underdogs, bet to win $5 on favorites (fee on top);
+* one $5 unit per bet, flat risk at every price (fee on top);
 * $50 per Eastern day of Kalshi spend, fees included; the day's spend is the larger of
   this ledger and Kalshi's own order history;
 * client_order_id comes from the paper position id, so a retried round can't double-bet;
@@ -95,30 +95,34 @@ def enabled() -> bool:
     return kalshi_submit.write_configured()
 
 
+def paused() -> bool:
+    """True when LIVE_PLAYS_PAUSED is set: settle open bets only, place nothing, alert nothing."""
+    return os.getenv("LIVE_PLAYS_PAUSED", "").strip().lower() in {"1", "true", "on", "yes"}
+
+
 def taker_fee(price: float, contracts: int, rate: float = 0.07) -> float:
     return math.ceil(rate * contracts * price * (1.0 - price) * 100.0 - 1e-9) / 100.0
 
 
 def size(price: float, room: float) -> int:
-    """One full unit or nothing: risk a unit on underdogs, bet to win a unit on favorites
-    (unit_sizing). 0 when price + fee doesn't fit what's left of today's cap."""
-    from unit_sizing import contracts_for_unit
-    n = contracts_for_unit(price, per_bet())
+    """Flat risk (Oct 27, 2026): about one unit of contracts at any price, matching live Sharp.
+    0 when price + fee doesn't fit what's left of today's cap."""
+    from unit_sizing import contracts_for_flat_risk
+    n = contracts_for_flat_risk(price, per_bet())
     if n < 1 or n * price + taker_fee(price, n) > room + 1e-9:
         return 0
     return n
 
 
 def hand_bet_note(p: dict) -> str:
-    """'risk $5.00 to win $5' on a dog, 'risk $7.50 to win $5' on a 60c favorite."""
-    from unit_sizing import risk_for_unit
+    """'risk $5 by hand at 60¢' -- flat risk at every price (Oct 27, 2026)."""
     price = kalshi_price(p)
     if price is None:
         dec = f(p.get("decimal"))
         price = 1 / dec if dec and dec > 1 else None
     if price is None:
-        return f"bet to win ${per_bet():.0f} (risk ${per_bet():.0f} if underdog) by hand at {p.get('shown')}"
-    return f"risk ${risk_for_unit(price, per_bet()):.2f} to win ${per_bet():.0f} by hand at {p.get('shown')}"
+        return f"risk ${per_bet():.0f} by hand at {p.get('shown')}"
+    return f"risk ${per_bet():.2f} to win ${per_bet() * (1 - price) / price:.2f} by hand at {p.get('shown')}"
 
 
 def game_of(title: str) -> str:

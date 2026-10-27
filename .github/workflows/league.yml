@@ -33,9 +33,11 @@ jobs:
           STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
           LEAGUE_PUSH: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}
           PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
-          # Live $1 Sharp (real money). Off until the repo variable LIVE_SHARP_ENABLED is "1"
-          # (Settings > Secrets and variables > Actions > Variables); only ever on main.
-          LIVE_SHARP_ENABLED: ${{ github.ref == 'refs/heads/main' && vars.LIVE_SHARP_ENABLED || '0' }}
+          # Live Sharp (real money) is OFF as of Oct 27, 2026: 511 live bets went -7.8% ROI with
+          # negative CLV, and paper Sharp is -9.5% over 742 bets since Oct 20. Paper Sharp keeps
+          # running as the benchmark; open live bets still settle. Turn it back on only when the
+          # Scorecard page shows paper Sharp clearing the go-live bar (change '0' below).
+          LIVE_SHARP_ENABLED: '0'
           KALSHI_WRITE_API_KEY_ID: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_API_KEY_ID || '' }}
           KALSHI_WRITE_PRIVATE_KEY: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_PRIVATE_KEY || '' }}
         # $2/bet from the evening of Oct 21, 2026 so the thin Kalshi pools (~$116 total) can keep
