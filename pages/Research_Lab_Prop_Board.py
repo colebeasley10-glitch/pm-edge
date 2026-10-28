@@ -18,7 +18,7 @@ except Exception:
     pass
 st.title("Prop Board")
 st.caption("Pinnacle's player props with the vig removed. Find the prop on Betr, Rebet or any book: "
-           "if their price is at or better than **Bet at**, it's +EV (2%+). Bigger P limit = a line Pinnacle trusts more.")
+           "if their price is at or above the **worst price**, it's +EV (2%+); anything lower, pass. Bigger P limit = a line Pinnacle trusts more.")
 
 board = pb.load_board()
 rows = board.get("rows") or []
@@ -49,8 +49,8 @@ with tab_board:
 
         st.caption(f"{len(shown)} props · updated {(board.get('at') or '')[11:16]} UTC")
         st.dataframe([{"Player": r["player"], "Stat": r["stat"], "Line": f"{r['line']:g}",
-                       "Over fair": r["fair_over"], "Bet Over at": r["bet_over_at"],
-                       "Under fair": r["fair_under"], "Bet Under at": r["bet_under_at"],
+                       "Over fair": r["fair_over"], "Over worst price": r["bet_over_at"],
+                       "Under fair": r["fair_under"], "Under worst price": r["bet_under_at"],
                        "Moved": moved(r), "P limit": f"${r['limit']:,}", "Game": r["game"],
                        "Starts": (parse_dt(r["starts"]).strftime("%a %H:%M UTC") if parse_dt(r["starts"]) else "")}
                       for r in shown[:400]], hide_index=True, width="stretch")
@@ -68,7 +68,7 @@ with tab_plays:
     if plays:
         recent = sorted(plays, key=lambda r: r.get("alert_time") or "", reverse=True)[:100]
         st.dataframe([{"When": (r["alert_time"] or "")[:16].replace("T", " "), "Play": r["pick"], "Why": r["move"],
-                       "Fair": r["fair_odds"], "Bet at": r["target_odds"], "P limit": r["limit"],
+                       "Fair": r["fair_odds"], "Worst price": r["target_odds"], "P limit": r["limit"],
                        "CLV (pts)": "—" if r.get("clv") in ("", None) else f"{float(r['clv']) * 100:+.1f}",
                        "Actual": r.get("actual") or "—", "Result": r["status"], "P/L": r.get("pl") or "—"}
                       for r in recent], hide_index=True, width="stretch")

@@ -109,3 +109,14 @@ def test_gap_far_in_future_skipped(tmp_path):
     g = gap(10)
     g.starts = NOW + timedelta(days=5)
     assert of.update(NOW, tmp_path, picks=[g])["sent"] == 0
+
+
+def test_price_check_worst_price():
+    from research_lab import odds_fam as of
+    # Anthony Black Over 14.5: fair +113 (46.88%), worst price +118
+    assert of.price_check("+104", 2.1758, 0.4688)["ok"] is False
+    assert "Pass" in of.price_check("+104", 2.1758, 0.4688)["msg"]
+    assert of.price_check("+118", 2.1758, 0.4688)["ok"] is True
+    assert of.price_check("+125", 2.1758, 0.4688)["ok"] is True
+    assert of.price_check("+115", 2.1758, 0.4688)["ok"] is False   # +EV but under the 2% cushion
+    assert of.price_check("abc", 2.1758, 0.4688) is None

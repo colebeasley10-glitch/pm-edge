@@ -67,6 +67,27 @@ def american_to_decimal(text) -> float | None:
     return None
 
 
+def price_check(text, worst_decimal, fair_prob) -> dict | None:
+    """Is a price you see good enough? Compares it to the play's worst price (fair + 2% edge).
+
+    Returns None if the odds can't be read; otherwise ok (at or above the worst price), the EV
+    at that price vs Pinnacle fair, and a one-line verdict.
+    """
+    dec = american_to_decimal(text)
+    if dec is None:
+        return None
+    worst, fair = float(worst_decimal), float(fair_prob)
+    ev = fair * dec - 1
+    shown = american(dec)
+    if dec >= worst - 1e-9:
+        return {"ok": True, "ev": ev, "msg": f"Bet it: {shown} is at or above the worst price {american(worst)} ({ev * 100:+.1f}% EV)."}
+    if ev > 0:
+        why = f"only {ev * 100:+.1f}% EV, under the 2% cushion"
+    else:
+        why = f"{ev * 100:+.1f}% EV, worse than the fair price {american(1 / fair)}"
+    return {"ok": False, "ev": ev, "msg": f"Pass: {shown} is below the worst price {american(worst)} ({why})."}
+
+
 def et_day(dt: datetime) -> str:
     return dt.astimezone(ET).strftime("%Y-%m-%d")
 
@@ -198,7 +219,7 @@ def alert_text(play: dict) -> tuple[str, str]:
     icon = {"Pick'em gap": "🔥", "Prop steam": "🎯", "Line steam": "📈", "Price gap": "💲"}[play["kind"]]
     lines = [f"{play['game']} · {play['league']} · {_eastern(start) if start else ''}",
              f"Why: {play['why']}",
-             f"Fair {play['fair_odds']} · bet at {play['bet_at']} or better"]
+             f"Fair {play['fair_odds']} · worst price {play['bet_at']}: bet at {play['bet_at']} or better, pass on anything lower"]
     if play.get("best_found"):
         lines.append(f"Best we found: {play['best_found']}")
     else:
@@ -269,7 +290,7 @@ def morning_digest(rows: list[dict], now: datetime, push) -> int:
             and (parse_dt(r["game_start"]) or now) > now]
     if not held:
         return 0
-    lines = [f"• {r['pick']} ({r['league']}) bet at {r['bet_at']}+" for r in held[:15]]
+    lines = [f"• {r['pick']} ({r['league']}) worst price {r['bet_at']}" for r in held[:15]]
     try:
         ok = push(f"☀️ Odds Fam: {len(held)} play{'s' if len(held) != 1 else ''} from overnight",
                   "\n".join(lines) + "\nDetails + log in Odds Fam", None)

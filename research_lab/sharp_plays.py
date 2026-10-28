@@ -176,7 +176,7 @@ def alert_text(play: dict) -> tuple[str, str]:
     return (f"🎯 Sharp play: {play['pick']}",
             f"{play['game']} · {play['league']} {play['market']} · {_eastern(start) if start else ''}\n"
             f"Why: {play['move']} (sharp money)\n"
-            f"Fair {play['fair_odds']} · bet at {play['target_odds']} or better on any book\n"
+            f"Fair {play['fair_odds']} · worst price {play['target_odds']}: bet at {play['target_odds']} or better on any book, pass on anything lower\n"
             f"Size: 1u{old}")
 
 

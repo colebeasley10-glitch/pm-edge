@@ -29,7 +29,7 @@ except Exception:
     pass
 st.title("Odds Fam")
 st.caption("Sharp plays from free data: Pinnacle line moves on props and game lines, plus spots where Kalshi "
-           "or Polymarket is already cheaper than fair. Bet only at the **bet at** price or better.")
+           "or Polymarket is already cheaper than fair. Every play has a **worst price**: bet it there or better, pass on anything lower.")
 
 BOOKS = ["Sleeper", "Betr", "Rebet", "Fliff", "DraftKings", "PrizePicks", "Underdog", "Kalshi", "Polymarket", "Novig",
          "ProphetX", "Bovado", "Other"]
@@ -65,9 +65,18 @@ with tab_today:
     for p in live:
         with st.container(border=True):
             st.markdown(f"**{ICON[p['kind']]} {p['pick']}**  \n{p['game']} · {p['league']} · {when(p['game_start'])}")
-            st.markdown(f"Fair **{p['fair_odds']}** · bet at **{p['bet_at']}** or better"
+            st.markdown(f"Fair **{p['fair_odds']}** · Worst price **{p['bet_at']}** · pass on anything lower"
                         + (f" · best we found: **{p['best_found']}**" if p.get("best_found") else ""))
             st.caption(f"{p['kind']}: {p['why']}")
+            seen = st.text_input("Check a price", key=f"chk_{p['of_id']}", placeholder="Price you see, e.g. +104")
+            if seen.strip():
+                chk = of.price_check(seen, p["bet_at_decimal"], p["fair_prob"])
+                if chk is None:
+                    st.caption("Enter odds like -110 or +135.")
+                elif chk["ok"]:
+                    st.success(chk["msg"], icon="✅")
+                else:
+                    st.error(chk["msg"], icon="🚫")
             with st.expander("I placed it"):
                 with st.form(f"log_{p['of_id']}"):
                     c1, c2 = st.columns(2)
@@ -83,8 +92,9 @@ with tab_today:
                     if dec is None:
                         st.error("Enter odds like -110 or +135.")
                     else:
-                        if dec < float(p["bet_at_decimal"]) - 1e-9:
-                            st.warning(f"That's worse than {p['bet_at']}, so it's no longer +EV. Logging it anyway.")
+                        chk = of.price_check(odds, p["bet_at_decimal"], p["fair_prob"])
+                        if chk and not chk["ok"]:
+                            st.warning(chk["msg"] + " Logging it anyway.")
                         try:
                             odds_fam_log.append({"of_id": p["of_id"], "pick": p["pick"], "book": book,
                                                  "odds": odds.strip().replace("−", "-"), "decimal": round(dec, 4),
@@ -169,8 +179,8 @@ with tab_games:
         shown = [r for r in rows if (not q or q.lower() in (r["game"] + r["pick"]).lower())
                  and lg in ("All", r["league"])]
         shown.sort(key=lambda r: (r["starts"], r["game"], r["market"]))
-        st.caption("If your book's price is at or better than **Bet at**, it's +EV (2%+).")
-        st.dataframe([{"Bet": r["pick"], "Game": r["game"], "Fair": r["fair_odds"], "Bet at": r["bet_at"],
+        st.caption("If your book's price is at or above the **Worst price**, it's +EV (2%+). Anything lower, pass.")
+        st.dataframe([{"Bet": r["pick"], "Game": r["game"], "Fair": r["fair_odds"], "Worst price": r["bet_at"],
                        "Kalshi/Poly best": r["best_found"],
                        "EV there": "" if r["ev"] is None else f"{r['ev'] * 100:+.1f}%", "Starts": when(r["starts"])}
                       for r in shown[:400]], hide_index=True, width="stretch")
@@ -188,7 +198,7 @@ with tab_record:
                       "Open": s["open"]})
     st.dataframe(table, hide_index=True, width="stretch")
     if plays:
-        st.dataframe([{"Sent": when(p["sent_at"]), "Play": p["pick"], "Type": p["kind"], "Bet at": p["bet_at"],
+        st.dataframe([{"Sent": when(p["sent_at"]), "Play": p["pick"], "Type": p["kind"], "Worst price": p["bet_at"],
                        "Result": p["status"], "P/L": p["pl"] or ""}
                       for p in sorted(plays, key=lambda r: r["sent_at"], reverse=True)[:150]],
                      hide_index=True, width="stretch")

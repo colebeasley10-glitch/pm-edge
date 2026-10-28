@@ -36,7 +36,7 @@ if not rows:
 else:
     recent = sorted(rows, key=lambda r: r.get("alert_time") or "", reverse=True)[:80]
     st.dataframe([{"When": (r["alert_time"] or "")[:16].replace("T", " "), "Play": r["pick"], "Game": r["game"],
-                   "Why": r["move"], "Fair": r["fair_odds"], "Bet at or better": r["target_odds"],
+                   "Why": r["move"], "Fair": r["fair_odds"], "Worst price": r["target_odds"],
                    "CLV (pts)": "—" if r.get("clv") in ("", None) else f"{float(r['clv']) * 100:+.1f}",
                    "Result": r["status"], "P/L": r.get("pl") or "—"} for r in recent],
                  hide_index=True, width="stretch")
