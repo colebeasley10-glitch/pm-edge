@@ -123,7 +123,17 @@ def bet_view(r: dict, pl_col: str) -> dict:
     settled = pl is not None and status not in HIDDEN | {"open", "alert"}
     if settled:
         status = "won" if pl > 0 else "lost" if pl < 0 else "push"
-    return {"title": title, "game": game, "game_at": game_at, "placed": placed, "price": price,
+    extra = ""
+    if (his := _num(r.get("his_usdc"))) is not None:
+        hp = _num(r.get("his_price"))
+        extra = f"He bet ${his:,.0f}" + (f" at {hp * 100:.0f}¢" if hp else "")
+        ph = _num(r.get("pl_his"))
+        if ph is not None and settled:
+            his_pl = his * ph / 10.0          # pl_his is per $10 at his price
+            extra += f" → he {'won' if his_pl > 0 else 'lost'} ~${abs(his_pl):,.0f}"
+        if r.get("sport"):
+            extra = f"{r['sport']} · {extra}"
+    return {"title": title, "game": game, "extra": extra, "game_at": game_at, "placed": placed, "price": price,
             "status": status or "open", "pl": pl, "settled": settled,
             "hidden": status in HIDDEN, "sort": str(when(game_at or placed) or "")}
 
@@ -144,7 +154,7 @@ def lane_bets(lane: dict) -> None:
         return f"{x:+,.2f}{unit}" if unit else f"{'+' if x >= 0 else '−'}${abs(x):,.2f}"
 
     def item(v, show_pl: bool):
-        bits = [b for b in (esc(v["game"]), ("Game " if v["game_at"] else "Placed ")
+        bits = [b for b in (esc(v["extra"]), esc(v["game"]), ("Game " if v["game_at"] else "Placed ")
                             + esc(stamp(v["game_at"] or v["placed"])), esc(v["price"])) if b.strip()]
         if show_pl:
             return (esc(v["title"]), " · ".join(bits + [esc(v["status"])]), money(v["pl"]), tone(v["pl"]))
@@ -153,19 +163,26 @@ def lane_bets(lane: dict) -> None:
                  else "waiting to settle" if late else esc(v["status"]))
         return (esc(v["title"]), " · ".join(bits + [state]), "", "")
 
-    t_new, t_old = st.tabs([f"Open ({len(open_)})", f"Settled ({len(done)})"])
-    with t_new:
-        if open_:
-            row_list([item(v, False) for v in open_])
-        else:
-            st.caption("No open bets.")
-    with t_old:
-        if done:
-            row_list([item(v, True) for v in done[:SETTLED_SHOWN]])
-            if len(done) > SETTLED_SHOWN:
-                st.caption(f"Newest {SETTLED_SHOWN} of {len(done)} shown.")
-        else:
-            st.caption("Nothing settled yet.")
+    rows_ = lane.get("rows") or []
+    stakes = [(_num(r.get("his_usdc")), _num(r.get("pl_his"))) for r in rows_]
+    if any(h for h, _ in stakes):
+        tot = sum(h or 0 for h, _ in stakes)
+        his_pl = sum((h or 0) * p / 10.0 for h, p in stakes if p is not None)
+        st.markdown(f"**He's put ${tot:,.0f} on these {len(rows_)} bets** · his estimated result "
+                    f"**{'+' if his_pl >= 0 else '−'}${abs(his_pl):,.0f}** · "
+                    f"your $10 copies: **{lane['pl']:+,.2f}**")
+    st.markdown(f"**Open bets ({len(open_)})**")
+    if open_:
+        row_list([item(v, False) for v in open_])
+    else:
+        st.caption("No open bets right now.")
+    st.markdown(f"**Settled bets ({len(done)})** — newest first")
+    if done:
+        row_list([item(v, True) for v in done[:SETTLED_SHOWN]])
+        if len(done) > SETTLED_SHOWN:
+            st.caption(f"Newest {SETTLED_SHOWN} of {len(done)} shown.")
+    else:
+        st.caption("Nothing settled yet.")
 
 
 def lane_label(l: dict, extra: str = "") -> str:
