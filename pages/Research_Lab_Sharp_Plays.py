@@ -8,6 +8,9 @@ for _m in [k for k in sys.modules if k == "research_lab.sharp_plays"]:
 from research_lab import sharp_plays as sp  # noqa: E402
 
 st.set_page_config(page_title="Research Lab: Sharp Plays", page_icon="🎯", layout="centered")
+sys.modules.pop("odds_calc", None)
+import odds_calc  # noqa: E402
+odds_calc.render()
 try:
     st.page_link("app.py", label="Back to SharpIQ", icon="⬅️")
 except Exception:

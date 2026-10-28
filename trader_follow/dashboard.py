@@ -1,6 +1,7 @@
 """Streamlit view for Trader Follow (read-only, PAPER results)."""
 from __future__ import annotations
 
+import sys
 import streamlit as st
 
 from trader_follow import core
@@ -18,6 +19,9 @@ def _pct(x) -> str:
 
 def render() -> None:
     st.set_page_config(page_title="Research Lab: Trader Follow", page_icon="👤", layout="centered")
+    sys.modules.pop("odds_calc", None)
+    import odds_calc  # noqa: E402
+    odds_calc.render()
     try:
         st.page_link("app.py", label="Back to SharpIQ", icon="⬅️")
     except Exception:

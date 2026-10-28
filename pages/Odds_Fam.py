@@ -20,6 +20,9 @@ from research_lab import odds_fam as of  # noqa: E402
 from research_lab.ledger import parse_dt  # noqa: E402
 
 st.set_page_config(page_title="Odds Fam", page_icon="🎯", layout="centered")
+sys.modules.pop("odds_calc", None)
+import odds_calc  # noqa: E402
+odds_calc.render()
 try:
     st.page_link("app.py", label="Back to SharpIQ", icon="⬅️")
 except Exception:

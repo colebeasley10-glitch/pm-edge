@@ -5,6 +5,7 @@ until the user presses the real-money confirmation button.
 """
 from __future__ import annotations
 
+import sys
 import hashlib
 import os
 from datetime import datetime
@@ -39,6 +40,9 @@ MAX_DAILY_RISK = 50.00
 EASTERN = ZoneInfo("America/New_York")
 
 st.set_page_config(page_title="PM Edge — Position Action", page_icon="🎯", layout="centered")
+sys.modules.pop("odds_calc", None)
+import odds_calc  # noqa: E402
+odds_calc.render()
 st.title("PM Edge — Position Action")
 st.caption("Nothing is sent to Kalshi until you press the button below.")
 

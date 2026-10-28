@@ -6,6 +6,7 @@ can submit that exact capped order only after the user presses Submit.
 """
 from __future__ import annotations
 
+import sys
 import hashlib
 import html
 import inspect
@@ -53,6 +54,9 @@ def _effective_daily_risk_limit() -> float:
     return float("inf") if MAX_DAILY_RISK_BASELINE <= 0 else MAX_DAILY_RISK_BASELINE
 
 st.set_page_config(page_title="PM Edge — Approve", page_icon="✅", layout="centered")
+sys.modules.pop("odds_calc", None)
+import odds_calc  # noqa: E402
+odds_calc.render()
 st.title("PM Edge — Review & Submit")
 st.caption("PM Edge re-checks the live price. Nothing is sent to Kalshi until you press Submit.")
 if math.isinf(_effective_daily_risk_limit()):

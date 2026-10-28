@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import os
 
 import streamlit as st
@@ -19,6 +20,9 @@ for _name in (
 from kalshi_submit import KalshiSubmitClient, KalshiSubmitError
 
 st.set_page_config(page_title="PM Edge — Kalshi Connection Check", page_icon="🔌", layout="centered")
+sys.modules.pop("odds_calc", None)
+import odds_calc  # noqa: E402
+odds_calc.render()
 st.title("PM Edge — Kalshi Connection Check")
 st.caption("Safe test only. This page can only read recent orders. It cannot place, modify, or cancel a Kalshi order.")
 

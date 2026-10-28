@@ -1,6 +1,7 @@
 """Streamlit view for the NCAA Model Grader (read-only, PAPER results)."""
 from __future__ import annotations
 
+import sys
 import streamlit as st
 
 from ncaa_grader import core
@@ -27,6 +28,9 @@ def _table(stats: list[dict], label: str) -> list[dict]:
 
 def render() -> None:
     st.set_page_config(page_title="Research Lab: NCAA Model Grader", page_icon="🏈", layout="centered")
+    sys.modules.pop("odds_calc", None)
+    import odds_calc  # noqa: E402
+    odds_calc.render()
     try:
         st.page_link("app.py", label="Back to SharpIQ", icon="⬅️")
     except Exception:

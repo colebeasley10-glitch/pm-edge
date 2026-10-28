@@ -7,6 +7,9 @@ sys.modules.pop("scorecard", None)   # Streamlit Cloud keeps old modules around
 import scorecard as sc  # noqa: E402
 
 st.set_page_config(page_title="Scorecard", page_icon="✅", layout="centered")
+sys.modules.pop("odds_calc", None)
+import odds_calc  # noqa: E402
+odds_calc.render()
 try:
     st.page_link("app.py", label="Back to SharpIQ", icon="⬅️")
 except Exception:

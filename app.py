@@ -21,6 +21,9 @@ import scorecard  # noqa: E402
 import ui_theme  # noqa: E402
 
 st.set_page_config(page_title="SharpIQ", page_icon="🎯", layout="centered", initial_sidebar_state="collapsed")
+sys.modules.pop("odds_calc", None)
+import odds_calc  # noqa: E402
+odds_calc.render()
 ui_theme.apply()
 
 ET = ZoneInfo("America/New_York")

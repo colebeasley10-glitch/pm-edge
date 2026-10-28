@@ -1,6 +1,7 @@
 """Streamlit views for the Strategy Research Lab (read-only, PAPER results)."""
 from __future__ import annotations
 
+import sys
 import json
 from datetime import datetime, timezone
 
@@ -66,6 +67,9 @@ def _top_bar() -> None:
 
 def header(title: str) -> None:
     st.set_page_config(page_title=f"Research Lab: {title}", page_icon="🧪", layout="centered")
+    sys.modules.pop("odds_calc", None)
+    import odds_calc  # noqa: E402
+    odds_calc.render()
     _top_bar()
     st.title(title)
     st.info(PAPER_BANNER)
@@ -427,6 +431,9 @@ def render_promo() -> None:
 def render_heavy_flow() -> None:
     from research_lab import heavy_flow as hf
     st.set_page_config(page_title="Research Lab: Heavy Flow", page_icon="🐋", layout="centered")
+    sys.modules.pop("odds_calc", None)
+    import odds_calc  # noqa: E402
+    odds_calc.render()
     _top_bar()
     st.title("Heavy Flow test")
     st.info(f"📝 **PAPER ONLY.** Same Sharp picks, split by how many whale trades backed them "
@@ -461,6 +468,9 @@ def render_heavy_flow() -> None:
 def render_best_price() -> None:
     from research_lab import best_price
     st.set_page_config(page_title="Research Lab: Best Price", page_icon="🏷️", layout="centered")
+    sys.modules.pop("odds_calc", None)
+    import odds_calc  # noqa: E402
+    odds_calc.render()
     _top_bar()
     st.title("Best Price")
     st.info("👀 **READ-ONLY.** Your live Sharp bets still go to Kalshi. This only records what the same bet "

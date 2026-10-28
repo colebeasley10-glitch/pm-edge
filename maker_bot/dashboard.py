@@ -1,6 +1,7 @@
 """Streamlit view for the Maker Bot (read-only)."""
 from __future__ import annotations
 
+import sys
 import json
 
 import streamlit as st
@@ -18,6 +19,9 @@ def _pct(x, signed=True) -> str:
 
 def render() -> None:
     st.set_page_config(page_title="Research Lab: Maker Bot", page_icon="🎯", layout="centered")
+    sys.modules.pop("odds_calc", None)
+    import odds_calc  # noqa: E402
+    odds_calc.render()
     try:
         st.page_link("app.py", label="Back to SharpIQ", icon="⬅️")
     except Exception:
