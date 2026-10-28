@@ -77,7 +77,120 @@ def row_list(items) -> None:
         for t, s, v, c in items) + "</div>", unsafe_allow_html=True)
 
 
-st.markdown("<div class='pe-mark'>Sharp<i>IQ</i></div>", unsafe_allow_html=True)
+# ------------------------------------------------- tap a lane to see its bets --
+HIDDEN = {"error", "no_fill", "void", "expired", "rejected", "dry_run", "skipped", "canceled", "cancelled"}
+SETTLED_SHOWN = 150
+
+
+def _num(v):
+    try:
+        x = float(v)
+        return None if x != x else x
+    except (TypeError, ValueError):
+        return None
+
+
+def _first(r: dict, *keys) -> str:
+    for k in keys:
+        if r.get(k) not in (None, ""):
+            return str(r[k])
+    return ""
+
+
+def bet_view(r: dict, pl_col: str) -> dict:
+    """One ledger row (any lane's format) -> what the list shows."""
+    if r.get("outcome") and r.get("question"):
+        title = f"{r['outcome']} — {r['question']}"
+    else:
+        title = _first(r, "pick", "label", "title", "side", "ticker")
+    side = str(r.get("side") or "").upper()
+    if side in {"YES", "NO"} and title != side:
+        title = f"{side} · {title}"
+    game = _first(r, "game") or (f"{r['away']} at {r['home']}" if r.get("away") and r.get("home") else "")
+    if game and game in title:
+        game = ""
+    game_at = _first(r, "game_start", "commence_time", "kickoff", "starts", "ends_at", "close_time")
+    placed = _first(r, "placed_at", "opened_at", "alert_time", "sent_at", "logged_at", "first_buy")
+    cents = _num(_first(r, "avg_price", "entry_price", "copy_price", "price", "limit_price"))
+    price = f"{cents * 100:.0f}¢" if cents is not None and 0 < cents < 1 else ""
+    if not price:
+        o = _first(r, "bet_at", "target_odds", "odds")
+        if (x := _num(o)) is not None:
+            o = f"+{x:.0f}" if x > 0 else f"{x:.0f}"
+        price = o
+    status = str(r.get("status") or r.get("result") or "").lower()
+    pl = _num(r.get(pl_col))
+    settled = pl is not None and status not in HIDDEN | {"open", "alert"}
+    if settled:
+        status = "won" if pl > 0 else "lost" if pl < 0 else "push"
+    return {"title": title, "game": game, "game_at": game_at, "placed": placed, "price": price,
+            "status": status or "open", "pl": pl, "settled": settled,
+            "hidden": status in HIDDEN, "sort": str(when(game_at or placed) or "")}
+
+
+def stamp(v) -> str:
+    d = when(v)
+    return d.astimezone(ET).strftime("%a %b %-d, %-I:%M %p") if d else ""
+
+
+def lane_bets(lane: dict) -> None:
+    unit = "u" if lane.get("pl_col") == "units" else ""
+    views = [bet_view(r, lane.get("pl_col", "pl")) for r in lane.get("rows") or []]
+    views = [v for v in views if not v["hidden"]]
+    open_ = sorted([v for v in views if not v["settled"]], key=lambda v: v["sort"])
+    done = sorted([v for v in views if v["settled"]], key=lambda v: v["sort"], reverse=True)
+
+    def money(x):
+        return f"{x:+,.2f}{unit}" if unit else f"{'+' if x >= 0 else '−'}${abs(x):,.2f}"
+
+    def item(v, show_pl: bool):
+        bits = [b for b in (esc(v["game"]), ("Game " if v["game_at"] else "Placed ")
+                            + esc(stamp(v["game_at"] or v["placed"])), esc(v["price"])) if b.strip()]
+        if show_pl:
+            return (esc(v["title"]), " · ".join(bits + [esc(v["status"])]), money(v["pl"]), tone(v["pl"]))
+        late = v["game_at"] and not upcoming(v["game_at"])
+        state = ("alert only (bet by hand)" if v["status"] == "alert"
+                 else "waiting to settle" if late else esc(v["status"]))
+        return (esc(v["title"]), " · ".join(bits + [state]), "", "")
+
+    t_new, t_old = st.tabs([f"Open ({len(open_)})", f"Settled ({len(done)})"])
+    with t_new:
+        if open_:
+            row_list([item(v, False) for v in open_])
+        else:
+            st.caption("No open bets.")
+    with t_old:
+        if done:
+            row_list([item(v, True) for v in done[:SETTLED_SHOWN]])
+            if len(done) > SETTLED_SHOWN:
+                st.caption(f"Newest {SETTLED_SHOWN} of {len(done)} shown.")
+        else:
+            st.caption("Nothing settled yet.")
+
+
+def lane_label(l: dict, extra: str = "") -> str:
+    rec = f"{l['won']}-{l['lost']}" if l["n"] else "no settled bets"
+    pl = f" · {l['pl']:+,.2f}{'u' if l.get('pl_col') == 'units' else ''}" if l["n"] else ""
+    roi = f" · ROI {roi_txt(l['roi'])}" if l["n"] and l["roi"] is not None else ""
+    return f"**{l['name']}** · {rec}{pl}{roi}{(' · ' + extra) if extra else ''}"
+
+
+def lane_expander(l: dict, extra: str = "") -> None:
+    with st.expander(lane_label(l, extra)):
+        if l.get("note") or l.get("verdict"):
+            st.caption(" · ".join(x for x in (l.get("note"), l.get("verdict")) if x))
+        lane_bets(l)
+
+
+def _refresh() -> None:
+    st.cache_data.clear()
+
+
+with st.container(horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"):
+    st.markdown("<div class='pe-mark'>Sharp<i>IQ</i></div>", unsafe_allow_html=True, width="content")
+    st.button("↻ Refresh", key="home_refresh", type="secondary", on_click=_refresh,
+              help="Reload the newest bets and results")
+st.caption(f"Updated {datetime.now(ET).strftime('%a %-I:%M %p')} · tap any lane to see its open and settled bets")
 st.page_link("pages/All_Tools.py", label="Everything (full dashboard, every tab from before)", icon="🗂️",
              use_container_width=True)
 
@@ -96,8 +209,8 @@ st.markdown(
     f"<div class='hm-tile'><div class='v'>${riding:,.2f}</div><div class='l'>{len(live_open)} open live bets settling</div></div>"
     "</div>", unsafe_allow_html=True)
 real = [l for l in lanes if l["money"] == "real"]
-row_list([(esc(l["name"]), esc(l["note"] or l["verdict"]),
-           f"{l['pl']:+,.2f}" if l["n"] else "—", tone(l["pl"])) for l in real])
+for l in real:
+    lane_expander(l)
 st.caption("Nothing new bets real money until a lane clears the bar: "
            f"{scorecard.MIN_BETS}+ bets, ROI above zero, CLV at or above zero.")
 
@@ -112,16 +225,17 @@ if not good:
 for l in good:
     done = min(l["n"], scorecard.MIN_BETS)
     with st.container(border=True):
-        st.markdown(f"**{esc(l['name'])}** · {l['won']}-{l['lost']} · ROI **{roi_txt(l['roi'])}** · "
-                    f"{l['pl']:+,.2f}")
         st.progress(done / scorecard.MIN_BETS, text=l["verdict"])
+        lane_expander(l)
 
 section("Not working")
-row_list([(esc(l["name"]), f"{l['won']}-{l['lost']} · {esc(l['verdict'])}", roi_txt(l["roi"]), "down")
-          for l in bad])
+for l in bad:
+    lane_expander(l)
 small = [l for l in lanes if l["money"] == "paper" and l["n"] < MIN_SHOWN]
 if small:
-    st.caption("Too few bets to call yet: " + ", ".join(f"{l['name']} ({l['n']})" for l in small))
+    section("Too few bets to call yet")
+    for l in small:
+        lane_expander(l)
 
 # ------------------------------------------------- open plays from what's working --
 section("Open plays from lanes that are working")

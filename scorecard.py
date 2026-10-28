@@ -74,7 +74,7 @@ def grade(name: str, rows: list[dict], *, pl: str = "pl", risk=None, clv: str | 
     return {"name": name, "money": money, "n": n, "won": won, "lost": lost, "pl": round(tot_pl, 2),
             "risk": round(tot_risk, 2), "roi": None if roi is None else round(roi, 4),
             "clv": None if avg_clv is None else round(avg_clv, 4), "checks": checks, "verdict": verdict,
-            "note": note}
+            "note": note, "rows": rows, "pl_col": pl}
 
 
 def lanes() -> list[dict]:
