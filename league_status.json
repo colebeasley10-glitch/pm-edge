@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-10-29T07:30:49.054033Z",
+ "ran_at": "2026-10-29T08:00:51.936683Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -9,7 +9,7 @@
    "shadow": [],
    "shadow_opened": 0,
    "diag": {
-    "events": 58,
+    "events": 48,
     "priced": 0,
     "skipped_far_from_market": 0,
     "skipped_same_day": 44,
@@ -17,21 +17,29 @@
    }
   },
   "polymarket": {
-   "picks_found": 0,
+   "picks_found": 1,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [],
-   "shadow_opened": 0,
+   "shadow": [
+    {
+     "ticker": "KXMLSGAME-26OCT31NYCMTL-NYC",
+     "side": "YES",
+     "ask": 0.63,
+     "fair": 0.67,
+     "edge": 0.0233
+    }
+   ],
+   "shadow_opened": 1,
    "diag": {
     "poly_events": 600,
-    "poly_games": 186,
+    "poly_games": 183,
     "kalshi_events": 1894,
-    "matched": 102,
-    "priced": 193,
+    "matched": 99,
+    "priced": 185,
     "best_gaps": [
      [
-      0.02,
+      0.04,
       "KXMLSGAME-26OCT31NYCMTL-NYC"
      ],
      [
@@ -48,6 +56,10 @@
      ],
      [
       0.015,
+      "KXSAUDIPLGAME-26OCT29ALNAKH-ALN"
+     ],
+     [
+      0.015,
       "KXLOLGAME-26OCT301900G2HLE-HLE"
      ],
      [
@@ -57,10 +69,6 @@
      [
       0.015,
       "KXBUNDESLIGAGAME-26NOV01SGEHSV-SGE"
-     ],
-     [
-      0.005,
-      "KXSERIEAGAME-26OCT29FROLEC-LEC"
      ]
     ]
    }
@@ -71,15 +79,11 @@
    "skipped": {}
   },
   "sharp": {
-   "picks_found": 4,
-   "opened": 1,
-   "skipped": {
-    "same_game": 1,
-    "already_holding": 1,
-    "wide_spread": 1
-   },
+   "picks_found": 0,
+   "opened": 0,
+   "skipped": {},
    "diag": {
-    "skipped_settles_late": 3
+    "skipped_settles_late": 0
    }
   },
   "crypto": {
@@ -92,8 +96,8 @@
    "diag": {
     "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.0033140578614910886,
-     "ETH-USD": 0.004201965042425013
+     "BTC-USD": 0.0033159343216834884,
+     "ETH-USD": 0.004178454875539547
     },
     "best": []
    }
@@ -106,7 +110,7 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 11,
+  "marked": 12,
   "settled": 0
  },
  "shadow_update": {
@@ -191,8 +195,8 @@
  "shadow_standings": [
   {
    "strategy": "polymarket",
-   "picks": 70,
-   "open": 3,
+   "picks": 71,
+   "open": 4,
    "won": 31,
    "lost": 36,
    "pl": -56.92000000000003,
