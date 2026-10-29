@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-10-29T09:00:44.126899Z",
+ "ran_at": "2026-10-29T09:30:39.216588Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -17,30 +17,38 @@
    }
   },
   "polymarket": {
-   "picks_found": 0,
+   "picks_found": 1,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [],
+   "shadow": [
+    {
+     "ticker": "KXMLSGAME-26OCT31NYCMTL-NYC",
+     "side": "YES",
+     "ask": 0.63,
+     "fair": 0.665,
+     "edge": 0.0183
+    }
+   ],
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 185,
-    "kalshi_events": 1881,
-    "matched": 101,
-    "priced": 186,
+    "poly_games": 207,
+    "kalshi_events": 1889,
+    "matched": 120,
+    "priced": 221,
     "best_gaps": [
+     [
+      0.035,
+      "KXMLSGAME-26OCT31NYCMTL-NYC"
+     ],
      [
       0.025,
       "KXUFCFIGHT-26OCT31SANSANT-SAN"
      ],
      [
-      0.025,
-      "KXLOLGAME-26OCT301900G2HLE-HLE"
-     ],
-     [
-      0.025,
-      "KXBRASILEIROGAME-26OCT29ATLCRU-CRU"
+      0.015,
+      "KXVALORANTGAME-26OCT290700TECWOR-TEC"
      ],
      [
       0.015,
@@ -52,15 +60,15 @@
      ],
      [
       0.015,
-      "KXLIGAMXGAME-26OCT30PUEPUM-PUM"
+      "KXUFCFIGHT-26OCT31DEOROD-ROD"
      ],
      [
       0.015,
-      "KXCS2GAME-26OCT290930ASTICE-ICE"
+      "KXLOLGAME-26OCT301900G2HLE-HLE"
      ],
      [
       0.015,
-      "KXBUNDESLIGAGAME-26NOV01SGEHSV-SGE"
+      "KXCS2GAME-26OCT290730ESBMOUZN-ESB"
      ]
     ]
    }
@@ -72,82 +80,28 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 2,
+   "opened": 3,
    "skipped": {
-    "already_holding": 2
+    "already_holding": 1
    },
    "diag": {
     "skipped_settles_late": 0
    }
   },
   "crypto": {
-   "picks_found": 4,
+   "picks_found": 0,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [
-    {
-     "ticker": "KXBTCD-26OCT2906-T79799.99",
-     "side": "NO",
-     "ask": 0.15,
-     "fair": 0.2671,
-     "edge": 0.1082
-    },
-    {
-     "ticker": "KXBTCD-26OCT2906-T79699.99",
-     "side": "NO",
-     "ask": 0.07,
-     "fair": 0.1773,
-     "edge": 0.1027
-    },
-    {
-     "ticker": "KXBTCD-26OCT2906-T80199.99",
-     "side": "YES",
-     "ask": 0.18,
-     "fair": 0.2772,
-     "edge": 0.0868
-    },
-    {
-     "ticker": "KXBTCD-26OCT2906-T79899.99",
-     "side": "NO",
-     "ask": 0.29,
-     "fair": 0.3753,
-     "edge": 0.0706
-    }
-   ],
-   "shadow_opened": 4,
+   "shadow": [],
+   "shadow_opened": 0,
    "diag": {
-    "markets_priced": 488,
+    "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.0033188316445115075,
-     "ETH-USD": 0.004165799692462116
+     "BTC-USD": 0.0032881741892896526,
+     "ETH-USD": 0.004164338119732466
     },
-    "best": [
-     [
-      -0.127,
-      "KXBTCD-26OCT2906-T79799.99"
-     ],
-     [
-      -0.117,
-      "KXBTCD-26OCT2906-T79699.99"
-     ],
-     [
-      0.097,
-      "KXBTCD-26OCT2906-T80199.99"
-     ],
-     [
-      -0.095,
-      "KXBTCD-26OCT2906-T79899.99"
-     ],
-     [
-      -0.079,
-      "KXBTCD-26OCT2906-T79599.99"
-     ],
-     [
-      0.076,
-      "KXBTCD-26OCT2906-T80299.99"
-     ]
-    ]
+    "best": []
    }
   }
  },
@@ -158,11 +112,11 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 12,
+  "marked": 11,
   "settled": 0
  },
  "shadow_update": {
-  "marked": 4,
+  "marked": 8,
   "settled": 0
  },
  "live_sharp": {
@@ -202,16 +156,16 @@
   },
   {
    "strategy": "sharp",
-   "picks": 1448,
+   "picks": 1451,
    "open": 14,
-   "won": 809,
-   "lost": 625,
-   "pl": -602.27,
-   "risked": 14367.940000000033,
-   "clv_sum": -1146.35,
-   "clv_n": 1402,
-   "roi": -0.04191763050235445,
-   "clv": -0.8176533523537802
+   "won": 810,
+   "lost": 627,
+   "pl": -614.29,
+   "risked": 14397.960000000034,
+   "clv_sum": -1226.85,
+   "clv_n": 1405,
+   "roi": -0.042665071996310484,
+   "clv": -0.8732028469750889
   },
   {
    "strategy": "crypto",
