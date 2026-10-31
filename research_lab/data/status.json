@@ -7,20 +7,20 @@
  },
  "last_report_preview": {
   "lines": [
-   "PM EDGE STRATEGY RESEARCH LAB \u2014 2026-10-29 (PAPER)",
-   "Existing Sharp (paper): 850-650, \u2212$558.50, ROI -3.7%",
-   "Today's Plays: 36-15, +$32.90, ROI +6.5%",
-   "Today's Plays (-200 to +150): 26-22, \u2212$3.08, ROI -0.6%",
+   "PM EDGE STRATEGY RESEARCH LAB \u2014 2026-10-30 (PAPER)",
+   "Existing Sharp (paper): 901-697, \u2212$651.16, ROI -4.1%",
+   "Today's Plays: 40-15, +$43.37, ROI +7.9%",
+   "Today's Plays (-200 to +150): 28-25, \u2212$18.36, ROI -3.5%",
    "Structural: 0 quote-level opportunities, 0 fully executable today",
-   "New paper trades today: 10 \u00b7 fees $0.00 \u00b7 open exposure $350.00",
-   "Top rejections: already_holding_event 71, already_holding_market 24, daily_exposure_cap 8",
+   "New paper trades today: 8 \u00b7 fees $0.00 \u00b7 open exposure $340.00",
+   "Top rejections: already_holding_market 75, already_holding_event 73, daily_exposure_cap 27",
    "Data: 0 failed fetches today; sportsbook snapshot EMPTY (no sportsbook prices; check Odds API credits)",
    "Records reconciled: yes"
   ],
-  "title": "\ud83e\uddea Research Lab (PAPER) 10/29"
+  "title": "\ud83e\uddea Research Lab (PAPER) 10/30"
  },
  "last_run": {
-  "at": "2026-10-31T02:32:58.269434Z",
+  "at": "2026-10-31T03:03:59.668304Z",
   "best_price": {
    "compared": 0,
    "new_picks": 0,
@@ -29,6 +29,7 @@
   "book_errors": 0,
   "data_failures": [],
   "ev": {
+   "book_offers": 0,
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
@@ -39,11 +40,13 @@
     "taken_at": null
    },
    "errors": [],
-   "games": 0,
-   "picks": 0
+   "games": 66,
+   "kalshi_offers": 62,
+   "picks": 664,
+   "polymarket_offers": 116
   },
   "maker_candidates": {
-   "candidates": 0,
+   "candidates": 396,
    "sharp_agrees": 0
   },
   "my_bets": {
@@ -53,7 +56,6 @@
   "notes": [],
   "odds_fam": {
    "bets_settled": 0,
-   "digest": 0,
    "pushed": 0,
    "sent": 0,
    "settled": 2
@@ -62,40 +64,53 @@
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [],
-   "kalshi_markets": 0,
-   "matched": 0,
-   "note": "no Pinnacle fetch due this round",
-   "pinnacle_games": 0,
-   "requests_today": 72,
-   "samples": [],
-   "skipped": [
-    "football: next in 15 min",
-    "basketball: next in 33 min",
-    "hockey: next in 30 min",
-    "baseball: next in 60 min",
-    "soccer: next in 120 min",
-    "tennis: next in 120 min"
+   "fetched": [
+    "football",
+    "hockey"
    ],
-   "unmatched": {}
+   "kalshi_markets": 5360,
+   "matched": 328,
+   "pinnacle_games": 67,
+   "requests_today": 74,
+   "samples": [
+    "no_pinnacle_match: Baylor vs UCF: UCF wins",
+    "no_pinnacle_match: Baylor vs UCF: Baylor wins",
+    "no_pinnacle_match: Appalachian St. vs Georgia Southern: Georgia Southern wins",
+    "no_pinnacle_match: Appalachian St. vs Georgia Southern: Appalachian St. wins",
+    "no_pinnacle_match: Arizona vs Texas Tech: Texas Tech wins",
+    "no_pinnacle_match: Arizona vs Texas Tech: Arizona wins",
+    "no_pinnacle_match: Army vs Memphis: Memphis wins",
+    "no_pinnacle_match: Army vs Memphis: Army wins"
+   ],
+   "skipped": [
+    "basketball: next in 2 min",
+    "baseball: next in 29 min",
+    "soccer: next in 89 min",
+    "tennis: next in 89 min"
+   ],
+   "unmatched": {
+    "no_moneyline": 2,
+    "no_pinnacle_match": 3682,
+    "pinnacle_line_not_offered": 1348
+   }
   },
   "prop_board": {
    "new_plays": 0,
-   "props": 0,
+   "props": 14,
    "pushed": 0,
    "settled": 0
   },
   "reconciled": true,
   "sharp_plays": {
-   "games": 0,
+   "games": 54,
    "new_plays": 0,
    "pushed": 0,
-   "settled": 1
+   "settled": 2
   },
   "sleeper": {
    "edges": 0,
    "errors": [],
-   "lines": 1253,
+   "lines": 1270,
    "matched_props": 0,
    "unmatched_stats": [
     "anytime_touchdowns",
@@ -143,36 +158,36 @@
   "strategies": {
    "EV_FINDER_v2": {
     "filled": 0,
-    "no_fill": 0,
+    "no_fill": 1,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 8,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 7,
+    "scanned": 664,
     "settle": {
      "marked": 19,
-     "pending": 20,
+     "pending": 19,
      "settled": 1
     }
    },
    "EV_FINDER_v3": {
     "filled": 0,
-    "no_fill": 0,
+    "no_fill": 1,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 1,
     "reconcile_problems": [],
     "rejected": 0,
-    "scanned": 0,
+    "scanned": 664,
     "settle": {
      "marked": 15,
-     "pending": 16,
+     "pending": 15,
      "settled": 1
     }
    }
   }
  },
- "last_success": "2026-10-31T02:32:58.269434Z",
- "report_sent": "20261029"
+ "last_success": "2026-10-31T03:03:59.668304Z",
+ "report_sent": "20261030"
 }
