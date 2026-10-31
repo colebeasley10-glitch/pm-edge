@@ -44,6 +44,7 @@ TOTAL_STRONG = _env_float("NBA_MODEL_TOTAL_STRONG", 7.0)
 ML_LEAN = _env_float("NBA_MODEL_ML_LEAN", 0.04)
 ML_STRONG = _env_float("NBA_MODEL_ML_STRONG", 0.08)
 LONG_SHOT_ODDS = _env_float("NBA_MODEL_LONG_SHOT_ODDS", 250)
+HEAVY_FAV_ODDS = _env_float("NBA_MODEL_HEAVY_FAV_ODDS", -300)   # ML chalk past -300: tracked, never recommended
 MARGIN_SD = _env_float("NBA_MODEL_MARGIN_SD", 12.0)
 TOTAL_SD = _env_float("NBA_MODEL_TOTAL_SD", 18.0)
 DEFAULT_ODDS = -110
@@ -115,6 +116,8 @@ def make_picks(*, game: dict, market: dict, home_margin: float, total: float, ho
             team, odds, prob, fair = away, am, 1 - home_win_prob, fair_a
         edge = prob - fair
         tier = "LONG_SHOT" if edge >= ML_LEAN and odds > LONG_SHOT_ODDS else _tier(edge, ML_LEAN, ML_STRONG)
+        if odds < HEAVY_FAV_ODDS:
+            tier = "NO_EDGE"
         add("ML", side=f"{team} ML {fmt_odds(odds)}", pick_team=team, direction="", line="", odds=odds,
             model_prob=round(prob, 4), market_prob=round(fair, 4), edge_pts="", edge_prob=round(edge, 4), tier=tier)
     return out

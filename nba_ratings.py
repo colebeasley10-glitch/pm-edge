@@ -57,6 +57,7 @@ class NBARatings:
         self.min_weight = kw.get("min_weight", MIN_WEIGHT)
         self.b2b = kw.get("b2b_pts", B2B_PTS)
         self.season = season
+        self._cur_start = self._prior_end = None
         self.mu: dict = {}
         self.hfa = 2.5
         self.off: dict[str, float] = defaultdict(float)
@@ -66,10 +67,14 @@ class NBARatings:
         self._fit([g for g in games if (_day(g) or as_of) < as_of])
 
     def _weight(self, g: dict, d: date) -> float:
-        w = 0.5 ** (max((self.as_of - d).days, 0) / self.half_life)
-        if self.season is not None and str(g.get("season")) != str(self.season):
-            w *= self.prior_weight
-        return w
+        """Decay by basketball days, not calendar days: the offseason doesn't age last season's games."""
+        prior = self.season is not None and str(g.get("season")) != str(self.season)
+        if prior and self._prior_end and self._cur_start:
+            age = (self._prior_end - d).days + max((self.as_of - self._cur_start).days, 0)
+        else:
+            age = (self.as_of - d).days
+        w = 0.5 ** (max(age, 0) / self.half_life)
+        return w * self.prior_weight if prior else w
 
     def _fit(self, games):
         obs = []  # (team, opp, site, points, weight, season)
@@ -81,6 +86,10 @@ class NBARatings:
                     played[self.key(t)].add(d)
         for t, days in played.items():
             self.last_played[t] = max(days)
+        cur = [d for g in games if (d := _day(g)) and str(g.get("season")) == str(self.season)]
+        old = [d for g in games if (d := _day(g)) and str(g.get("season")) != str(self.season)]
+        self._cur_start = min(cur) if cur else None
+        self._prior_end = max(old) if old else None
         for g in games:
             hp, ap, d = g.get("homePoints"), g.get("awayPoints"), _day(g)
             if not g.get("completed") or hp is None or ap is None or d is None:

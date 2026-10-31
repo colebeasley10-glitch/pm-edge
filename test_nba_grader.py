@@ -95,3 +95,18 @@ def test_live_logs_freezes_closes_and_settles():
     out = core.run_live(games=hist + [final], lines={}, project=proj, now=tip + timedelta(hours=4), rows=out["rows"])
     sp = next(r for r in out["rows"] if r["market"] == "SPREAD")
     assert out["settled"] == 3 and sp["result"] == "W" and abs(sp["units"] - 0.9091) < 1e-3
+
+
+def test_offseason_does_not_age_last_season():
+    last = [g(i, "2026-04-0%d" % (1 + i % 9), "A", "B", 120, 100, season=2026) for i in range(10)]
+    first_week = [g(100, "2026-10-21", "C", "D", 110, 110)]
+    r = NBARatings(last + first_week, as_of=date(2026, 10, 25), season=2027)
+    assert r.w["A"] > 2.0   # ~10 games x 0.35 prior weight, barely decayed
+
+
+def test_heavy_ml_favorite_never_recommended():
+    game = {"id": "1", "homeTeam": "A", "awayTeam": "B", "startDate": "x"}
+    mkt = {"spread": None, "total": None, "home_ml": -440, "away_ml": 340}
+    ml = core.make_picks(game=game, market=mkt, home_margin=14, total=230, home_win_prob=0.92,
+                         model="m", source="live", logged_at="x")[0]
+    assert ml["pick_team"] == "A" and ml["tier"] == "NO_EDGE"
