@@ -155,16 +155,16 @@ def lanes() -> list[dict]:
         out.append(grade(f"Odds Fam — {kind}", [r for r in of if r.get("kind") == kind], risk=10.0, clv="clv"))
     out.append(grade("Sharp Plays (line steam)", _rows("research_lab/data/SHARP_PLAYS/plays.csv"), risk=10.0, clv="clv"))
 
-    ncaa = [r for r in _rows("ncaa_grader/data/picks.csv") if r.get("units") not in (None, "")]
+    ncaa = _rows("ncaa_grader/data/picks.csv")   # open picks kept so the bet list shows them; grade() skips unsettled
     out.append(grade("NCAA Grader — all", ncaa, pl="units", risk=1.0, clv="clv"))
     out.append(grade("NCAA Grader — STRONG", [r for r in ncaa if r.get("tier") == "STRONG"], pl="units", risk=1.0, clv="clv"))
     out.append(grade("NCAA Grader — ML", [r for r in ncaa if r.get("market") == "ML"], pl="units", risk=1.0, clv="clv"))
 
-    nba = [r for r in _rows("nba_grader/data/picks.csv") if r.get("units") not in (None, "")]
+    nba = _rows("nba_grader/data/picks.csv")
     out.append(grade("NBA Model — Strong + Lean", [r for r in nba if r.get("tier") in ("STRONG", "LEAN")],
                      pl="units", risk=1.0, clv="clv"))
     out.append(grade("NBA Model — all", nba, pl="units", risk=1.0, clv="clv"))
-    nbp = [r for r in _rows("nba_grader/data/props.csv") if r.get("units") not in (None, "") and r.get("result") != "V"]
+    nbp = [r for r in _rows("nba_grader/data/props.csv") if r.get("result") != "V"]
     out.append(grade("NBA Props — Strong + Lean", [r for r in nbp if r.get("tier") in ("STRONG", "LEAN")],
                      pl="units", risk=1.0, clv="clv"))
     out.append(grade("NBA Props — all", nbp, pl="units", risk=1.0, clv="clv"))

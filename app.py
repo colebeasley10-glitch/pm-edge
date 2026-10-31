@@ -81,7 +81,7 @@ def row_list(items) -> None:
 
 
 # ------------------------------------------------- tap a lane to see its bets --
-HIDDEN = {"error", "no_fill", "void", "expired", "rejected", "dry_run", "skipped", "canceled", "cancelled"}
+HIDDEN = {"v", "error", "no_fill", "void", "expired", "rejected", "dry_run", "skipped", "canceled", "cancelled"}
 SETTLED_SHOWN = 150
 
 
@@ -126,7 +126,7 @@ def bet_view(r: dict, pl_col: str) -> dict:
     settled = pl is not None and status not in HIDDEN | {"open", "alert"}
     if settled:
         status = "won" if pl > 0 else "lost" if pl < 0 else "push"
-    extra = ""
+    extra = str(r.get("tier") or "").replace("_", " ").title() if r.get("tier") not in (None, "", "NO_EDGE") else ""
     if (his := _num(r.get("his_usdc"))) is not None:
         hp = _num(r.get("his_price"))
         extra = f"He bet ${his:,.0f}" + (f" at {hp * 100:.0f}¢" if hp else "")
@@ -174,22 +174,23 @@ def lane_bets(lane: dict) -> None:
         st.markdown(f"**He's put ${tot:,.0f} on these {len(rows_)} bets** · his estimated result "
                     f"**{'+' if his_pl >= 0 else '−'}${abs(his_pl):,.0f}** · "
                     f"your $10 copies: **{lane['pl']:+,.2f}**")
-    t_open, t_done = st.tabs([f"Open ({len(open_)})", f"Closed ({len(done)})"])
-    with t_open:
+    which = st.segmented_control("Bets", [f"Open ({len(open_)})", f"Closed ({len(done)})"],
+                                 default=f"Open ({len(open_)})", key=f"bets_{lane['name']}",
+                                 label_visibility="collapsed", width="stretch") or f"Open ({len(open_)})"
+    if which.startswith("Open"):
         if open_:
             row_list([item(v, False) for v in open_])
         else:
             st.caption("No open bets right now.")
-    with t_done:
-        if done:
-            won = sum(1 for v in done if v["status"] == "won")
-            lost = sum(1 for v in done if v["status"] == "lost")
-            st.caption(f"{won}-{lost} · {money(sum(v['pl'] or 0 for v in done))} · newest first")
-            row_list([item(v, True) for v in done[:SETTLED_SHOWN]])
-            if len(done) > SETTLED_SHOWN:
-                st.caption(f"Newest {SETTLED_SHOWN} of {len(done)} shown.")
-        else:
-            st.caption("Nothing settled yet.")
+    elif done:
+        won = sum(1 for v in done if v["status"] == "won")
+        lost = sum(1 for v in done if v["status"] == "lost")
+        st.caption(f"{won}-{lost} · {money(sum(v['pl'] or 0 for v in done))} · newest first")
+        row_list([item(v, True) for v in done[:SETTLED_SHOWN]])
+        if len(done) > SETTLED_SHOWN:
+            st.caption(f"Newest {SETTLED_SHOWN} of {len(done)} shown.")
+    else:
+        st.caption("Nothing settled yet.")
 
 
 def lane_label(l: dict, extra: str = "") -> str:
