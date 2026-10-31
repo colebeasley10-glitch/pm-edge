@@ -254,6 +254,8 @@ def apply() -> None:
         .lb-row { display:grid; grid-template-columns:auto 1fr auto; gap:.8rem; align-items:center; padding:.8rem .95rem;
                   border-bottom:1px solid var(--line); }
         .lb-row:last-child { border-bottom:0; }
+        a.lb-row { color:inherit !important; text-decoration:none !important; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+        a.lb-row:hover, a.lb-row:active { background:var(--panel2); }
         .lb-row.sub { padding-left:1.6rem; background:var(--panel2); }
         .lb-row.sub .lb-name { font-weight:600; color:var(--soft); }
         .lb-rank { width:1.85rem; height:1.85rem; border-radius:9px; display:flex; align-items:center; justify-content:center;
@@ -276,9 +278,10 @@ def apply() -> None:
         .lb-roi small { display:block; color:var(--muted); font-size:.62rem; font-weight:700; letter-spacing:.1em; margin-top:.1rem; }
         .fine { color:var(--muted); font-size:.74rem; line-height:1.5; margin:.2rem .1rem 1rem; }
         .idle { display:flex; flex-wrap:wrap; gap:.35rem; margin:.5rem 0 1rem; }
-        .idle span { font-size:.76rem; font-weight:600; color:var(--soft); background:var(--panel); border:1px solid var(--line);
+        .idle span, .idle a { font-size:.76rem; font-weight:600; color:var(--soft); background:var(--panel); border:1px solid var(--line);
                      border-radius:999px; padding:.3rem .7rem; }
         .detail-h { display:flex; flex-direction:column; gap:.1rem; margin:.6rem 0 .2rem; }
+        .idle a { color:var(--soft) !important; text-decoration:none !important; }
         .detail-h b { font-size:1.05rem; } .detail-h span { color:var(--muted); font-size:.78rem; }
         /* play cards */
         .plays { display:flex; flex-direction:column; gap:.55rem; margin:.55rem 0 .5rem; }

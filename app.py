@@ -11,6 +11,7 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
 import streamlit as st
@@ -173,18 +174,22 @@ def lane_bets(lane: dict) -> None:
         st.markdown(f"**He's put ${tot:,.0f} on these {len(rows_)} bets** · his estimated result "
                     f"**{'+' if his_pl >= 0 else '−'}${abs(his_pl):,.0f}** · "
                     f"your $10 copies: **{lane['pl']:+,.2f}**")
-    st.markdown(f"**Open bets ({len(open_)})**")
-    if open_:
-        row_list([item(v, False) for v in open_])
-    else:
-        st.caption("No open bets right now.")
-    st.markdown(f"**Settled bets ({len(done)})** — newest first")
-    if done:
-        row_list([item(v, True) for v in done[:SETTLED_SHOWN]])
-        if len(done) > SETTLED_SHOWN:
-            st.caption(f"Newest {SETTLED_SHOWN} of {len(done)} shown.")
-    else:
-        st.caption("Nothing settled yet.")
+    t_open, t_done = st.tabs([f"Open ({len(open_)})", f"Closed ({len(done)})"])
+    with t_open:
+        if open_:
+            row_list([item(v, False) for v in open_])
+        else:
+            st.caption("No open bets right now.")
+    with t_done:
+        if done:
+            won = sum(1 for v in done if v["status"] == "won")
+            lost = sum(1 for v in done if v["status"] == "lost")
+            st.caption(f"{won}-{lost} · {money(sum(v['pl'] or 0 for v in done))} · newest first")
+            row_list([item(v, True) for v in done[:SETTLED_SHOWN]])
+            if len(done) > SETTLED_SHOWN:
+                st.caption(f"Newest {SETTLED_SHOWN} of {len(done)} shown.")
+        else:
+            st.caption("Nothing settled yet.")
 
 
 def lane_label(l: dict, extra: str = "") -> str:
@@ -245,26 +250,33 @@ def lane_row(l: dict, rank: int | None = None, sub: bool = False) -> str:
     rec = f"{l['won']}-{l['lost']}" if l["n"] else "—"
     meta = " · ".join(x for x in (f"{l['n']} bet{'s' if l['n'] != 1 else ''}" if l["n"] else "No settled bets", rec if l["n"] else "",
                                   money_txt(l) if l["n"] else "") if x)
-    return (f"<div class='lb-row{' sub' if sub else ''}'>{rk}<div class='lb-main'>"
+    return (f"<a class='lb-row{' sub' if sub else ''}' href='?lane={quote(l['name'])}' target='_self'>{rk}<div class='lb-main'>"
             f"<div class='lb-name'>{esc(('↳ ' + l['name'].split(' — ', 1)[1]) if sub else l['name'])}</div>"
             f"<div class='lb-meta'>{esc(meta)}</div>"
             f"<div class='lb-chips'>{status_chip(l)}{clv_chip(l)}</div>"
             f"<div class='lb-bar' title='{l['n']} of {scorecard.MIN_BETS} bets toward the go-live bar'>"
             f"<span style='width:{prog:.0f}%'></span></div></div>"
-            f"<div class='lb-roi {tone(l['roi'])}'>{roi_txt(l['roi'])}<small>ROI</small></div></div>")
+            f"<div class='lb-roi {tone(l['roi'])}'>{roi_txt(l['roi'])}<small>ROI</small></div></a>")
 
 
 def lane_details(options: list[dict], key: str) -> None:
-    names = [l["name"] for l in options]
-    if not names:
+    """A tapped lane row lands here as ?lane=<name>; show that lane's open and closed bets in a popup."""
+    pick = st.query_params.get("lane")
+    if not pick:
         return
-    pick = st.selectbox("See a lane's bets", names, index=None, placeholder="Choose a lane to see its bets",
-                        key=key, label_visibility="collapsed")
-    if pick:
-        l = next(x for x in options if x["name"] == pick)
-        st.markdown(f"<div class='detail-h'><b>{esc(l['name'])}</b><span>{esc(l.get('verdict') or '')}"
-                    f"{(' · ' + esc(l['note'])) if l.get('note') else ''}</span></div>", unsafe_allow_html=True)
+    l = next((x for x in options if x["name"] == pick), None)
+    if l is None:
+        return
+    del st.query_params["lane"]   # so later reruns (switching views, refresh) don't pop it back open
+
+    @st.dialog(l["name"], width="large")
+    def _show():
+        bits = [x for x in (l.get("verdict"), l.get("note")) if x]
+        if bits:
+            st.caption(" · ".join(bits))
         lane_bets(l)
+
+    _show()
 
 
 def open_plays() -> list[dict]:
@@ -366,9 +378,8 @@ if view == "Leaderboard":
     if paper_idle:
         st.markdown("<div class='section'><span>Waiting on first results</span>"
                     f"<span class='n'>{len(paper_idle)}</span></div>", unsafe_allow_html=True)
-        st.markdown("<div class='idle'>" + "".join(f"<span>{esc(l['name'])}</span>" for l in paper_idle) + "</div>",
+        st.markdown("<div class='idle'>" + "".join(f"<a href='?lane={quote(l['name'])}' target='_self'>{esc(l['name'])}</a>" for l in paper_idle) + "</div>",
                     unsafe_allow_html=True)
-    lane_details([x for l in paper_active + paper_idle for x in [l] + slices.get(l["name"], [])], "lb_pick")
 
 elif view == "Today":
     st.markdown(f"<div class='section'><span>Open plays</span><span class='n'>{len(plays)}</span></div>",
@@ -387,7 +398,8 @@ else:
     st.markdown("<div class='lb'>" + "".join(lane_row(l) for l in real) + "</div>", unsafe_allow_html=True)
     st.markdown(f"<div class='fine'>Nothing new bets real money until a lane clears the bar: {scorecard.MIN_BETS}+ "
                 "bets, ROI above zero, CLV at or above zero.</div>", unsafe_allow_html=True)
-    lane_details(real, "real_pick")
+
+lane_details([x for l in paper_active + paper_idle for x in [l] + slices.get(l["name"], [])] + real, "lane_pick")
 
 st.markdown("<div class='gap'></div>", unsafe_allow_html=True)
 c1, c2 = st.columns(2)
