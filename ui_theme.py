@@ -282,10 +282,10 @@ def apply() -> None:
         .detail-h b { font-size:1.05rem; } .detail-h span { color:var(--muted); font-size:.78rem; }
         /* play cards */
         .plays { display:flex; flex-direction:column; gap:.55rem; margin:.55rem 0 .5rem; }
-        .play { display:grid; grid-template-columns:3.6rem 1fr auto; gap:.8rem; align-items:center; background:var(--panel);
+        .play { display:grid; grid-template-columns:4.3rem 1fr auto; gap:.8rem; align-items:center; background:var(--panel);
                 border:1px solid var(--line); border-radius:14px; padding:.75rem .85rem; }
         .play-l { display:flex; flex-direction:column; gap:.3rem; align-items:flex-start; }
-        .play-l .lg { font-size:.64rem; font-weight:800; letter-spacing:.08em; color:var(--gold); background:rgba(245,184,0,.1);
+        .play-l .lg { font-size:.62rem; font-weight:800; letter-spacing:.05em; white-space:nowrap; color:var(--gold); background:rgba(245,184,0,.1);
                       border-radius:6px; padding:.12rem .4rem; text-transform:uppercase; max-width:100%; overflow:hidden; text-overflow:ellipsis; }
         .play-l .tm { color:var(--muted); font-size:.7rem; font-weight:600; line-height:1.25; }
         .play-m { min-width:0; } .play .pt { font-weight:700; font-size:.93rem; line-height:1.3; }

@@ -86,11 +86,29 @@ def rank_score(lane: dict) -> float:
     return 0.0 if not n or roi is None else roi * n / (n + RANK_PRIOR)
 
 
-def ranked(lanes_: list[dict], money: str = "paper") -> tuple[list[dict], list[dict]]:
-    """(lanes with settled bets, best first), (lanes with none yet)."""
+def parent_name(lane: dict, names: set[str]) -> str | None:
+    """'Follow X — NFL' is a slice of 'Follow X'; 'NCAA Grader — ML' a slice of 'NCAA Grader — all'."""
+    name = lane["name"]
+    if " — " not in name or name.endswith(" — all"):
+        return None
+    pre = name.split(" — ")[0]
+    return next((c for c in (pre, pre + " — all") if c in names), None)
+
+
+def ranked(lanes_: list[dict], money: str = "paper") -> tuple[list[dict], list[dict], dict[str, list[dict]]]:
+    """(top-level lanes with settled bets, best first), (top-level lanes with none yet),
+    {parent name: its slices, best first}. Slices are ranked inside their lane, not against it."""
     sel = [l for l in lanes_ if l["money"] == money]
-    active = sorted([l for l in sel if l["n"]], key=lambda l: (-rank_score(l), -(l["n"])))
-    return active, [l for l in sel if not l["n"]]
+    names = {l["name"] for l in sel}
+    tops, kids = [], {}
+    for l in sel:
+        p = parent_name(l, names)
+        (kids.setdefault(p, []) if p else tops).append(l)
+    order = lambda l: (-rank_score(l), -(l["n"]))  # noqa: E731
+    active = sorted([l for l in tops if l["n"]], key=order)
+    for p in kids:
+        kids[p].sort(key=order)
+    return active, [l for l in tops if not l["n"]], kids
 
 
 def lanes() -> list[dict]:

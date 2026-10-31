@@ -79,7 +79,7 @@ def stat_cells(s: dict, clv_fmt) -> list:
 def cards(rows: list[dict], title_fn, sub_fn, edge_fn) -> None:
     out = []
     for r in rows:
-        tier = r["tier"].replace("_", " ").title()
+        tier = {"LONG_SHOT": "Dog"}.get(r["tier"], r["tier"].title())
         kind = "good" if r["tier"] == "STRONG" else "mute"
         out.append(f"<div class='play'><div class='play-l'><span class='lg'>{esc(tier)}</span>"
                    f"<span class='tm'>{esc(tip(r['kickoff']))}</span></div>"
@@ -103,7 +103,14 @@ def games_view(rows: list[dict]) -> None:
         def edge(r):
             return (f"{float(r['edge_pts']):.1f} pt edge" if r.get("edge_pts") not in ("", None)
                     else f"{float(r['edge_prob']) * 100:.1f}% edge")
-        cards(open_, lambda r: r["side"], lambda r: f"{r['away']} at {r['home']} · model {r['proj']}", edge)
+        def sub(r):
+            a, h = r["away"].split()[-1], r["home"].split()[-1]
+            try:
+                ap, hp = (float(x.rsplit(" ", 1)[1]) for x in r["proj"].split(" - "))
+                return f"{r['away']} at {r['home']} · model {a} {ap:.0f}–{hp:.0f} {h}"
+            except (ValueError, IndexError):
+                return f"{r['away']} at {r['home']}"
+        cards(open_, lambda r: r["side"], sub, edge)
     else:
         quiet("No game plays open", "Picks log when the day's lines post, usually by late morning.")
 
@@ -195,6 +202,9 @@ def render() -> None:
     sys.modules.pop("ui_theme", None)
     import ui_theme  # noqa: E402
     ui_theme.apply()
+    st.markdown("<style>.st-key-oc_fab{bottom:calc(4.4rem + env(safe-area-inset-bottom)) !important}"
+                ".st-key-oc_fab button{width:2.7rem !important;height:2.7rem !important;opacity:.92}</style>",
+                unsafe_allow_html=True)
 
     try:
         status = json.loads(core.STATUS_PATH.read_text())

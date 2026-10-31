@@ -238,16 +238,15 @@ def money_txt(l: dict) -> str:
     return f"{l['pl']:+,.2f}u" if l.get("pl_col") == "units" else f"{'+' if l['pl'] >= 0 else '−'}${abs(l['pl']):,.2f}"
 
 
-def lane_row(l: dict, rank: int | None = None) -> str:
-    sub = l["name"].count(" — ") > 0
+def lane_row(l: dict, rank: int | None = None, sub: bool = False) -> str:
     prog = min(l["n"], scorecard.MIN_BETS) / scorecard.MIN_BETS * 100
     rk = (f"<div class='lb-rank{' top' if rank and rank <= 3 and (l['roi'] or 0) > 0 else ''}'>{rank}</div>"
           if rank is not None else "")
     rec = f"{l['won']}-{l['lost']}" if l["n"] else "—"
-    meta = " · ".join(x for x in (f"{l['n']} bets" if l["n"] else "No settled bets", rec if l["n"] else "",
+    meta = " · ".join(x for x in (f"{l['n']} bet{'s' if l['n'] != 1 else ''}" if l["n"] else "No settled bets", rec if l["n"] else "",
                                   money_txt(l) if l["n"] else "") if x)
     return (f"<div class='lb-row{' sub' if sub else ''}'>{rk}<div class='lb-main'>"
-            f"<div class='lb-name'>{esc(l['name'])}</div>"
+            f"<div class='lb-name'>{esc(('↳ ' + l['name'].split(' — ', 1)[1]) if sub else l['name'])}</div>"
             f"<div class='lb-meta'>{esc(meta)}</div>"
             f"<div class='lb-chips'>{status_chip(l)}{clv_chip(l)}</div>"
             f"<div class='lb-bar' title='{l['n']} of {scorecard.MIN_BETS} bets toward the go-live bar'>"
@@ -323,7 +322,7 @@ st.markdown(f"<div class='pe-sub'>{datetime.now(ET).strftime('%A, %B %-d')} · u
             f"{datetime.now(ET).strftime('%-I:%M %p')} ET</div>", unsafe_allow_html=True)
 
 lanes = scorecard.lanes()
-paper_active, paper_idle = scorecard.ranked(lanes, "paper")
+paper_active, paper_idle, slices = scorecard.ranked(lanes, "paper")
 real = [l for l in lanes if l["money"] == "real"]
 plays = open_plays()
 bal = rows("kalshi_balance_log.csv")
@@ -332,6 +331,9 @@ riding = sum(float(r.get("cost") or 0) for r in live_open)
 cash = float(bal[-1]["cash"]) if bal else None
 called = [l for l in paper_active if l["n"] >= MIN_SHOWN]
 ahead = [l for l in called if (l["roi"] or 0) > 0]
+FAB_CSS = ("<style>.st-key-oc_fab{bottom:calc(4.4rem + env(safe-area-inset-bottom)) !important}"
+           ".st-key-oc_fab button{width:2.7rem !important;height:2.7rem !important;opacity:.92}</style>")
+st.markdown(FAB_CSS, unsafe_allow_html=True)
 best = paper_active[0] if paper_active else None
 
 st.markdown(
@@ -352,18 +354,21 @@ view = st.segmented_control("View", ["Leaderboard", "Today", "Real money"], defa
 if view == "Leaderboard":
     st.markdown(f"<div class='section'><span>Paper lanes, best to worst</span>"
                 f"<span class='n'>{len(paper_active)} ranked</span></div>", unsafe_allow_html=True)
-    st.markdown("<div class='lb'>" + "".join(lane_row(l, i) for i, l in enumerate(paper_active, 1)) + "</div>",
-                unsafe_allow_html=True)
+    board = []
+    for i, l in enumerate(paper_active, 1):
+        board.append(lane_row(l, i))
+        board += [lane_row(k, sub=True) for k in slices.get(l["name"], []) if k["n"]]
+    st.markdown("<div class='lb'>" + "".join(board) + "</div>", unsafe_allow_html=True)
     st.markdown(f"<div class='fine'>Ranked by ROI adjusted for sample size (ROI × bets ÷ (bets + "
                 f"{scorecard.RANK_PRIOR})), so a lane needs volume <i>and</i> results to sit on top. The bar under each "
-                f"lane is progress to the {scorecard.MIN_BETS}-bet go-live bar. Indented rows are a slice of the lane "
-                f"above them.</div>", unsafe_allow_html=True)
+                f"lane is progress to the {scorecard.MIN_BETS}-bet go-live bar. ↳ rows break a lane down (by sport, "
+                f"tier or market) and are ranked within it.</div>", unsafe_allow_html=True)
     if paper_idle:
         st.markdown("<div class='section'><span>Waiting on first results</span>"
                     f"<span class='n'>{len(paper_idle)}</span></div>", unsafe_allow_html=True)
         st.markdown("<div class='idle'>" + "".join(f"<span>{esc(l['name'])}</span>" for l in paper_idle) + "</div>",
                     unsafe_allow_html=True)
-    lane_details(paper_active + paper_idle, "lb_pick")
+    lane_details([x for l in paper_active + paper_idle for x in [l] + slices.get(l["name"], [])], "lb_pick")
 
 elif view == "Today":
     st.markdown(f"<div class='section'><span>Open plays</span><span class='n'>{len(plays)}</span></div>",
