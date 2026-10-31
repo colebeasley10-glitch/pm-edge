@@ -154,7 +154,8 @@ def test_prop_logs_over_when_projection_beats_pinnacle_then_settles():
               "starts": "2026-11-01T00:00:00Z", "line": 27.5, "p_over": 0.5, "limit": 250}]
     out = props.run(board=board, games=games, boxes=boxes, season=2027, now=tip - timedelta(hours=6), rows=[])
     r = out["rows"][0]
-    assert out["logged"] == 1 and r["direction"] == "OVER" and r["tier"] == "STRONG" and abs(r["proj"] - 32) < 0.5
+    assert out["logged"] == 1 and r["direction"] == "OVER" and abs(r["proj"] - 32) < 0.5
+    assert 27.5 < r["blend"] < r["proj"] and r["tier"] in ("LEAN", "STRONG")     # Pinnacle keeps most of the vote
     # Pinnacle moves to 29.5: frozen at 27.5, CLV positive after converting the close to our line
     board[0].update(line=29.5, p_over=0.52)
     out = props.run(board=board, games=games, boxes=boxes, season=2027, now=tip - timedelta(hours=1), rows=out["rows"])

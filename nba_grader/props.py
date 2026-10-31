@@ -5,8 +5,10 @@ For every NBA player prop on the Prop Board (Pinnacle, free PinnWire feed):
 1. PROJECT. The player's per-minute rate for the stat (recent games weigh more; last
    season's late games at reduced weight) x projected minutes (recent minutes, a little
    less on a back-to-back) x a small pace nudge from the game model's projected total.
-2. PRICE. A negative-binomial count around that mean (spread set per stat) gives
-   P(over) / P(under) at Pinnacle's line. Edge = our side's chance - Pinnacle's no-vig chance.
+2. BLEND + PRICE. Our mean is blended with the mean Pinnacle's price implies; our share of the
+   vote grows with the player's games this season (27% at 5 games, ~55% over a full season).
+   A negative-binomial count around the blend (spread set per stat) gives P(over) / P(under)
+   at Pinnacle's line. Edge = our side's chance - Pinnacle's no-vig chance.
 3. LOG + FREEZE. Every prop gets our side, frozen with the line. STRONG / LEAN are the
    recommendations; NO_EDGE is tracked for the honest big-sample test.
 4. CLOSE + SETTLE. Keep reading Pinnacle until tip (closing price -> CLV, converted to our
@@ -30,8 +32,13 @@ DATA_DIR = Path(__file__).resolve().parent / "data"
 PROPS_PATH = DATA_DIR / "props.csv"
 MODEL = "nba_props_v1"
 
-LEAN = _env_float("NBA_PROPS_LEAN", 0.06)        # our chance minus Pinnacle's no-vig chance
-STRONG = _env_float("NBA_PROPS_STRONG", 0.10)
+LEAN = _env_float("NBA_PROPS_LEAN", 0.04)        # our chance minus Pinnacle's no-vig chance
+STRONG = _env_float("NBA_PROPS_STRONG", 0.07)
+# Pinnacle is the sharpest prop market there is. Our projection only gets a share of the vote,
+# growing with the player's games this season: weight = MAX * games / (games + HALF).
+# 5 games -> 27%, 15 games -> 43%, a full season -> ~55%.
+MODEL_WEIGHT_MAX = _env_float("NBA_PROPS_MODEL_WEIGHT_MAX", 0.6)
+MODEL_WEIGHT_HALF = _env_float("NBA_PROPS_MODEL_WEIGHT_HALF", 6)
 BOOK_VIG = 1.045
 MIN_GAMES = 3                 # this-season games played
 MIN_WEIGHTED_MIN = 90.0       # weighted minutes behind the rate
@@ -50,7 +57,7 @@ STATS = {"points": (("pts",), 2.3), "rebounds": (("reb",), 1.35), "assists": (("
 PACE_STATS = {"pts", "fg3m", "ast"}
 
 FIELDS = ["pick_id", "source", "model", "logged_at", "game_day", "kickoff", "key", "home", "away", "player",
-          "team", "stat", "market", "side", "direction", "line", "odds", "proj", "proj_min", "model_prob",
+          "team", "stat", "market", "side", "direction", "line", "odds", "proj", "proj_min", "blend", "weight", "model_prob",
           "market_prob", "edge_prob", "tier", "limit", "close_line", "close_prob", "clv", "actual",
           "result", "units", "settled_at"]
 
@@ -156,7 +163,7 @@ def project(logs: list[dict], cols: tuple, *, before: str, season, b2b: bool = F
     for c in cols:
         rate = tot[c] / wmin
         mean += rate * minutes * (pace if c in PACE_STATS else 1.0)
-    return {"mean": mean, "minutes": minutes, "team": cur[0]["team"]}
+    return {"mean": mean, "minutes": minutes, "team": cur[0]["team"], "games": len(cur)}
 
 
 # ------------------------------------------------------------------ ledger
@@ -227,7 +234,9 @@ def run(*, board: list[dict], games: list[dict], boxes: dict, season, now: datet
             info["no_log"] += 1
             continue
         line, fair_over = float(p["line"]), float(p["p_over"])
-        ours_over = p_over(pr["mean"], line, phi)
+        w = MODEL_WEIGHT_MAX * pr["games"] / (pr["games"] + MODEL_WEIGHT_HALF)
+        blended = w * pr["mean"] + (1 - w) * mean_for(fair_over, line, phi)
+        ours_over = p_over(blended, line, phi)
         if ours_over - fair_over >= (1 - ours_over) - (1 - fair_over):
             direction, mp, fp = "OVER", ours_over, fair_over
         else:
@@ -239,7 +248,7 @@ def run(*, board: list[dict], games: list[dict], boxes: dict, season, now: datet
                "away": p.get("away", ""), "player": p["player"], "team": pr["team"], "stat": p["stat"],
                "market": "PROP", "side": f"{p['player']} {direction.title()} {line:g} {p['stat']}",
                "direction": direction, "line": line, "odds": odds, "proj": round(pr["mean"], 1),
-               "proj_min": round(pr["minutes"], 1), "model_prob": round(mp, 4), "market_prob": round(fp, 4),
+               "proj_min": round(pr["minutes"], 1), "blend": round(blended, 1), "weight": round(w, 3), "model_prob": round(mp, 4), "market_prob": round(fp, 4),
                "edge_prob": round(edge, 4), "tier": _tier(edge), "limit": p.get("limit", "")}
         by_id[row["pick_id"]] = row
         info["new"].append(row)
