@@ -34,7 +34,7 @@ from kalshi_readonly import KalshiReadOnlyClient
 
 st.set_page_config(page_title="SharpIQ · Everything", page_icon="🗂️", layout="centered",
                    initial_sidebar_state="collapsed")
-sys.modules.pop("odds_calc", None)
+_sys.modules.pop("odds_calc", None)
 import odds_calc  # noqa: E402
 odds_calc.render()
 
