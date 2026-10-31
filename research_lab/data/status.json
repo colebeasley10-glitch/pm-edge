@@ -1,7 +1,7 @@
 {
  "day_stats": {
   "data_failures": 0,
-  "day": "20261030",
+  "day": "20261031",
   "structural_filled": 0,
   "structural_qualified": 0
  },
@@ -20,7 +20,7 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 10/30"
  },
  "last_run": {
-  "at": "2026-10-31T03:33:07.693008Z",
+  "at": "2026-10-31T04:03:35.144171Z",
   "best_price": {
    "compared": 0,
    "new_picks": 0,
@@ -33,20 +33,23 @@
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
-    "errors": [],
+    "errors": [
+     "americanfootball_ncaaf: HTTP 401",
+     "americanfootball_nfl: HTTP 401",
+     "basketball_nba: HTTP 401"
+    ],
     "fresh": false,
     "remaining": "0",
-    "skipped": "lab odds budget used or account nearly empty",
     "taken_at": null
    },
    "errors": [],
-   "games": 5,
-   "kalshi_offers": 10,
-   "picks": 68,
-   "polymarket_offers": 10
+   "games": 59,
+   "kalshi_offers": 48,
+   "picks": 600,
+   "polymarket_offers": 104
   },
   "maker_candidates": {
-   "candidates": 68,
+   "candidates": 328,
    "sharp_agrees": 0
   },
   "my_bets": {
@@ -57,59 +60,60 @@
   "odds_fam": {
    "bets_settled": 0,
    "pushed": 0,
-   "sent": 0,
-   "settled": 2
+   "sent": 1,
+   "settled": 1
   },
   "paper_only": true,
   "pinnacle": {
    "budget": 90,
    "errors": [],
    "fetched": [
-    "basketball"
+    "football",
+    "baseball"
    ],
-   "kalshi_markets": 558,
-   "matched": 39,
-   "pinnacle_games": 5,
-   "requests_today": 75,
+   "kalshi_markets": 4974,
+   "matched": 289,
+   "pinnacle_games": 60,
+   "requests_today": 2,
    "samples": [
-    "no_pinnacle_match: Denver vs Phoenix: Denver wins",
-    "no_pinnacle_match: Denver vs Phoenix: Phoenix wins",
-    "no_pinnacle_match: Los Angeles L vs Golden State: Los Angeles L wins",
-    "no_pinnacle_match: Los Angeles L vs Golden State: Golden State wins",
-    "no_pinnacle_match: Philadelphia vs Charlotte: Philadelphia wins",
-    "no_pinnacle_match: Philadelphia vs Charlotte: Charlotte wins",
-    "no_pinnacle_match: Oklahoma City vs Houston: Oklahoma City wins",
-    "no_pinnacle_match: Oklahoma City vs Houston: Houston wins"
+    "no_pinnacle_match: Appalachian St. vs Georgia Southern: Georgia Southern wins",
+    "no_pinnacle_match: Appalachian St. vs Georgia Southern: Appalachian St. wins",
+    "no_pinnacle_match: Arizona vs Texas Tech: Texas Tech wins",
+    "no_pinnacle_match: Arizona vs Texas Tech: Arizona wins",
+    "no_pinnacle_match: Army vs Memphis: Memphis wins",
+    "no_pinnacle_match: Army vs Memphis: Army wins",
+    "no_pinnacle_match: Arizona St. vs BYU: BYU wins",
+    "no_pinnacle_match: Arizona St. vs BYU: Arizona St. wins"
    ],
    "skipped": [
-    "football: next in 15 min",
-    "hockey: next in 90 min",
-    "baseball: next in 0 min",
-    "soccer: next in 60 min",
-    "tennis: next in 60 min"
+    "basketball: next in 29 min",
+    "hockey: next in 60 min",
+    "soccer: next in 29 min",
+    "tennis: next in 30 min"
    ],
    "unmatched": {
-    "no_pinnacle_match": 383,
-    "pinnacle_line_not_offered": 136
+    "no_moneyline": 2,
+    "no_pinnacle_match": 3338,
+    "pinnacle_line_not_offered": 1345
    }
   },
   "prop_board": {
    "new_plays": 0,
-   "props": 0,
+   "props": 14,
    "pushed": 0,
-   "settled": 0
+   "settled": 1
   },
   "reconciled": true,
   "sharp_plays": {
-   "games": 5,
-   "new_plays": 0,
+   "games": 47,
+   "new_plays": 1,
    "pushed": 0,
-   "settled": 2
+   "settled": 0
   },
   "sleeper": {
    "edges": 0,
    "errors": [],
-   "lines": 1275,
+   "lines": 1350,
    "matched_props": 0,
    "unmatched_stats": [
     "anytime_touchdowns",
@@ -156,14 +160,14 @@
   },
   "strategies": {
    "EV_FINDER_v2": {
-    "filled": 0,
-    "no_fill": 0,
+    "filled": 4,
+    "no_fill": 1,
     "ok": true,
     "pushed": 0,
-    "qualified": 2,
+    "qualified": 13,
     "reconcile_problems": [],
-    "rejected": 2,
-    "scanned": 68,
+    "rejected": 8,
+    "scanned": 600,
     "settle": {
      "marked": 19,
      "pending": 19,
@@ -172,13 +176,13 @@
    },
    "EV_FINDER_v3": {
     "filled": 0,
-    "no_fill": 0,
+    "no_fill": 1,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 2,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 68,
+    "rejected": 1,
+    "scanned": 600,
     "settle": {
      "marked": 15,
      "pending": 15,
@@ -187,6 +191,6 @@
    }
   }
  },
- "last_success": "2026-10-31T03:33:07.693008Z",
+ "last_success": "2026-10-31T04:03:35.144171Z",
  "report_sent": "20261030"
 }
