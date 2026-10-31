@@ -21,7 +21,7 @@ permissions:
 jobs:
   grade:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,7 +34,9 @@ jobs:
       - name: Restore ESPN cache
         uses: actions/cache@v4
         with:
-          path: .espn_nba_cache.json
+          path: |
+            .espn_nba_cache.json
+            .espn_nba_box_cache.json
           key: nba-model-${{ github.run_id }}
           restore-keys: nba-model-
 

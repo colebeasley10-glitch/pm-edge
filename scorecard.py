@@ -77,6 +77,22 @@ def grade(name: str, rows: list[dict], *, pl: str = "pl", risk=None, clv: str | 
             "note": note, "rows": rows, "pl_col": pl}
 
 
+RANK_PRIOR = 50   # bets of "no edge" blended in before ranking, so 5 lucky bets can't top the board
+
+
+def rank_score(lane: dict) -> float:
+    """ROI shrunk toward zero by sample size: roi * n / (n + RANK_PRIOR). Used to rank lanes best to worst."""
+    n, roi = lane.get("n") or 0, lane.get("roi")
+    return 0.0 if not n or roi is None else roi * n / (n + RANK_PRIOR)
+
+
+def ranked(lanes_: list[dict], money: str = "paper") -> tuple[list[dict], list[dict]]:
+    """(lanes with settled bets, best first), (lanes with none yet)."""
+    sel = [l for l in lanes_ if l["money"] == money]
+    active = sorted([l for l in sel if l["n"]], key=lambda l: (-rank_score(l), -(l["n"])))
+    return active, [l for l in sel if not l["n"]]
+
+
 def lanes() -> list[dict]:
     out: list[dict] = []
     out.append(grade("Live Sharp", _rows("live_sharp_trades.csv"), clv="clv_cents", money="real",
@@ -130,6 +146,10 @@ def lanes() -> list[dict]:
     out.append(grade("NBA Model — Strong + Lean", [r for r in nba if r.get("tier") in ("STRONG", "LEAN")],
                      pl="units", risk=1.0, clv="clv"))
     out.append(grade("NBA Model — all", nba, pl="units", risk=1.0, clv="clv"))
+    nbp = [r for r in _rows("nba_grader/data/props.csv") if r.get("units") not in (None, "") and r.get("result") != "V"]
+    out.append(grade("NBA Props — Strong + Lean", [r for r in nbp if r.get("tier") in ("STRONG", "LEAN")],
+                     pl="units", risk=1.0, clv="clv"))
+    out.append(grade("NBA Props — all", nbp, pl="units", risk=1.0, clv="clv"))
 
     qb = _rows("research_lab/data/quick_bets.csv")
     for src in sorted({r.get("source") for r in qb if r.get("source")}):

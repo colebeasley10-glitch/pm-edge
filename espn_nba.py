@@ -111,3 +111,65 @@ class ESPNNBA:
 
     def save(self):
         self.path.write_text(json.dumps(self.cache))
+
+
+SUMMARY = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary"
+BOX_STATS = {"MIN": "min", "PTS": "pts", "REB": "reb", "AST": "ast", "STL": "stl", "BLK": "blk", "TO": "tov"}
+
+
+def parse_box(summary: dict) -> list[dict]:
+    """ESPN game summary -> one row per player: {player, team, dnp, min, pts, reb, ast, fg3m, stl, blk, tov}."""
+    out = []
+    for team in (summary.get("boxscore") or {}).get("players") or []:
+        tname = (team.get("team") or {}).get("displayName") or ""
+        for cat in team.get("statistics") or []:
+            labels = [str(x).upper() for x in (cat.get("labels") or cat.get("names") or [])]
+            for a in cat.get("athletes") or []:
+                name = (a.get("athlete") or {}).get("displayName") or ""
+                stats = a.get("stats") or []
+                row = {"player": name, "team": tname, "dnp": bool(a.get("didNotPlay")) or not stats}
+                vals = dict(zip(labels, stats))
+                for lab, key in BOX_STATS.items():
+                    row[key] = _num(vals.get(lab)) or 0.0
+                try:
+                    row["fg3m"] = float(str(vals.get("3PT", "0-0")).split("-")[0])
+                except ValueError:
+                    row["fg3m"] = 0.0
+                if row["min"] <= 0:
+                    row["dnp"] = True
+                out.append(row)
+    return out
+
+
+class BoxCache:
+    """Parsed box scores by game id. A final game's box never changes, so it's fetched once."""
+
+    def __init__(self, path=".espn_nba_box_cache.json", session=None, timeout=20, max_calls=600):
+        self.path, self.timeout, self.max_calls = Path(path), timeout, max_calls
+        self.session = session or requests.Session()
+        self.calls, self.errors = 0, []
+        try:
+            self.cache = json.loads(self.path.read_text())
+        except Exception:
+            self.cache = {}
+
+    def get(self, game_id: str) -> list[dict] | None:
+        gid = str(game_id)
+        if gid in self.cache:
+            return self.cache[gid]
+        if self.calls >= self.max_calls:
+            return None
+        try:
+            r = self.session.get(SUMMARY, params={"event": gid}, timeout=self.timeout)
+            r.raise_for_status()
+            self.calls += 1
+            rows = parse_box(r.json())
+            if rows:
+                self.cache[gid] = rows
+            return rows or None
+        except Exception as exc:
+            self.errors.append(f"box {gid}: {type(exc).__name__}: {str(exc)[:120]}")
+            return None
+
+    def save(self):
+        self.path.write_text(json.dumps(self.cache, separators=(",", ":")))

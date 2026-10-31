@@ -1,8 +1,7 @@
-"""SharpIQ home (Oct 27, 2026): the new results first.
+"""SharpIQ home (redesigned Oct 30, 2026).
 
-What's running with real money, which lanes are working on paper, which aren't, and today's
-open plays from the lanes that are working. Everything from before lives on the
-"Everything" page (pages/All_Tools.py), one tap away.
+Every paper lane ranked best to worst, today's open plays, and what's running with real money.
+Everything from before lives on the "Everything" page (pages/All_Tools.py), one tap away.
 """
 from __future__ import annotations
 
@@ -206,100 +205,189 @@ def _refresh() -> None:
     st.cache_data.clear()
 
 
-with st.container(horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"):
+def fmt_american(v) -> str:
+    x = _num(v)
+    return "" if x is None else (f"+{x:.0f}" if x > 0 else f"{x:.0f}")
+
+
+def chip(text: str, kind: str = "") -> str:
+    return f"<span class='chip {kind}'>{esc(text)}</span>"
+
+
+def status_chip(l: dict) -> str:
+    if not l["n"]:
+        return chip("Not started", "mute")
+    if l["n"] < MIN_SHOWN:
+        return chip("Too early", "mute")
+    if l["verdict"].startswith("Clears"):
+        return chip("Clears bar", "good")
+    if l["verdict"].startswith("Proven"):
+        return chip("Proven loser", "bad")
+    if (l["roi"] or 0) > 0:
+        return chip("Ahead", "good")
+    return chip("Behind", "bad")
+
+
+def clv_chip(l: dict) -> str:
+    if l.get("clv") is None:
+        return ""
+    return chip("Beats close", "good") if l["clv"] > 0 else chip("Loses to close", "bad") if l["clv"] < 0 else chip("Even w/ close", "mute")
+
+
+def money_txt(l: dict) -> str:
+    return f"{l['pl']:+,.2f}u" if l.get("pl_col") == "units" else f"{'+' if l['pl'] >= 0 else '−'}${abs(l['pl']):,.2f}"
+
+
+def lane_row(l: dict, rank: int | None = None) -> str:
+    sub = l["name"].count(" — ") > 0
+    prog = min(l["n"], scorecard.MIN_BETS) / scorecard.MIN_BETS * 100
+    rk = (f"<div class='lb-rank{' top' if rank and rank <= 3 and (l['roi'] or 0) > 0 else ''}'>{rank}</div>"
+          if rank is not None else "")
+    rec = f"{l['won']}-{l['lost']}" if l["n"] else "—"
+    meta = " · ".join(x for x in (f"{l['n']} bets" if l["n"] else "No settled bets", rec if l["n"] else "",
+                                  money_txt(l) if l["n"] else "") if x)
+    return (f"<div class='lb-row{' sub' if sub else ''}'>{rk}<div class='lb-main'>"
+            f"<div class='lb-name'>{esc(l['name'])}</div>"
+            f"<div class='lb-meta'>{esc(meta)}</div>"
+            f"<div class='lb-chips'>{status_chip(l)}{clv_chip(l)}</div>"
+            f"<div class='lb-bar' title='{l['n']} of {scorecard.MIN_BETS} bets toward the go-live bar'>"
+            f"<span style='width:{prog:.0f}%'></span></div></div>"
+            f"<div class='lb-roi {tone(l['roi'])}'>{roi_txt(l['roi'])}<small>ROI</small></div></div>")
+
+
+def lane_details(options: list[dict], key: str) -> None:
+    names = [l["name"] for l in options]
+    if not names:
+        return
+    pick = st.selectbox("See a lane's bets", names, index=None, placeholder="Choose a lane to see its bets",
+                        key=key, label_visibility="collapsed")
+    if pick:
+        l = next(x for x in options if x["name"] == pick)
+        st.markdown(f"<div class='detail-h'><b>{esc(l['name'])}</b><span>{esc(l.get('verdict') or '')}"
+                    f"{(' · ' + esc(l['note'])) if l.get('note') else ''}</span></div>", unsafe_allow_html=True)
+        lane_bets(l)
+
+
+def open_plays() -> list[dict]:
+    plays = []
+
+    def add(start, league, title, sub, price, tier, lane):
+        plays.append({"start": start, "league": league, "title": title, "sub": sub, "price": price,
+                      "tier": tier, "lane": lane})
+
+    for r in rows("trader_follow/data/signals.csv"):
+        if r.get("status") == "open" and upcoming(r.get("game_start")) and r.get("in_band") == "True":
+            cp = _num(r.get("copy_price"))
+            add(r["game_start"], r.get("sport") or "Follow", f"{r['outcome']} — {r['question']}",
+                f"{r['trader']} bet ${float(r['his_usdc']):,.0f}", f"{cp * 100:.0f}¢" if cp else "", "", "Trader Follow")
+    for r in rows("research_lab/data/PROP_BOARD/plays.csv"):
+        if r.get("status") == "open" and upcoming(r.get("game_start")):
+            add(r["game_start"], r.get("league") or "Prop", r["pick"], f"{r['game']} · {r['move']}",
+                r.get("target_odds") or "", "", "Prop Board steam")
+    for r in rows("research_lab/data/ODDS_FAM/plays.csv"):
+        if r.get("status") == "open" and r.get("kind") == "Prop steam" and upcoming(r.get("game_start")):
+            add(r["game_start"], r.get("league") or "Prop", r["pick"], r.get("game") or "", r.get("bet_at") or "",
+                "", "Odds Fam")
+    for path, league, lane in (("ncaa_grader/data/picks.csv", "NCAAF", "NCAA Grader"),
+                               ("nba_grader/data/picks.csv", "NBA", "NBA Model")):
+        for r in rows(path):
+            if not r.get("result") and r.get("tier") == "STRONG" and upcoming(r.get("kickoff")) \
+                    and r.get("source", "live") == "live":
+                add(r["kickoff"], league, r["side"], f"{r['away']} at {r['home']}", fmt_american(r.get("odds")),
+                    "STRONG", lane)
+    for r in rows("nba_grader/data/props.csv"):
+        if not r.get("result") and r.get("tier") == "STRONG" and upcoming(r.get("kickoff")):
+            add(r["kickoff"], "NBA", r["side"], f"{r['away']} at {r['home']} · proj {r['proj']}",
+                fmt_american(r.get("odds")), "STRONG", "NBA Props")
+    return sorted(plays, key=lambda p: p["start"])
+
+
+def play_cards(plays: list[dict]) -> None:
+    html_ = []
+    for p in plays:
+        tier = chip(p["tier"].title(), "good") if p["tier"] else ""
+        html_.append(
+            f"<div class='play'><div class='play-l'><span class='lg'>{esc(p['league'])}</span>"
+            f"<span class='tm'>{esc(starts(p['start']))}</span></div>"
+            f"<div class='play-m'><div class='pt'>{esc(p['title'])}</div><div class='ps'>{esc(p['sub'])}</div>"
+            f"<div class='lb-chips'>{chip(p['lane'], 'mute')}{tier}</div></div>"
+            f"<div class='play-r'>{esc(p['price'])}<small>bet at</small></div></div>")
+    st.markdown("<div class='plays'>" + "".join(html_) + "</div>", unsafe_allow_html=True)
+
+
+# ================================================================== page
+with st.container(horizontal=True, horizontal_alignment="distribute", vertical_alignment="center", key="pe_head"):
     st.markdown("<div class='pe-mark'>Sharp<i>IQ</i></div>", unsafe_allow_html=True, width="content")
-    st.button("↻ Refresh", key="home_refresh", type="secondary", on_click=_refresh,
-              help="Reload the newest bets and results")
-st.caption(f"Updated {datetime.now(ET).strftime('%a %-I:%M %p')} · tap any lane to see its open and settled bets")
-st.page_link("pages/All_Tools.py", label="Everything (full dashboard, every tab from before)", icon="🗂️",
-             use_container_width=True)
+    st.button("↻", key="hdr_refresh", type="secondary", on_click=_refresh, help="Reload the newest bets and results")
+st.markdown(f"<div class='pe-sub'>{datetime.now(ET).strftime('%A, %B %-d')} · updated "
+            f"{datetime.now(ET).strftime('%-I:%M %p')} ET</div>", unsafe_allow_html=True)
 
 lanes = scorecard.lanes()
-
-# ---------------------------------------------------------------- real money --
-section("Real money")
+paper_active, paper_idle = scorecard.ranked(lanes, "paper")
+real = [l for l in lanes if l["money"] == "real"]
+plays = open_plays()
 bal = rows("kalshi_balance_log.csv")
 live_open = [r for r in rows("live_plays/data/bets.csv") if r.get("status") == "open"]
 riding = sum(float(r.get("cost") or 0) for r in live_open)
 cash = float(bal[-1]["cash"]) if bal else None
+called = [l for l in paper_active if l["n"] >= MIN_SHOWN]
+ahead = [l for l in called if (l["roi"] or 0) > 0]
+best = paper_active[0] if paper_active else None
+
 st.markdown(
-    "<div class='hm-tiles'>"
-    f"<div class='hm-tile'><div class='v'>{'—' if cash is None else f'${cash:,.2f}'}</div>"
-    f"<div class='l'>Kalshi cash{(' as of ' + esc(starts(bal[-1]['at']))) if bal else ''}</div></div>"
-    f"<div class='hm-tile'><div class='v'>${riding:,.2f}</div><div class='l'>{len(live_open)} open live bets settling</div></div>"
+    "<div class='kpis'>"
+    f"<div class='kpi'><div class='l'>Kalshi cash</div><div class='v'>{'—' if cash is None else f'${cash:,.0f}'}</div>"
+    f"<div class='s'>{f'${riding:,.0f} in {len(live_open)} open bets' if live_open else 'No open live bets'}</div></div>"
+    f"<div class='kpi'><div class='l'>Open plays</div><div class='v'>{len(plays)}</div>"
+    f"<div class='s'>from lanes on paper</div></div>"
+    f"<div class='kpi'><div class='l'>Lanes ahead</div><div class='v'>{len(ahead)}<em>/{len(called)}</em></div>"
+    f"<div class='s'>with {MIN_SHOWN}+ settled bets</div></div>"
+    f"<div class='kpi'><div class='l'>Top lane</div><div class='v sm'>{esc(best['name']) if best else '—'}</div>"
+    f"<div class='s {tone(best['roi']) if best else ''}'>{roi_txt(best['roi']) if best else ''} ROI</div></div>"
     "</div>", unsafe_allow_html=True)
-real = [l for l in lanes if l["money"] == "real"]
-for l in real:
-    lane_expander(l)
-st.caption("Nothing new bets real money until a lane clears the bar: "
-           f"{scorecard.MIN_BETS}+ bets, ROI above zero, CLV at or above zero.")
 
-# ------------------------------------------------------------------- paper --
-paper = [l for l in lanes if l["money"] == "paper" and l["n"] >= MIN_SHOWN]
-good = sorted([l for l in paper if (l["roi"] or 0) > 0], key=lambda l: -(l["roi"] or 0))
-bad = sorted([l for l in paper if (l["roi"] or 0) <= 0], key=lambda l: (l["roi"] or 0))
+view = st.segmented_control("View", ["Leaderboard", "Today", "Real money"], default="Leaderboard",
+                            key="home_view", label_visibility="collapsed", width="stretch") or "Leaderboard"
 
-section("Working on paper")
-if not good:
-    st.write("Nothing is ahead yet.")
-for l in good:
-    done = min(l["n"], scorecard.MIN_BETS)
-    with st.container(border=True):
-        st.progress(done / scorecard.MIN_BETS, text=l["verdict"])
-        lane_expander(l)
+if view == "Leaderboard":
+    st.markdown(f"<div class='section'><span>Paper lanes, best to worst</span>"
+                f"<span class='n'>{len(paper_active)} ranked</span></div>", unsafe_allow_html=True)
+    st.markdown("<div class='lb'>" + "".join(lane_row(l, i) for i, l in enumerate(paper_active, 1)) + "</div>",
+                unsafe_allow_html=True)
+    st.markdown(f"<div class='fine'>Ranked by ROI adjusted for sample size (ROI × bets ÷ (bets + "
+                f"{scorecard.RANK_PRIOR})), so a lane needs volume <i>and</i> results to sit on top. The bar under each "
+                f"lane is progress to the {scorecard.MIN_BETS}-bet go-live bar. Indented rows are a slice of the lane "
+                f"above them.</div>", unsafe_allow_html=True)
+    if paper_idle:
+        st.markdown("<div class='section'><span>Waiting on first results</span>"
+                    f"<span class='n'>{len(paper_idle)}</span></div>", unsafe_allow_html=True)
+        st.markdown("<div class='idle'>" + "".join(f"<span>{esc(l['name'])}</span>" for l in paper_idle) + "</div>",
+                    unsafe_allow_html=True)
+    lane_details(paper_active + paper_idle, "lb_pick")
 
-section("Not working")
-for l in bad:
-    lane_expander(l)
-small = [l for l in lanes if l["money"] == "paper" and l["n"] < MIN_SHOWN]
-if small:
-    section("Too few bets to call yet")
-    for l in small:
-        lane_expander(l)
+elif view == "Today":
+    st.markdown(f"<div class='section'><span>Open plays</span><span class='n'>{len(plays)}</span></div>",
+                unsafe_allow_html=True)
+    if plays:
+        play_cards(plays[:30])
+        st.markdown("<div class='fine'>All paper. Bet one by hand at the listed price or better, then log it so it "
+                    "gets graded. NBA plays don't account for injuries; check the report first.</div>",
+                    unsafe_allow_html=True)
+    else:
+        st.markdown("<div class='quiet'><strong>Nothing open right now</strong>New plays push to your phone "
+                    "as they show up.</div>", unsafe_allow_html=True)
 
-# ------------------------------------------------- open plays from what's working --
-section("Open plays from lanes that are working")
-plays = []
-for r in rows("trader_follow/data/signals.csv"):
-    if r.get("status") == "open" and upcoming(r.get("game_start")) and r.get("in_band") == "True":
-        cp = float(r["copy_price"]) if r.get("copy_price") else None
-        plays.append((r["game_start"], f"{esc(r['outcome'])} — {esc(r['question'])}",
-                      f"Follow {esc(r['trader'])} · ${float(r['his_usdc']):,.0f} on it · {starts(r['game_start'])}",
-                      f"{cp * 100:.0f}¢" if cp else "", "Research_Lab_Trader_Follow"))
-for r in rows("research_lab/data/PROP_BOARD/plays.csv"):
-    if r.get("status") == "open" and upcoming(r.get("game_start")):
-        plays.append((r["game_start"], esc(r["pick"]), f"Prop steam · {esc(r['move'])} · {starts(r['game_start'])}",
-                      esc(r["target_odds"]), "Research_Lab_Prop_Board"))
-for r in rows("research_lab/data/ODDS_FAM/plays.csv"):
-    if r.get("status") == "open" and r.get("kind") == "Prop steam" and upcoming(r.get("game_start")):
-        plays.append((r["game_start"], esc(r["pick"]), f"Odds Fam prop steam · {starts(r['game_start'])}",
-                      esc(r["bet_at"]), "Odds_Fam"))
-for r in rows("ncaa_grader/data/picks.csv"):
-    if not r.get("result") and r.get("tier") == "STRONG" and upcoming(r.get("kickoff")):
-        odds = r.get("odds") or ""
-        try:
-            o = float(odds)
-            odds = f"+{o:.0f}" if o > 0 else f"{o:.0f}"
-        except ValueError:
-            pass
-        plays.append((r["kickoff"], esc(r["side"]), f"NCAA STRONG · {esc(r['away'])} at {esc(r['home'])} · "
-                      f"{starts(r['kickoff'])}", esc(odds), "Research_Lab_NCAA_Grader"))
-for r in rows("nba_grader/data/picks.csv"):
-    if not r.get("result") and r.get("tier") == "STRONG" and upcoming(r.get("kickoff")):
-        odds = r.get("odds") or ""
-        try:
-            o = float(odds)
-            odds = f"+{o:.0f}" if o > 0 else f"{o:.0f}"
-        except ValueError:
-            pass
-        plays.append((r["kickoff"], esc(r["side"]), f"NBA STRONG · {esc(r['away'])} at {esc(r['home'])} · "
-                      f"{starts(r['kickoff'])}", esc(odds), "Research_Lab_NBA_Model"))
-plays.sort(key=lambda p: p[0])
-if not plays:
-    st.write("No open plays from the working lanes right now. They push to your phone when they show up.")
 else:
-    row_list([(t, s, v, "") for _, t, s, v, _ in plays[:25]])
-    st.caption("All paper. Bet one by hand if you want, then log it below so it gets graded.")
+    st.markdown("<div class='section'><span>Real money</span></div>", unsafe_allow_html=True)
+    st.markdown("<div class='lb'>" + "".join(lane_row(l) for l in real) + "</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='fine'>Nothing new bets real money until a lane clears the bar: {scorecard.MIN_BETS}+ "
+                "bets, ROI above zero, CLV at or above zero.</div>", unsafe_allow_html=True)
+    lane_details(real, "real_pick")
 
-st.page_link("pages/Odds_Fam.py", label="Log a bet (Hunter's, yours, anything)", icon="📝", use_container_width=True)
-st.page_link("pages/Scorecard.py", label="Full scorecard", icon="✅", use_container_width=True)
+st.markdown("<div class='gap'></div>", unsafe_allow_html=True)
+c1, c2 = st.columns(2)
+with c1:
+    st.page_link("pages/Odds_Fam.py", label="Log a bet", icon=":material/edit_note:", use_container_width=True)
+with c2:
+    st.page_link("pages/Scorecard.py", label="Full scorecard", icon=":material/fact_check:", use_container_width=True)
+st.page_link("pages/All_Tools.py", label="Every tool & research lane", icon=":material/apps:", use_container_width=True)

@@ -226,6 +226,87 @@ def apply() -> None:
           background:var(--gold) !important; border:0 !important; border-radius:12px !important; }
         [data-testid="stBaseButton-primaryFormSubmit"] p, [data-testid="stBaseButton-primary"] p {
           color:#14110A !important; font-weight:800 !important; }
+        /* ============ 2026-10-30 redesign: app-style home ============ */
+        .pe-sub { color:var(--muted); font-size:.8rem; font-weight:600; margin:-.55rem 0 1rem; letter-spacing:.01em; }
+        .kpis { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:.55rem; margin:0 0 1rem; }
+        @media (min-width:600px) { .kpis { grid-template-columns:repeat(4, minmax(0,1fr)); } }
+        .kpi { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:.75rem .85rem; min-width:0; }
+        .kpi .l { color:var(--muted); font-size:.66rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+        .kpi .v { font-weight:800; font-size:1.5rem; line-height:1.15; margin-top:.3rem; font-variant-numeric:tabular-nums;
+                  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .kpi .v em { font-style:normal; color:var(--muted); font-size:1rem; font-weight:700; }
+        .kpi .v.sm { font-size:.98rem; line-height:1.3; white-space:normal; display:-webkit-box; -webkit-line-clamp:2;
+                     -webkit-box-orient:vertical; margin-top:.35rem; }
+        .kpi .s { color:var(--muted); font-size:.72rem; margin-top:.2rem; font-weight:600; }
+        .kpi .s.up { color:var(--up); } .kpi .s.down { color:var(--down); }
+        /* segmented control */
+        [data-testid="stButtonGroup"] { background:var(--panel2); border:1px solid var(--line); border-radius:14px; padding:4px; }
+        [data-testid="stButtonGroup"] button { border:0 !important; border-radius:10px !important; background:transparent !important;
+          min-height:2.3rem !important; box-shadow:none !important; }
+        [data-testid="stButtonGroup"] button p { color:var(--muted) !important; font-weight:700 !important; font-size:.86rem !important; }
+        [data-testid="stButtonGroup"] button[kind*="Active"], [data-testid="stButtonGroup"] button[aria-checked="true"] {
+          background:var(--panel) !important; box-shadow:0 1px 0 rgba(255,255,255,.04), 0 2px 8px rgba(0,0,0,.35) !important; }
+        [data-testid="stButtonGroup"] button[kind*="Active"] p, [data-testid="stButtonGroup"] button[aria-checked="true"] p {
+          color:var(--text) !important; }
+        .section .n { font-size:.78rem; font-weight:700; color:var(--muted); }
+        /* leaderboard */
+        .lb { background:var(--panel); border:1px solid var(--line); border-radius:16px; overflow:hidden; margin:.55rem 0 .5rem; }
+        .lb-row { display:grid; grid-template-columns:auto 1fr auto; gap:.8rem; align-items:center; padding:.8rem .95rem;
+                  border-bottom:1px solid var(--line); }
+        .lb-row:last-child { border-bottom:0; }
+        .lb-row.sub { padding-left:1.6rem; background:var(--panel2); }
+        .lb-row.sub .lb-name { font-weight:600; color:var(--soft); }
+        .lb-rank { width:1.85rem; height:1.85rem; border-radius:9px; display:flex; align-items:center; justify-content:center;
+                   font-weight:800; font-size:.82rem; color:var(--muted); background:var(--deep); border:1px solid var(--line);
+                   font-variant-numeric:tabular-nums; }
+        .lb-rank.top { color:#14110A; background:var(--gold); border-color:var(--gold); }
+        .lb-row > .lb-main:first-child { grid-column:1 / 3; }
+        .lb-main { min-width:0; }
+        .lb-name { font-weight:700; font-size:.95rem; line-height:1.25; }
+        .lb-meta { color:var(--muted); font-size:.76rem; margin-top:.15rem; font-variant-numeric:tabular-nums; }
+        .lb-chips { display:flex; flex-wrap:wrap; gap:.3rem; margin-top:.4rem; }
+        .chip { font-size:.66rem; font-weight:700; letter-spacing:.03em; padding:.14rem .5rem; border-radius:999px;
+                border:1px solid var(--line); color:var(--soft); white-space:nowrap; }
+        .chip.good { color:var(--up); border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.08); }
+        .chip.bad { color:var(--down); border-color:rgba(240,82,82,.35); background:rgba(240,82,82,.08); }
+        .chip.mute { color:var(--muted); background:var(--deep); }
+        .lb-bar { height:3px; border-radius:2px; background:var(--line); margin-top:.55rem; overflow:hidden; max-width:220px; }
+        .lb-bar span { display:block; height:3px; background:#6EA8FE; border-radius:2px; }
+        .lb-roi { text-align:right; font-weight:800; font-size:1.1rem; font-variant-numeric:tabular-nums; white-space:nowrap; }
+        .lb-roi small { display:block; color:var(--muted); font-size:.62rem; font-weight:700; letter-spacing:.1em; margin-top:.1rem; }
+        .fine { color:var(--muted); font-size:.74rem; line-height:1.5; margin:.2rem .1rem 1rem; }
+        .idle { display:flex; flex-wrap:wrap; gap:.35rem; margin:.5rem 0 1rem; }
+        .idle span { font-size:.76rem; font-weight:600; color:var(--soft); background:var(--panel); border:1px solid var(--line);
+                     border-radius:999px; padding:.3rem .7rem; }
+        .detail-h { display:flex; flex-direction:column; gap:.1rem; margin:.6rem 0 .2rem; }
+        .detail-h b { font-size:1.05rem; } .detail-h span { color:var(--muted); font-size:.78rem; }
+        /* play cards */
+        .plays { display:flex; flex-direction:column; gap:.55rem; margin:.55rem 0 .5rem; }
+        .play { display:grid; grid-template-columns:3.6rem 1fr auto; gap:.8rem; align-items:center; background:var(--panel);
+                border:1px solid var(--line); border-radius:14px; padding:.75rem .85rem; }
+        .play-l { display:flex; flex-direction:column; gap:.3rem; align-items:flex-start; }
+        .play-l .lg { font-size:.64rem; font-weight:800; letter-spacing:.08em; color:var(--gold); background:rgba(245,184,0,.1);
+                      border-radius:6px; padding:.12rem .4rem; text-transform:uppercase; max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+        .play-l .tm { color:var(--muted); font-size:.7rem; font-weight:600; line-height:1.25; }
+        .play-m { min-width:0; } .play .pt { font-weight:700; font-size:.93rem; line-height:1.3; }
+        .play .ps { color:var(--muted); font-size:.75rem; margin-top:.15rem; overflow-wrap:anywhere; }
+        .play-r { text-align:right; font-weight:800; font-size:1.15rem; font-variant-numeric:tabular-nums; white-space:nowrap; }
+        .play-r small { display:block; color:var(--muted); font-size:.6rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+        .gap { height:.6rem; }
+        [data-testid="stPageLink"] a { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:.55rem .8rem; }
+        [data-testid="stPageLink"] a:hover { border-color:var(--gold); }
+        [data-testid="stPageLink"] p { font-weight:700 !important; font-size:.88rem !important; }
+        [data-testid="stSelectbox"] > div > div { border-radius:12px !important; background:var(--panel) !important; }
+        /* stat tables on lane pages */
+        .tbl { width:100%; border-collapse:collapse; font-size:.82rem; font-variant-numeric:tabular-nums; }
+        .tbl-wrap { background:var(--panel); border:1px solid var(--line); border-radius:14px; overflow:hidden; margin:.5rem 0 .8rem; }
+        .tbl th { text-align:right; color:var(--muted); font-size:.64rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+                  padding:.6rem .7rem; border-bottom:1px solid var(--line); background:var(--panel2); }
+        .tbl td { text-align:right; padding:.6rem .7rem; border-bottom:1px solid var(--line); font-weight:600; }
+        .tbl tr:last-child td { border-bottom:0; }
+        .tbl th:first-child, .tbl td:first-child { text-align:left; }
+        .tbl td.up { color:var(--up); } .tbl td.down { color:var(--down); }
+        .tbl tr.minor td { color:var(--muted); font-weight:500; }
         </style>
         """,
         unsafe_allow_html=True,

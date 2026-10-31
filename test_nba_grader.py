@@ -110,3 +110,77 @@ def test_heavy_ml_favorite_never_recommended():
     ml = core.make_picks(game=game, market=mkt, home_margin=14, total=230, home_win_prob=0.92,
                          model="m", source="live", logged_at="x")[0]
     assert ml["pick_team"] == "A" and ml["tier"] == "NO_EDGE"
+
+
+# ------------------------------------------------------------------ player props
+from espn_nba import parse_box
+from nba_grader import props
+
+
+def test_negative_binomial_and_line_moves():
+    assert abs(props.p_over(20.0, 19.5, 2.3) - 0.5) < 0.06
+    assert props.p_over(25, 19.5, 2.3) > 0.75 and props.p_over(3, 2.5, 1.05) > 0.5
+    m = props.mean_for(0.6, 22.5, 2.3)
+    assert abs(props.p_over(m, 22.5, 2.3) - 0.6) < 1e-3
+
+
+def test_parse_box_reads_threes_and_dnp():
+    summ = {"boxscore": {"players": [{"team": {"displayName": "A"}, "statistics": [{
+        "labels": ["MIN", "FG", "3PT", "FT", "OREB", "DREB", "REB", "AST", "STL", "BLK", "TO", "PF", "+/-", "PTS"],
+        "athletes": [{"athlete": {"displayName": "Luka Dončić"}, "stats": ["36", "11-22", "4-10", "5-6", "1", "8", "9",
+                                                                           "8", "1", "0", "4", "2", "+6", "31"]},
+                     {"athlete": {"displayName": "Bench Guy"}, "stats": [], "didNotPlay": True}]}]}]}}
+    rows = parse_box(summ)
+    assert rows[0]["pts"] == 31 and rows[0]["fg3m"] == 4 and rows[0]["reb"] == 9 and not rows[0]["dnp"]
+    assert rows[1]["dnp"] and props.norm_name(rows[0]["player"]) == "luka doncic"
+
+
+def _prop_world():
+    games, boxes = [], {}
+    for i in range(6):
+        d = f"2026-10-{20 + i * 2}"
+        gid = f"g{i}"
+        games.append({"id": gid, "season": 2027, "week": d, "completed": True, "homeTeam": "A", "awayTeam": "B",
+                      "homePoints": 110, "awayPoints": 100})
+        boxes[gid] = [{"player": "Luka Doncic", "team": "A", "dnp": False, "min": 36.0, "pts": 32.0, "reb": 9.0,
+                       "ast": 8.0, "fg3m": 4.0, "stl": 1.0, "blk": 0.0, "tov": 3.0}]
+    return games, boxes
+
+
+def test_prop_logs_over_when_projection_beats_pinnacle_then_settles():
+    games, boxes = _prop_world()
+    tip = datetime(2026, 11, 1, 0, 0, tzinfo=timezone.utc)   # Oct 31 ET
+    board = [{"key": "p1", "league": "NBA", "player": "Luka Doncic", "stat": "Points", "home": "A", "away": "B",
+              "starts": "2026-11-01T00:00:00Z", "line": 27.5, "p_over": 0.5, "limit": 250}]
+    out = props.run(board=board, games=games, boxes=boxes, season=2027, now=tip - timedelta(hours=6), rows=[])
+    r = out["rows"][0]
+    assert out["logged"] == 1 and r["direction"] == "OVER" and r["tier"] == "STRONG" and abs(r["proj"] - 32) < 0.5
+    # Pinnacle moves to 29.5: frozen at 27.5, CLV positive after converting the close to our line
+    board[0].update(line=29.5, p_over=0.52)
+    out = props.run(board=board, games=games, boxes=boxes, season=2027, now=tip - timedelta(hours=1), rows=out["rows"])
+    r = out["rows"][0]
+    assert out["logged"] == 0 and r["line"] == 27.5 and r["clv"] > 0.05
+    final = {"id": "g9", "season": 2027, "week": "2026-10-31", "completed": True, "homeTeam": "A", "awayTeam": "B",
+             "homePoints": 120, "awayPoints": 111}
+    boxes["g9"] = [{**boxes["g0"][0], "pts": 30.0}]
+    out = props.run(board=[], games=games + [final], boxes=boxes, season=2027, now=tip + timedelta(hours=4),
+                    rows=out["rows"])
+    r = out["rows"][0]
+    assert r["result"] == "W" and r["actual"] == 30.0 and float(r["units"]) > 0.8
+
+
+def test_prop_dnp_voids_and_thin_history_skips():
+    games, boxes = _prop_world()
+    board = [{"key": "p2", "league": "NBA", "player": "Nobody New", "stat": "Points", "home": "A", "away": "B",
+              "starts": "2026-11-01T00:00:00Z", "line": 10.5, "p_over": 0.5, "limit": 250}]
+    out = props.run(board=board, games=games, boxes=boxes, season=2027,
+                    now=datetime(2026, 10, 31, 12, tzinfo=timezone.utc), rows=[])
+    assert out["logged"] == 0 and out["no_log"] == 1
+    row = {"pick_id": "x", "key": "p3", "player": "Luka Doncic", "stat": "Points", "direction": "OVER", "line": 27.5,
+           "odds": -110, "market_prob": 0.5, "home": "A", "away": "B", "game_day": "2026-10-31",
+           "kickoff": "2026-11-01T00:00:00Z"}
+    final = {"id": "g9", "season": 2027, "week": "2026-10-31", "completed": True, "homeTeam": "A", "awayTeam": "B"}
+    boxes["g9"] = [{**boxes["g0"][0], "dnp": True, "min": 0.0}]
+    out = props.run(board=[], games=games + [final], boxes=boxes, season=2027,
+                    now=datetime(2026, 11, 1, 5, tzinfo=timezone.utc), rows=[row])
+    assert out["rows"][0]["result"] == "V" and out["rows"][0]["units"] == 0.0
