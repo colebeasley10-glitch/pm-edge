@@ -1631,6 +1631,16 @@ with tab_lab:
                         "beat_close": _ngs.get("beat_close")}, None))
     except Exception:
         pass
+    try:  # NBA Game Model: every NBA game graded at a frozen line (Strong + Lean shown)
+        for _m in [k for k in _lsys.modules if k == "nba_grader" or k.startswith("nba_grader.")]:
+            del _lsys.modules[_m]
+        from nba_grader import core as _nb
+        _nbs = _nb.summarize(_nb.load_ledger(), source="live", model="nba_v1")[0]
+        _cards.append(("Research_Lab_NBA_Model", "NBA Game Model", "Power ratings + rest vs the line, graded at a frozen line",
+                       {"won": _nbs["w"], "lost": _nbs["l"], "roi": _nbs["roi"], "open": _nbs["open"],
+                        "beat_close": _nbs.get("beat_close")}, None))
+    except Exception:
+        pass
     for _spec in _lcfg.RESEARCH_STRATEGIES:
         try:
             _sm = _lmet.summarize(_LStore(_spec.key).positions)

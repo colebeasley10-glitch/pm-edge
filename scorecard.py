@@ -126,6 +126,11 @@ def lanes() -> list[dict]:
     out.append(grade("NCAA Grader — STRONG", [r for r in ncaa if r.get("tier") == "STRONG"], pl="units", risk=1.0, clv="clv"))
     out.append(grade("NCAA Grader — ML", [r for r in ncaa if r.get("market") == "ML"], pl="units", risk=1.0, clv="clv"))
 
+    nba = [r for r in _rows("nba_grader/data/picks.csv") if r.get("units") not in (None, "")]
+    out.append(grade("NBA Model — Strong + Lean", [r for r in nba if r.get("tier") in ("STRONG", "LEAN")],
+                     pl="units", risk=1.0, clv="clv"))
+    out.append(grade("NBA Model — all", nba, pl="units", risk=1.0, clv="clv"))
+
     qb = _rows("research_lab/data/quick_bets.csv")
     for src in sorted({r.get("source") for r in qb if r.get("source")}):
         out.append(grade(f"My bets — {src}", [r for r in qb if r.get("source") == src], risk="stake",

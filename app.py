@@ -284,6 +284,16 @@ for r in rows("ncaa_grader/data/picks.csv"):
             pass
         plays.append((r["kickoff"], esc(r["side"]), f"NCAA STRONG · {esc(r['away'])} at {esc(r['home'])} · "
                       f"{starts(r['kickoff'])}", esc(odds), "Research_Lab_NCAA_Grader"))
+for r in rows("nba_grader/data/picks.csv"):
+    if not r.get("result") and r.get("tier") == "STRONG" and upcoming(r.get("kickoff")):
+        odds = r.get("odds") or ""
+        try:
+            o = float(odds)
+            odds = f"+{o:.0f}" if o > 0 else f"{o:.0f}"
+        except ValueError:
+            pass
+        plays.append((r["kickoff"], esc(r["side"]), f"NBA STRONG · {esc(r['away'])} at {esc(r['home'])} · "
+                      f"{starts(r['kickoff'])}", esc(odds), "Research_Lab_NBA_Model"))
 plays.sort(key=lambda p: p[0])
 if not plays:
     st.write("No open plays from the working lanes right now. They push to your phone when they show up.")
