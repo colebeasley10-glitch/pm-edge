@@ -295,6 +295,10 @@ def apply() -> None:
         .play .ps { color:var(--muted); font-size:.75rem; margin-top:.15rem; overflow-wrap:anywhere; }
         .play-r { text-align:right; font-weight:800; font-size:1.15rem; font-variant-numeric:tabular-nums; white-space:nowrap; }
         .play-r small { display:block; color:var(--muted); font-size:.6rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+        .play-r .fair { display:block; margin-top:.25rem; color:var(--muted); font-size:.66rem; font-weight:600; white-space:nowrap; }
+        .play-r .fair b { font-weight:800; }
+        .play-l .live-dot { font-size:.58rem; font-weight:800; letter-spacing:.08em; color:#fff; background:var(--down);
+            border-radius:.35rem; padding:.08rem .35rem; }
         .gap { height:.6rem; }
         [data-testid="stPageLink"] a { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:.55rem .8rem; }
         [data-testid="stPageLink"] a:hover { border-color:var(--gold); }

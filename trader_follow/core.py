@@ -87,7 +87,7 @@ LEDGER_FIELDS = [
     "signal_id", "trader", "wallet", "sport", "market_type", "event", "question", "outcome",
     "outcome_index", "condition_id", "event_slug", "game_start", "first_buy", "alert_time",
     "his_usdc", "his_price", "copy_price", "in_band", "in_sports", "pushed", "status", "settled_time",
-    "pl_copy", "pl_his", "settled_by",
+    "pl_copy", "pl_his", "settled_by", "fair_prob",
 ]
 
 
@@ -339,6 +339,10 @@ def alert_text(row: dict) -> tuple[str, str]:
         f"Copy only at {max_pay * 100:.0f}¢ ({american(max_pay)}) or better",
         f"Starts {_eastern(parse_ts(row['game_start']))}",
     ]
+    fair = _float(row.get("fair_prob"))
+    if fair:
+        e = f" · {(fair / copy - 1) * 100:+.1f}% EV at {copy * 100:.0f}¢" if copy else ""
+        lines.insert(4, f"Pinnacle fair: {fair * 100:.0f}¢ ({american(fair)}){e}")
     if copy and copy > max_pay:
         lines.insert(3, "⚠️ Price already moved past the copy limit")
     return title, "\n".join(lines)
@@ -435,6 +439,7 @@ def run_round(
         if first_look:
             state["seeded"].append(trader.wallet)
 
+        fair_rows = None
         for pkey in touched:
             pos = positions[pkey]
             trader_cfg = by_wallet.get(pos["wallet"])
@@ -463,6 +468,14 @@ def run_round(
                 "copy_price": copy if copy is not None else "", "in_band": in_band(his),
                 "pushed": False, "status": "open", "settled_time": "", "pl_copy": "", "pl_his": "",
             }
+            try:   # Nov 1, 2026: Pinnacle fair price for the same side, from the Odds Fam board
+                from trader_follow import fair as _fair
+                if fair_rows is None:
+                    fair_rows = _fair.load_rows()
+                f = _fair.fair_for(row, fair_rows)
+                row["fair_prob"] = round(f, 4) if f else ""
+            except Exception:
+                row["fair_prob"] = ""
             row["in_sports"] = not (trader_cfg and trader_cfg.sports) or sport_group(row) in trader_cfg.sports
             summary["signals"] += 1
             if row["in_band"] and row["in_sports"] and summary["pushed"] < MAX_PUSHES_PER_RUN:
