@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-01T09:00:46.699022Z",
+ "ran_at": "2026-11-01T09:30:42.863851Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -26,8 +26,8 @@
      "ticker": "KXNFLGAME-26NOV01NEMIA-NE",
      "side": "NO",
      "ask": 0.25,
-     "fair": 0.675,
-     "edge": 0.4118
+     "fair": 0.68,
+     "edge": 0.4167
     },
     {
      "ticker": "KXNFLGAME-26NOV01NEMIA-MIA",
@@ -54,10 +54,10 @@
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 174,
-    "kalshi_events": 1490,
-    "matched": 121,
-    "priced": 218,
+    "poly_games": 173,
+    "kalshi_events": 1494,
+    "matched": 120,
+    "priced": 219,
     "best_gaps": [
      [
       0.195,
@@ -68,20 +68,16 @@
       "KXNWSLGAME-26NOV01HDAPTH-PTH"
      ],
      [
-      0.025,
-      "KXCS2GAME-26NOV010600APOGEEPHA-PHA"
-     ],
-     [
       0.015,
       "KXVALORANTGAME-26NOV011300KRM8GC-KR"
      ],
      [
       0.015,
-      "KXLOLGAME-26NOV031700IGTES-IG"
+      "KXSERIECGAME-26NOV01FOLUNI-UNI"
      ],
      [
       0.015,
-      "KXLIGAPORTUGALGAME-26NOV01BRAFAM-BRA"
+      "KXLOLGAME-26NOV031700IGTES-IG"
      ],
      [
       0.015,
@@ -90,6 +86,10 @@
      [
       0.015,
       "KXCS2GAME-26NOV012100B8HERO-HERO"
+     ],
+     [
+      0.015,
+      "KXCS2GAME-26NOV010600APOGEEPHA-PHA"
      ]
     ]
    }
@@ -101,82 +101,29 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 2,
+   "opened": 1,
    "skipped": {
-    "already_holding": 2
+    "same_game": 2,
+    "already_holding": 1
    },
    "diag": {
-    "skipped_settles_late": 0
+    "skipped_settles_late": 1
    }
   },
   "crypto": {
-   "picks_found": 4,
+   "picks_found": 0,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [
-    {
-     "ticker": "KXBTCD-26NOV0105-T77899.99",
-     "side": "NO",
-     "ask": 0.12,
-     "fair": 0.3742,
-     "edge": 0.2467
-    },
-    {
-     "ticker": "KXBTCD-26NOV0105-T77799.99",
-     "side": "NO",
-     "ask": 0.05,
-     "fair": 0.2974,
-     "edge": 0.2441
-    },
-    {
-     "ticker": "KXETHD-26NOV0105-T2279.99",
-     "side": "YES",
-     "ask": 0.08,
-     "fair": 0.306,
-     "edge": 0.2208
-    },
-    {
-     "ticker": "KXBTCD-26NOV0105-T78299.99",
-     "side": "YES",
-     "ask": 0.08,
-     "fair": 0.3013,
-     "edge": 0.2161
-    }
-   ],
-   "shadow_opened": 1,
+   "shadow": [],
+   "shadow_opened": 0,
    "diag": {
-    "markets_priced": 488,
+    "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.00490071683085528,
-     "ETH-USD": 0.006029337144453642
+     "BTC-USD": 0.0049149964587193295,
+     "ETH-USD": 0.0060447803630484945
     },
-    "best": [
-     [
-      -0.54,
-      "KXETHD-26NOV0105-T2469.99"
-     ],
-     [
-      -0.54,
-      "KXETHD-26NOV0105-T2474.99"
-     ],
-     [
-      -0.53,
-      "KXETHD-26NOV0105-T2464.99"
-     ],
-     [
-      -0.51,
-      "KXETHD-26NOV0105-T2459.99"
-     ],
-     [
-      -0.45,
-      "KXETHD-26NOV0105-T2414.99"
-     ],
-     [
-      -0.45,
-      "KXETHD-26NOV0105-T2419.99"
-     ]
-    ]
+    "best": []
    }
   }
  },
@@ -187,12 +134,12 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 14,
-  "settled": 3
+  "marked": 16,
+  "settled": 0
  },
  "shadow_update": {
-  "marked": 6,
-  "settled": 0
+  "marked": 7,
+  "settled": 3
  },
  "live_sharp": {
   "enabled": false,
@@ -218,8 +165,8 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 1739,
-   "open": 16,
+   "picks": 1740,
+   "open": 17,
    "won": 974,
    "lost": 749,
    "pl": -689.6199999999989,
@@ -286,15 +233,15 @@
   {
    "strategy": "crypto",
    "picks": 168,
-   "open": 4,
+   "open": 1,
    "won": 15,
-   "lost": 149,
-   "pl": -619.4199999999998,
-   "risked": 1727.4199999999978,
-   "clv_sum": -246.5,
-   "clv_n": 164,
-   "roi": -0.3585810051985045,
-   "clv": -1.5030487804878048
+   "lost": 152,
+   "pl": -651.1799999999998,
+   "risked": 1759.1799999999976,
+   "clv_sum": -260.0,
+   "clv_n": 167,
+   "roi": -0.3701610977841953,
+   "clv": -1.5568862275449102
   },
   {
    "strategy": "weather",
