@@ -77,3 +77,14 @@ def test_more_stats():
     nhl = {"forwards": {"G": "1", "A": "2", "S": "4"}}
     assert pb.stat_value("Goals", nhl) == 1 and pb.stat_value("Points", nhl) == 3
     assert pb.stat_value("Shots On Goal", nhl) == 4
+
+
+def test_fast_steam_since_last_read(tmp_path):
+    """Hunter-style: a 4%+ jump since the previous read, on a prop that's been up for hours."""
+    sp = dict(special="Ajay Mitchell Total Pts+Rebs+Asts", units="Pts+Rebs+Asts")
+    pb.update(payload(25.5, 1.91, 1.91, **sp), T0, tmp_path)
+    pb.update(payload(25.5, 1.91, 1.91, **sp), T0 + timedelta(hours=2), tmp_path)
+    out = pb.update(payload(25.5, 1.72, 2.12, **sp), T0 + timedelta(hours=2, minutes=30), tmp_path)
+    assert out["new_plays"] == 1
+    r = pb.load(tmp_path)[0]
+    assert r["side"] == "over" and r["move"].startswith("⚡") and "in 30m" in r["move"]

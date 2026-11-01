@@ -31,7 +31,7 @@ st.title("Odds Fam")
 st.caption("Sharp plays from free data: Pinnacle line moves on props and game lines, plus spots where Kalshi "
            "or Polymarket is already cheaper than fair. Every play has a **worst price**: bet it there or better, pass on anything lower.")
 
-BOOKS = ["Sleeper", "Betr", "Rebet", "Fliff", "DraftKings", "PrizePicks", "Underdog", "Kalshi", "Polymarket", "Novig",
+BOOKS = ["Courtside", "Betr", "Rebet", "Onyx", "Sleeper", "Fliff", "DraftKings", "PrizePicks", "Underdog", "Kalshi", "Polymarket", "Novig",
          "ProphetX", "Bovado", "Other"]
 ICON = {"Pick'em gap": "🔥", "Prop steam": "🎯", "Line steam": "📈", "Price gap": "💲"}
 now = datetime.now(timezone.utc)
@@ -53,7 +53,7 @@ def my_bets(_tok: bool):
     return of.load_bets()
 
 
-tab_today, tab_mine, tab_games, tab_record = st.tabs(["Today", "My bets", "Game Board", "Record"])
+tab_today, tab_board, tab_mine, tab_record = st.tabs(["Today", "Board", "My bets", "Record"])
 
 with tab_today:
     live = [p for p in plays if p["status"] == "open" and (parse_dt(p["game_start"]) or now) > now]
@@ -158,32 +158,85 @@ with tab_mine:
     c2.metric("Profit", f"${s['pl']:+,.2f}")
     c3.metric("ROI", "—" if s["roi"] is None else f"{s['roi'] * 100:+.1f}%")
     st.caption(f"Open: ${s['open_stake']:,.2f} riding. Results come in after each game.")
+    clvs = of.load_clv()
+    st.markdown("**Beating the close?** CLV = your price vs the fair price right before the game. "
+                "Hunter-style plays should beat it most of the time; over 50+ bets that's the real test.")
+    for by, label in (("source", "From"), ("book", "Book")):
+        rep = of.clv_report(bets, results, clvs, by=by)
+        if rep:
+            st.dataframe([{label: r[by], "Bets": r["bets"], "W-L": f"{r['won']}-{r['lost']}",
+                           "P/L": f"${r['pl']:+,.2f}", "ROI": "—" if r["roi"] is None else f"{r['roi'] * 100:+.1f}%",
+                           "Avg CLV": "—" if r["clv_avg"] is None else f"{r['clv_avg'] * 100:+.1f}%",
+                           "Beat close": "—" if r["beat_close"] is None else f"{r['beat_close'] * 100:.0f}% of {r['clv_n']}"}
+                          for r in rep], hide_index=True, width="stretch")
     if bets:
         st.dataframe([{"Logged": (b.get("logged_at") or "")[:10], "Bet": b["pick"],
                        "Line": b.get("line_taken") or "", "Book": b["book"], "Odds": b["odds"],
                        "Stake": f"${float(b['stake']):,.2f}",
+                       "From": b.get("source") or "Odds Fam",
+                       "CLV": "" if b["bet_id"] not in clvs else f"{clvs[b['bet_id']]['clv'] * 100:+.1f}%",
                        "Result": (results.get(b["bet_id"]) or {}).get("status", "open"),
                        "P/L": (results.get(b["bet_id"]) or {}).get("pl", "")}
                       for b in reversed(bets)], hide_index=True, width="stretch")
     else:
         st.write("Nothing logged yet. Tap **I placed it** on a play after you bet it.")
 
-with tab_games:
-    gb = of.load_game_board()
-    rows = [r for r in gb.get("rows") or [] if (parse_dt(r["starts"]) or now) > now]
-    if not rows:
+with tab_board:
+    tb = of.load_board()
+    brows = [r for r in tb.get("rows") or [] if (parse_dt(r["starts"]) or now) > now]
+    st.caption(f"Shop **{of.SHOP}**. Take any price at or better than **Bet at**. "
+               "**Arb at**: at that price or better, buying the other side on the exchange locks a profit. "
+               + (f"Updated {when(tb['at'])}." if tb.get("at") else ""))
+    if not brows:
         st.write("Fills in on the next Pinnacle pull.")
     else:
-        q = st.text_input("Search team", placeholder="e.g. Pacers")
-        lg = st.selectbox("League", ["All"] + sorted({r["league"] for r in rows}))
-        shown = [r for r in rows if (not q or q.lower() in (r["game"] + r["pick"]).lower())
-                 and lg in ("All", r["league"])]
-        shown.sort(key=lambda r: (r["starts"], r["game"], r["market"]))
-        st.caption("If your book's price is at or above the **Worst price**, it's +EV (2%+). Anything lower, pass.")
-        st.dataframe([{"Bet": r["pick"], "Game": r["game"], "Fair": r["fair_odds"], "Worst price": r["bet_at"],
-                       "Kalshi/Poly best": r["best_found"],
-                       "EV there": "" if r["ev"] is None else f"{r['ev'] * 100:+.1f}%", "Starts": when(r["starts"])}
+        c1, c2 = st.columns(2)
+        q = c1.text_input("Search player or team", placeholder="e.g. Markkanen")
+        kind = c2.selectbox("Show", ["Props", "Game lines", "All"])
+        lg = st.selectbox("League", ["All"] + sorted({r["league"] for r in brows}))
+        moved_only = st.toggle("Only lines that moved (stale-line hunting)", value=False)
+        shown = [r for r in brows
+                 if (not q or q.lower() in (r["game"] + r["pick"]).lower()) and lg in ("All", r["league"])
+                 and (kind == "All" or (kind == "Props") == (r["kind"] == "prop"))
+                 and (not moved_only or r.get("moved"))]
+        st.dataframe([{"Bet": r["pick"], "Bet at": r["bet_at"], "Fair": r["fair_odds"], "Arb at": r["arb_at"],
+                       "Moved": r["moved"], "P limit": f"${r['limit']:,}" if r.get("limit") else "",
+                       "Exchanges": r["best_found"] or r["exch"], "Starts": when(r["starts"]), "Game": r["game"]}
                       for r in shown[:400]], hide_index=True, width="stretch")
+
+        st.markdown("**I bet one of these**")
+        opts = {f"{r['pick']} · {when(r['starts'])}": r for r in shown[:300]}
+        if opts:
+            pick_lbl = st.selectbox("Bet", list(opts), label_visibility="collapsed")
+            row = opts[pick_lbl]
+            seen = st.text_input("Price at your book", key="board_price", placeholder="e.g. -112")
+            if seen.strip():
+                chk = of.price_check(seen, row["bet_at_decimal"], row["fair_prob"])
+                if chk is None:
+                    st.caption("Enter odds like -110 or +135.")
+                elif chk["ok"]:
+                    st.success(chk["msg"], icon="✅")
+                else:
+                    st.error(chk["msg"], icon="🚫")
+            with st.form("board_log", clear_on_submit=True):
+                src = st.radio("From", of.SOURCES, horizontal=True)
+                c1, c2 = st.columns(2)
+                book = c1.selectbox("Book", BOOKS)
+                odds = c2.text_input("Odds you got", value=seen.strip())
+                c3, c4 = st.columns(2)
+                stake = c3.number_input("Amount ($)", min_value=1.0, value=10.0, step=5.0)
+                lt = c4.text_input("Line you got", value=f"{row['line']:g}" if row.get("line") not in ("", None) else "",
+                                   help="Change it if you got a different number")
+                go = st.form_submit_button("Log it", type="primary", use_container_width=True)
+            if go:
+                try:
+                    bet = of.bet_from_board(row, source=src, book=book, odds=odds or seen, stake=stake, line_taken=lt)
+                    odds_fam_log.append(bet)
+                    st.success(f"Logged ${stake:,.0f} on {bet['pick']} at {bet['odds']} ({book}). "
+                               "It grades itself and gets a CLV score once the game starts.")
+                    st.cache_data.clear()
+                except Exception as exc:
+                    st.error(str(exc))
 
 with tab_record:
     st.caption("Paper record: 1 unit ($10) on every play at the bet-at price (or the price we found). "

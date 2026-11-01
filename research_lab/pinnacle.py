@@ -18,6 +18,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -108,6 +109,28 @@ class PinnWire:
         raise PinnacleError("PinnWire rate limited")
 
 
+# Busy windows (ET hours, by weekday Mon=0): soft books lag Pinnacle most while games are being bet,
+# so football and basketball refresh on every run then (Nov 1, 2026: Odds Fam v2). Off-window they
+# keep the normal schedule above. Outside busy windows, other fetches stop at 75% of the budget so
+# the evening slate always has requests left.
+BUSY_EVERY = timedelta(minutes=14)
+BUSY = {
+    5: {3: (18, 23), 5: (10, 23), 6: (11, 23), 0: (18, 23)},          # football: Thu/Sat/Sun/Mon
+    3: {d: (16, 23) for d in range(7)},                               # basketball: every evening
+}
+OFF_WINDOW_SHARE = 0.75
+
+
+def busy(sid: int, now: datetime) -> bool:
+    et = now.astimezone(ZoneInfo("America/New_York"))
+    w = BUSY.get(sid, {}).get(et.weekday())
+    return bool(w) and w[0] <= et.hour < w[1]
+
+
+def refresh_every(sid: int, now: datetime) -> timedelta:
+    return BUSY_EVERY if busy(sid, now) else timedelta(minutes=SPORTS[sid][3])
+
+
 def fetch_due(client, now: datetime, base: Path | None = None) -> tuple[dict[int, dict], dict]:
     """Fetch the sports whose refresh time has come (at most MAX_FETCHES_PER_RUN), within the daily budget."""
     u = load_usage(now, base)
@@ -116,14 +139,19 @@ def fetch_due(client, now: datetime, base: Path | None = None) -> tuple[dict[int
     if not getattr(client, "key", "x"):
         info["errors"].append("PINNWIRE_KEY is not set")
         return out, info
-    for sid, spec in SPORTS.items():
-        name, every = spec[0], timedelta(minutes=spec[3])
+    order = sorted(SPORTS, key=lambda s: not busy(s, now))      # busy sports first
+    for sid in order:
+        spec = SPORTS[sid]
+        name, every = spec[0], refresh_every(sid, now)
         last = parse_dt(u["last_fetch"].get(str(sid)))
         if last is not None and now - last < every:
             info["skipped"].append(f"{name}: next in {int((every - (now - last)).total_seconds() // 60)} min")
             continue
         if u["requests"] >= DAILY_BUDGET:
             info["skipped"].append(f"{name}: daily budget used")
+            continue
+        if not busy(sid, now) and any(BUSY.values()) and u["requests"] >= DAILY_BUDGET * OFF_WINDOW_SHARE:
+            info["skipped"].append(f"{name}: saving budget for game windows")
             continue
         if len(info["fetched"]) + len(info["errors"]) >= MAX_FETCHES_PER_RUN:
             info["skipped"].append(f"{name}: next round")

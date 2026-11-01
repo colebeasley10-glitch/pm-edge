@@ -43,7 +43,13 @@ KIND_RANK = {"Pick'em gap": 4, "Prop steam": 3, "Line steam": 2, "Price gap": 1}
 FIELDS = ["of_id", "sent_at", "kind", "league", "game", "pick", "market", "line", "why", "fair_prob", "fair_odds",
           "bet_at", "bet_at_decimal", "best_found", "best_decimal", "game_start", "source_id", "settle_ticker",
           "settle_side", "pushed", "clv", "status", "pl", "settled_at", "player", "stat", "side", "actual"]
-BET_FIELDS = ["bet_id", "logged_at", "of_id", "pick", "book", "odds", "decimal", "stake", "line_taken"]
+BET_FIELDS = ["bet_id", "logged_at", "of_id", "pick", "book", "odds", "decimal", "stake", "line_taken",
+              # Nov 1, 2026 (v2): bets logged straight from the Target Price Board, any source
+              "source", "board_id", "close_key", "fair_prob", "kind", "league", "game", "game_start", "market",
+              "line", "player", "stat", "side", "settle_ticker", "settle_side"]
+SOURCES = ["Odds Fam", "Hunter", "Me"]
+SHOP = "Courtside, Betr, Rebet, Onyx"      # the slow books Hunter's plays come from
+CLOSE_TTL = timedelta(days=4)
 
 
 def _dir(base: Path | None) -> Path:
@@ -223,7 +229,7 @@ def alert_text(play: dict) -> tuple[str, str]:
     if play.get("best_found"):
         lines.append(f"Best we found: {play['best_found']}")
     else:
-        lines.append("Shop it: Betr, Rebet, Fliff, DraftKings...")
+        lines.append(f"Shop it: {SHOP}")
     lines.append("Size: 1u · log it in Odds Fam once placed")
     return f"{icon} Odds Fam: {play['pick']}", "\n".join(lines)
 
@@ -441,3 +447,276 @@ def my_summary(bets: list[dict], results: dict) -> dict:
     return {"won": won, "lost": lost, "pl": round(pl, 2), "roi": pl / risked if risked else None,
             "open": len(bets) - won - lost - sum(1 for b in bets if (results.get(b.get("bet_id") or "") or {}).get("status") == "void"),
             "open_stake": round(open_stake, 2)}
+
+
+# ================================================================== v2: Target Price Board (Nov 1, 2026)
+# Hunter's edge is a slow book (Courtside, Betr, Rebet, Onyx) still showing a price that Pinnacle
+# and the exchanges have moved past. We can't read those books for free, so the board gives the
+# number to beat: fair price, "bet at or better", and, for game lines, what Kalshi/Polymarket's
+# other side says (and the price where it becomes a straight arb). Every bet he logs from here is
+# graded and scored by CLV: his price vs the fair price right before the game.
+def pair_key(key: str) -> str:
+    return key.rsplit(":", 1)[0]
+
+
+def exchange_check(pick, opp) -> dict:
+    """What the exchanges say about this side. Offer decimals are after fees, so this is conservative.
+
+    floor: this side's win chance is at least 1 - (cost of the other side on an exchange);
+    arb_at: a soft-book price at or above this locks a profit if you buy the other side there.
+    """
+    mine = best_offer(pick)
+    other = best_offer(opp) if opp is not None else None
+    floor = (1 - 1 / other.decimal) if other else None
+    mid = ((1 / mine.decimal + floor) / 2) if (mine and floor) else None
+    return {"floor": floor, "mid": mid, "venue": other.venue if other else "",
+            "arb_at": (1 / floor) if floor and floor > 0.05 else None}
+
+
+def blended(pin: float, mid: float | None) -> float:
+    """Pinnacle counts twice, the exchange midpoint once (only when both exchange sides are quoted)."""
+    if mid is None or not (0.02 < mid < 0.98) or abs(mid - pin) > 0.08:   # big gaps = bad match, trust Pinnacle
+        return pin
+    return (2 * pin + mid) / 3
+
+
+def _game_rows(picks, now: datetime) -> list[dict]:
+    by_pair: dict[str, list] = {}
+    for p in picks or []:
+        by_pair.setdefault(pair_key(p.key), []).append(p)
+    out = []
+    for p in picks or []:
+        if not p.starts or p.starts <= now or not p.fair:
+            continue
+        opp = next((q for q in by_pair.get(pair_key(p.key), []) if q is not p), None)
+        x = exchange_check(p, opp)
+        fair = blended(p.fair, x["mid"])
+        o = best_offer(p)
+        out.append({"id": f"game:{p.key}", "kind": "game", "league": p.league, "game": p.game,
+                    "starts": iso(p.starts), "pick": p.label, "market": p.market, "line": "",
+                    "fair_prob": round(fair, 4), "fair_odds": american(1 / fair),
+                    "bet_at": american(1.02 / fair), "bet_at_decimal": round(1.02 / fair, 4),
+                    "arb_at": american(x["arb_at"]) if x["arb_at"] else "",
+                    "exch": f"{x['venue']} other side → this side ≥ {american(1 / x['floor'])}" if x["floor"] else "",
+                    "best_found": f"{o.venue} {american(o.decimal)}" if o else "",
+                    "limit": "", "moved": "", "close_key": f"game:{p.key}",
+                    "settle_ticker": p.settle_ticker, "settle_side": p.settle_side})
+    return out
+
+
+def _prop_rows(prop_board_rows, now: datetime) -> list[dict]:
+    out = []
+    for r in prop_board_rows or []:
+        start = parse_dt(r.get("starts"))
+        if not start or start <= now:
+            continue
+        line, po = float(r["line"]), float(r["p_over"])
+        moved = ""
+        if float(r.get("open_line", line)) != line:
+            moved = f"{float(r['open_line']):g} → {line:g}"
+        elif abs(po - float(r.get("open_p_over", po))) >= 0.02:
+            d = po - float(r["open_p_over"])
+            moved = f"{'Over' if d > 0 else 'Under'} +{abs(d) * 100:.0f}%"
+        for side, prob in (("over", po), ("under", 1 - po)):
+            out.append({"id": f"prop:{r['key']}:{line:g}:{side}", "kind": "prop", "league": r["league"],
+                        "game": r["game"], "starts": r["starts"],
+                        "pick": f"{r['player']} {side.title()} {line:g} {r['stat']}", "market": "prop",
+                        "line": line, "player": r["player"], "stat": r["stat"], "side": side,
+                        "fair_prob": round(prob, 4), "fair_odds": american(1 / prob),
+                        "bet_at": american(1.02 / prob), "bet_at_decimal": round(1.02 / prob, 4),
+                        "arb_at": "", "exch": "", "best_found": "", "limit": int(r.get("limit") or 0),
+                        "moved": moved, "close_key": f"prop:{r['key']}:{line:g}:{side}",
+                        "settle_ticker": "", "settle_side": ""})
+    return out
+
+
+def target_board(prop_board_rows, picks, now: datetime) -> list[dict]:
+    rows = _prop_rows(prop_board_rows, now) + _game_rows(picks, now)
+    rows.sort(key=lambda r: (r["starts"], r["game"], r["kind"] != "prop", r["pick"]))
+    return rows
+
+
+BOARD_KEYS = ("id", "kind", "league", "game", "starts", "pick", "market", "line", "player", "stat", "side",
+              "fair_prob", "fair_odds", "bet_at", "bet_at_decimal", "arb_at", "exch", "best_found", "limit",
+              "moved", "close_key", "settle_ticker", "settle_side")
+
+
+def load_board(base: Path | None = None) -> dict:
+    p = _dir(base) / "board.json"
+    try:
+        data = json.loads(p.read_text()) if p.exists() else {}
+    except ValueError:
+        return {}
+    rows = []
+    for r in data.get("rows") or []:
+        full = {k: r.get(k, "") for k in BOARD_KEYS}
+        full["close_key"] = r.get("close_key") or r.get("id", "")
+        full["fair_odds"] = r.get("fair_odds") or (american(1 / float(r["fair_prob"])) if r.get("fair_prob") else "")
+        rows.append(full)
+    return {**data, "rows": rows}
+
+
+def load_closes(base: Path | None = None) -> dict:
+    p = _dir(base) / "closes.json"
+    try:
+        return json.loads(p.read_text()) if p.exists() else {}
+    except ValueError:
+        return {}
+
+
+def record_closes(rows: list[dict], now: datetime, base: Path | None = None) -> int:
+    """Keep the latest pre-game fair price for every board row: the closing line for CLV."""
+    closes = load_closes(base)
+    for r in rows:
+        start = parse_dt(r["starts"])
+        if start and start > now:
+            closes[r["close_key"]] = {"p": r["fair_prob"], "at": iso(now), "starts": r["starts"]}
+    closes = {k: v for k, v in closes.items() if now - (parse_dt(v.get("starts")) or now) <= CLOSE_TTL}
+    _atomic_write_text(_dir(base) / "closes.json", json.dumps(closes, separators=(",", ":")))
+    return len(closes)
+
+
+def update_board(now: datetime, base: Path | None = None, *, prop_board_rows=(), picks=()) -> dict:
+    rows = target_board(prop_board_rows, picks, now)
+    if rows:
+        slim = [{k: v for k, v in r.items() if v not in ("", None) and k not in {"close_key", "fair_odds"}}
+                for r in rows]                                  # restored by load_board (keeps the commit small)
+        _atomic_write_text(_dir(base) / "board.json", json.dumps({"at": iso(now), "rows": slim}, separators=(",", ":")))
+        record_closes(rows, now, base)
+    return {"rows": len(rows), "props": sum(r["kind"] == "prop" for r in rows),
+            "arbs_possible": sum(bool(r["arb_at"]) for r in rows)}
+
+
+def bet_from_board(row: dict, *, source: str, book: str, odds: str, stake: float, line_taken: str = "") -> dict:
+    dec = american_to_decimal(odds)
+    if dec is None:
+        raise ValueError("Enter odds like -110 or +135.")
+    if source not in SOURCES:
+        raise ValueError(f"Source must be one of {SOURCES}")
+    lt = str(line_taken or "").strip()
+    return {"of_id": "", "pick": row["pick"], "book": book, "odds": str(odds).strip().replace("−", "-"),
+            "decimal": round(dec, 4), "stake": round(float(stake), 2), "line_taken": lt,
+            "source": source, "board_id": row["id"],
+            "close_key": row["close_key"] if (not lt or row.get("line") in ("", None) or float(lt) == float(row["line"])) else "",
+            "fair_prob": row["fair_prob"], "kind": row["kind"], "league": row["league"], "game": row["game"],
+            "game_start": row["starts"], "market": row["market"], "line": row.get("line", ""),
+            "player": row.get("player", ""), "stat": row.get("stat", ""), "side": row.get("side", ""),
+            "settle_ticker": row.get("settle_ticker", ""), "settle_side": row.get("settle_side", "")}
+
+
+def _play_close_key(play: dict) -> str:
+    sid = play.get("source_id") or ""
+    if sid.startswith("gap:"):
+        return f"game:{sid[4:]}"
+    if play.get("kind") == "Prop steam" and play.get("line") not in ("", None):
+        side = "over" if " Over " in f" {play['pick']} " else "under"
+        return f"prop:{sid.split(':', 1)[-1]}:{float(play['line']):g}:{side}"
+    return ""
+
+
+def bet_clv(bet: dict, closes: dict, now: datetime, plays: dict | None = None) -> dict | None:
+    """CLV = what his price was worth at the close: close fair prob x his decimal odds - 1."""
+    key = bet.get("close_key") or ""
+    start = parse_dt(bet.get("game_start"))
+    if not key and plays is not None:
+        play = plays.get(bet.get("of_id") or "")
+        if play and (not bet.get("line_taken") or play.get("line") in ("", None)
+                     or float(bet["line_taken"]) == float(play["line"])):
+            key, start = _play_close_key(play), parse_dt(play.get("game_start"))
+    c = closes.get(key) if key else None
+    if not c or not start or start > now:
+        return None
+    try:
+        return {"close_p": c["p"], "clv": round(float(c["p"]) * float(bet["decimal"]) - 1, 4)}
+    except (TypeError, ValueError, KeyError):
+        return None
+
+
+def load_clv(base: Path | None = None) -> dict:
+    p = _dir(base) / "my_clv.json"
+    try:
+        return json.loads(p.read_text()) if p.exists() else {}
+    except ValueError:
+        return {}
+
+
+def score_clv(now: datetime, base: Path | None = None) -> int:
+    bets, closes, have = load_bets(base), load_closes(base), load_clv(base)
+    plays = {r["of_id"]: r for r in load(base)}
+    n = 0
+    for b in bets:
+        bid = b.get("bet_id")
+        if not bid or bid in have:
+            continue
+        c = bet_clv(b, closes, now, plays)
+        if c:
+            have[bid] = c
+            n += 1
+    if n:
+        _atomic_write_text(_dir(base) / "my_clv.json", json.dumps(have, indent=1, sort_keys=True))
+    return n
+
+
+def settle_board_bets(now: datetime, base: Path | None = None, *, markets=None, box=None) -> int:
+    """Grade bets logged from the board (no Odds Fam play behind them)."""
+    bets, results = load_bets(base), load_results(base)
+    n = 0
+    for b in bets:
+        bid = b.get("bet_id")
+        if not bid or bid in results or b.get("of_id") or not b.get("board_id"):
+            continue
+        start = parse_dt(b.get("game_start"))
+        if not start or now - start < timedelta(hours=4):
+            continue
+        res = None
+        if b.get("kind") == "prop" and box is not None:
+            line = float(b.get("line_taken") or b["line"])
+            try:
+                actual = box({"league": b["league"], "game": b["game"], "game_start": b["game_start"],
+                              "player": b["player"], "stat": b["stat"]})
+            except Exception:
+                actual = None
+            if actual is not None:
+                res = "void" if actual == line else ("won" if (actual > line) == (b["side"] == "over") else "lost")
+        elif b.get("kind") == "game" and not b.get("line_taken"):
+            out = _leg((markets or {}).get(b.get("settle_ticker") or ""))
+            if out is not None:
+                res = "void" if out == "void" else ("won" if (out == "yes") == (b.get("settle_side") == "YES") else "lost")
+        if res is None:
+            if now - start > timedelta(days=3):
+                results[bid] = {"status": "ungraded", "pl": 0.0, "settled_at": iso(now)}
+                n += 1
+            continue
+        stake, dec = float(b.get("stake") or 0), float(b.get("decimal") or 0)
+        pl = round(stake * (dec - 1), 2) if res == "won" else (-stake if res == "lost" else 0.0)
+        results[bid] = {"status": res, "pl": pl, "settled_at": iso(now)}
+        n += 1
+    if n:
+        _atomic_write_text(_dir(base) / "my_results.json", json.dumps(results, indent=1, sort_keys=True))
+    return n
+
+
+def bet_tickers(base: Path | None = None) -> list[str]:
+    results = load_results(base)
+    return [b["settle_ticker"] for b in load_bets(base)
+            if b.get("settle_ticker") and b.get("bet_id") not in results]
+
+
+def clv_report(bets: list[dict], results: dict, clvs: dict, by: str = "source") -> list[dict]:
+    """One row per source (or book): bets, record, P/L, ROI, average CLV, % that beat the close."""
+    groups: dict[str, list] = {}
+    for b in bets:
+        groups.setdefault(b.get(by) or ("Odds Fam" if by == "source" else "Other"), []).append(b)
+    out = []
+    for name, bs in sorted(groups.items(), key=lambda kv: -len(kv[1])):
+        res = [results.get(b.get("bet_id") or "") or {} for b in bs]
+        done = [(b, r) for b, r in zip(bs, res) if r.get("status") in {"won", "lost"}]
+        pl = sum(float(r["pl"]) for _, r in done)
+        risked = sum(float(b.get("stake") or 0) for b, _ in done)
+        cs = [clvs[b["bet_id"]]["clv"] for b in bs if b.get("bet_id") in clvs]
+        out.append({by: name, "bets": len(bs), "won": sum(r["status"] == "won" for _, r in done),
+                    "lost": sum(r["status"] == "lost" for _, r in done), "pl": round(pl, 2),
+                    "roi": pl / risked if risked else None, "clv_n": len(cs),
+                    "clv_avg": sum(cs) / len(cs) if cs else None,
+                    "beat_close": sum(c > 0 for c in cs) / len(cs) if cs else None})
+    return out

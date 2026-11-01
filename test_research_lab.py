@@ -515,6 +515,8 @@ def test_pinnacle_total_and_bad_margin():
 
 
 def test_pinnacle_fetch_respects_budget_and_refetch_gap(tmp_path):
+    NOW = datetime(2026, 10, 21, 14, 0, tzinfo=timezone.utc)    # Wednesday 10am ET: no busy window
+
     class Fake:
         key, calls = "k", 0
 
@@ -876,3 +878,25 @@ def test_bet_log_appends_through_github_api():
         assert [r["label"] for r in rows] == ["A", "B"] and all(r["bet_id"] for r in rows)
     finally:
         os.environ.pop("GITHUB_TOKEN", None)
+
+
+def test_pinnacle_busy_windows_refresh_every_run(tmp_path):
+    sat = datetime(2026, 10, 17, 18, 0, tzinfo=timezone.utc)    # Saturday 2pm ET: college football window
+    assert pinnacle.busy(5, sat) and not pinnacle.busy(3, sat)
+    assert pinnacle.busy(3, datetime(2026, 10, 21, 23, 30, tzinfo=timezone.utc))   # 7:30pm ET NBA
+    assert not pinnacle.busy(5, datetime(2026, 10, 21, 18, 0, tzinfo=timezone.utc))  # Wednesday
+
+    class Fake:
+        key = "k"
+
+        def fixtures(self, sid):
+            return PIN_PAYLOAD
+    out, _ = pinnacle.fetch_due(Fake(), sat, tmp_path)
+    assert 5 in out
+    out, _ = pinnacle.fetch_due(Fake(), sat + timedelta(minutes=15), tmp_path)
+    assert 5 in out                                              # every run in the window
+    u = pinnacle.load_usage(sat, tmp_path)
+    u["requests"] = int(pinnacle.DAILY_BUDGET * 0.8)
+    pinnacle.save_usage(u, tmp_path)
+    out, info = pinnacle.fetch_due(Fake(), sat + timedelta(hours=6), tmp_path)
+    assert set(out) == {5, 3} and any("game windows" in x for x in info["skipped"])   # 8pm: NBA busy too

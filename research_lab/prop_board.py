@@ -34,6 +34,10 @@ MIN_HISTORY = timedelta(hours=2)
 WINDOW = timedelta(hours=12)
 MAX_AHEAD = timedelta(hours=36)
 PROB_MOVE = 0.06
+# Fast steam (Nov 1, 2026): a big move since the LAST read (one run ago), like Hunter's
+# "P 4.7% · 14m" cards. That's the window when Courtside/Betr/Rebet/Onyx still show the old price.
+FAST_PROB_MOVE = 0.04
+FAST_WINDOW = timedelta(minutes=95)
 MIN_LIMIT = 100                # ignore props Pinnacle barely takes action on
 LEAGUES = {"NBA": "basketball/nba", "NFL": "football/nfl", "NCAA": "football/college-football",
            "NHL": "hockey/nhl"}
@@ -133,13 +137,34 @@ def steam(first: dict, now: dict) -> dict | None:
     return None
 
 
+def fast_steam(prev: dict, now: dict, gap: timedelta) -> dict | None:
+    """A big move since the last read. Same sides as steam(), lower bar, with the minutes shown."""
+    mins = max(1, int(gap.total_seconds() // 60))
+    move = now["line"] - prev["line"]
+    need = 3.0 if big_stat(now["stat"]) else 1.0
+    if abs(move) >= need:
+        return {"side": "over" if move > 0 else "under", "fast": True,
+                "why": f"line {prev['line']:g} → {now['line']:g} in {mins}m"}
+    if move == 0:
+        dp = now["p_over"] - prev["p_over"]
+        if abs(dp) >= FAST_PROB_MOVE:
+            side = "over" if dp > 0 else "under"
+            p0 = prev["p_over"] if side == "over" else 1 - prev["p_over"]
+            p1 = now["p_over"] if side == "over" else 1 - now["p_over"]
+            return {"side": side, "fast": True,
+                    "why": f"{side.title()} {now['line']:g} {american(1 / p0)} → {american(1 / p1)} "
+                           f"({abs(dp) * 100:.1f}% in {mins}m)"}
+    return None
+
+
 def make_play(p: dict, first: dict, st: dict, now: datetime) -> dict:
     side = st["side"]
     prob = p["p_over"] if side == "over" else 1 - p["p_over"]
     target = (1 + EDGE_CUSHION) / prob
     return {"play_id": f"{p['key']}", "alert_time": iso(now), "league": p["league"], "game": p["game"],
             "player": p["player"], "stat": p["stat"], "pick": f"{p['player']} {side.title()} {p['line']:g} {p['stat']}",
-            "side": side, "line": p["line"], "open_line": first["line"], "move": f"Pinnacle {st['why']}",
+            "side": side, "line": p["line"], "open_line": first["line"],
+            "move": f"{'⚡ ' if st.get('fast') else ''}Pinnacle {st['why']}",
             "limit": p["limit"], "fair_prob": round(prob, 4), "fair_odds": american(1 / prob),
             "target_odds": american(target), "target_decimal": round(target, 4), "game_start": p["starts"],
             "pushed": False, "close_prob": "", "clv": "", "actual": "", "status": "open", "settled_time": "", "pl": ""}
@@ -210,6 +235,8 @@ def update(payloads: dict, now: datetime, base: Path | None = None, *, push=None
             h["snaps"] = [x for x in h["snaps"] if now - (parse_dt(x["at"]) or now) <= WINDOW]
             first = h["snaps"][0]["p"] if h["snaps"] else None
             first_at = parse_dt(h["snaps"][0]["at"]) if h["snaps"] else None
+            prev = h["snaps"][-1]["p"] if h["snaps"] else None
+            prev_at = parse_dt(h["snaps"][-1]["at"]) if h["snaps"] else None
             h["snaps"].append({"at": iso(now), "p": {k: p[k] for k in ("line", "p_over", "stat")}})
             keep.append(board_row(p, first))
             r = by_id.get(p["key"])
@@ -217,6 +244,7 @@ def update(payloads: dict, now: datetime, base: Path | None = None, *, push=None
                 prob = p["p_over"] if r["side"] == "over" else 1 - p["p_over"]
                 r["close_prob"], r["clv"] = round(prob, 4), round(prob - float(r["fair_prob"]), 4)
             p["_first"], p["_first_at"] = first, first_at
+            p["_prev"], p["_prev_at"] = prev, prev_at
         _atomic_write_text(_dir(base) / "board.json", json.dumps({"at": iso(now), "rows": keep}, indent=0))
 
         today = now.strftime("%Y-%m-%d")
@@ -224,12 +252,22 @@ def update(payloads: dict, now: datetime, base: Path | None = None, *, push=None
         cands = []
         for p in props:
             first, at = p.pop("_first"), p.pop("_first_at")
-            if (not first or not at or now - at < MIN_HISTORY or p["key"] in by_id or p["limit"] < MIN_LIMIT):
+            prev, prev_at = p.pop("_prev"), p.pop("_prev_at")
+            if p["key"] in by_id or p["limit"] < MIN_LIMIT:
                 continue
-            st = steam({**first, "stat": p["stat"]}, p)
+            st, base_snap, boost = None, None, 1.0
+            settled_in = first and at and now - at >= MIN_HISTORY     # not a brand-new opener finding its level
+            if settled_in and prev and prev_at and now - prev_at <= FAST_WINDOW:
+                st = fast_steam({**prev, "stat": p["stat"]}, p, now - prev_at)
+                base_snap, boost = prev, 1.5
+            if not st and first and at and now - at >= MIN_HISTORY:
+                st = steam({**first, "stat": p["stat"]}, p)
+                base_snap, boost = first, 1.0
             if st:
-                prob_jump = abs(p["p_over"] - first["p_over"]) + abs(p["line"] - first["line"]) / (8 if big_stat(p["stat"]) else 2)
-                cands.append((prob_jump * (1 + min(p["limit"], 2000) / 2000), make_play(p, first, st, now)))
+                prob_jump = (abs(p["p_over"] - base_snap["p_over"])
+                             + abs(p["line"] - base_snap["line"]) / (8 if big_stat(p["stat"]) else 2))
+                cands.append((boost * prob_jump * (1 + min(p["limit"], 2000) / 2000),
+                              make_play(p, first or base_snap, st, now)))
         players_today = {(r["player"], r["game"]) for r in rows if (r.get("alert_time") or "")[:10] == today}
         for _, play in sorted(cands, key=lambda c: -c[0]):
             if sent >= MAX_PER_DAY or (play["player"], play["game"]) in players_today:
@@ -248,7 +286,8 @@ def update(payloads: dict, now: datetime, base: Path | None = None, *, push=None
             info["new_plays"] += 1
     else:
         for p in props:
-            p.pop("_first", None)
+            for k in ("_first", "_first_at", "_prev", "_prev_at"):
+                p.pop(k, None)
     # grade finished props from box scores
     if box is not None:
         for r in rows:

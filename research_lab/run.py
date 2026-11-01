@@ -155,6 +155,7 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
         try:
             from research_lab import odds_fam as _of
             tickers += _of.open_tickers(base)
+            tickers += _of.bet_tickers(base)
         except Exception:
             pass
         try:
@@ -220,6 +221,15 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
                 scores=_OfScores(), pickem=_edges, box=_pbm.BoxScores() if send_report else None)
         except Exception as exc:
             out["odds_fam"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
+        try:   # Odds Fam v2: Target Price Board, closing prices, board-bet grading, CLV of his bets
+            from research_lab import odds_fam as _of2, prop_board as _pb2
+            out["odds_fam_board"] = _of2.update_board(now, base, prop_board_rows=_pb2.load_board(base).get("rows") or [],
+                                                      picks=getattr(ctx, "picks", []) or [])
+            out["odds_fam_board"]["bets_graded"] = _of2.settle_board_bets(
+                now, base, markets=ctx.markets, box=_pb2.BoxScores() if send_report else None)
+            out["odds_fam_board"]["clv_scored"] = _of2.score_clv(now, base)
+        except Exception as exc:
+            out["odds_fam_board"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
         try:   # read-only export for the keyed Maker Bot workflow (no orders here)
             out["maker_candidates"] = maker_candidates.write(base, ctx.picks, ctx.markets, ctx.flows, now,
                                                              ctx.flow_complete)

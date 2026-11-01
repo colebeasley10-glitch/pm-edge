@@ -22,7 +22,7 @@ PATH = "research_lab/data/quick_bets.csv"
 API = f"https://api.github.com/repos/{bet_log.REPO}/contents/{PATH}"
 FIELDS = ["bet_id", "logged_at", "source", "pick", "book", "odds", "decimal", "stake", "status", "pl", "graded_at"]
 SOURCES = ["Hunter", "Odds Fam", "Me"]
-BOOKS = ["Betr", "Rebet", "Fliff", "Bovado", "Novig", "ProphetX", "Kalshi", "Polymarket", "PrizePicks",
+BOOKS = ["Courtside", "Betr", "Rebet", "Onyx", "Fliff", "Bovado", "Novig", "ProphetX", "Kalshi", "Polymarket", "PrizePicks",
          "Underdog", "Sleeper", "Other"]
 
 
