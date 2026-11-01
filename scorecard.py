@@ -1,9 +1,15 @@
-"""Scorecard: every lane graded against one go-live bar (Oct 27, 2026).
+"""Scorecard: every lane graded against one go-live bar (Oct 27, 2026; tightened Nov 1, 2026).
 
 A lane earns real money only when ALL of these hold on its settled bets:
   * at least MIN_BETS settled bets,
-  * ROI above zero,
-  * average CLV at or above zero (beating the closing price on average).
+  * average CLV above zero (beating the closing price on average) -- the main test, because CLV
+    shows real edge in a few hundred bets while profit alone needs well over a thousand,
+  * ROI not clearly negative (no worse than one standard error below zero).
+Nov 1, 2026 tightening:
+  * "reference" lanes (every pick a model logs, including the ones it rates no-edge) never clear
+    the bar: only tiers you would actually bet can,
+  * a real-money lane whose last DEMOTE_WINDOW bets lose to the close on average is flagged to
+    go back to paper.
 A hot week is not a reason to go live or size up; clearing the bar is.
 
 Reads only the ledgers already committed to the repo, so it costs nothing to run.
@@ -17,7 +23,8 @@ import json
 import math
 from pathlib import Path
 
-MIN_BETS = 150
+MIN_BETS = 200
+DEMOTE_WINDOW = 100
 ROOT = Path(__file__).resolve().parent
 
 
@@ -38,12 +45,13 @@ def _rows(rel: str) -> list[dict]:
 
 
 def grade(name: str, rows: list[dict], *, pl: str = "pl", risk=None, clv: str | None = None,
-          money: str = "paper", note: str = "", clv_unit: str = "") -> dict:
+          money: str = "paper", note: str = "", clv_unit: str = "", reference: bool = False) -> dict:
     """rows -> {name, n, won, lost, pl, risk, roi, clv, verdict}. `risk` is a column name or a
     flat stake per bet; unsettled rows (blank P/L) are skipped."""
     n = won = lost = 0
     tot_pl = tot_risk = 0.0
     clvs: list[float] = []
+    rets: list[float] = []
     for r in rows:
         p = _f(r.get(pl))
         if p is None or str(r.get("status", "")).lower() in {"open", "alert", "error", "no_fill", "void",
@@ -55,20 +63,35 @@ def grade(name: str, rows: list[dict], *, pl: str = "pl", risk=None, clv: str | 
         lost += p < 0
         tot_pl += p
         tot_risk += stake or 0.0
+        if stake:
+            rets.append(p / stake)
         if clv and (c := _f(r.get(clv))) is not None:
             clvs.append(c)
     roi = tot_pl / tot_risk if tot_risk else None
     avg_clv = sum(clvs) / len(clvs) if clvs else None
-    checks = {"bets": n >= MIN_BETS, "roi": roi is not None and roi > 0,
-              "clv": None if avg_clv is None else avg_clv >= 0}
+    se = None
+    if len(rets) >= 2:
+        m = sum(rets) / len(rets)
+        se = (sum((x - m) ** 2 for x in rets) / (len(rets) - 1)) ** 0.5 / math.sqrt(len(rets))
+    roi_ok = roi is not None and (roi > 0 or (se is not None and roi > -se))
+    checks = {"bets": n >= MIN_BETS, "roi": roi_ok, "clv": None if avg_clv is None else avg_clv > 0}
+    recent = clvs[-DEMOTE_WINDOW:]
     if n == 0:
         verdict = "No settled bets"
-    elif checks["bets"] and checks["roi"] and checks["clv"] is not False:
-        verdict = "Clears the bar" if checks["clv"] else "Clears bets + ROI (no CLV data)"
-    elif n >= MIN_BETS and not checks["roi"]:
+    elif money == "real" and len(recent) >= DEMOTE_WINDOW and sum(recent) / len(recent) < 0:
+        verdict = f"Demote to paper — losing to the close over its last {DEMOTE_WINDOW} bets"
+    elif n >= MIN_BETS and roi is not None and se is not None and roi < -2 * se:
         verdict = "Proven loser — keep off"
+    elif reference and n >= MIN_BETS:
+        verdict = "Reference only — includes no-edge picks"
+    elif checks["bets"] and checks["roi"] and checks["clv"]:
+        verdict = "Clears the bar"
+    elif checks["bets"] and checks["roi"] and checks["clv"] is None:
+        verdict = "Needs CLV data — bets + ROI are there"
     elif checks["clv"] is False and n >= 50:
         verdict = "Losing to the close — not real yet"
+    elif n >= MIN_BETS:
+        verdict = "Not proven — ROI too far below zero"
     else:
         verdict = f"Too early — {max(0, MIN_BETS - n)} more bets"
     # Nov 1, 2026: units (P/L ÷ average stake) and the share of bets that beat the close, for the board
@@ -81,7 +104,8 @@ def grade(name: str, rows: list[dict], *, pl: str = "pl", risk=None, clv: str | 
             "clv_unit": clv_unit if clvs else "",
             "risk": round(tot_risk, 2), "roi": None if roi is None else round(roi, 4),
             "clv": None if avg_clv is None else round(avg_clv, 4), "checks": checks, "verdict": verdict,
-            "note": note, "rows": rows, "pl_col": pl}
+            "note": note, "rows": rows, "pl_col": pl, "reference": reference,
+            "roi_se": None if se is None else round(se, 4)}
 
 
 RANK_PRIOR = 50   # bets of "no edge" blended in before ranking, so 5 lucky bets can't top the board
@@ -163,20 +187,27 @@ def lanes() -> list[dict]:
     out.append(grade("Sharp Plays (line steam)", _rows("research_lab/data/SHARP_PLAYS/plays.csv"), risk=10.0, clv="clv"))
 
     ncaa = _rows("ncaa_grader/data/picks.csv")   # open picks kept so the bet list shows them; grade() skips unsettled
-    out.append(grade("NCAA Grader — all", ncaa, pl="units", risk=1.0, clv="clv", clv_unit="mixed"))
+    out.append(grade("NCAA Grader — all", ncaa, pl="units", risk=1.0, clv="clv", clv_unit="mixed", reference=True))
     out.append(grade("NCAA Grader — STRONG", [r for r in ncaa if r.get("tier") == "STRONG"], pl="units", risk=1.0,
                      clv="clv", clv_unit="mixed"))
-    out.append(grade("NCAA Grader — ML", [r for r in ncaa if r.get("market") == "ML"], pl="units", risk=1.0, clv="clv"))
+    out.append(grade("NCAA Grader — ML", [r for r in ncaa if r.get("market") == "ML"], pl="units", risk=1.0, clv="clv",
+                     reference=True))
 
     nba = _rows("nba_grader/data/picks.csv")
     out.append(grade("NBA Model — Strong + Lean", [r for r in nba if r.get("tier") in ("STRONG", "LEAN")],
                      pl="units", risk=1.0, clv="clv", clv_unit="mixed"))
-    out.append(grade("NBA Model — all", nba, pl="units", risk=1.0, clv="clv", clv_unit="mixed"))
+    out.append(grade("NBA Model — all", nba, pl="units", risk=1.0, clv="clv", clv_unit="mixed", reference=True))
     nbp = [r for r in _rows("nba_grader/data/props.csv") if r.get("result") != "V"]
     out.append(grade("NBA Props — Strong + Lean", [r for r in nbp if r.get("tier") in ("STRONG", "LEAN")],
                      pl="units", risk=1.0, clv="clv"))
-    out.append(grade("NBA Props — all", nbp, pl="units", risk=1.0, clv="clv"))
+    out.append(grade("NBA Props — all", nbp, pl="units", risk=1.0, clv="clv", reference=True))
 
+    bq = _rows("research_lab/data/BET_QUEUE/queue.csv")   # Nov 1, 2026: the daily short list, paper
+    out.append(grade("Bet Queue", bq, risk=10.0, clv="clv",
+                     note="Top ≤15 plays a day from lanes earning their place; $10 flat, paper"))
+    out.append(grade("Bet Queue — ¼ Kelly on $1k", bq, pl="pl_kelly", risk="stake_kelly", clv="clv"))
+    for lane in sorted({r.get("lane") for r in bq if r.get("lane")}):
+        out.append(grade(f"Bet Queue — {lane}", [r for r in bq if r.get("lane") == lane], risk=10.0, clv="clv"))
     qb = _rows("research_lab/data/quick_bets.csv")
     for src in sorted({r.get("source") for r in qb if r.get("source")}):
         out.append(grade(f"My bets — {src}", [r for r in qb if r.get("source") == src], risk="stake",

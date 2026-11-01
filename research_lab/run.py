@@ -230,6 +230,11 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
             out["odds_fam_board"]["clv_scored"] = _of2.score_clv(now, base)
         except Exception as exc:
             out["odds_fam_board"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
+        try:   # Bet Queue (paper): the top plays a day from lanes earning their place, at most 15
+            from research_lab import bet_queue
+            out["bet_queue"] = bet_queue.update(now, base)
+        except Exception as exc:
+            out["bet_queue"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
         try:   # read-only export for the keyed Maker Bot workflow (no orders here)
             out["maker_candidates"] = maker_candidates.write(base, ctx.picks, ctx.markets, ctx.flows, now,
                                                              ctx.flow_complete)

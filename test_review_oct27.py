@@ -45,12 +45,13 @@ def test_quick_bet_grading():
 
 
 def test_scorecard_bar():
-    win = [{"pl": "1", "cost": "10", "clv": "0.01"}] * 150
+    win = [{"pl": "9", "cost": "10", "clv": "0.01"}, {"pl": "-8", "cost": "10", "clv": "0.01"}] * 100
     assert sc.grade("x", win, clv="clv")["verdict"] == "Clears the bar"
-    lose = [{"pl": "-1", "cost": "10", "clv": "0.01"}] * 150
+    assert sc.grade("x", win, clv="clv", reference=True)["verdict"].startswith("Reference only")
+    lose = [{"pl": "5", "cost": "10", "clv": "0.01"}, {"pl": "-10", "cost": "10", "clv": "0.01"}] * 100
     assert sc.grade("x", lose, clv="clv")["verdict"].startswith("Proven loser")
     few = [{"pl": "1", "cost": "10"}] * 20
-    assert sc.grade("x", few)["verdict"] == "Too early — 130 more bets"
+    assert sc.grade("x", few)["verdict"] == "Too early — 180 more bets"
     open_rows = [{"pl": "", "status": "open"}]
     assert sc.grade("x", open_rows)["n"] == 0
 
@@ -58,3 +59,14 @@ def test_scorecard_bar():
 def test_scorecard_runs_on_repo_ledgers():
     names = [l["name"] for l in sc.lanes()]
     assert "Live Sharp" in names and "Paper Sharp (benchmark)" in names
+
+
+def test_scorecard_nov1_tightening():
+    flat = [{"pl": "9", "cost": "10", "clv": "-0.01"}, {"pl": "-8", "cost": "10", "clv": "-0.01"}] * 100
+    assert sc.grade("x", flat, clv="clv")["verdict"].startswith("Losing to the close")
+    no_clv = [{"pl": "9", "cost": "10"}, {"pl": "-8", "cost": "10"}] * 100
+    assert sc.grade("x", no_clv)["verdict"].startswith("Needs CLV data")
+    slight_loss = [{"pl": "9", "cost": "10", "clv": "0.01"}, {"pl": "-9.2", "cost": "10", "clv": "0.01"}] * 100
+    assert sc.grade("x", slight_loss, clv="clv")["verdict"] == "Clears the bar"     # within 1 SE of zero
+    demote = [{"pl": "9", "cost": "10", "clv": "0.05"}] * 150 + [{"pl": "-8", "cost": "10", "clv": "-0.02"}] * 100
+    assert sc.grade("x", demote, clv="clv", money="real")["verdict"].startswith("Demote to paper")

@@ -231,6 +231,10 @@ def status_chip(l: dict) -> str:
         return chip("Clears bar", "good")
     if l["verdict"].startswith("Proven"):
         return chip("Proven loser", "bad")
+    if l["verdict"].startswith("Demote"):
+        return chip("Demote to paper", "bad")
+    if l["verdict"].startswith("Reference"):
+        return chip("Reference only", "mute")
     if (l["roi"] or 0) > 0:
         return chip("Ahead", "good")
     return chip("Behind", "bad")
