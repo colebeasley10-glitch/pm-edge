@@ -29,7 +29,11 @@ DIR = "PROP_BOARD"
 UNIT = 10.0
 EDGE_CUSHION = 0.02
 MAX_OVERROUND = 1.12           # props carry a little more vig than sides
-MAX_PER_DAY = 10
+# Nov 1, 2026: the day cap was counted in UTC, so ten Saturday-night (8pm ET) alerts used up all of
+# Sunday's and the post-inactives moves at 11:37 ET never went out. Now: Eastern day, a bigger cap,
+# and at most MAX_PER_ROUND per read so one overnight burst of reopened lines can't eat the day.
+MAX_PER_DAY = 15
+MAX_PER_ROUND = 4
 MIN_HISTORY = timedelta(hours=2)
 WINDOW = timedelta(hours=12)
 MAX_AHEAD = timedelta(hours=36)
@@ -38,6 +42,10 @@ PROB_MOVE = 0.06
 # "P 4.7% · 14m" cards. That's the window when Courtside/Betr/Rebet/Onyx still show the old price.
 FAST_PROB_MOVE = 0.04
 FAST_WINDOW = timedelta(minutes=95)
+# Late steam: in the last LATE_WINDOW before kickoff (inactives, final sharp bets) a smaller move
+# counts. Hunter's George Pickens U4.5 play (Nov 1) was a ~5% move in the final 10 minutes.
+LATE_PROB_MOVE = 0.03
+LATE_WINDOW = timedelta(minutes=45)
 MIN_LIMIT = 100                # ignore props Pinnacle barely takes action on
 LEAGUES = {"NBA": "basketball/nba", "NFL": "football/nfl", "NCAA": "football/college-football",
            "NHL": "hockey/nhl"}
@@ -137,8 +145,10 @@ def steam(first: dict, now: dict) -> dict | None:
     return None
 
 
-def fast_steam(prev: dict, now: dict, gap: timedelta) -> dict | None:
-    """A big move since the last read. Same sides as steam(), lower bar, with the minutes shown."""
+def fast_steam(prev: dict, now: dict, gap: timedelta, late: bool = False) -> dict | None:
+    """A big move since the last read. Same sides as steam(), lower bar, with the minutes shown.
+
+    late: kickoff is within LATE_WINDOW, so the price bar drops to LATE_PROB_MOVE."""
     mins = max(1, int(gap.total_seconds() // 60))
     move = now["line"] - prev["line"]
     need = 3.0 if big_stat(now["stat"]) else 1.0
@@ -147,7 +157,7 @@ def fast_steam(prev: dict, now: dict, gap: timedelta) -> dict | None:
                 "why": f"line {prev['line']:g} → {now['line']:g} in {mins}m"}
     if move == 0:
         dp = now["p_over"] - prev["p_over"]
-        if abs(dp) >= FAST_PROB_MOVE:
+        if abs(dp) >= (LATE_PROB_MOVE if late else FAST_PROB_MOVE):
             side = "over" if dp > 0 else "under"
             p0 = prev["p_over"] if side == "over" else 1 - prev["p_over"]
             p1 = now["p_over"] if side == "over" else 1 - now["p_over"]
@@ -182,6 +192,16 @@ def alert_text(play: dict) -> tuple[str, str]:
             f"Why: {play['move']} (sharp money) · P limit ${int(play['limit']):,}\n"
             f"Fair {play['fair_odds']} · worst price {play['target_odds']}: bet at {play['target_odds']} or better, pass on anything lower (Betr, Rebet, any book)\n"
             f"Size: 1u{old}")
+
+
+def et_day(dt: datetime) -> str:
+    from zoneinfo import ZoneInfo
+    return dt.astimezone(ZoneInfo("America/New_York")).strftime("%Y-%m-%d")
+
+
+def _alert_day(r: dict) -> str:
+    at = parse_dt(r.get("alert_time"))
+    return et_day(at) if at else ""
 
 
 # ------------------------------------------------------------------ storage
@@ -247,8 +267,8 @@ def update(payloads: dict, now: datetime, base: Path | None = None, *, push=None
             p["_prev"], p["_prev_at"] = prev, prev_at
         _atomic_write_text(_dir(base) / "board.json", json.dumps({"at": iso(now), "rows": keep}, indent=0))
 
-        today = now.strftime("%Y-%m-%d")
-        sent = sum(1 for r in rows if (r.get("alert_time") or "")[:10] == today)
+        today = et_day(now)
+        sent = sum(1 for r in rows if _alert_day(r) == today)
         cands = []
         for p in props:
             first, at = p.pop("_first"), p.pop("_first_at")
@@ -258,7 +278,9 @@ def update(payloads: dict, now: datetime, base: Path | None = None, *, push=None
             st, base_snap, boost = None, None, 1.0
             settled_in = first and at and now - at >= MIN_HISTORY     # not a brand-new opener finding its level
             if settled_in and prev and prev_at and now - prev_at <= FAST_WINDOW:
-                st = fast_steam({**prev, "stat": p["stat"]}, p, now - prev_at)
+                kick = parse_dt(p["starts"])
+                late = bool(kick) and kick - now <= LATE_WINDOW
+                st = fast_steam({**prev, "stat": p["stat"]}, p, now - prev_at, late)
                 base_snap, boost = prev, 1.5
             if not st and first and at and now - at >= MIN_HISTORY:
                 st = steam({**first, "stat": p["stat"]}, p)
@@ -268,9 +290,10 @@ def update(payloads: dict, now: datetime, base: Path | None = None, *, push=None
                              + abs(p["line"] - base_snap["line"]) / (8 if big_stat(p["stat"]) else 2))
                 cands.append((boost * prob_jump * (1 + min(p["limit"], 2000) / 2000),
                               make_play(p, first or base_snap, st, now)))
-        players_today = {(r["player"], r["game"]) for r in rows if (r.get("alert_time") or "")[:10] == today}
+        players_today = {(r["player"], r["game"]) for r in rows if _alert_day(r) == today}
+        this_round = 0
         for _, play in sorted(cands, key=lambda c: -c[0]):
-            if sent >= MAX_PER_DAY or (play["player"], play["game"]) in players_today:
+            if sent >= MAX_PER_DAY or this_round >= MAX_PER_ROUND or (play["player"], play["game"]) in players_today:
                 continue
             if push:
                 t, m = alert_text(play)
@@ -283,6 +306,7 @@ def update(payloads: dict, now: datetime, base: Path | None = None, *, push=None
             info["new"].append(play)
             players_today.add((play["player"], play["game"]))
             sent += 1
+            this_round += 1
             info["new_plays"] += 1
     else:
         for p in props:
