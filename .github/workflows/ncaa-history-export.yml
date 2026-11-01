@@ -1,0 +1,27 @@
+name: NCAA History Export (one-off)
+
+# One-off pull of CFBD games, lines, PPA, talent and returning production (2022-2026)
+# for the Claude NCAA pool-model rebuild. Output is a workflow artifact only (not committed).
+on:
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Export
+        env:
+          CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
+        run: python tools/ncaa_history_export.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ncaa-history
+          path: ncaa_history_export/
+          retention-days: 7
