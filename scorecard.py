@@ -38,7 +38,7 @@ def _rows(rel: str) -> list[dict]:
 
 
 def grade(name: str, rows: list[dict], *, pl: str = "pl", risk=None, clv: str | None = None,
-          money: str = "paper", note: str = "") -> dict:
+          money: str = "paper", note: str = "", clv_unit: str = "") -> dict:
     """rows -> {name, n, won, lost, pl, risk, roi, clv, verdict}. `risk` is a column name or a
     flat stake per bet; unsettled rows (blank P/L) are skipped."""
     n = won = lost = 0
@@ -71,7 +71,14 @@ def grade(name: str, rows: list[dict], *, pl: str = "pl", risk=None, clv: str | 
         verdict = "Losing to the close — not real yet"
     else:
         verdict = f"Too early — {max(0, MIN_BETS - n)} more bets"
+    # Nov 1, 2026: units (P/L ÷ average stake) and the share of bets that beat the close, for the board
+    units = tot_pl / (tot_risk / n) if n and tot_risk else None
+    beat = sum(c > 0 for c in clvs) / len(clvs) if clvs else None
+    if not clv_unit and clv:
+        clv_unit = "cents" if clv == "clv_cents" else "prob"
     return {"name": name, "money": money, "n": n, "won": won, "lost": lost, "pl": round(tot_pl, 2),
+            "units": None if units is None else round(units, 2), "beat_close": beat,
+            "clv_unit": clv_unit if clvs else "",
             "risk": round(tot_risk, 2), "roi": None if roi is None else round(roi, 4),
             "clv": None if avg_clv is None else round(avg_clv, 4), "checks": checks, "verdict": verdict,
             "note": note, "rows": rows, "pl_col": pl}
@@ -156,14 +163,15 @@ def lanes() -> list[dict]:
     out.append(grade("Sharp Plays (line steam)", _rows("research_lab/data/SHARP_PLAYS/plays.csv"), risk=10.0, clv="clv"))
 
     ncaa = _rows("ncaa_grader/data/picks.csv")   # open picks kept so the bet list shows them; grade() skips unsettled
-    out.append(grade("NCAA Grader — all", ncaa, pl="units", risk=1.0, clv="clv"))
-    out.append(grade("NCAA Grader — STRONG", [r for r in ncaa if r.get("tier") == "STRONG"], pl="units", risk=1.0, clv="clv"))
+    out.append(grade("NCAA Grader — all", ncaa, pl="units", risk=1.0, clv="clv", clv_unit="mixed"))
+    out.append(grade("NCAA Grader — STRONG", [r for r in ncaa if r.get("tier") == "STRONG"], pl="units", risk=1.0,
+                     clv="clv", clv_unit="mixed"))
     out.append(grade("NCAA Grader — ML", [r for r in ncaa if r.get("market") == "ML"], pl="units", risk=1.0, clv="clv"))
 
     nba = _rows("nba_grader/data/picks.csv")
     out.append(grade("NBA Model — Strong + Lean", [r for r in nba if r.get("tier") in ("STRONG", "LEAN")],
-                     pl="units", risk=1.0, clv="clv"))
-    out.append(grade("NBA Model — all", nba, pl="units", risk=1.0, clv="clv"))
+                     pl="units", risk=1.0, clv="clv", clv_unit="mixed"))
+    out.append(grade("NBA Model — all", nba, pl="units", risk=1.0, clv="clv", clv_unit="mixed"))
     nbp = [r for r in _rows("nba_grader/data/props.csv") if r.get("result") != "V"]
     out.append(grade("NBA Props — Strong + Lean", [r for r in nbp if r.get("tier") in ("STRONG", "LEAN")],
                      pl="units", risk=1.0, clv="clv"))

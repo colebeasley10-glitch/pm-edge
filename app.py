@@ -241,7 +241,23 @@ def clv_chip(l: dict) -> str:
 
 
 def money_txt(l: dict) -> str:
-    return f"{l['pl']:+,.2f}u" if l.get("pl_col") == "units" else f"{'+' if l['pl'] >= 0 else '−'}${abs(l['pl']):,.2f}"
+    """Dollars at the paper stake. Unit-graded lanes (the models) are shown at $10 a unit, like the rest."""
+    pl = l["pl"] * 10 if l.get("pl_col") == "units" else l["pl"]
+    return f"{'+' if pl >= 0 else '−'}${abs(pl):,.2f}"
+
+
+def clv_txt(l: dict) -> str:
+    """Average CLV in the lane's own unit, plus how often it beat the close. Grader lanes mix
+    spread points with ML probability, so they show only the beat-the-close share."""
+    c, u, b = l.get("clv"), l.get("clv_unit"), l.get("beat_close")
+    if c is None:
+        return "—"
+    beat = f" ({b * 100:.0f}% beat)" if b is not None else ""
+    if u == "cents":
+        return f"{c:+.1f}¢{beat}"
+    if u == "prob":
+        return f"{c * 100:+.1f}%{beat}"
+    return f"{b * 100:.0f}% beat" if b is not None else "—"
 
 
 def lane_row(l: dict, rank: int | None = None, sub: bool = False) -> str:
@@ -249,11 +265,18 @@ def lane_row(l: dict, rank: int | None = None, sub: bool = False) -> str:
     rk = (f"<div class='lb-rank{' top' if rank and rank <= 3 and (l['roi'] or 0) > 0 else ''}'>{rank}</div>"
           if rank is not None else "")
     rec = f"{l['won']}-{l['lost']}" if l["n"] else "—"
-    meta = " · ".join(x for x in (f"{l['n']} bet{'s' if l['n'] != 1 else ''}" if l["n"] else "No settled bets", rec if l["n"] else "",
-                                  money_txt(l) if l["n"] else "") if x)
+    meta = f"{l['n']} bet{'s' if l['n'] != 1 else ''} · {rec}" if l["n"] else "No settled bets"
+    stats = ""
+    if l["n"]:
+        u = l.get("units")
+        cells = (("Profit", money_txt(l), tone(l["pl"])),
+                 ("Units", "—" if u is None else f"{u:+.1f}u", tone(u)),
+                 ("CLV", clv_txt(l), tone(l.get("clv")) if l.get("clv_unit") in ("cents", "prob") else ""))
+        stats = "<div class='lb-stats'>" + "".join(
+            f"<span><small>{k}</small><b class='{c}'>{esc(v)}</b></span>" for k, v, c in cells) + "</div>"
     return (f"<a class='lb-row{' sub' if sub else ''}' href='?lane={quote(l['name'])}' target='_self'>{rk}<div class='lb-main'>"
             f"<div class='lb-name'>{esc(('↳ ' + l['name'].split(' — ', 1)[1]) if sub else l['name'])}</div>"
-            f"<div class='lb-meta'>{esc(meta)}</div>"
+            f"<div class='lb-meta'>{esc(meta)}</div>{stats}"
             f"<div class='lb-chips'>{status_chip(l)}{clv_chip(l)}</div>"
             f"<div class='lb-bar' title='{l['n']} of {scorecard.MIN_BETS} bets toward the go-live bar'>"
             f"<span style='width:{prog:.0f}%'></span></div></div>"
@@ -416,7 +439,9 @@ if view == "Leaderboard":
     st.markdown("<div class='lb'>" + "".join(board) + "</div>", unsafe_allow_html=True)
     st.markdown(f"<div class='fine'>Ranked by ROI adjusted for sample size (ROI × bets ÷ (bets + "
                 f"{scorecard.RANK_PRIOR})), so a lane needs volume <i>and</i> results to sit on top. The bar under each "
-                f"lane is progress to the {scorecard.MIN_BETS}-bet go-live bar. ↳ rows break a lane down (by sport, "
+                f"lane is progress to the {scorecard.MIN_BETS}-bet go-live bar. Profit is paper dollars at $10 a bet (model lanes at "
+                f"$10 a unit); Units = profit ÷ stake; CLV = average edge over the closing price and how often the "
+                f"bet beat it. ↳ rows break a lane down (by sport, "
                 f"tier or market) and are ranked within it.</div>", unsafe_allow_html=True)
     if paper_idle:
         st.markdown("<div class='section'><span>Waiting on first results</span>"

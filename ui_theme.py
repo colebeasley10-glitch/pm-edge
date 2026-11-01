@@ -266,6 +266,10 @@ def apply() -> None:
         .lb-main { min-width:0; }
         .lb-name { font-weight:700; font-size:.95rem; line-height:1.25; }
         .lb-meta { color:var(--muted); font-size:.76rem; margin-top:.15rem; font-variant-numeric:tabular-nums; }
+        .lb-stats { display:flex; gap:.9rem; flex-wrap:wrap; margin-top:.3rem; font-variant-numeric:tabular-nums; }
+        .lb-stats span { display:flex; flex-direction:column; line-height:1.15; }
+        .lb-stats small { color:var(--muted); font-size:.56rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase; }
+        .lb-stats b { font-size:.8rem; font-weight:700; }
         .lb-chips { display:flex; flex-wrap:wrap; gap:.3rem; margin-top:.4rem; }
         .chip { font-size:.66rem; font-weight:700; letter-spacing:.03em; padding:.14rem .5rem; border-radius:999px;
                 border:1px solid var(--line); color:var(--soft); white-space:nowrap; }
