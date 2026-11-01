@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-01T07:30:46.984523Z",
+ "ran_at": "2026-11-01T08:00:42.777122Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -9,7 +9,7 @@
    "shadow": [],
    "shadow_opened": 0,
    "diag": {
-    "events": 58,
+    "events": 48,
     "priced": 0,
     "skipped_far_from_market": 0,
     "skipped_same_day": 44,
@@ -26,15 +26,15 @@
      "ticker": "KXNCAAWBGAME-26NOV01VILLND-VILL",
      "side": "YES",
      "ask": 0.24,
-     "fair": 0.745,
-     "edge": 0.4921
+     "fair": 0.75,
+     "edge": 0.4971
     },
     {
      "ticker": "KXNCAAWBGAME-26NOV01VILLND-ND",
      "side": "NO",
      "ask": 0.25,
-     "fair": 0.745,
-     "edge": 0.4818
+     "fair": 0.75,
+     "edge": 0.4868
     },
     {
      "ticker": "KXNFLGAME-26NOV01NEMIA-NE",
@@ -68,13 +68,13 @@
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 188,
-    "kalshi_events": 1458,
-    "matched": 134,
-    "priced": 242,
+    "poly_games": 193,
+    "kalshi_events": 1463,
+    "matched": 138,
+    "priced": 248,
     "best_gaps": [
      [
-      0.505,
+      0.51,
       "KXNCAAWBGAME-26NOV01VILLND-VILL"
      ],
      [
@@ -87,11 +87,11 @@
      ],
      [
       0.025,
-      "KXDOTA2GAME-26NOV010800TSTY-TS"
+      "KXCS2GAME-26NOV010600APOGEEPHA-PHA"
      ],
      [
-      0.025,
-      "KXCS2GAME-26NOV010600APOGEEPHA-PHA"
+      0.02,
+      "KXCS2GAME-26NOV010500MZPJJH-MZP"
      ],
      [
       0.015,
@@ -99,11 +99,11 @@
      ],
      [
       0.015,
-      "KXCS2GAME-26NOV020200FAZEFURIA-FAZE"
+      "KXVALORANTGAME-26NOV010400NOVAUR-NOVA"
      ],
      [
-      0.01,
-      "KXVALORANTGAME-26NOV010400NOVAUR-NOVA"
+      0.015,
+      "KXLIGAPORTUGALGAME-26NOV01BRAFAM-BRA"
      ]
     ]
    }
@@ -115,29 +115,80 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 0,
-   "skipped": {
-    "already_holding": 2,
-    "same_game": 2
-   },
+   "opened": 4,
+   "skipped": {},
    "diag": {
-    "skipped_settles_late": 0
+    "skipped_settles_late": 1
    }
   },
   "crypto": {
-   "picks_found": 0,
+   "picks_found": 4,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [],
-   "shadow_opened": 0,
-   "diag": {
-    "markets_priced": 0,
-    "vol": {
-     "BTC-USD": 0.004902219177872789,
-     "ETH-USD": 0.006044925306019369
+   "shadow": [
+    {
+     "ticker": "KXBTCD-26NOV0104-T77599.99",
+     "side": "NO",
+     "ask": 0.03,
+     "fair": 0.3152,
+     "edge": 0.2832
     },
-    "best": []
+    {
+     "ticker": "KXETHD-26NOV0104-T2259.99",
+     "side": "NO",
+     "ask": 0.05,
+     "fair": 0.3307,
+     "edge": 0.2774
+    },
+    {
+     "ticker": "KXBTCD-26NOV0104-T77699.99",
+     "side": "NO",
+     "ask": 0.11,
+     "fair": 0.3938,
+     "edge": 0.2769
+    },
+    {
+     "ticker": "KXETHD-26NOV0104-T2274.99",
+     "side": "YES",
+     "ask": 0.05,
+     "fair": 0.329,
+     "edge": 0.2756
+    }
+   ],
+   "shadow_opened": 3,
+   "diag": {
+    "markets_priced": 488,
+    "vol": {
+     "BTC-USD": 0.004900460157451034,
+     "ETH-USD": 0.006044914097516701
+    },
+    "best": [
+     [
+      -0.63,
+      "KXETHD-26NOV0104-T2469.99"
+     ],
+     [
+      -0.62,
+      "KXETHD-26NOV0104-T2464.99"
+     ],
+     [
+      -0.61,
+      "KXETHD-26NOV0104-T2454.99"
+     ],
+     [
+      -0.61,
+      "KXETHD-26NOV0104-T2459.99"
+     ],
+     [
+      -0.45,
+      "KXETHD-26NOV0104-T2409.99"
+     ],
+     [
+      -0.44,
+      "KXETHD-26NOV0104-T2424.99"
+     ]
+    ]
    }
   }
  },
@@ -149,11 +200,11 @@
  },
  "update": {
   "marked": 12,
-  "settled": 1
+  "settled": 0
  },
  "shadow_update": {
-  "marked": 7,
-  "settled": 2
+  "marked": 6,
+  "settled": 0
  },
  "live_sharp": {
   "enabled": false,
@@ -192,8 +243,8 @@
   },
   {
    "strategy": "sharp",
-   "picks": 1731,
-   "open": 12,
+   "picks": 1735,
+   "open": 16,
    "won": 973,
    "lost": 746,
    "pl": -667.6799999999989,
@@ -246,8 +297,8 @@
   },
   {
    "strategy": "crypto",
-   "picks": 164,
-   "open": 1,
+   "picks": 167,
+   "open": 4,
    "won": 15,
    "lost": 148,
    "pl": -608.8599999999999,
