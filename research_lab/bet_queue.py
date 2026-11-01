@@ -45,7 +45,7 @@ EV_CAP = 0.10
 BAD_VERDICTS = ("Proven loser", "Losing to the close", "Demote")
 MIN_LANE_BETS = 30       # a lane (or slice) needs this many settled bets before it can feed the queue
 FIELDS = ["queue_id", "alert_time", "day", "lane", "source", "source_id", "league", "game", "pick", "game_start",
-          "bet_at", "decimal", "fair_prob", "fair_src", "ev", "lane_score", "score", "kelly_pct", "stake_kelly",
+          "bet_at", "decimal", "fair_prob", "fair_odds", "fair_src", "ev", "lane_score", "score", "kelly_pct", "stake_kelly",
           "status", "settled_time", "clv", "pl", "pl_kelly"]
 
 
@@ -277,7 +277,7 @@ def update(now: datetime, base: Path | None = None, *, root: Path = ROOT, lanes:
         k = kelly(c["fair_prob"], c["decimal"])
         q = {**{k_: v for k_, v in c.items() if not k_.startswith("_")},
              "queue_id": f"q-{c['source']}-{c['source_id']}"[:90], "alert_time": iso(now), "day": day,
-             "bet_at": american(c["decimal"]), "kelly_pct": round(k, 4), "stake_kelly": round(BANKROLL * k, 2),
+             "bet_at": american(c["decimal"]), "fair_odds": american(1 / c["fair_prob"]), "kelly_pct": round(k, 4), "stake_kelly": round(BANKROLL * k, 2),
              "status": "open", "settled_time": "", "clv": "", "pl": "", "pl_kelly": ""}
         rows.append(q)
         today.append(q)

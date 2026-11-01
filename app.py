@@ -429,7 +429,7 @@ def queue_plays() -> list[dict]:
                     "lane": f"Queue · {r.get('lane')}", "price": r.get("bet_at") or "", "fair": fair_txt,
                     "fair_src": "Model" if r.get("fair_src") == "Model" else "Pinnacle",
                     "ev": (f * dec - 1) if (f and dec) else None, "live": bool(d) and d <= NOW and status == "open",
-                    "bet": {}})
+                    "bet": {}, "queue": True})
     return sorted(out, key=lambda p: p["start"] or "")
 
 
@@ -444,6 +444,16 @@ def play_cards(plays: list[dict]) -> None:
             fair_line = f"{esc(p['fair_src'])} fair {esc(p['fair'])}{ev_txt}"
         else:
             fair_line = "no fair price"
+        fair_span = f"<span class='fair'>{fair_line}</span>"
+        qv = ""
+        if p.get("queue") and p["fair"]:
+            # Nov 1, 2026: fair value + EV up front, so a better price at another book can be judged on sight
+            ev = p["ev"]
+            cents = p["fair"].endswith("¢")
+            ev_b = "" if ev is None else (f"<span>EV <b class='{'up' if ev > 0 else 'down'}'>{ev * 100:+.1f}%</b>"
+                                          f" at {esc(p['price'])}</span>")
+            hint = (f"<span class='qh'>Any price better than {esc(p['fair'])} is +EV</span>" if not cents else "")
+            qv = (f"<div class='qv'><span>{esc(p['fair_src'])} fair <b>{esc(p['fair'])}</b></span>{ev_b}{hint}</div>")
         lv = p.get("lv")
         live_line = ""
         if lv:
@@ -455,10 +465,10 @@ def play_cards(plays: list[dict]) -> None:
                          f"<span>{esc(bits)}</span></div>")
         html_.append(
             f"<div class='play'><div class='play-l'><span class='lg'>{esc(p['league'])}</span>{when_txt}</div>"
-            f"<div class='play-m'><div class='pt'>{esc(p['title'])}</div><div class='ps'>{esc(p['sub'])}</div>{live_line}"
+            f"<div class='play-m'><div class='pt'>{esc(p['title'])}</div><div class='ps'>{esc(p['sub'])}</div>{qv}{live_line}"
             f"<div class='lb-chips'>{chip(p['lane'], 'mute')}</div></div>"
             f"<div class='play-r'>{esc(p['price'])}<small>{'took' if p['live'] else 'bet at'}</small>"
-            f"<span class='fair'>{fair_line}</span></div></div>")
+            f"{'' if qv else fair_span}</div></div>")
     st.markdown("<div class='plays'>" + "".join(html_) + "</div>", unsafe_allow_html=True)
 
 
