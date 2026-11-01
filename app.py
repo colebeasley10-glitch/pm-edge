@@ -6,6 +6,7 @@ Everything from before lives on the "Everything" page (pages/All_Tools.py), one 
 from __future__ import annotations
 
 import csv
+import json
 import html
 import os
 import sys
@@ -23,6 +24,7 @@ import ui_theme  # noqa: E402
 st.set_page_config(page_title="SharpIQ", page_icon="🎯", layout="centered", initial_sidebar_state="collapsed")
 sys.modules.pop("odds_calc", None)
 import odds_calc  # noqa: E402
+import live_status  # noqa: E402
 odds_calc.render()
 ui_theme.apply()
 
@@ -317,6 +319,34 @@ def _am(dec: float) -> str:
     return f"+{(dec - 1) * 100:.0f}" if dec >= 2 else f"{-100 / (dec - 1):.0f}"
 
 
+def _prop_bet(r: dict) -> dict:
+    side = r.get("side") or ("over" if " Over " in f" {r.get('pick', '')} " else "under")
+    return {"kind": "prop", "player": r.get("player"), "stat": r.get("stat"), "line": r.get("line"), "side": side,
+            "teams": (r.get("game") or "").split(" at ")}
+
+
+def _grader_bet(r: dict) -> dict:
+    m = str(r.get("market") or "").upper()
+    teams = [r.get("away"), r.get("home")]
+    if m == "TOTAL":
+        return {"kind": "total", "line": r.get("line"), "side": str(r.get("direction") or "").lower(), "teams": teams}
+    return {"kind": "spread" if m == "SPREAD" else "ml", "team": r.get("pick_team"), "line": r.get("line"),
+            "teams": teams}
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def live_info(bets_json: str) -> list:
+    """Score + winning/losing for each live play (ESPN, refreshed at most once a minute)."""
+    lv = live_status.Live()
+    out = []
+    for b in json.loads(bets_json):
+        try:
+            out.append(live_status.evaluate(b, lv))
+        except Exception:
+            out.append(None)
+    return out
+
+
 def open_plays() -> list[dict]:
     """Every open paper play, upcoming or in progress, with the price we took, the fair price and EV.
 
@@ -324,7 +354,8 @@ def open_plays() -> list[dict]:
     model lanes (NCAA Grader, NBA Model/Props); EV = fair chance x decimal odds - 1, before fees."""
     plays = []
 
-    def add(start, league, title, sub, lane, *, price="", dec=None, fair=None, fair_src="Pinnacle", cents=False):
+    def add(start, league, title, sub, lane, *, price="", dec=None, fair=None, fair_src="Pinnacle", cents=False,
+            bet=None):
         d = when(start)
         if d is None:
             return
@@ -338,7 +369,8 @@ def open_plays() -> list[dict]:
         else:
             fair_txt = ""
         plays.append({"start": start, "league": league, "title": title, "sub": sub, "lane": lane, "price": price,
-                      "fair": fair_txt, "fair_src": fair_src, "ev": ev, "live": age >= 0})
+                      "fair": fair_txt, "fair_src": fair_src, "ev": ev, "live": age >= 0,
+                      "bet": {**(bet or {}), "league": league, "start": start}})
 
     for r in rows("trader_follow/data/signals.csv"):
         if r.get("status") == "open" and r.get("in_band") == "True":
@@ -346,29 +378,33 @@ def open_plays() -> list[dict]:
             add(r["game_start"], r.get("sport") or "Follow", f"{r['outcome']} — {r['question']}",
                 f"{r['trader']} bet ${float(r['his_usdc']):,.0f} at {float(r['his_price']) * 100:.0f}¢",
                 "Trader Follow", price=f"{cp * 100:.0f}¢" if cp else "", dec=(1 / cp) if cp else None,
-                fair=r.get("fair_prob"), cents=True)
+                fair=r.get("fair_prob"), cents=True,
+                bet=live_status.describe_polymarket(r.get("question") or "", r.get("outcome") or ""))
     for r in rows("research_lab/data/PROP_BOARD/plays.csv"):
         if r.get("status") == "open":
             add(r["game_start"], r.get("league") or "Prop", r["pick"], f"{r['game']} · {r['move']}",
                 "Prop Board steam", price=r.get("target_odds") or "", dec=_num(r.get("target_decimal")),
-                fair=r.get("fair_prob"))
+                fair=r.get("fair_prob"), bet=_prop_bet(r))
     for r in rows("research_lab/data/ODDS_FAM/plays.csv"):
         if r.get("status") == "open" and r.get("kind") == "Prop steam":
             dec = _num(r.get("best_decimal")) or _num(r.get("bet_at_decimal"))
             add(r["game_start"], r.get("league") or "Prop", r["pick"], r.get("game") or "", "Odds Fam",
-                price=_am(dec) if dec else (r.get("bet_at") or ""), dec=dec, fair=r.get("fair_prob"))
+                price=_am(dec) if dec else (r.get("bet_at") or ""), dec=dec, fair=r.get("fair_prob"),
+                bet=_prop_bet(r))
     for path, league, lane in (("ncaa_grader/data/picks.csv", "NCAAF", "NCAA Grader"),
                                ("nba_grader/data/picks.csv", "NBA", "NBA Model")):
         for r in rows(path):
             if not r.get("result") and r.get("tier") == "STRONG" and r.get("source", "live") == "live":
                 add(r["kickoff"], league, r["side"], f"{r['away']} at {r['home']}", lane,
                     price=fmt_american(r.get("odds")), dec=_dec_from_american(r.get("odds")),
-                    fair=r.get("model_prob"), fair_src="Model")
+                    fair=r.get("model_prob"), fair_src="Model", bet=_grader_bet(r))
     for r in rows("nba_grader/data/props.csv"):
         if not r.get("result") and r.get("tier") == "STRONG":
             add(r["kickoff"], "NBA", r["side"], f"{r['away']} at {r['home']} · proj {r['proj']}", "NBA Props",
                 price=fmt_american(r.get("odds")), dec=_dec_from_american(r.get("odds")),
-                fair=r.get("model_prob"), fair_src="Model")
+                fair=r.get("model_prob"), fair_src="Model",
+                bet={"kind": "prop", "player": r.get("player"), "stat": r.get("stat"), "line": r.get("line"),
+                     "side": str(r.get("direction") or "").lower(), "teams": [r.get("away"), r.get("home")]})
     return sorted(plays, key=lambda p: p["start"])
 
 
@@ -383,9 +419,18 @@ def play_cards(plays: list[dict]) -> None:
             fair_line = f"{esc(p['fair_src'])} fair {esc(p['fair'])}{ev_txt}"
         else:
             fair_line = "no fair price"
+        lv = p.get("lv")
+        live_line = ""
+        if lv:
+            stt = lv.get("status")
+            lab = {"winning": ("Winning", "good"), "losing": ("Losing", "bad"), "push": ("Push", "mute"),
+                   "won": ("Won", "good"), "lost": ("Lost", "bad")}.get(stt)
+            bits = " · ".join(x for x in (lv.get("score"), lv.get("clock"), lv.get("note")) if x)
+            live_line = (f"<div class='live-line'>{chip(lab[0], lab[1]) if lab else ''}"
+                         f"<span>{esc(bits)}</span></div>")
         html_.append(
             f"<div class='play'><div class='play-l'><span class='lg'>{esc(p['league'])}</span>{when_txt}</div>"
-            f"<div class='play-m'><div class='pt'>{esc(p['title'])}</div><div class='ps'>{esc(p['sub'])}</div>"
+            f"<div class='play-m'><div class='pt'>{esc(p['title'])}</div><div class='ps'>{esc(p['sub'])}</div>{live_line}"
             f"<div class='lb-chips'>{chip(p['lane'], 'mute')}</div></div>"
             f"<div class='play-r'>{esc(p['price'])}<small>{'took' if p['live'] else 'bet at'}</small>"
             f"<span class='fair'>{fair_line}</span></div></div>")
@@ -453,6 +498,9 @@ elif view == "Today":
     live_now = [p for p in plays if p["live"]]
     upcoming_ = [p for p in plays if not p["live"]]
     if live_now:
+        infos = live_info(json.dumps([p["bet"] for p in live_now[:30]], default=str))
+        for p, info in zip(live_now, infos):
+            p["lv"] = info
         st.markdown(f"<div class='section'><span>Live now</span><span class='n'>{len(live_now)}</span></div>",
                     unsafe_allow_html=True)
         play_cards(live_now[:30])
