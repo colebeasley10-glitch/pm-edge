@@ -9,6 +9,8 @@ jobs:
   export:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,9 +21,14 @@ jobs:
         env:
           CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
         run: python tools/ncaa_history_export.py
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: ncaa-history
-          path: ncaa_history_export/
-          retention-days: 7
+      - name: Push to a temporary branch (deleted after download)
+        run: |
+          tar czf /tmp/h.tgz ncaa_history_export
+          git config user.name "pm-edge-bot"
+          git config user.email "pm-edge-bot@users.noreply.github.com"
+          git checkout --orphan tmp-ncaa-history
+          git rm -rfq .
+          cp /tmp/h.tgz ncaa_history.tgz
+          git add ncaa_history.tgz
+          git commit -qm "temp NCAA history export"
+          git push -f origin HEAD:refs/heads/tmp-ncaa-history
