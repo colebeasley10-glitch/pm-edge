@@ -412,6 +412,27 @@ def open_plays() -> list[dict]:
     return sorted(plays, key=lambda p: p["start"])
 
 
+def queue_plays() -> list[dict]:
+    """Today's Bet Queue (paper): its open plays plus any it settled today, newest list first."""
+    today = NOW.astimezone(ET).strftime("%Y-%m-%d")
+    out = []
+    for r in rows("research_lab/data/BET_QUEUE/queue.csv"):
+        if r.get("day") != today and r.get("status") != "open":
+            continue
+        d = when(r.get("game_start"))
+        f, dec = _num(r.get("fair_prob")), _num(r.get("decimal"))
+        fair_txt = (f"{f * 100:.0f}¢" if r.get("fair_src") == "Copy price" else _am(1 / f)) if f else ""
+        status = r.get("status") or "open"
+        out.append({"start": r.get("game_start"), "league": r.get("league") or "", "title": r.get("pick") or "",
+                    "sub": " · ".join(x for x in (r.get("game"), f"¼ Kelly ${float(r.get('stake_kelly') or 0):,.0f}")
+                                      if x) + ("" if status == "open" else f" · {status}"),
+                    "lane": f"Queue · {r.get('lane')}", "price": r.get("bet_at") or "", "fair": fair_txt,
+                    "fair_src": "Model" if r.get("fair_src") == "Model" else "Pinnacle",
+                    "ev": (f * dec - 1) if (f and dec) else None, "live": bool(d) and d <= NOW and status == "open",
+                    "bet": {}})
+    return sorted(out, key=lambda p: p["start"] or "")
+
+
 def play_cards(plays: list[dict]) -> None:
     html_ = []
     for p in plays:
@@ -499,6 +520,14 @@ if view == "Leaderboard":
                     unsafe_allow_html=True)
 
 elif view == "Today":
+    qp = queue_plays()
+    st.markdown(f"<div class='section'><span>Bet Queue — today's list</span><span class='n'>{len(qp)} of "
+                f"15</span></div>", unsafe_allow_html=True)
+    if qp:
+        play_cards(qp)
+    else:
+        st.markdown("<div class='quiet'><strong>Nothing queued yet today</strong>The queue fills as lanes that "
+                    "are earning their place post plays.</div>", unsafe_allow_html=True)
     live_now = [p for p in plays if p["live"]]
     upcoming_ = [p for p in plays if not p["live"]]
     if live_now:
