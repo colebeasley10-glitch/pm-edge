@@ -4,9 +4,23 @@ name: NCAA History Export (one-off)
 # for the Claude NCAA pool-model rebuild. Output is a workflow artifact only (not committed).
 on:
   workflow_dispatch:
+    inputs:
+      cleanup_only:
+        description: "Only delete the temporary tmp-ncaa-history branch"
+        type: boolean
+        default: false
 
 jobs:
+  cleanup:
+    if: ${{ github.event.inputs.cleanup_only == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: git push origin --delete tmp-ncaa-history || true
   export:
+    if: ${{ github.event.inputs.cleanup_only != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
