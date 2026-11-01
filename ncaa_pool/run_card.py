@@ -85,7 +85,7 @@ def main(argv=None):
     ap.add_argument("pool_file")
     ap.add_argument("--pool", choices=POOLS, default="clay")
     ap.add_argument("--market")
-    ap.add_argument("--no-totals", action="store_true")
+    ap.add_argument("--totals", action="store_true", help="also consider totals (off by default: spreads did better on real Clay slates)")
     a = ap.parse_args(argv)
     aliases = _aliases()
     market = market_from_csv(a.market, aliases) if a.market else market_from_grader(aliases)
@@ -106,7 +106,7 @@ def main(argv=None):
             continue
         games.append(Game(away, home, _f(r["home_spread"]), m["spread"], _f(r.get("total")), m.get("total")))
     n, k = POOLS[a.pool]
-    card = build_card(games, n, k, allow_totals=not a.no_totals)
+    card = build_card(games, n, k, allow_totals=a.totals)
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     print(f"# {a.pool.title()}'s pool card — CPM v1 — market read {stamp}\n")
     for i, o in enumerate(card["picks"], 1):
