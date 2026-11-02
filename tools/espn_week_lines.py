@@ -13,7 +13,22 @@ from pathlib import Path
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from espn_cfb import BASE, FBS_GROUP, parse_event  # noqa: E402
+from espn_cfb import BASE, FBS_GROUP, parse_event, parse_odds  # noqa: E402
+
+SUMMARY = BASE.replace("/scoreboard", "/summary")
+
+
+def summary_line(event_id: str) -> dict:
+    """Finished games drop odds from the scoreboard; the game summary's pickcenter still has them."""
+    try:
+        r = requests.get(SUMMARY, params={"event": event_id}, headers={"User-Agent": "Mozilla/5.0"}, timeout=30)
+        r.raise_for_status()
+        j = r.json()
+        ln = parse_odds({"odds": j.get("pickcenter") or []}) or parse_odds({"odds": j.get("odds") or []})
+        return ln or {}
+    except Exception as exc:
+        print("summary ERROR", event_id, type(exc).__name__, str(exc)[:160])
+        return {}
 
 ROOT = Path(__file__).resolve().parent.parent
 REQ = ROOT / "ncaa_pool" / "data" / "line_requests.txt"
@@ -46,6 +61,8 @@ def fetch(dates: str) -> list[dict]:
             continue
         g, gl = p
         ln = (gl or {}).get("lines", [{}])[0] if gl else {}
+        if not ln or ln.get("spread") is None:
+            ln = summary_line(g["id"])
         out.append({"away": g["awayTeam"], "home": g["homeTeam"], "kickoff": g["startDate"],
                     "close": ln.get("spread"), "open": ln.get("spreadOpen"), "ctot": ln.get("overUnder"),
                     "otot": ln.get("overUnderOpen"), "away_pts": g["awayPoints"], "home_pts": g["homePoints"],
