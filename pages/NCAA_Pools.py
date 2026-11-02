@@ -306,7 +306,7 @@ with tab_past:
                     rows = sorted(e["rows"], key=lambda r: int(r.get("rank") or 99))
                     st.markdown(f"<div class='np-card'>{pick_rows(rows)}</div>", unsafe_allow_html=True)
         st.markdown("<div class='fine'><b>CPM v1 replay</b> = what this model would have picked on Clay's real slates "
-                    "(weeks 1-9, spreads only like the live card; week 5 is left out because only 8 of its games were saved). <b>Your picks</b> = your entries: weeks 5-7 from your Splash screenshots; weeks 2, 4 and 8 from recovered "
+                    "(weeks 1-9, spreads only like the live card; week 5 from the full Splash slate you sent, with ESPN's market lines). <b>Your picks</b> = your entries: weeks 5-7 from your Splash screenshots; weeks 2, 4 and 8 from recovered "
                     "cards whose grades match the records you reported (week 8's keys unconfirmed); weeks 1, 3 and 9 from "
                     "the old v51 log (keys assumed to be ranks 1-3 when the log didn't say). "
                     "<b>CPM card</b> = the weekly cards saved from week 10 on. $ = your $10/$5 staking at -110. "
