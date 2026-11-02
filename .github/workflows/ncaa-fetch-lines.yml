@@ -1,0 +1,39 @@
+name: NCAA fetch past lines (ESPN)
+
+# One-off helper: edit ncaa_pool/data/line_requests.txt and push; this saves ESPN's open/close
+# lines + finals for those dates to ncaa_pool/data/espn_lines/. Read-only, free, no keys.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ncaa_pool/data/line_requests.txt
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - run: python tools/espn_week_lines.py
+      - name: Save
+        run: |
+          git config user.name "pm-edge-bot"
+          git config user.email "pm-edge-bot@users.noreply.github.com"
+          git add ncaa_pool/data/espn_lines
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "NCAA: past ESPN lines [skip ci]"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep $((i * 3))
+          done
+          exit 1
