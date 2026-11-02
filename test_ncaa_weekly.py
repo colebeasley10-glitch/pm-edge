@@ -78,3 +78,58 @@ def test_history_and_money():
     assert {"CPM v1 replay", "Your picks"} <= sources
     rows = [{"rank": 1, "key": "Y", "result": "W"}, {"rank": 5, "key": "N", "result": "L"}]
     assert wk.points(rows) == 2 and wk.money(rows) == round(10 * 100 / 110 - 5, 2)
+
+
+class _Resp:
+    def __init__(self, code, body=None):
+        self.status_code, self._b = code, body or {}
+
+    def json(self):
+        return self._b
+
+
+class _GH:
+    def __init__(self):
+        self.files, self.calls = {}, []
+
+    def get(self, url, **k):
+        return _Resp(200, {"sha": "abc"}) if url in self.files else _Resp(404)
+
+    def put(self, url, json, **k):
+        import base64
+        self.files[url] = base64.b64decode(json["content"]).decode()
+        self.calls.append(("put", url))
+        return _Resp(201)
+
+    def delete(self, url, json, **k):
+        self.files.pop(url, None)
+        self.calls.append(("delete", url))
+        return _Resp(200)
+
+
+def test_lock_and_unlock_my_picks(monkeypatch):
+    import bet_log
+    monkeypatch.setattr(bet_log, "token", lambda: "t")
+    gh = _GH()
+    rows = [{"pool": "clay", "rank": 1, "key": "Y", "pick": "Iowa +2.5", "kind": "spread", "side": "away",
+             "away": "Iowa", "home": "Washington", "line": 2.5, "prob": 0.6}]
+    locked = wk.lock_picks("clay", 2026, 10, rows, now=datetime(2026, 11, 7, 1, 3, tzinfo=UTC), session=gh)
+    assert locked[0]["locked_at"] == "2026-11-07T01:03Z" and locked[0]["frozen"] == "Y"
+    url = next(iter(gh.files))
+    assert url.endswith("ncaa_pool/data/my_picks/clay_2026_w10.csv") and "Iowa +2.5" in gh.files[url]
+    wk.unlock_picks("clay", 2026, 10, session=gh)
+    assert gh.calls[-1][0] == "delete" and not gh.files
+
+
+def test_locked_picks_graded_and_in_history(tmp_path, monkeypatch):
+    monkeypatch.setattr(wk, "SLATES", tmp_path / "slates")
+    monkeypatch.setattr(wk, "CARDS", tmp_path / "cards")
+    monkeypatch.setattr(wk, "MINE", tmp_path / "mine")
+    wk.MINE.mkdir()
+    rows = [{"pool": "clay", "season": 2026, "week": 10, "rank": 1, "key": "Y", "pick": "Away0 +3", "kind": "spread",
+             "side": "away", "away": "Away0", "home": "Home0", "line": 3, "prob": 0.6, "frozen": "Y"}]
+    (wk.MINE / "clay_2026_w10.csv").write_text(wk.render_card(rows, "2026-11-07T01:03Z"))
+    feed = _feed(home_pts=12.0)                    # Home0 12, Away0 10 -> Away0 +3 covers
+    assert wk.snapshot(datetime(2026, 11, 8, tzinfo=UTC), feed)["graded"] == 1
+    mine = [e for e in wk.history() if e["source"] == "Your picks" and e["week"] == 10]
+    assert mine and mine[0]["rows"][0]["result"] == "W" and wk.points(mine[0]["rows"]) == 2

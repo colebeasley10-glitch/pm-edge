@@ -217,16 +217,58 @@ with tab_now:
             rows, built = [], None
             note = ("Enter Chappy's lines to get the 6-pick card. Chappy's lines move with the market, so the edge "
                     "comes from catching a line before it moves.")
+        preview = bool(built and built.get("preview"))
         msg = st.session_state.pop(f"msg_{pool}", None)
         if msg:
             (st.success if msg[0] == "ok" else st.warning)(msg[1])
+
+        # ---- "Lock my picks": once you've submitted on Splash, this is your entry (Nov 1, 2026)
+        mine = st.session_state.get(f"mine_{pool}")
+        if mine is None:
+            mine = wk._csv(wk.mine_path(pool, season, week))
+        if mine:
+            wk.grade_rows(mine, games)
+            at = kick(mine[0].get("locked_at")) or "earlier"
+            st.markdown(f"<div class='np-note'>🔒 <b>Your picks — locked {esc(at)}.</b> This is your entry; it won't "
+                        "change and it's what gets graded under Past weeks.</div>", unsafe_allow_html=True)
+            show_card(pool, mine)
+            if rows and not preview and not locked:
+                d = wk.diff(mine, rows)
+                if d["dropped"] or d["keys_changed"]:
+                    bits = []
+                    if d["dropped"]:
+                        bits.append(f"now prefers {', '.join(d['added'])} over {', '.join(d['dropped'])}")
+                    if d["keys_changed"]:
+                        bits.append(f"keys now {', '.join(d['model_keys'])}")
+                    st.info("Since you locked, the model " + "; ".join(bits) + ". If Splash still lets you edit, "
+                            "update there, then Unlock and Lock again.")
+            if rows:
+                with st.expander("Model's current card", icon=":material/insights:"):
+                    st.markdown(f"<div class='np-note'>{note}</div>", unsafe_allow_html=True)
+                    show_card(pool, rows)
+            if not locked and st.button("Unlock (I changed my picks)", key=f"unlock_{pool}", use_container_width=True):
+                try:
+                    wk.unlock_picks(pool, season, week)
+                    st.session_state[f"mine_{pool}"] = []
+                    st.session_state[f"msg_{pool}"] = ("ok", "Unlocked. Lock again once your entry is final.")
+                except Exception as exc:
+                    st.session_state[f"msg_{pool}"] = ("warn", f"Couldn't unlock: {exc}")
+                st.rerun()
+            continue
+
         st.markdown(f"<div class='np-note'>{note}</div>", unsafe_allow_html=True)
         if rows:
             show_card(pool, rows)
-        if built and built.get("missing"):
-            st.caption("No market line for: " + ", ".join(built["missing"][:12]))
-        if built and built.get("bench"):
-            st.caption("Next best: " + "; ".join(f"{lbl} {p * 100:.0f}%" for lbl, p in built["bench"][:5]))
+            if preview:
+                st.caption("Lock becomes available once Clay's real lines are in (this is an early look).")
+            elif st.button("🔒 Lock my picks — I submitted this card", key=f"lock_{pool}", type="primary",
+                           use_container_width=True):
+                try:
+                    st.session_state[f"mine_{pool}"] = wk.lock_picks(pool, season, week, rows)
+                    st.session_state[f"msg_{pool}"] = ("ok", "Locked. These are your picks for the week.")
+                except Exception as exc:
+                    st.session_state[f"msg_{pool}"] = ("warn", f"Couldn't save your locked picks: {exc}")
+                st.rerun()
         if not locked:
             paste_form(pool, season, week)
     st.markdown("<div class='fine'>Chance = the model's chance the pick covers Clay's frozen line, using the current "

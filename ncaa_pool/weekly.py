@@ -34,6 +34,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "ncaa_pool" / "data"
 SLATES = DATA / "slates"
 CARDS = DATA / "cards"
+MINE = DATA / "my_picks"                # Nov 1, 2026: "Lock my picks" -- exactly what Cole submitted
 GRADER = ROOT / "ncaa_grader" / "data" / "picks.csv"
 ET = ZoneInfo("America/New_York")
 STAKE_KEY, STAKE_OTHER = 10.0, 5.0     # Cole's staking: $10 on ranks 1-3, $5 on ranks 4-12
@@ -331,6 +332,17 @@ def snapshot(now: datetime | None = None, feed: dict | None = None) -> dict:
         grade_rows(rows, games)
         info["graded"] += sum(bool(r.get("result")) for r in rows) - before
         write_card(cp, rows)
+    for p in sorted(MINE.glob("*.csv")):                    # your locked entries: grade only
+        m = re.match(r"(clay|chappy)_(\d{4})_w(\d+)\.csv$", p.name)
+        if not m:
+            continue
+        rows = _csv(p)
+        before = sum(bool(r.get("result")) for r in rows)
+        grade_rows(rows, feed.get((int(m[2]), int(m[3])), {}))
+        n = sum(bool(r.get("result")) for r in rows) - before
+        if n:
+            info["graded"] += n
+            p.write_text(render_card(rows), encoding="utf-8")
     return info
 
 
@@ -366,19 +378,20 @@ def history(feed: dict | None = None) -> list[dict]:
              "result": r["result"], "final": r.get("final", "")})
     for w, rows in v51.items():
         out.append({"season": 2026, "week": w, "pool": "clay", "source": "Your picks", "rows": rows})
+    for p in sorted(MINE.glob("*.csv")):                    # weeks you locked in the app
+        m = re.match(r"(clay|chappy)_(\d{4})_w(\d+)\.csv$", p.name)
+        rows = _csv(p) if m else []
+        if rows and not (m[1] == "clay" and int(m[2]) == 2026 and int(m[3]) in v51):
+            out.append({"season": int(m[2]), "week": int(m[3]), "pool": m[1], "source": "Your picks", "rows": rows})
     order = {"CPM card": 0, "Your picks": 1, "CPM v1 replay": 2}
     out.sort(key=lambda e: (-e["season"], -e["week"], e["pool"], order.get(e["source"], 9)))
     return out
 
 
-if __name__ == "__main__":
-    print(snapshot())
-
-
 # ------------------------------------------------------------------ saving a slate from the app
-def save_slate(pool: str, season: int, week: int, rows: list[dict], session=None) -> None:
-    """Write the pasted slate to the repo via GitHub's contents API (Streamlit Cloud's disk is wiped
-    on restart). Uses the GITHUB_TOKEN already in the app's secrets, same as the bet log."""
+def _github_write(rel: str, text: str | None, message: str, session=None) -> None:
+    """Create/replace (text) or delete (text=None) a repo file via GitHub's contents API. Streamlit
+    Cloud's disk is wiped on restart, so the app writes through the GITHUB_TOKEN in its secrets."""
     import base64
 
     import requests
@@ -387,23 +400,68 @@ def save_slate(pool: str, season: int, week: int, rows: list[dict], session=None
     if not bet_log.token():
         raise bet_log.BetLogError("GITHUB_TOKEN is not set in the app's secrets")
     s = session or requests
-    rel = f"ncaa_pool/data/slates/{pool}_{season}_w{week}.csv"
     api = f"https://api.github.com/repos/{bet_log.REPO}/contents/{rel}"
     for _ in range(3):
         r = s.get(api, headers=bet_log._headers(), params={"ref": "main"}, timeout=15)
-        sha = r.json().get("sha") if r.status_code == 200 else None
         if r.status_code not in (200, 404):
             raise bet_log.BetLogError(f"GitHub read failed (HTTP {r.status_code})")
-        body = {"message": f"NCAA {pool} pool lines, week {week} [skip ci]", "branch": "main",
-                "content": base64.b64encode(render_slate(rows).encode("utf-8")).decode("ascii")}
+        sha = r.json().get("sha") if r.status_code == 200 else None
+        body = {"message": f"{message} [skip ci]", "branch": "main"}
         if sha:
             body["sha"] = sha
-        w = s.put(api, headers=bet_log._headers(), json=body, timeout=20)
+        if text is None:
+            if not sha:
+                return
+            w = s.delete(api, headers=bet_log._headers(), json=body, timeout=20)
+        else:
+            body["content"] = base64.b64encode(text.encode("utf-8")).decode("ascii")
+            w = s.put(api, headers=bet_log._headers(), json=body, timeout=20)
         if w.status_code in (200, 201):
             return
         if w.status_code not in (409, 422):
             raise bet_log.BetLogError(f"GitHub write failed (HTTP {w.status_code})")
     raise bet_log.BetLogError("GitHub write kept conflicting; try again")
+
+
+def save_slate(pool: str, season: int, week: int, rows: list[dict], session=None) -> None:
+    _github_write(f"ncaa_pool/data/slates/{pool}_{season}_w{week}.csv", render_slate(rows),
+                  f"NCAA {pool} pool lines, week {week}", session)
+
+
+# ------------------------------------------------------------------ "Lock my picks"
+def mine_path(pool: str, season: int, week: int) -> Path:
+    return MINE / f"{pool}_{season}_w{week}.csv"
+
+
+def render_card(rows: list[dict], locked_at: str | None = None) -> str:
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=CARD_FIELDS + ["locked_at"], extrasaction="ignore", lineterminator="\n")
+    w.writeheader()
+    for r in rows:
+        w.writerow({**r, "locked_at": locked_at or r.get("locked_at", "")})
+    return buf.getvalue()
+
+
+def lock_picks(pool: str, season: int, week: int, rows: list[dict], now: datetime | None = None,
+               session=None) -> list[dict]:
+    """Save the card exactly as submitted. It's never rebuilt again, only graded."""
+    at = (now or datetime.now(timezone.utc)).isoformat(timespec="minutes").replace("+00:00", "Z")
+    locked = [{**r, "season": season, "week": week, "frozen": "Y", "locked_at": at} for r in rows]
+    _github_write(f"ncaa_pool/data/my_picks/{pool}_{season}_w{week}.csv", render_card(locked, at),
+                  f"NCAA {pool} pool: my picks locked, week {week}", session)
+    return locked
+
+
+def unlock_picks(pool: str, season: int, week: int, session=None) -> None:
+    _github_write(f"ncaa_pool/data/my_picks/{pool}_{season}_w{week}.csv", None,
+                  f"NCAA {pool} pool: unlocked my picks, week {week}", session)
+
+
+def diff(mine: list[dict], model: list[dict]) -> dict:
+    a, b = {r["pick"] for r in mine}, {r["pick"] for r in model}
+    ka = {r["pick"] for r in mine if r.get("key") == "Y"}
+    kb = {r["pick"] for r in model if r.get("key") == "Y"}
+    return {"dropped": sorted(a - b), "added": sorted(b - a), "keys_changed": ka != kb, "model_keys": sorted(kb)}
 
 
 def expected_points(rows: list[dict]) -> tuple[float, int]:
@@ -412,3 +470,7 @@ def expected_points(rows: list[dict]) -> tuple[float, int]:
     weights = [2 if r.get("key") == "Y" else 1 for r in rows]
     dist = poisson_binomial(probs, weights)
     return sum(k * q for k, q in dist.items()), sum(weights)
+
+
+if __name__ == "__main__":
+    print(snapshot())
