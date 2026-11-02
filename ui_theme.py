@@ -210,6 +210,7 @@ def apply() -> None:
         .row-list .r:last-child { border-bottom:0; }
         .row-list .t { font-weight:600; font-size:.95rem; line-height:1.3; }
         .row-list .s { color:var(--muted); font-size:.8rem; margin-top:.15rem; overflow-wrap:anywhere; }
+        .row-list .s .fair { color:var(--soft); display:inline-block; margin-top:.2rem; }
         .row-list .v { font-family:'Manrope', sans-serif !important; font-weight:700; font-size:1.1rem; text-align:right; white-space:nowrap; }
         .quiet { text-align:center; padding:2.6rem 1.2rem; color:var(--muted); line-height:1.5; }
         .quiet strong { display:block; color:var(--text); font-size:1.1rem; font-weight:700; margin-bottom:.35rem; }
