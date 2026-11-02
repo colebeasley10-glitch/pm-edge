@@ -75,6 +75,6 @@ def test_snapshot_refreshes_then_freezes_and_grades(tmp_path, monkeypatch):
 def test_history_and_money():
     h = wk.history()
     sources = {e["source"] for e in h}
-    assert {"CPM v1 replay", "Your v51 picks"} <= sources
+    assert {"CPM v1 replay", "Your picks"} <= sources
     rows = [{"rank": 1, "key": "Y", "result": "W"}, {"rank": 5, "key": "N", "result": "L"}]
     assert wk.points(rows) == 2 and wk.money(rows) == round(10 * 100 / 110 - 5, 2)

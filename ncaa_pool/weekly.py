@@ -365,8 +365,8 @@ def history(feed: dict | None = None) -> list[dict]:
             {"rank": r["rank"], "key": key, "pick": r["pick"], "prob": "", "value_pts": r.get("edge", ""),
              "result": r["result"], "final": r.get("final", "")})
     for w, rows in v51.items():
-        out.append({"season": 2026, "week": w, "pool": "clay", "source": "Your v51 picks", "rows": rows})
-    order = {"CPM card": 0, "Your v51 picks": 1, "CPM v1 replay": 2}
+        out.append({"season": 2026, "week": w, "pool": "clay", "source": "Your picks", "rows": rows})
+    order = {"CPM card": 0, "Your picks": 1, "CPM v1 replay": 2}
     out.sort(key=lambda e: (-e["season"], -e["week"], e["pool"], order.get(e["source"], 9)))
     return out
 
