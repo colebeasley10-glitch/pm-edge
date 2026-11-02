@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-02
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-02T18:45:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-02T19:00:36+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $500.00 (start $500, at risk $10.00) · ¼-Kelly comparison $500.00
 **Season to date (BET tier):** 0-0-0 · flat P/L $+0.00 · ¼-Kelly P/L $+0.00
 
-## Qualified bets (2)
+## Qualified bets (1)
 
 ```
 GAME: Arizona Wildcats at UCLA Bruins (neutral)
@@ -28,28 +28,6 @@ CONFIDENCE/UNCERTAINTY: LOW — ratings are still mostly the preseason prior; ca
 FLAGS: early season (<4 games): mostly preseason prior; neutral site; injuries/lineups not modeled — check before betting
 
 WHY: Model line UCLA Bruins +1.5 vs market +4.5 (+3.1 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-02T16:12:03+00:00 · model ncaab_v1
-```
-
-```
-GAME: UTEP Miners at Northern Kentucky Norse (neutral)
-TIPOFF: Mon 2:00 PM ET
-
-SPORTSBOOK LINE: Northern Kentucky Norse +2.5 (-105)
-MODEL LINE: Northern Kentucky Norse PK
-PROJECTED SCORE: UTEP Miners 74 - Northern Kentucky Norse 74
-
-MODEL COVER PROBABILITY: 52.4%
-BREAK-EVEN PROBABILITY: 51.22%
-EXPECTED ROI: +2.4%
-
-RECOMMENDATION: Northern Kentucky Norse +2.5
-MINIMUM ACCEPTABLE PRICE: -106
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $3.15
-CONFIDENCE/UNCERTAINTY: LOW — ratings are still mostly the preseason prior; calibrated win prob 52.4% (backtest-shrunk toward the market)
-FLAGS: early season (<4 games): mostly preseason prior; neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Northern Kentucky Norse PK vs market +2.5 (+2.4 pts) from opponent-adjusted efficiency and venue.
 LOGGED: 2026-11-02T16:12:03+00:00 · model ncaab_v1
 ```
 
