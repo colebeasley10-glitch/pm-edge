@@ -139,8 +139,54 @@ def bet_view(r: dict, pl_col: str) -> dict:
         if r.get("sport"):
             extra = f"{r['sport']} · {extra}"
     return {"title": title, "game": game, "extra": extra, "game_at": game_at, "placed": placed, "price": price,
+            "fair": fair_value(r),
             "status": status or "open", "pl": pl, "settled": settled,
             "hidden": status in HIDDEN, "sort": str(when(game_at or placed) or "")}
+
+
+def fair_value(r: dict) -> dict | None:
+    """Fair win probability vs the price the bet is listed at, for any lane's row (Nov 2, 2026).
+    Fair = Pinnacle no-vig (Bet Queue / Prop Board / Odds Fam / Trader Follow) or the lane's model."""
+    p = _num(r.get("fair_prob"))
+    src = r.get("fair_src") or "Pinnacle"
+    if p is None and _num(r.get("model_prob")) is not None:
+        p, src = _num(r.get("model_prob")), "Model"
+    if p is None or not 0 < p < 1:
+        return None
+    cents = False
+    dec = None
+    for k in ("decimal", "bet_at_decimal", "target_decimal", "best_decimal"):
+        if (x := _num(r.get(k))) and x > 1:
+            dec = x
+            break
+    if dec is None:
+        for k in ("copy_price", "avg_price", "entry_price", "price"):
+            if (c := _num(r.get(k))) is not None and 0 < c < 1:
+                dec, cents = 1 / c, True
+                break
+    if dec is None:
+        for k in ("bet_at", "target_odds", "odds"):
+            if (d := _dec_from_american(r.get(k))) is not None:
+                dec = d
+                break
+    if src == "Copy price":       # no outside price to compare against: nothing honest to show
+        return None
+    fair = f"{p * 100:.0f}¢" if cents else _am(1 / p)
+    ev = p * dec - 1 if dec else None
+    return {"p": p, "fair": fair, "ev": ev, "src": "our model's estimate" if src == "Model" else "Pinnacle no-vig"}
+
+
+def fair_html(fv: dict | None) -> str:
+    if not fv:
+        return ""
+    txt = f"Fair {fv['fair']} ({fv['p'] * 100:.1f}%, {fv['src']})"
+    if fv["ev"] is None:
+        return f"<br><span class='fair'>{esc(txt)}</span>"
+    good = fv["ev"] > 0
+    verdict = (f"+EV — worth it at {fv['fair']} or better" if good
+               else f"no value here — only worth it at {fv['fair']} or better")
+    return (f"<br><span class='fair'>{esc(txt)} · <b class='{'up' if good else 'down'}'>EV {fv['ev'] * 100:+.1f}%</b>"
+            f" · {esc(verdict)}</span>")
 
 
 def stamp(v) -> str:
@@ -162,11 +208,12 @@ def lane_bets(lane: dict) -> None:
         bits = [b for b in (esc(v["extra"]), esc(v["game"]), ("Game " if v["game_at"] else "Placed ")
                             + esc(stamp(v["game_at"] or v["placed"])), esc(v["price"])) if b.strip()]
         if show_pl:
-            return (esc(v["title"]), " · ".join(bits + [esc(v["status"])]), money(v["pl"]), tone(v["pl"]))
+            return (esc(v["title"]), " · ".join(bits + [esc(v["status"])]) + fair_html(v["fair"]),
+                    money(v["pl"]), tone(v["pl"]))
         late = v["game_at"] and not upcoming(v["game_at"])
         state = ("alert only (bet by hand)" if v["status"] == "alert"
                  else "waiting to settle" if late else esc(v["status"]))
-        return (esc(v["title"]), " · ".join(bits + [state]), "", "")
+        return (esc(v["title"]), " · ".join(bits + [state]) + fair_html(v["fair"]), "", "")
 
     rows_ = lane.get("rows") or []
     stakes = [(_num(r.get("his_usdc")), _num(r.get("pl_his"))) for r in rows_]
