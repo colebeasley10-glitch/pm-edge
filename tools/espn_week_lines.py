@@ -21,11 +21,26 @@ OUT = ROOT / "ncaa_pool" / "data" / "espn_lines"
 FIELDS = ["away", "home", "kickoff", "close", "open", "ctot", "otot", "away_pts", "home_pts", "provider"]
 
 
+def _days(dates: str) -> list[str]:
+    from datetime import date, timedelta
+    a, b = (dates.split("-") + [dates])[:2]
+    d0, d1 = date(int(a[:4]), int(a[4:6]), int(a[6:])), date(int(b[:4]), int(b[4:6]), int(b[6:]))
+    return [(d0 + timedelta(days=i)).strftime("%Y%m%d") for i in range((d1 - d0).days + 1)]
+
+
 def fetch(dates: str) -> list[dict]:
-    r = requests.get(BASE, params={"dates": dates, "groups": FBS_GROUP, "limit": 500}, timeout=30)
-    r.raise_for_status()
+    events = []
+    for day in _days(dates):            # one day at a time; a bad day is reported, not fatal
+        try:
+            r = requests.get(BASE, params={"dates": day, "groups": FBS_GROUP, "limit": 300},
+                             headers={"User-Agent": "Mozilla/5.0"}, timeout=30)
+            print(day, r.status_code, len(r.text))
+            r.raise_for_status()
+            events += r.json().get("events") or []
+        except Exception as exc:
+            print("ERROR", day, type(exc).__name__, str(exc)[:200])
     out = []
-    for ev in r.json().get("events") or []:
+    for ev in events:
         p = parse_event(ev)
         if not p:
             continue
