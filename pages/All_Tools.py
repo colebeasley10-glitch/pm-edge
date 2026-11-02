@@ -1641,6 +1641,18 @@ with tab_lab:
                         "beat_close": _nbs.get("beat_close")}, None))
     except Exception:
         pass
+    try:  # NCAA Basketball Model: $500 paper bankroll, BET tier only
+        for _m in [k for k in _lsys.modules if k.split(".")[0] in ("ncaab_grader", "ncaab_model")]:
+            del _lsys.modules[_m]
+        from ncaab_grader import core as _cb
+        _cbr = [r for r in _cb.load_ledger() if r.get("tier") == "BET"]
+        _cbs = _cb.stats(_cbr, pl="pnl", risk="stake")
+        _cards.append(("Research_Lab_NCAAB_Model", "NCAA Basketball Model",
+                       "Adjusted efficiency + preseason priors, calibrated EV, $500 paper bankroll",
+                       {"won": _cbs["w"], "lost": _cbs["l"], "roi": _cbs["roi"], "open": _cbs["open"],
+                        "beat_close": _cbs.get("beat_close")}, None))
+    except Exception:
+        pass
     for _spec in _lcfg.RESEARCH_STRATEGIES:
         try:
             _sm = _lmet.summarize(_LStore(_spec.key).positions)
