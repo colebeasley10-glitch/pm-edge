@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-02
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-02T23:15:31+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-02T23:30:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -48,7 +48,7 @@ LOGGED: 2026-11-02T16:12:03+00:00 · model ncaab_v1
 
 ## Data gaps
 
-- no line posted yet (30): SUNY Old Westbury Panthers @ Stony Brook Seawolves, Rhode Island College Anchormen @ UAlbany Great Danes, Dallas Christian Crusaders @ Rice Owls, Kentucky Christian Knights @ Eastern Kentucky Colonels, Cheyney (PA) Wolves @ Morgan State Bears, New College Mighty Banyans @ Florida International Panthers, Saint Vincent Bearcats @ Delaware State Hornets, Mount Olive Trojans @ UNC Wilmington Seahawks, Midway Eagles @ Kennesaw State Owls, Eureka Red Devils @ SIU Edwardsville Cougars, Paul Quinn Tigers @ Prairie View A&M Panthers, Coast Guard Bears @ Sacred Heart Pioneers, Rivier Raiders @ UMass Lowell River Hawks, Notre Dame (MD) Gators @ Delaware Blue Hens, Trinity College of Jacksonville Eagles @ Jacksonville Dolphins …
-- possession data coverage: 0.667
+- no line posted yet (30): Kentucky Christian Knights @ Eastern Kentucky Colonels, Cheyney (PA) Wolves @ Morgan State Bears, New College Mighty Banyans @ Florida International Panthers, Saint Vincent Bearcats @ Delaware State Hornets, Mount Olive Trojans @ UNC Wilmington Seahawks, Midway Eagles @ Kennesaw State Owls, Eureka Red Devils @ SIU Edwardsville Cougars, Paul Quinn Tigers @ Prairie View A&M Panthers, Coast Guard Bears @ Sacred Heart Pioneers, Rivier Raiders @ UMass Lowell River Hawks, Notre Dame (MD) Gators @ Delaware Blue Hens, Trinity College of Jacksonville Eagles @ Jacksonville Dolphins, MIT Engineers @ Harvard Crimson, Curry Colonels @ Stonehill Skyhawks, Bridgewater Eagles @ William & Mary Tribe …
+- possession data coverage: 0.778
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
