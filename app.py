@@ -425,7 +425,8 @@ def queue_plays() -> list[dict]:
         status = r.get("status") or "open"
         out.append({"start": r.get("game_start"), "league": r.get("league") or "", "title": r.get("pick") or "",
                     "sub": " · ".join(x for x in (r.get("game"), f"¼ Kelly ${float(r.get('stake_kelly') or 0):,.0f}")
-                                      if x) + ("" if status == "open" else f" · {status}"),
+                                      if x) + ("" if status == "open" else f" · {status}")
+                           + (f" · ⚠️ {r['injury']}" if r.get("injury") else ""),
                     "lane": f"Queue · {r.get('lane')}", "price": r.get("bet_at") or "", "fair": fair_txt,
                     "fair_src": "Model" if r.get("fair_src") == "Model" else "Pinnacle",
                     "ev": (f * dec - 1) if (f and dec) else None, "live": bool(d) and d <= NOW and status == "open",

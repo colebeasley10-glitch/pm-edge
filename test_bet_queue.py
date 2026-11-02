@@ -16,8 +16,17 @@ def write(path: Path, rows: list[dict]) -> None:
         w.writerows(rows)
 
 
-def lane(name, n=100, roi=0.08, verdict="Too early — 100 more bets", reference=False):
-    return {"name": name, "n": n, "roi": roi, "verdict": verdict, "reference": reference}
+def lane(name, n=100, roi=0.08, verdict="Too early — 100 more bets", reference=False, clv=0.01, clv_n=50):
+    return {"name": name, "n": n, "roi": roi, "verdict": verdict, "reference": reference, "clv": clv, "clv_n": clv_n}
+
+
+import pytest  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _no_injury_network(monkeypatch):
+    import nba_injuries
+    monkeypatch.setattr(nba_injuries, "fetch", lambda *a, **k: {})   # healthy league, no network
 
 
 def prop(i, player="Player", tier="STRONG", result="", start=NOW + timedelta(hours=3), prob=0.6, odds="-110"):
@@ -106,3 +115,40 @@ def test_muted_or_failed_push_retries_next_round():
     q = {"status": "open", "game_start": "2026-11-02T20:00:00Z", "pick": "P", "bet_at": "+100", "fair_odds": "-110",
          "lane": "X", "kelly_pct": "0", "ev": "0.09", "fair_src": "Pinnacle", "alerted": ""}
     assert bq._alert_new([q], now, lambda t, m: False) == 0 and q["alerted"] == ""
+
+
+def test_lane_needs_positive_clv_over_enough_bets():
+    """Nov 1, 2026: ROI alone isn't enough; the lane has to beat the close."""
+    def lane(name, clv, clv_n):
+        return {"name": name, "n": 100, "roi": 0.10, "verdict": "Too early", "clv": clv, "clv_n": clv_n,
+                "risk": 1000.0, "pl": 100.0, "reference": False}
+    ok = bq.lane_scores([lane("A", 0.02, 50), lane("B", -0.01, 50), lane("C", 0.05, 5), lane("D", None, 0)])
+    assert set(ok) == {"A"}
+
+
+def test_injury_check_blocks_out_and_mutes_questionable():
+    import nba_injuries as inj
+    rep = inj.parse({"injuries": [{"displayName": "Team", "injuries": [
+        {"athlete": {"displayName": "Luka Dončić"}, "status": "Out"},
+        {"athlete": {"displayName": "Jaren Jackson Jr."}, "status": "Questionable"},
+        {"athlete": {"displayName": "Ja Morant"}, "status": "Probable"}]}]})
+    assert inj.check("Luka Doncic", rep) == "block"
+    assert inj.check("Jaren Jackson", rep) == "warn"
+    assert inj.check("Ja Morant", rep) == "ok" and inj.check("Nobody", rep) == "ok"
+    assert inj.check("Anyone", None) == "unknown"
+    assert bq._prop_player("Luka Doncic Over 31.5 Points") == "Luka Doncic"
+    # flagged plays never buzz
+    from datetime import datetime, timezone
+    now = datetime(2026, 11, 2, 15, 0, tzinfo=timezone.utc)
+    q = {"status": "open", "game_start": "2026-11-02T20:00:00Z", "pick": "P", "bet_at": "+100", "fair_odds": "-150",
+         "lane": "X", "kelly_pct": "0", "ev": "0.30", "fair_src": "Model", "alerted": "", "injury": "Questionable"}
+    assert bq._alert_new([q], now, lambda t, m: True) == 0
+
+
+def test_out_player_never_queued_questionable_flagged(tmp_path):
+    root, lab = setup(tmp_path, [prop(1, player="Hurt Guy"), prop(2, player="Maybe Guy"), prop(3, player="Fine Guy")])
+    rep = {"hurt guy1": "Out", "maybe guy2": "Questionable"}
+    info = bq.update(NOW, lab, root=root, lanes=[lane("NBA Props — Strong + Lean")], injury_report=rep)
+    rows = {r["pick"].split(" Over")[0].split(" Under")[0]: r for r in bq.load(lab)}
+    assert info["injury_blocked"] == 1 and "Hurt Guy1" not in rows
+    assert rows["Maybe Guy2"]["injury"] == "Questionable" and rows["Fine Guy3"]["injury"] == ""

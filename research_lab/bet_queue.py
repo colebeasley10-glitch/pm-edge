@@ -10,7 +10,12 @@ Ranking (no hand-picked favorites, so it adjusts by itself as lanes prove or fai
   score = the lane's sample-size-shrunk ROI (scorecard.rank_score) + half the play's own EV,
           with the play EV capped at 10% (model probabilities run hot).
 Eligible lanes: positive shrunk ROI, not "Proven loser", "Losing to the close" or "Demote", and not
-a reference lane (every pick including no-edge). Steam plays from the Prop Board and Odds Fam are
+a reference lane (every pick including no-edge). Nov 1, 2026: also positive CLV -- the lane must beat
+the closing price on average over at least MIN_CLV_BETS bets. ROI on a small sample is mostly luck;
+beating the close is the faster sign of a real edge. Lanes that don't track CLV (Trader Follow) can't
+get in; BreakTheBank's NFL bets still alert straight from Trader Follow.
+NBA props are checked against ESPN's injury report first (nba_injuries.py): Out/Doubtful players are
+never queued, Questionable ones are queued on paper but never alerted, and no report = no alert. Steam plays from the Prop Board and Odds Fam are
 the same props, so each prop is queued once.
 
 Each queued play records the price, the fair price and EV at queue time, and two paper stakes:
@@ -53,10 +58,11 @@ BAD_VERDICTS = ("Proven loser", "Losing to the close", "Demote")
 HUGE_EV_PINNACLE = 0.06  # 6%+ vs Pinnacle's no-vig price
 HUGE_EV_MODEL = 0.12     # 12%+ vs our own model's probability (model and copy-price fairs)
 MAX_ALERTS_PER_DAY = 6
+MIN_CLV_BETS = 20       # CLV readings a lane needs before its average counts
 MIN_LANE_BETS = 30       # a lane (or slice) needs this many settled bets before it can feed the queue
 FIELDS = ["queue_id", "alert_time", "day", "lane", "source", "source_id", "league", "game", "pick", "game_start",
           "bet_at", "decimal", "fair_prob", "fair_odds", "fair_src", "ev", "lane_score", "score", "kelly_pct", "stake_kelly",
-          "status", "settled_time", "clv", "pl", "pl_kelly", "alerted"]
+          "status", "settled_time", "clv", "pl", "pl_kelly", "alerted", "injury"]
 
 
 def _dir(base: Path | None) -> Path:
@@ -164,6 +170,8 @@ def lane_scores(lanes: list[dict]) -> dict[str, float]:
     def good(l):
         if l.get("reference") or l["n"] < MIN_LANE_BETS or any(l["verdict"].startswith(b) for b in BAD_VERDICTS):
             return None
+        if l.get("clv") is None or (l.get("clv_n") or 0) < MIN_CLV_BETS or l["clv"] <= 0:
+            return None      # must be beating the close (Nov 1, 2026)
         s = scorecard.rank_score(l)
         return s if s > 0 else None
 
@@ -275,8 +283,19 @@ def _default_push(title: str, message: str) -> bool:
 
 
 # ------------------------------------------------------------------ one round
+_UNSET = object()
+
+
+def _prop_player(pick: str) -> str:
+    p = f" {pick or ''} "
+    for w in _STAT_WORDS:
+        if w in p:
+            return p.split(w)[0].strip()
+    return ""
+
+
 def update(now: datetime, base: Path | None = None, *, root: Path = ROOT, lanes: list[dict] | None = None,
-           push=None) -> dict:
+           push=None, injury_report=_UNSET) -> dict:
     lab = Path(base or config.DATA_DIR)
     rows = load(base)
     info = {"queued": 0, "settled": settle(rows, now, root, lab), "eligible_lanes": 0, "candidates": 0}
@@ -299,6 +318,24 @@ def update(now: datetime, base: Path | None = None, *, root: Path = ROOT, lanes:
         c["lane_score"] = round(ok[c["lane"]], 4)
         c["score"] = round(ok[c["lane"]] + 0.5 * min(c["ev"], EV_CAP), 4)
         pool.append(c)
+    if any(c["source"] == "nba_props" for c in pool):
+        import nba_injuries
+        report = nba_injuries.fetch() if injury_report is _UNSET else injury_report
+        info["injury_report"] = "ok" if report is not None else "unavailable"
+        kept = []
+        for c in pool:
+            if c["source"] == "nba_props":
+                player = _prop_player(c["pick"])
+                verdict = nba_injuries.check(player, report)
+                if verdict == "block":
+                    info["injury_blocked"] = info.get("injury_blocked", 0) + 1
+                    continue
+                if verdict == "warn":
+                    c["injury"] = report.get(nba_injuries.norm(player), "listed")
+                elif verdict == "unknown":
+                    c["injury"] = "no injury report"
+            kept.append(c)
+        pool = kept
     info["candidates"] = len(pool)
     pool.sort(key=lambda c: (-c["score"], -c["ev"], c["game_start"]))
     taken_keys: set[str] = set()
@@ -317,7 +354,8 @@ def update(now: datetime, base: Path | None = None, *, root: Path = ROOT, lanes:
         q = {**{k_: v for k_, v in c.items() if not k_.startswith("_")},
              "queue_id": f"q-{c['source']}-{c['source_id']}"[:90], "alert_time": iso(now), "day": day,
              "bet_at": american(c["decimal"]), "fair_odds": american(1 / c["fair_prob"]), "kelly_pct": round(k, 4), "stake_kelly": round(BANKROLL * k, 2),
-             "status": "open", "settled_time": "", "clv": "", "pl": "", "pl_kelly": "", "alerted": ""}
+             "status": "open", "settled_time": "", "clv": "", "pl": "", "pl_kelly": "", "alerted": "",
+             "injury": c.get("injury", "")}
         rows.append(q)
         today.append(q)
         taken_keys.add(c["_key"])
@@ -341,6 +379,8 @@ def _alert_new(today: list[dict], now: datetime, push) -> int:
         start = parse_dt(q.get("game_start"))
         if q.get("status") != "open" or q.get("alerted") or not is_huge(q) or not start or start <= now:
             continue
+        if q.get("injury"):
+            continue         # questionable player or no injury report: paper only, no buzz
         title, msg = alert_text(q)
         try:
             ok = bool(push(title, msg))

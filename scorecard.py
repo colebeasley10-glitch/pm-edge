@@ -103,7 +103,7 @@ def grade(name: str, rows: list[dict], *, pl: str = "pl", risk=None, clv: str | 
             "units": None if units is None else round(units, 2), "beat_close": beat,
             "clv_unit": clv_unit if clvs else "",
             "risk": round(tot_risk, 2), "roi": None if roi is None else round(roi, 4),
-            "clv": None if avg_clv is None else round(avg_clv, 4), "checks": checks, "verdict": verdict,
+            "clv": None if avg_clv is None else round(avg_clv, 4), "clv_n": len(clvs), "checks": checks, "verdict": verdict,
             "note": note, "rows": rows, "pl_col": pl, "reference": reference,
             "roi_se": None if se is None else round(se, 4)}
 
