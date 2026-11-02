@@ -48,6 +48,10 @@ def grade(name: str, rows: list[dict], *, pl: str = "pl", risk=None, clv: str | 
           money: str = "paper", note: str = "", clv_unit: str = "", reference: bool = False) -> dict:
     """rows -> {name, n, won, lost, pl, risk, roi, clv, verdict}. `risk` is a column name or a
     flat stake per bet; unsettled rows (blank P/L) are skipped."""
+    if isinstance(risk, str):
+        # A row with a $0 stake in this lane wasn't a bet here (e.g. quarter Kelly sizes a no-edge
+        # copy at $0). Counting it showed real wins/losses as "+$0.00 push" (fixed Nov 2, 2026).
+        rows = [r for r in rows if _f(r.get(risk)) != 0]
     n = won = lost = 0
     tot_pl = tot_risk = 0.0
     clvs: list[float] = []
