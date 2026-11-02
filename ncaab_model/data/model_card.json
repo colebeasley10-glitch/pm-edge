@@ -1,0 +1,113 @@
+{
+ "version": "ncaab_v1",
+ "built": "2026-11-02",
+ "params": {
+  "half_life": 90.0,
+  "prior_games": 3.0,
+  "tempo_prior_games": 3.0,
+  "eff_cap": 40.0
+ },
+ "calibration": {
+  "b_s": 0.0457,
+  "sd_s": 11.115,
+  "b_s_neutral": 0.293,
+  "sd_s_neutral": 11.479,
+  "a_t": 0.854,
+  "b_t": 0.0051,
+  "sd_t": 16.646,
+  "fit_on": "2020-2023 + 2026 seasons vs ESPN/consensus closing lines (2024-25 have no line data)"
+ },
+ "rules": {
+  "SPREAD": {
+   "enabled": true,
+   "neutral_only": true,
+   "min_ev": 0.02,
+   "max_edge_pts": 8.0,
+   "why": "Only neutral-court spreads kept signal vs the closing line out of sample (2023+2026: 113 bets, +11.0% ROI, 95% CI -6.5% to +28.6%). Not proven; paper only."
+  },
+  "TOTAL": {
+   "enabled": false,
+   "min_ev": 0.03,
+   "why": "No signal vs the closing total in any season since 2020 (shrink ~0)."
+  },
+  "ML": {
+   "enabled": false,
+   "min_ev": 0.03,
+   "min_odds": -250,
+   "max_odds": 250,
+   "why": "Lost in validation and test."
+  }
+ },
+ "staking": {
+  "start_bankroll": 500.0,
+  "flat_stake": 5.0,
+  "kelly_fraction": 0.25,
+  "max_stake_pct": 0.02,
+  "max_daily_exposure_pct": 0.08,
+  "min_stake": 1.0,
+  "why": "Flat $5 (1%) is primary: on the test bets it made +$62 with a $56 max drawdown vs +$39 / $83 for capped quarter Kelly. Never sized up after losses."
+ },
+ "flags": {
+  "early_season_games": 4
+ },
+ "recalibration": "Scheduled only: refit calibration + priors once in early January and once after the season, never after a bad day. Each refit gets a new version (ncaab_v2...) and old picks keep their version.",
+ "summary": "Opponent-adjusted, possession-based efficiency ratings with a preseason prior (last season's ratings, returning minutes, transfers, conference), refit daily on games before tip. Every game's spread, total and moneyline is priced and logged; only neutral-court spreads with +2% calibrated EV are BETs. Totals and moneylines are tracked as WATCH/PASS because the backtest found no edge there.",
+ "backtest": {
+  "Neutral-court spreads (the BET rule)": {
+   "bets": 113,
+   "W": 64,
+   "L": 47,
+   "roi": 11.0,
+   "roi_lo95": -6.5,
+   "roi_hi95": 28.6
+  },
+  "  2023 only": {
+   "bets": 56,
+   "W": 36,
+   "L": 18,
+   "roi": 26.6,
+   "roi_lo95": 3.1,
+   "roi_hi95": 50.0
+  },
+  "  2026 only": {
+   "bets": 57,
+   "W": 28,
+   "L": 29,
+   "roi": -4.2,
+   "roi_lo95": -29.8,
+   "roi_hi95": 21.3
+  },
+  "Home-court spreads (+2% EV)": {
+   "bets": 26,
+   "W": 13,
+   "L": 13,
+   "roi": 2.8,
+   "roi_lo95": -37.5,
+   "roi_hi95": 43.1
+  },
+  "Moneyline (+2% EV, recent calibration)": {
+   "bets": 395,
+   "W": 201,
+   "L": 194,
+   "roi": -8.9,
+   "roi_lo95": -17.8,
+   "roi_hi95": 0.0
+  },
+  "Pre-registered plan: spreads": {
+   "bets": 77,
+   "W": 32,
+   "L": 44,
+   "roi": -18.6,
+   "roi_lo95": -39.9,
+   "roi_hi95": 2.6
+  },
+  "Pre-registered plan: moneylines": {
+   "bets": 28,
+   "W": 7,
+   "L": 21,
+   "roi": -33.4,
+   "roi_lo95": -78.3,
+   "roi_hi95": 11.6
+  }
+ }
+}

@@ -402,6 +402,11 @@ def open_plays() -> list[dict]:
                 add(r["kickoff"], league, r["side"], f"{r['away']} at {r['home']}", lane,
                     price=fmt_american(r.get("odds")), dec=_dec_from_american(r.get("odds")),
                     fair=r.get("model_prob"), fair_src="Model", bet=_grader_bet(r))
+    for r in rows("ncaab_grader/data/picks.csv"):   # NCAA basketball: BET tier only
+        if not r.get("result") and r.get("tier") == "BET":
+            add(r["tipoff"], "NCAAB", r["side"], f"{r['away']} at {r['home']} · min {r.get('min_odds', '')}",
+                "NCAAB Model", price=fmt_american(r.get("odds")), dec=_dec_from_american(r.get("odds")),
+                fair=r.get("model_prob"), fair_src="Model", bet={})
     for r in rows("nba_grader/data/props.csv"):
         if not r.get("result") and r.get("tier") == "STRONG":
             add(r["kickoff"], "NBA", r["side"], f"{r['away']} at {r['home']} · proj {r['proj']}", "NBA Props",
