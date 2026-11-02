@@ -555,8 +555,8 @@ elif view == "Today":
                     "gets graded. NBA plays don't account for injuries; check the report first.</div>",
                     unsafe_allow_html=True)
     if not plays:
-        st.markdown("<div class='quiet'><strong>Nothing open right now</strong>New plays push to your phone "
-                    "as they show up.</div>", unsafe_allow_html=True)
+        st.markdown("<div class='quiet'><strong>Nothing open right now</strong>Your phone only buzzes for huge-EV "
+                    "Bet Queue plays and BreakTheBank's NFL bets.</div>", unsafe_allow_html=True)
 
 else:
     st.markdown("<div class='section'><span>Real money</span></div>", unsafe_allow_html=True)
@@ -572,4 +572,6 @@ with c1:
     st.page_link("pages/Odds_Fam.py", label="Log a bet", icon=":material/edit_note:", use_container_width=True)
 with c2:
     st.page_link("pages/Scorecard.py", label="Full scorecard", icon=":material/fact_check:", use_container_width=True)
+st.page_link("pages/NCAA_Pools.py", label="NCAA Pools — this week's card & past weeks", icon=":material/sports_football:",
+             use_container_width=True)
 st.page_link("pages/All_Tools.py", label="Every tool & research lane", icon=":material/apps:", use_container_width=True)

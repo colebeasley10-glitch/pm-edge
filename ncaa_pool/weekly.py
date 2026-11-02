@@ -1,0 +1,414 @@
+"""Week-by-week NCAA pool cards for the SharpIQ app (Nov 1, 2026).
+
+What the "NCAA Pools" page shows, and where it comes from:
+
+  * This week's card for Clay's pool (12 picks, 3 double-point keys) and Chappy's (6 picks, 1 key),
+    built by the CPM v1 model (ncaa_pool/model.py) from that pool's lines + the latest market line the
+    NCAA grader logs hourly from ESPN.
+  * Past weeks: every saved card, graded from the final scores, plus the season so far
+    (CPM v1 replayed on Clay's real weeks 1-9 slates, and the v51 picks actually made where we have them).
+
+A pool's lines live in ncaa_pool/data/slates/<pool>_<season>_w<week>.csv (away,home,home_spread[,total]).
+Cole can paste them on the page (saved to the repo through the GitHub API) or send a screenshot to Claude.
+
+snapshot() runs hourly from the NCAA grader workflow. Until the lock (Saturday noon ET, or a game's own
+kickoff if earlier) it rebuilds the card with the newest market read and writes it to
+ncaa_pool/data/cards/<pool>_<season>_w<week>.csv; once a pick's game has kicked off that pick is frozen,
+and after the lock the whole card is frozen. It also grades each pick when its final score is in.
+Paper only: nothing here bets.
+"""
+from __future__ import annotations
+
+import csv
+import io
+import re
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
+from ncaa_pool.model import Game, build_card
+from ncaa_pool.run_card import POOLS, _aliases, _f, _norm
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / "ncaa_pool" / "data"
+SLATES = DATA / "slates"
+CARDS = DATA / "cards"
+GRADER = ROOT / "ncaa_grader" / "data" / "picks.csv"
+ET = ZoneInfo("America/New_York")
+STAKE_KEY, STAKE_OTHER = 10.0, 5.0     # Cole's staking: $10 on ranks 1-3, $5 on ranks 4-12
+WIN_AT_110 = 100 / 110
+LOCK_HOUR_ET = 12                       # picks lock Saturday noon ET
+CARD_FIELDS = ["pool", "season", "week", "rank", "key", "pick", "kind", "side", "away", "home", "line",
+               "prob", "value_pts", "market", "kickoff", "made_at", "frozen", "home_pts", "away_pts", "result"]
+
+
+def _csv(p: Path) -> list[dict]:
+    if not p.exists() or p.stat().st_size == 0:
+        return []
+    with p.open(newline="", encoding="utf-8") as fh:
+        return list(csv.DictReader(fh))
+
+
+def _dt(v) -> datetime | None:
+    try:
+        d = datetime.fromisoformat(str(v).replace("Z", "+00:00"))
+        return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        return None
+
+
+def stake(rank: int) -> float:
+    return STAKE_KEY if rank <= 3 else STAKE_OTHER
+
+
+def slate_path(pool: str, season: int, week: int) -> Path:
+    return SLATES / f"{pool}_{season}_w{week}.csv"
+
+
+def card_path(pool: str, season: int, week: int) -> Path:
+    return CARDS / f"{pool}_{season}_w{week}.csv"
+
+
+# ------------------------------------------------------------------ pasting a slate
+_LINE = re.compile(r"^\s*(?P<away>.+?)\s+(?:at|@|vs\.?)\s+(?P<home>.+?)\s+(?P<spread>[+-]?\d+(?:\.\d+)?|pk|PK|Pk)"
+                   r"(?:\s*(?:,|\s)\s*(?:o/u|ou|total|t)?\s*(?P<total>\d+(?:\.\d+)?))?\s*$")
+
+
+def parse_slate(text: str) -> tuple[list[dict], list[str]]:
+    """Lines like 'Ohio at Akron -3.5' or 'Ohio @ Akron +7, 52.5' (spread = HOME team's line),
+    or CSV 'away,home,home_spread[,total]'. Returns (rows, lines it couldn't read)."""
+    rows, bad = [], []
+    for raw in (text or "").splitlines():
+        line = raw.strip()
+        if not line or line.lower().startswith("away,"):
+            continue
+        parts = [p.strip() for p in line.split(",")]
+        if len(parts) >= 3 and _f(parts[2]) is not None and not _LINE.match(line):
+            rows.append({"away": parts[0], "home": parts[1], "home_spread": _f(parts[2]),
+                         "total": _f(parts[3]) if len(parts) > 3 else None})
+            continue
+        m = _LINE.match(line)
+        if not m:
+            bad.append(line)
+            continue
+        rows.append({"away": m["away"].strip(), "home": m["home"].strip(), "home_spread": _f(m["spread"]),
+                     "total": _f(m["total"])})
+    return rows, bad
+
+
+def render_slate(rows: list[dict]) -> str:
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=["away", "home", "home_spread", "total", "exclude"], extrasaction="ignore",
+                       lineterminator="\n")
+    w.writeheader()
+    for r in rows:
+        w.writerow({**r, "total": "" if r.get("total") is None else r["total"]})
+    return buf.getvalue()
+
+
+# ------------------------------------------------------------------ grader feed (schedule, market, finals)
+@dataclass
+class GameInfo:
+    kickoff: datetime | None = None
+    home_pts: float | None = None
+    away_pts: float | None = None
+    spread: float | None = None     # latest market HOME spread
+    total: float | None = None      # latest market total
+    first_spread: float | None = None
+    first_total: float | None = None
+
+
+def game_feed(path: Path = GRADER, aliases: dict | None = None) -> dict[tuple, dict]:
+    """(season, week) -> {(away, home): GameInfo} from the NCAA grader's log (newest read wins)."""
+    aliases = aliases if aliases is not None else _aliases()
+    rows = sorted(_csv(path), key=lambda r: r.get("logged_at") or "")
+    out: dict[tuple, dict] = {}
+    for r in rows:
+        if r.get("source", "live") != "live":
+            continue
+        try:
+            sw = (int(r["season"]), int(r["week"]))
+        except (KeyError, ValueError):
+            continue
+        key = (_norm(r["away"], aliases), _norm(r["home"], aliases))
+        g = out.setdefault(sw, {}).setdefault(key, GameInfo())
+        g.kickoff = _dt(r.get("kickoff")) or g.kickoff
+        if r.get("home_pts") not in (None, "") and r.get("away_pts") not in (None, ""):
+            g.home_pts, g.away_pts = _f(r["home_pts"]), _f(r["away_pts"])
+        line = _f(r.get("close_line")) if r.get("close_line") not in (None, "") else _f(r.get("line"))
+        first = _f(r.get("line"))
+        if r.get("market") == "SPREAD" and line is not None:
+            home = r.get("pick_team") == r.get("home")
+            g.spread = line if home else -line
+            if g.first_spread is None and first is not None:
+                g.first_spread = first if home else -first
+        elif r.get("market") == "TOTAL" and line is not None:
+            g.total = line
+            if g.first_total is None and first is not None:
+                g.first_total = first
+    return out
+
+
+def current_week(feed: dict, now: datetime) -> tuple[int, int] | None:
+    """The week whose games are next (or still being played)."""
+    best = None
+    for sw, games in feed.items():
+        ks = [g.kickoff for g in games.values() if g.kickoff]
+        if not ks or max(ks) + timedelta(hours=5) < now:
+            continue
+        if best is None or sw < best:
+            best = sw
+    return best
+
+
+def lock_time(games: dict) -> datetime | None:
+    """Saturday noon ET of the week (the Saturday on or after the earliest kickoff)."""
+    ks = sorted(g.kickoff for g in games.values() if g.kickoff)
+    if not ks:
+        return None
+    d = ks[0].astimezone(ET).date()
+    sat = d + timedelta(days=(5 - d.weekday()) % 7)
+    return datetime(sat.year, sat.month, sat.day, LOCK_HOUR_ET, tzinfo=ET).astimezone(timezone.utc)
+
+
+# ------------------------------------------------------------------ building a card
+def _lookup(games: dict, away: str, home: str) -> tuple[GameInfo | None, bool]:
+    if (away, home) in games:
+        return games[(away, home)], False
+    if (home, away) in games:
+        return games[(home, away)], True
+    return None, False
+
+
+def build(pool: str, slate: list[dict], games: dict, *, now: datetime, preview: bool = False,
+          pinned: list[dict] | None = None, aliases: dict | None = None) -> dict:
+    """Card rows for one pool. `slate` rows: away, home, home_spread, total, exclude.
+    preview=True: no pool lines yet, so the grader's first logged line stands in for the pool line.
+    pinned: picks from the last snapshot whose games have kicked off (kept as they were)."""
+    aliases = aliases if aliases is not None else _aliases()
+    n, k = POOLS[pool]
+    pinned = pinned or []
+    pinned_games = {(p["away"], p["home"]) for p in pinned}
+    cand, missing, by_game = [], [], {}
+    for r in slate:
+        away, home = _norm(r["away"], aliases), _norm(r["home"], aliases)
+        if r.get("exclude") or (away, home) in pinned_games:
+            continue
+        info, flipped = _lookup(games, away, home)
+        if not info or info.spread is None:
+            missing.append(f"{away} at {home}")
+            continue
+        if info.kickoff and info.kickoff <= now:
+            continue                      # already started: can't be picked now
+        mspread = -info.spread if flipped else info.spread
+        pspread = _f(r.get("home_spread"))
+        if pspread is None:
+            continue
+        g = Game(away, home, pspread, mspread, _f(r.get("total")), info.total)
+        cand.append(g)
+        by_game[(away, home)] = info
+    n_left = max(0, n - len(pinned))
+    k_left = max(0, k - sum(p["key"] == "Y" for p in pinned))
+    card = build_card(cand, n_left, k_left, allow_totals=False)
+    rows = [dict(p) for p in pinned]
+    for i, o in enumerate(card["picks"]):
+        g = o.game
+        info = by_game.get((g.away, g.home))
+        line = g.pool_spread if o.side == "home" else -g.pool_spread
+        rows.append({"pool": pool, "rank": 0, "key": "Y" if i < k_left else "N", "pick": o.label, "kind": o.kind,
+                     "side": o.side, "away": g.away, "home": g.home, "line": line, "prob": round(o.prob, 4),
+                     "value_pts": round(o.gap, 2), "market": o.extra["market"],
+                     "kickoff": info.kickoff.isoformat().replace("+00:00", "Z") if info and info.kickoff else "",
+                     "made_at": now.isoformat(timespec="minutes").replace("+00:00", "Z"), "frozen": "",
+                     "home_pts": "", "away_pts": "", "result": ""})
+    # keys first, then by chance to score
+    rows.sort(key=lambda r: (r["key"] != "Y", -float(r["prob"] or 0)))
+    for i, r in enumerate(rows, 1):
+        r["rank"] = i
+    return {"rows": rows, "missing": missing, "bench": [(o.label, o.prob) for o in card["bench"]],
+            "preview": preview}
+
+
+def preview_slate(games: dict) -> list[dict]:
+    """No pool lines yet: use the grader's first logged line (what the market said early in the week)."""
+    return [{"away": a, "home": h, "home_spread": g.first_spread, "total": g.first_total}
+            for (a, h), g in games.items() if g.first_spread is not None]
+
+
+# ------------------------------------------------------------------ grading
+def grade(row: dict, home_pts: float | None, away_pts: float | None) -> str:
+    if home_pts is None or away_pts is None:
+        return ""
+    if row.get("kind") != "spread":
+        return ""
+    line = float(row["line"])
+    margin = (home_pts - away_pts) if row["side"] == "home" else (away_pts - home_pts)
+    x = margin + line
+    return "W" if x > 0 else "L" if x < 0 else "P"
+
+
+def grade_rows(rows: list[dict], games: dict) -> None:
+    for r in rows:
+        if r.get("result"):
+            continue
+        info, flipped = _lookup(games, r["away"], r["home"])
+        if not info or info.home_pts is None:
+            continue
+        hp, ap = (info.away_pts, info.home_pts) if flipped else (info.home_pts, info.away_pts)
+        res = grade(r, hp, ap)
+        if res:
+            r["home_pts"], r["away_pts"], r["result"] = hp, ap, res
+
+
+def points(rows: list[dict]) -> int:
+    return sum((2 if r.get("key") in ("Y", "True", True) else 1) for r in rows if r.get("result") == "W")
+
+
+def money(rows: list[dict]) -> float:
+    pl = 0.0
+    for r in rows:
+        s = stake(int(r["rank"]))
+        if r.get("result") == "W":
+            pl += s * WIN_AT_110
+        elif r.get("result") == "L":
+            pl -= s
+    return round(pl, 2)
+
+
+def record(rows: list[dict]) -> tuple[int, int, int]:
+    res = [r.get("result") for r in rows]
+    return res.count("W"), res.count("L"), res.count("P")
+
+
+# ------------------------------------------------------------------ files
+def write_card(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=CARD_FIELDS, extrasaction="ignore", lineterminator="\n")
+    w.writeheader()
+    w.writerows(rows)
+    if not path.exists() or path.read_text(encoding="utf-8") != buf.getvalue():
+        path.write_text(buf.getvalue(), encoding="utf-8")
+
+
+def slates() -> list[tuple[str, int, int, Path]]:
+    out = []
+    for p in sorted(SLATES.glob("*.csv")):
+        m = re.match(r"(clay|chappy)_(\d{4})_w(\d+)\.csv$", p.name)
+        if m:
+            out.append((m[1], int(m[2]), int(m[3]), p))
+    return out
+
+
+def snapshot(now: datetime | None = None, feed: dict | None = None) -> dict:
+    """Hourly: refresh unlocked cards with the newest market, freeze locked picks, grade finals."""
+    now = now or datetime.now(timezone.utc)
+    feed = feed if feed is not None else game_feed()
+    info = {"rebuilt": 0, "frozen": 0, "graded": 0}
+    for pool, season, week, path in slates():
+        games = feed.get((season, week), {})
+        cp = card_path(pool, season, week)
+        old = _csv(cp)
+        lock = lock_time(games)
+        locked = bool(lock and now >= lock)
+        if locked and old:
+            rows = old
+            for r in rows:
+                if not r.get("frozen"):
+                    r["frozen"] = "Y"
+                    info["frozen"] += 1
+        else:
+            pinned = [r for r in old if (_dt(r.get("kickoff")) or now + timedelta(days=1)) <= now]
+            for r in pinned:
+                r["frozen"] = "Y"
+            built = build(pool, _csv(path), games, now=now, pinned=pinned)
+            rows = built["rows"]
+            info["rebuilt"] += 1
+        for r in rows:
+            r["season"], r["week"] = season, week
+        before = sum(bool(r.get("result")) for r in rows)
+        grade_rows(rows, games)
+        info["graded"] += sum(bool(r.get("result")) for r in rows) - before
+        write_card(cp, rows)
+    return info
+
+
+# ------------------------------------------------------------------ season history for the page
+def history(feed: dict | None = None) -> list[dict]:
+    """One entry per (week, pool, source) with its graded picks, newest week first.
+
+    Sources: saved cards (live, from this page/snapshot), the CPM v1 replay on Clay's real slates
+    (weeks 1-9, made before those cards were saved), and the v51 picks you actually made."""
+    out = []
+    saved_weeks = set()
+    for p in sorted(CARDS.glob("*.csv")):
+        m = re.match(r"(clay|chappy)_(\d{4})_w(\d+)\.csv$", p.name)
+        if not m:
+            continue
+        rows = _csv(p)
+        if rows:
+            out.append({"season": int(m[2]), "week": int(m[3]), "pool": m[1], "source": "CPM card", "rows": rows})
+            saved_weeks.add((m[1], int(m[3])))
+    bt: dict[int, list[dict]] = {}
+    for r in _csv(DATA / "cpm_v1_real_slate_backtest.csv"):
+        bt.setdefault(int(r["week"]), []).append(
+            {"rank": r["rank"], "key": "Y" if r["key"] == "True" else "N", "pick": r["pick"], "prob": r["chance"],
+             "value_pts": r["value"], "result": r["result"], "final": r.get("final", "")})
+    for w, rows in bt.items():
+        if ("clay", w) not in saved_weeks:
+            out.append({"season": 2026, "week": w, "pool": "clay", "source": "CPM v1 replay", "rows": rows})
+    v51: dict[int, list[dict]] = {}
+    for r in _csv(DATA / "history_verified.csv"):
+        key = r.get("key") if r.get("key") in ("Y", "N") else ("Y" if int(r["rank"]) <= 3 else "N")
+        v51.setdefault(int(r["week"]), []).append(
+            {"rank": r["rank"], "key": key, "pick": r["pick"], "prob": "", "value_pts": r.get("edge", ""),
+             "result": r["result"], "final": r.get("final", "")})
+    for w, rows in v51.items():
+        out.append({"season": 2026, "week": w, "pool": "clay", "source": "Your v51 picks", "rows": rows})
+    order = {"CPM card": 0, "Your v51 picks": 1, "CPM v1 replay": 2}
+    out.sort(key=lambda e: (-e["season"], -e["week"], e["pool"], order.get(e["source"], 9)))
+    return out
+
+
+if __name__ == "__main__":
+    print(snapshot())
+
+
+# ------------------------------------------------------------------ saving a slate from the app
+def save_slate(pool: str, season: int, week: int, rows: list[dict], session=None) -> None:
+    """Write the pasted slate to the repo via GitHub's contents API (Streamlit Cloud's disk is wiped
+    on restart). Uses the GITHUB_TOKEN already in the app's secrets, same as the bet log."""
+    import base64
+
+    import requests
+
+    import bet_log
+    if not bet_log.token():
+        raise bet_log.BetLogError("GITHUB_TOKEN is not set in the app's secrets")
+    s = session or requests
+    rel = f"ncaa_pool/data/slates/{pool}_{season}_w{week}.csv"
+    api = f"https://api.github.com/repos/{bet_log.REPO}/contents/{rel}"
+    for _ in range(3):
+        r = s.get(api, headers=bet_log._headers(), params={"ref": "main"}, timeout=15)
+        sha = r.json().get("sha") if r.status_code == 200 else None
+        if r.status_code not in (200, 404):
+            raise bet_log.BetLogError(f"GitHub read failed (HTTP {r.status_code})")
+        body = {"message": f"NCAA {pool} pool lines, week {week} [skip ci]", "branch": "main",
+                "content": base64.b64encode(render_slate(rows).encode("utf-8")).decode("ascii")}
+        if sha:
+            body["sha"] = sha
+        w = s.put(api, headers=bet_log._headers(), json=body, timeout=20)
+        if w.status_code in (200, 201):
+            return
+        if w.status_code not in (409, 422):
+            raise bet_log.BetLogError(f"GitHub write failed (HTTP {w.status_code})")
+    raise bet_log.BetLogError("GitHub write kept conflicting; try again")
+
+
+def expected_points(rows: list[dict]) -> tuple[float, int]:
+    from ncaa_pool.model import poisson_binomial
+    probs = [float(r.get("prob") or 0) for r in rows]
+    weights = [2 if r.get("key") == "Y" else 1 for r in rows]
+    dist = poisson_binomial(probs, weights)
+    return sum(k * q for k, q in dist.items()), sum(weights)

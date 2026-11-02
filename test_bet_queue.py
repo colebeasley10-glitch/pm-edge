@@ -79,3 +79,30 @@ def test_settles_from_source(tmp_path):
     r = bq.load(lab)[0]
     assert info["settled"] == 1 and r["status"] == "won" and float(r["pl"]) == 12.0
     assert float(r["pl_kelly"]) > 0 and r["clv"] == "0.01"
+
+
+def test_huge_ev_alerts_once_and_respect_thresholds():
+    """Nov 1, 2026: only huge-EV queue plays push (6%+ vs Pinnacle, 12%+ vs model), once each."""
+    from datetime import datetime, timezone
+    now = datetime(2026, 11, 2, 15, 0, tzinfo=timezone.utc)
+    later = "2026-11-02T20:00:00Z"
+    base = {"status": "open", "game_start": later, "pick": "Chiefs ML", "league": "NFL", "game": "A at B",
+            "bet_at": "+120", "fair_odds": "+100", "lane": "X", "kelly_pct": "0.01", "alerted": ""}
+    today = [dict(base, ev="0.07", fair_src="Pinnacle"),       # huge
+             dict(base, ev="0.05", fair_src="Pinnacle"),       # not huge
+             dict(base, ev="0.10", fair_src="Model"),          # model bar is higher
+             dict(base, ev="0.15", fair_src="Model"),          # huge
+             dict(base, ev="0.20", fair_src="Pinnacle", game_start="2026-11-02T14:00:00Z")]  # started
+    sent = []
+    n = bq._alert_new(today, now, lambda t, m: sent.append(t) or True)
+    assert n == 2 and [q["alerted"] for q in today] == ["Y", "", "", "Y", ""]
+    assert bq._alert_new(today, now, lambda t, m: sent.append(t) or True) == 0   # never twice
+    assert all(t.startswith("🔥 Bet Queue") for t in sent)
+
+
+def test_muted_or_failed_push_retries_next_round():
+    from datetime import datetime, timezone
+    now = datetime(2026, 11, 2, 15, 0, tzinfo=timezone.utc)
+    q = {"status": "open", "game_start": "2026-11-02T20:00:00Z", "pick": "P", "bet_at": "+100", "fair_odds": "-110",
+         "lane": "X", "kelly_pct": "0", "ev": "0.09", "fair_src": "Pinnacle", "alerted": ""}
+    assert bq._alert_new([q], now, lambda t, m: False) == 0 and q["alerted"] == ""

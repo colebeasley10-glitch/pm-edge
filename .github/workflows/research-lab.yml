@@ -31,8 +31,10 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Run Research Lab round (paper)
         env:
-          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
-          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
+          # Nov 1, 2026: phone alerts go through alert_gate.py only (Bet Queue huge-EV +
+          # BreakTheBank NFL). Same Pushover account, new names so nothing else can push.
+          SHARPIQ_PUSH_USER: ${{ secrets.PUSHOVER_USER_KEY }}
+          SHARPIQ_PUSH_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
           STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
           # Free PinnWire data key (Pinnacle prices) for the v2 strategies. Not a trading key.
           PINNWIRE_KEY: ${{ secrets.PINNWIRE_KEY }}
@@ -47,8 +49,6 @@ jobs:
         continue-on-error: true
         timeout-minutes: 18
         env:
-          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
-          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
           STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
           PINNWIRE_KEY: ${{ secrets.PINNWIRE_KEY }}
         run: python -m research_lab.kickoff_sprint

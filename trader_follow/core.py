@@ -48,6 +48,7 @@ class Trader:
     min_usdc: float = MIN_USDC
     sports: frozenset = frozenset()   # sport_group names to alert on; empty = every sport
     unit: float = 0.0                 # your $ per copy (1 unit); 0 = PAPER_STAKE
+    push_sports: frozenset | None = None  # Nov 1, 2026: sports that buzz your phone; None = every tracked sport
 
 
 # Oct 25, 2026, from the Trader Scout (closed + settled-but-held positions, by sport).
@@ -58,7 +59,10 @@ TRADERS: tuple[Trader, ...] = (
     # so we can see everything he bets big on, NBA/MLB/tennis/UFC included.
     Trader("BreakTheBank", "0xf0318c32136c2db7fec88b84869aee6a1106c80c",
            "1,223 games +6.4%: NFL +34.8% (240), soccer +4.4% (718); NBA -1.1%, MLB/tennis/UFC negative",
-           unit=1.0),
+           unit=1.0,
+           # Nov 1, 2026: phone alerts for his NFL bets only (the slice Cole would bet for real).
+           # Every sport is still logged and tracked on paper exactly as before.
+           push_sports=frozenset({"NFL"})),
     # Oct 27, 2026: primm and ndb1 dropped -- zero copyable signals since Oct 25. primm now bets
     # only in-game (31 positions, $0 pre-game), ndb1 only politics/futures. Re-add from the Scout
     # if either goes back to big pre-game sports bets:
@@ -254,23 +258,15 @@ def trade_key(t: dict) -> str:
 # ------------------------------------------------------------------ alerts
 
 def send_push(title: str, message: str, url: str | None = None, post=requests.post,
-              url_title: str = "Open on Polymarket") -> bool:
-    user, token = os.getenv("PUSHOVER_USER_KEY"), os.getenv("PUSHOVER_APP_TOKEN")
-    if not user or not token:
-        print("PUSH SKIPPED (no Pushover secrets):", title, "|", message.replace("\n", " | "))
-        return False
-    payload = {"token": token, "user": user, "title": title[:250], "message": message[:1024], "priority": "1"}
-    if url:
-        payload["url"], payload["url_title"] = url, url_title
-    try:
-        r = post(PUSH_URL, data=payload, timeout=15)
-    except requests.RequestException as exc:
-        print("Pushover error:", exc)
-        return False
-    if getattr(r, "status_code", 500) >= 400:
-        print("Pushover error:", r.status_code, getattr(r, "text", "")[:300])
-        return False
-    return True
+              url_title: str = "Open on Polymarket", source: str = "trader_follow") -> bool:
+    """Every push goes through alert_gate (Nov 1, 2026). Only source="btb_nfl" is on the allow
+    list, so Odds Fam, the kickoff sprint and Kalshi Follow (which reuse this) stay quiet."""
+    import alert_gate
+    return alert_gate.send(source, title, message, url, url_title=url_title, post=post)
+
+
+def push_btb_nfl(title: str, message: str, url: str | None = None) -> bool:
+    return send_push(title, message, url, source="btb_nfl")
 
 
 def _eastern(dt: datetime) -> str:
@@ -356,7 +352,7 @@ def run_round(
     now: datetime | None = None,
     get_trades: Callable[[str], list[dict]] = fetch_trades,
     get_market: Callable[[str], dict | None] = fetch_market,
-    push: Callable[[str, str, str | None], bool] = send_push,
+    push: Callable[[str, str, str | None], bool] = push_btb_nfl,
     state_path: Path = STATE_PATH,
     ledger_path: Path = LEDGER_PATH,
     get_score: Callable[[dict], str | None] | None = None,
@@ -478,7 +474,8 @@ def run_round(
                 row["fair_prob"] = ""
             row["in_sports"] = not (trader_cfg and trader_cfg.sports) or sport_group(row) in trader_cfg.sports
             summary["signals"] += 1
-            if row["in_band"] and row["in_sports"] and summary["pushed"] < MAX_PUSHES_PER_RUN:
+            phone = not trader_cfg or trader_cfg.push_sports is None or sport_group(row) in trader_cfg.push_sports
+            if row["in_band"] and row["in_sports"] and phone and summary["pushed"] < MAX_PUSHES_PER_RUN:
                 title, msg = alert_text(row)
                 url = f"https://polymarket.com/event/{row['event_slug']}" if row["event_slug"] else None
                 if push(title, msg, url):

@@ -62,12 +62,19 @@ jobs:
             python -m ncaa_grader.run
           fi
 
+      # Nov 1, 2026: refresh this week's NCAA pool cards (Clay's / Chappy's) from the newest market
+      # until Saturday noon ET, then freeze them; grade picks as finals come in. Paper only.
+      - name: Pool cards
+        continue-on-error: true
+        run: python -m ncaa_pool.weekly
+
       - name: Save picks
         if: always()
         run: |
           git config user.name "pm-edge-bot"
           git config user.email "pm-edge-bot@users.noreply.github.com"
           git add ncaa_grader/data
+          git add ncaa_pool/data/cards 2>/dev/null || true
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "NCAA grader round [skip ci]"
           # Only this job writes ncaa_grader/data, so a plain rebase never conflicts.

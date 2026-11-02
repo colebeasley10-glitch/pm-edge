@@ -40,8 +40,6 @@ jobs:
       - name: Run NCAA model beta
         env:
           CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
-          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
-          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
           STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
           PM_EDGE_APPROVAL_SECRET: ${{ secrets.PM_EDGE_APPROVAL_SECRET }}
           PM_EDGE_APPROVAL_TTL_SECONDS: "1800"

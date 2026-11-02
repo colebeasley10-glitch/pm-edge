@@ -40,8 +40,6 @@ jobs:
           KALSHI_WRITE_API_KEY_ID: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_API_KEY_ID || '' }}
           KALSHI_WRITE_PRIVATE_KEY: ${{ github.ref == 'refs/heads/main' && secrets.KALSHI_WRITE_PRIVATE_KEY || '' }}
           PM_EDGE_KALSHI_PUBLIC_BASE_URL: "https://external-api.kalshi.com/trade-api/v2"
-          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
-          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
           STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
           LIVE_PLAYS_PER_BET: "5"
           LIVE_PLAYS_DAILY_BUDGET: "50"

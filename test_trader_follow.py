@@ -181,7 +181,7 @@ def test_bet_label_reads_the_side_he_took():
 
 def test_breakthebank_all_sports_one_dollar_units():
     btb = next(t for t in core.TRADERS if t.name == "BreakTheBank")
-    assert btb.sports == frozenset() and btb.unit == 1.0
+    assert btb.sports == frozenset() and btb.unit == 1.0  # tracked on every sport
     assert core.unit_for("BreakTheBank") == 1.0 and core.unit_for("primm") == core.PAPER_STAKE
     rows = [{"trader": "BreakTheBank", "sport": "NBA", "in_band": "True", "status": "won", "pl_copy": "10", "pl_his": "10"},
             {"trader": "BreakTheBank", "sport": "NBA", "in_band": "True", "status": "lost", "pl_copy": "-10", "pl_his": "-10"},
@@ -201,3 +201,26 @@ def test_huge_bets_tagged_and_tiered():
     tiers = {t["tier"]: t for t in core.summarize_by_stake(rows, "BreakTheBank")}
     assert tiers["$100k–250k"]["wins"] == 1 and tiers["Under $50k"]["losses"] == 1 and tiers["$250k+"]["open"] == 1
     assert [float(r["his_usdc"]) for r in core.biggest_bets(rows, "BreakTheBank")] == [400000, 150000, 30000]
+
+
+def test_breakthebank_pushes_nfl_only_but_tracks_everything(tmp_path):
+    """Nov 1, 2026: BTB's NFL buys buzz the phone; his other sports are logged on paper, unpushed."""
+    btb = next(t for t in core.TRADERS if t.name == "BreakTheBank")
+    assert btb.sports == frozenset() and btb.push_sports == frozenset({"NFL"})
+    for sport, expect in (("NFL", True), ("NBA", False), ("EPL", False)):
+        row = {"sport": sport.lower()}
+        assert (core.sport_group(row) in btb.push_sports) is expect
+
+
+def test_btb_default_push_goes_through_gate(monkeypatch):
+    import alert_gate
+    sent = []
+    monkeypatch.setenv("SHARPIQ_PUSH_USER", "u")
+    monkeypatch.setenv("SHARPIQ_PUSH_TOKEN", "t")
+
+    class R:
+        status_code = 200
+    post = lambda url, data, timeout: sent.append(data) or R()
+    assert alert_gate.send("btb_nfl", "x", "y", post=post)
+    assert not core.send_push("x", "y", post=post)          # generic source (Odds Fam etc.) is muted
+    assert len(sent) == 1

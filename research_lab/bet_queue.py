@@ -16,12 +16,19 @@ the same props, so each prop is queued once.
 Each queued play records the price, the fair price and EV at queue time, and two paper stakes:
   * flat $10 (the lane's main record, like every other lane),
   * quarter-Kelly on a $1,000 paper bankroll, capped at 2% a bet -- how it would look sized up.
-Results, CLV and P/L come from the source lane once it settles the play. No alerts, no orders.
+Results, CLV and P/L come from the source lane once it settles the play. No orders.
+
+Phone alerts (Nov 1, 2026): a queued play with a HUGE edge pushes to Cole's phone -- these are the
+only Bet Queue plays he'd put real money on. Huge = EV of at least HUGE_EV_PINNACLE against a
+Pinnacle fair price, or HUGE_EV_MODEL against our own model's price (model probabilities run hot,
+so that bar is higher). At most MAX_ALERTS_PER_DAY a day. Sent through alert_gate as
+"bet_queue_huge"; every queued play is still tracked on paper whether it alerts or not.
 """
 from __future__ import annotations
 
 import csv
 import io
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -43,10 +50,13 @@ KELLY_FRACTION = 0.25
 KELLY_CAP = 0.02
 EV_CAP = 0.10
 BAD_VERDICTS = ("Proven loser", "Losing to the close", "Demote")
+HUGE_EV_PINNACLE = 0.06  # 6%+ vs Pinnacle's no-vig price
+HUGE_EV_MODEL = 0.12     # 12%+ vs our own model's probability (model and copy-price fairs)
+MAX_ALERTS_PER_DAY = 6
 MIN_LANE_BETS = 30       # a lane (or slice) needs this many settled bets before it can feed the queue
 FIELDS = ["queue_id", "alert_time", "day", "lane", "source", "source_id", "league", "game", "pick", "game_start",
           "bet_at", "decimal", "fair_prob", "fair_odds", "fair_src", "ev", "lane_score", "score", "kelly_pct", "stake_kelly",
-          "status", "settled_time", "clv", "pl", "pl_kelly"]
+          "status", "settled_time", "clv", "pl", "pl_kelly", "alerted"]
 
 
 def _dir(base: Path | None) -> Path:
@@ -236,8 +246,37 @@ def _player_key(q: dict) -> str:
     return ""
 
 
+# ------------------------------------------------------------------ huge-EV phone alerts
+def is_huge(q: dict) -> bool:
+    ev = _f(q.get("ev")) or 0.0
+    return ev >= (HUGE_EV_PINNACLE if q.get("fair_src") == "Pinnacle" else HUGE_EV_MODEL)
+
+
+def alert_text(q: dict) -> tuple[str, str]:
+    start = parse_dt(q.get("game_start"))
+    when = start.astimezone(ET).strftime("%a %-I:%M %p ET") if start else "?"
+    ev = float(q["ev"])
+    title = f"🔥 Bet Queue {ev * 100:+.1f}% EV: {q['pick']}"[:250]
+    lines = [
+        f"{q['pick']}",
+        f"{q.get('league') or ''} · {q.get('game') or ''}".strip(" ·"),
+        f"Bet at {q['bet_at']} or better (fair {q['fair_odds']}, {q.get('fair_src') or 'fair'})",
+        f"Edge: {ev * 100:+.1f}% EV · quarter-Kelly {float(q.get('kelly_pct') or 0) * 100:.1f}% of bankroll",
+        f"From: {q['lane']}",
+        f"Starts {when}",
+    ]
+    return title, "\n".join(lines)
+
+
+def _default_push(title: str, message: str) -> bool:
+    import alert_gate
+    return alert_gate.send("bet_queue_huge", title, message, os.getenv("STREAMLIT_APP_URL") or None,
+                           url_title="Open SharpIQ")
+
+
 # ------------------------------------------------------------------ one round
-def update(now: datetime, base: Path | None = None, *, root: Path = ROOT, lanes: list[dict] | None = None) -> dict:
+def update(now: datetime, base: Path | None = None, *, root: Path = ROOT, lanes: list[dict] | None = None,
+           push=None) -> dict:
     lab = Path(base or config.DATA_DIR)
     rows = load(base)
     info = {"queued": 0, "settled": settle(rows, now, root, lab), "eligible_lanes": 0, "candidates": 0}
@@ -278,7 +317,7 @@ def update(now: datetime, base: Path | None = None, *, root: Path = ROOT, lanes:
         q = {**{k_: v for k_, v in c.items() if not k_.startswith("_")},
              "queue_id": f"q-{c['source']}-{c['source_id']}"[:90], "alert_time": iso(now), "day": day,
              "bet_at": american(c["decimal"]), "fair_odds": american(1 / c["fair_prob"]), "kelly_pct": round(k, 4), "stake_kelly": round(BANKROLL * k, 2),
-             "status": "open", "settled_time": "", "clv": "", "pl": "", "pl_kelly": ""}
+             "status": "open", "settled_time": "", "clv": "", "pl": "", "pl_kelly": "", "alerted": ""}
         rows.append(q)
         today.append(q)
         taken_keys.add(c["_key"])
@@ -286,5 +325,30 @@ def update(now: datetime, base: Path | None = None, *, root: Path = ROOT, lanes:
         if pk:
             players.add(pk)
         info["queued"] += 1
+    info["alerted"] = _alert_new(today, now, push or _default_push)
     _save(rows, base)
     return info
+
+
+def _alert_new(today: list[dict], now: datetime, push) -> int:
+    """Push today's not-yet-alerted huge-EV plays (oldest first), up to MAX_ALERTS_PER_DAY.
+    A failed push is retried next round; a muted/skipped one isn't marked, so it's never stuck."""
+    sent_today = sum(q.get("alerted") == "Y" for q in today)
+    n = 0
+    for q in today:
+        if sent_today >= MAX_ALERTS_PER_DAY:
+            break
+        start = parse_dt(q.get("game_start"))
+        if q.get("status") != "open" or q.get("alerted") or not is_huge(q) or not start or start <= now:
+            continue
+        title, msg = alert_text(q)
+        try:
+            ok = bool(push(title, msg))
+        except Exception as exc:   # an alert problem must never break the queue
+            print("Bet Queue alert error:", exc)
+            ok = False
+        if ok:
+            q["alerted"] = "Y"
+            sent_today += 1
+            n += 1
+    return n
