@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-02
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-02T16:45:32+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-02T17:00:43+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -70,7 +70,7 @@ LOGGED: 2026-11-02T16:12:03+00:00 · model ncaab_v1
 
 ## Data gaps
 
-- no line posted yet (30): Morris Hornets @ South Carolina State Bulldogs, North American Stallions @ Nicholls Colonels, Carnegie Mellon Tartans @ Princeton Tigers, St. Francis (IL) Fighting Saints @ UIC Flames, Mount Marty Lancers @ South Dakota Coyotes, Virginia Lynchburg Dragons @ VMI Keydets, Southeastern Baptist Chargers @ West Florida Argonauts, SUNY Old Westbury Panthers @ Stony Brook Seawolves, Rhode Island College Anchormen @ UAlbany Great Danes, Dallas Christian Crusaders @ Rice Owls, Kentucky Christian Knights @ Eastern Kentucky Colonels, Cheyney (PA) Wolves @ Morgan State Bears, New College Mighty Banyans @ Florida International Panthers, Saint Vincent Bearcats @ Delaware State Hornets, Mount Olive Trojans @ UNC Wilmington Seahawks …
-- possession data coverage: 1.0
+- no line posted yet (30): Carnegie Mellon Tartans @ Princeton Tigers, St. Francis (IL) Fighting Saints @ UIC Flames, Mount Marty Lancers @ South Dakota Coyotes, Virginia Lynchburg Dragons @ VMI Keydets, Southeastern Baptist Chargers @ West Florida Argonauts, SUNY Old Westbury Panthers @ Stony Brook Seawolves, Rhode Island College Anchormen @ UAlbany Great Danes, Dallas Christian Crusaders @ Rice Owls, Kentucky Christian Knights @ Eastern Kentucky Colonels, Cheyney (PA) Wolves @ Morgan State Bears, New College Mighty Banyans @ Florida International Panthers, Saint Vincent Bearcats @ Delaware State Hornets, Mount Olive Trojans @ UNC Wilmington Seahawks, Midway Eagles @ Kennesaw State Owls, Eureka Red Devils @ SIU Edwardsville Cougars …
+- possession data coverage: 0.8
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
