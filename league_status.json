@@ -1,8 +1,8 @@
 {
- "ran_at": "2026-11-03T06:00:43.715041Z",
+ "ran_at": "2026-11-03T06:15:35.241160Z",
  "strategies": {
   "weather": {
-   "picks_found": 6,
+   "picks_found": 4,
    "opened": 0,
    "skipped": {},
    "benched": true,
@@ -15,32 +15,18 @@
      "edge": 0.1449
     },
     {
-     "ticker": "KXHIGHTSFO-26NOV03-B64.5",
-     "side": "NO",
-     "ask": 0.54,
-     "fair": 0.6882,
-     "edge": 0.1304
-    },
-    {
-     "ticker": "KXLOWTSFO-26NOV03-B56.5",
-     "side": "NO",
-     "ask": 0.81,
-     "fair": 0.9432,
-     "edge": 0.1224
-    },
-    {
-     "ticker": "KXHIGHDEN-26NOV03-T55",
-     "side": "YES",
-     "ask": 0.48,
-     "fair": 0.6165,
-     "edge": 0.119
-    },
-    {
      "ticker": "KXLOWTSEA-26NOV03-T46",
      "side": "YES",
      "ask": 0.02,
      "fair": 0.1157,
      "edge": 0.0944
+    },
+    {
+     "ticker": "KXHIGHDEN-26NOV03-T55",
+     "side": "YES",
+     "ask": 0.51,
+     "fair": 0.6165,
+     "edge": 0.0886
     },
     {
      "ticker": "KXHIGHLAX-26NOV03-T76",
@@ -54,9 +40,153 @@
    "diag": {
     "events": 78,
     "priced": 8,
-    "skipped_far_from_market": 10,
+    "skipped_far_from_market": 12,
     "skipped_same_day": 44,
     "samples": [
+     {
+      "event": "KXHIGHTSFO-26NOV03",
+      "note": "KSFO high forecast 64.8\u00b0F \u00b12.5",
+      "model_vs_ask": [
+       [
+        "61\u00b0 or below",
+        0.09,
+        0.03
+       ],
+       [
+        "62\u00b0 to 63\u00b0",
+        0.21,
+        0.12
+       ],
+       [
+        "64\u00b0 to 65\u00b0",
+        0.31,
+        0.49
+       ],
+       [
+        "66\u00b0 to 67\u00b0",
+        0.25,
+        0.32
+       ],
+       [
+        "68\u00b0 to 69\u00b0",
+        0.11,
+        0.04
+       ],
+       [
+        "70\u00b0 or above",
+        0.03,
+        0.01
+       ]
+      ]
+     },
+     {
+      "event": "KXHIGHDEN-26NOV03",
+      "note": "KDEN high forecast 53.8\u00b0F \u00b12.4",
+      "model_vs_ask": [
+       [
+        "54\u00b0 or below",
+        0.62,
+        0.51
+       ],
+       [
+        "55\u00b0 to 56\u00b0",
+        0.26,
+        0.45
+       ],
+       [
+        "57\u00b0 to 58\u00b0",
+        0.1,
+        0.07
+       ],
+       [
+        "59\u00b0 to 60\u00b0",
+        0.03,
+        0.02
+       ],
+       [
+        "61\u00b0 to 62\u00b0",
+        0.03,
+        0.02
+       ],
+       [
+        "63\u00b0 or above",
+        0.03,
+        0.01
+       ]
+      ]
+     },
+     {
+      "event": "KXHIGHLAX-26NOV03",
+      "note": "KLAX high forecast 73.3\u00b0F \u00b12.4",
+      "model_vs_ask": [
+       [
+        "68\u00b0 or below",
+        0.03,
+        0.01
+       ],
+       [
+        "69\u00b0 to 70\u00b0",
+        0.1,
+        0.01
+       ],
+       [
+        "71\u00b0 to 72\u00b0",
+        0.24,
+        0.12
+       ],
+       [
+        "73\u00b0 to 74\u00b0",
+        0.32,
+        0.67
+       ],
+       [
+        "75\u00b0 to 76\u00b0",
+        0.22,
+        0.21
+       ],
+       [
+        "77\u00b0 or above",
+        0.09,
+        0.02
+       ]
+      ]
+     },
+     {
+      "event": "KXHIGHTPHX-26NOV03",
+      "note": "KPHX high forecast 75.9\u00b0F \u00b12.7",
+      "model_vs_ask": [
+       [
+        "71\u00b0 or below",
+        0.05,
+        0.01
+       ],
+       [
+        "72\u00b0 to 73\u00b0",
+        0.14,
+        0.02
+       ],
+       [
+        "74\u00b0 to 75\u00b0",
+        0.25,
+        0.03
+       ],
+       [
+        "76\u00b0 to 77\u00b0",
+        0.28,
+        0.09
+       ],
+       [
+        "78\u00b0 to 79\u00b0",
+        0.18,
+        0.54
+       ],
+       [
+        "80\u00b0 or above",
+        0.09,
+        0.32
+       ]
+      ]
+     },
      {
       "event": "KXHIGHTSAN-26NOV03",
       "note": "KSAN high forecast 74.7\u00b0F \u00b12.4",
@@ -100,7 +230,7 @@
        [
         "55\u00b0 or below",
         0.5,
-        0.15
+        0.13
        ],
        [
         "56\u00b0 to 57\u00b0",
@@ -126,186 +256,6 @@
         "64\u00b0 or above",
         0.03,
         0.01
-       ]
-      ]
-     },
-     {
-      "event": "KXHIGHTSFO-26NOV03",
-      "note": "KSFO high forecast 64.8\u00b0F \u00b12.5",
-      "model_vs_ask": [
-       [
-        "61\u00b0 or below",
-        0.09,
-        0.03
-       ],
-       [
-        "62\u00b0 to 63\u00b0",
-        0.21,
-        0.13
-       ],
-       [
-        "64\u00b0 to 65\u00b0",
-        0.31,
-        0.47
-       ],
-       [
-        "66\u00b0 to 67\u00b0",
-        0.25,
-        0.33
-       ],
-       [
-        "68\u00b0 to 69\u00b0",
-        0.11,
-        0.04
-       ],
-       [
-        "70\u00b0 or above",
-        0.03,
-        0.01
-       ]
-      ]
-     },
-     {
-      "event": "KXHIGHLAX-26NOV03",
-      "note": "KLAX high forecast 73.3\u00b0F \u00b12.4",
-      "model_vs_ask": [
-       [
-        "68\u00b0 or below",
-        0.03,
-        0.01
-       ],
-       [
-        "69\u00b0 to 70\u00b0",
-        0.1,
-        0.01
-       ],
-       [
-        "71\u00b0 to 72\u00b0",
-        0.24,
-        0.12
-       ],
-       [
-        "73\u00b0 to 74\u00b0",
-        0.32,
-        0.65
-       ],
-       [
-        "75\u00b0 to 76\u00b0",
-        0.22,
-        0.22
-       ],
-       [
-        "77\u00b0 or above",
-        0.09,
-        0.02
-       ]
-      ]
-     },
-     {
-      "event": "KXHIGHTPHX-26NOV03",
-      "note": "KPHX high forecast 75.9\u00b0F \u00b12.7",
-      "model_vs_ask": [
-       [
-        "71\u00b0 or below",
-        0.05,
-        0.01
-       ],
-       [
-        "72\u00b0 to 73\u00b0",
-        0.14,
-        0.02
-       ],
-       [
-        "74\u00b0 to 75\u00b0",
-        0.25,
-        0.03
-       ],
-       [
-        "76\u00b0 to 77\u00b0",
-        0.28,
-        0.1
-       ],
-       [
-        "78\u00b0 to 79\u00b0",
-        0.18,
-        0.51
-       ],
-       [
-        "80\u00b0 or above",
-        0.09,
-        0.33
-       ]
-      ]
-     },
-     {
-      "event": "KXHIGHDEN-26NOV03",
-      "note": "KDEN high forecast 53.8\u00b0F \u00b12.4",
-      "model_vs_ask": [
-       [
-        "54\u00b0 or below",
-        0.62,
-        0.48
-       ],
-       [
-        "55\u00b0 to 56\u00b0",
-        0.26,
-        0.45
-       ],
-       [
-        "57\u00b0 to 58\u00b0",
-        0.1,
-        0.07
-       ],
-       [
-        "59\u00b0 to 60\u00b0",
-        0.03,
-        0.02
-       ],
-       [
-        "61\u00b0 to 62\u00b0",
-        0.03,
-        0.02
-       ],
-       [
-        "63\u00b0 or above",
-        0.03,
-        0.01
-       ]
-      ]
-     },
-     {
-      "event": "KXLOWTSFO-26NOV03",
-      "note": "KSFO low forecast 51.0\u00b0F \u00b13.1",
-      "model_vs_ask": [
-       [
-        "49\u00b0 or below",
-        0.32,
-        0.02
-       ],
-       [
-        "50\u00b0 to 51\u00b0",
-        0.25,
-        0.02
-       ],
-       [
-        "52\u00b0 to 53\u00b0",
-        0.22,
-        0.21
-       ],
-       [
-        "54\u00b0 to 55\u00b0",
-        0.14,
-        0.65
-       ],
-       [
-        "56\u00b0 to 57\u00b0",
-        0.06,
-        0.28
-       ],
-       [
-        "58\u00b0 or above",
-        0.03,
-        0.02
        ]
       ]
      },
@@ -336,11 +286,47 @@
        [
         "45\u00b0 to 46\u00b0",
         0.2,
-        0.26
+        0.24
        ],
        [
         "47\u00b0 or above",
         0.12,
+        0.02
+       ]
+      ]
+     },
+     {
+      "event": "KXLOWTSFO-26NOV03",
+      "note": "KSFO low forecast 51.0\u00b0F \u00b13.1",
+      "model_vs_ask": [
+       [
+        "49\u00b0 or below",
+        0.32,
+        0.02
+       ],
+       [
+        "50\u00b0 to 51\u00b0",
+        0.25,
+        0.02
+       ],
+       [
+        "52\u00b0 to 53\u00b0",
+        0.22,
+        0.19
+       ],
+       [
+        "54\u00b0 to 55\u00b0",
+        0.14,
+        0.64
+       ],
+       [
+        "56\u00b0 to 57\u00b0",
+        0.06,
+        0.28
+       ],
+       [
+        "58\u00b0 or above",
+        0.03,
         0.02
        ]
       ]
@@ -373,10 +359,10 @@
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 121,
-    "kalshi_events": 1369,
-    "matched": 84,
-    "priced": 156,
+    "poly_games": 125,
+    "kalshi_events": 1383,
+    "matched": 88,
+    "priced": 161,
     "best_gaps": [
      [
       0.065,
@@ -387,16 +373,16 @@
       "KXUCLGAME-26NOV03GALVFB-GAL"
      ],
      [
-      0.01,
-      "KXDIMAYORGAME-26NOV03PASJAG-PAS"
-     ],
-     [
       0.005,
       "KXUELGAME-26NOV05RSOOL-RSO"
      ],
      [
       0.005,
       "KXUELGAME-26NOV05LEVJAG-LEV"
+     ],
+     [
+      0.005,
+      "KXUCLGAME-26NOV04VIKSBH-VIK"
      ],
      [
       0.005,
@@ -422,10 +408,10 @@
    "picks_found": 4,
    "opened": 3,
    "skipped": {
-    "same_game": 1
+    "price_out_of_range": 1
    },
    "diag": {
-    "skipped_settles_late": 0
+    "skipped_settles_late": 4
    }
   },
   "crypto": {
@@ -436,37 +422,12 @@
    "shadow": [],
    "shadow_opened": 0,
    "diag": {
-    "markets_priced": 488,
+    "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.0020535150634394123,
-     "ETH-USD": 0.0026914190564053028
+     "BTC-USD": 0.002068297998673683,
+     "ETH-USD": 0.0026968699976994866
     },
-    "best": [
-     [
-      -0.18,
-      "KXETHD-26NOV0302-T2439.99"
-     ],
-     [
-      -0.17,
-      "KXETHD-26NOV0302-T2434.99"
-     ],
-     [
-      -0.16,
-      "KXETHD-26NOV0302-T2409.99"
-     ],
-     [
-      -0.15,
-      "KXETHD-26NOV0302-T2399.99"
-     ],
-     [
-      -0.14,
-      "KXETHD-26NOV0302-T2394.99"
-     ],
-     [
-      -0.14,
-      "KXETHD-26NOV0302-T2404.99"
-     ]
-    ]
+    "best": []
    }
   }
  },
@@ -477,12 +438,12 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 6,
-  "settled": 3
+  "marked": 7,
+  "settled": 0
  },
  "shadow_update": {
   "marked": 1,
-  "settled": 0
+  "settled": 2
  },
  "live_sharp": {
   "enabled": false,
@@ -508,16 +469,16 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 1970,
-   "open": 9,
-   "won": 1112,
-   "lost": 849,
-   "pl": -586.9899999999993,
-   "risked": 19658.99000000004,
-   "clv_sum": -740.5799999999999,
-   "clv_n": 1926,
-   "roi": -0.029858604129713584,
-   "clv": -0.38451713395638626
+   "picks": 1973,
+   "open": 10,
+   "won": 1113,
+   "lost": 850,
+   "pl": -582.6299999999993,
+   "risked": 19679.63000000004,
+   "clv_sum": -691.5799999999999,
+   "clv_n": 1928,
+   "roi": -0.029605739538802207,
+   "clv": -0.3587033195020746
   },
   {
    "strategy": "weather",
@@ -576,15 +537,15 @@
   {
    "strategy": "crypto",
    "picks": 182,
-   "open": 2,
-   "won": 17,
+   "open": 0,
+   "won": 19,
    "lost": 163,
-   "pl": -678.7699999999999,
-   "risked": 1895.7699999999975,
-   "clv_sum": -97.0,
-   "clv_n": 180,
-   "roi": -0.3580444885191773,
-   "clv": -0.5388888888888889
+   "pl": -578.6899999999998,
+   "risked": 1916.6899999999976,
+   "clv_sum": -57.0,
+   "clv_n": 182,
+   "roi": -0.30192154182470854,
+   "clv": -0.3131868131868132
   },
   {
    "strategy": "weather",
