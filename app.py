@@ -194,6 +194,82 @@ def stamp(v) -> str:
     return d.astimezone(ET).strftime("%a %b %-d, %-I:%M %p") if d else ""
 
 
+def bet_day(v: dict):
+    """The ET calendar day a settled bet counts on: its game day, else the day it was placed."""
+    d = when(v["game_at"]) or when(v["placed"])
+    return d.astimezone(ET).date() if d else None
+
+
+def lane_calendar(lane: dict, done: list[dict]) -> None:
+    """Month calendar of a lane's settled bets: units and profit per day (Nov 3, 2026).
+    Units = day P/L ÷ the lane's average stake, the same definition the board uses, so the days add
+    up to the lane's Units total. Profit is shown the way the board shows it ($10 a unit for models)."""
+    import calendar as _cal
+    from datetime import date
+
+    per_unit = (lane["risk"] / lane["n"]) if lane.get("n") and lane.get("risk") else None
+    to_usd = 10.0 if lane.get("pl_col") == "units" else 1.0
+    days: dict = {}
+    for v in done:
+        d = bet_day(v)
+        if d is None:
+            continue
+        x = days.setdefault(d, {"pl": 0.0, "w": 0, "l": 0, "n": 0})
+        x["pl"] += v["pl"] or 0
+        x["n"] += 1
+        x["w"] += v["status"] == "won"
+        x["l"] += v["status"] == "lost"
+    if not days:
+        st.caption("Nothing settled yet, so there's nothing on the calendar.")
+        return
+
+    months = sorted({(d.year, d.month) for d in days}, reverse=True)
+    labels = [date(y, m, 1).strftime("%B %Y") for y, m in months]
+    pick = st.selectbox("Month", labels, key=f"cal_{lane['name']}", label_visibility="collapsed")
+    y, m = months[labels.index(pick)]
+
+    def u_txt(pl):
+        return f"{pl / per_unit:+.1f}u" if per_unit else ""
+
+    def usd(pl):
+        x = pl * to_usd
+        return f"{'+' if x >= 0 else '−'}${abs(x):,.0f}"
+
+    in_month = {d: x for d, x in days.items() if (d.year, d.month) == (y, m)}
+    mpl = sum(x["pl"] for x in in_month.values())
+    up_days = sum(x["pl"] > 0 for x in in_month.values())
+    dn_days = sum(x["pl"] < 0 for x in in_month.values())
+    mw = sum(x["w"] for x in in_month.values())
+    ml = sum(x["l"] for x in in_month.values())
+    st.markdown(
+        f"<div class='cal-sum'><span><small>Month</small><b class='{tone(mpl)}'>{esc(u_txt(mpl) or usd(mpl))}</b></span>"
+        f"<span><small>Profit</small><b class='{tone(mpl)}'>{usd(mpl)}</b></span>"
+        f"<span><small>Record</small><b>{mw}-{ml}</b></span>"
+        f"<span><small>Days</small><b><span class='up'>{up_days}▲</span> <span class='down'>{dn_days}▼</span></b></span></div>",
+        unsafe_allow_html=True)
+
+    today = datetime.now(ET).date()
+    cells = "".join(f"<div class='cal-h'>{d}</div>" for d in ("S", "M", "T", "W", "T", "F", "S"))
+    for week in _cal.Calendar(firstweekday=6).monthdatescalendar(y, m):
+        for d in week:
+            if d.month != m:
+                cells += "<div class='cal-d out'></div>"
+                continue
+            x = in_month.get(d)
+            cls = "cal-d" + (" today" if d == today else "")
+            if not x:
+                cells += f"<div class='{cls}'><i>{d.day}</i></div>"
+                continue
+            t = tone(x["pl"])
+            tip = f"{d:%a %b %-d}: {x['w']}-{x['l']} · {u_txt(x['pl'])} · {usd(x['pl'])} ({x['n']} bets)"
+            cells += (f"<div class='{cls} {t or 'even'}' title='{esc(tip)}'><i>{d.day}</i>"
+                      f"<b>{esc(u_txt(x['pl']) or usd(x['pl']))}</b><small>{usd(x['pl'])}</small>"
+                      f"<em>{x['w']}-{x['l']}</em></div>")
+    st.markdown(f"<div class='cal'>{cells}</div>", unsafe_allow_html=True)
+    st.caption("Days count by game date (Eastern). Units = profit ÷ this lane's average stake; dollars "
+               + ("at $10 a unit." if to_usd == 10 else "at the paper stake."))
+
+
 def lane_bets(lane: dict) -> None:
     unit = "u" if lane.get("pl_col") == "units" else ""
     views = [bet_view(r, lane.get("pl_col", "pl")) for r in lane.get("rows") or []]
@@ -223,10 +299,12 @@ def lane_bets(lane: dict) -> None:
         st.markdown(f"**He's put ${tot:,.0f} on these {len(rows_)} bets** · his estimated result "
                     f"**{'+' if his_pl >= 0 else '−'}${abs(his_pl):,.0f}** · "
                     f"your $10 copies: **{lane['pl']:+,.2f}**")
-    which = st.segmented_control("Bets", [f"Open ({len(open_)})", f"Closed ({len(done)})"],
-                                 default=f"Open ({len(open_)})", key=f"bets_{lane['name']}",
-                                 label_visibility="collapsed", width="stretch") or f"Open ({len(open_)})"
-    if which.startswith("Open"):
+    which = st.segmented_control("Bets", ["Calendar", f"Open ({len(open_)})", f"Closed ({len(done)})"],
+                                 default="Calendar", key=f"bets_{lane['name']}",
+                                 label_visibility="collapsed", width="stretch") or "Calendar"
+    if which == "Calendar":
+        lane_calendar(lane, done)
+    elif which.startswith("Open"):
         if open_:
             row_list([item(v, False) for v in open_])
         else:

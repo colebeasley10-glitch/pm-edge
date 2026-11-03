@@ -325,6 +325,25 @@ def apply() -> None:
         .tbl th:first-child, .tbl td:first-child { text-align:left; }
         .tbl td.up { color:var(--up); } .tbl td.down { color:var(--down); }
         .tbl tr.minor td { color:var(--muted); font-weight:500; }
+        /* lane popup: daily units / profit calendar (Nov 3, 2026) */
+        .cal-sum { display:grid; grid-template-columns:repeat(4,1fr); gap:.4rem; margin:.3rem 0 .6rem; }
+        .cal-sum > span { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:.45rem .55rem; }
+        .cal-sum small { display:block; color:var(--muted); font-size:.6rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+        .cal-sum b { font-size:.95rem; font-weight:800; }
+        .cal { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px; }
+        .cal-h { text-align:center; color:var(--muted); font-size:.62rem; font-weight:700; padding:.15rem 0; }
+        .cal-d { min-height:64px; background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:3px 4px;
+                 display:flex; flex-direction:column; line-height:1.15; overflow:hidden; }
+        .cal-d.out { background:transparent; border-color:transparent; }
+        .cal-d.today { border-color:var(--gold); }
+        .cal-d i { font-style:normal; color:var(--muted); font-size:.62rem; font-weight:600; }
+        .cal-d b { font-size:.78rem; font-weight:800; margin-top:auto; white-space:nowrap; }
+        .cal-d small { font-size:.62rem; color:var(--soft); white-space:nowrap; }
+        .cal-d em { font-style:normal; font-size:.58rem; color:var(--muted); }
+        .cal-d.up { background:rgba(34,197,94,.14); border-color:rgba(34,197,94,.45); } .cal-d.up b { color:var(--up); }
+        .cal-d.down { background:rgba(240,82,82,.13); border-color:rgba(240,82,82,.45); } .cal-d.down b { color:var(--down); }
+        @media (max-width:480px) { .cal-d { min-height:56px; padding:2px 3px; } .cal-d b { font-size:.7rem; }
+                                   .cal-d small { font-size:.56rem; } .cal-sum b { font-size:.82rem; } }
         </style>
         """,
         unsafe_allow_html=True,
