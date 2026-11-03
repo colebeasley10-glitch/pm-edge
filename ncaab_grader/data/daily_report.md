@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-02
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-03T01:00:35+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-03T01:15:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -49,6 +49,6 @@ LOGGED: 2026-11-02T16:12:03+00:00 · model ncaab_v1
 ## Data gaps
 
 - no line posted yet (30): LaGrange Panthers @ Jacksonville State Gamecocks, Southwestern Christian U Eagles @ North Texas Mean Green, Oakwood Ambassadors @ Alabama A&M Bulldogs, Texas A&M-Kingsville Javelinas @ UT Rio Grande Valley Vaqueros, Schreiner Mountaineers @ Lamar Cardinals, Fresno Pacific Sunbirds @ Fresno State Bulldogs, San Francisco State Gators @ UC Santa Barbara Gauchos, Colorado College Tigers @ Northern Colorado Bears, Biola Eagles @ San Diego Toreros, La Verne Leopards @ UC Riverside Highlanders, West Coast Baptist Eagles @ Southern Utah Thunderbirds, George Fox Bruins @ Idaho Vandals, Whittier Poets @ UC San Diego Tritons, Jessup Warriors @ Sacramento State Hornets, Cal State San Marcos Cougars @ Cal Poly Mustangs …
-- possession data coverage: 1.0
+- possession data coverage: 0.75
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
