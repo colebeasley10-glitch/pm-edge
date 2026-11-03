@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-02
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-02T23:45:39+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-03T00:00:37+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,24 +31,24 @@ WHY: Model line UCLA Bruins +1.5 vs market +4.5 (+3.1 pts) from opponent-adjuste
 LOGGED: 2026-11-02T16:12:03+00:00 · model ncaab_v1
 ```
 
-## Watch list (31) — positive EV but not a qualified bet
+## Watch list (17) — positive EV but not a qualified bet
 
 - Florida A&M Rattlers +27.5 (-115) · Florida A&M Rattlers at Florida State Seminoles · Mon 8:30 PM ET · EV +10.2% · min -137
 - San Francisco Dons ML -520 (-520) · Radford Highlanders at San Francisco Dons · Mon 10:00 PM ET · EV +7.1% · min -681
-- Iona Gaels ML -115 (-115) · Vermont Catamounts at Iona Gaels · Mon 7:00 PM ET · EV +4.7% · min -119
 - South Alabama Jaguars -1.5 (+110) · Ohio Bobcats at South Alabama Jaguars · Mon 8:00 PM ET · EV +4.2% · min +105
 - South Alabama Jaguars ML -112 (-112) · Ohio Bobcats at South Alabama Jaguars · Mon 8:00 PM ET · EV +4.1% · min -115
-- Ball State Cardinals ML -130 (-130) · Ball State Cardinals at Georgia Southern Eagles · Mon 7:00 PM ET · EV +3.8% · min -132
 - Montana State Bobcats ML +490 (+490) · Montana State Bobcats at Colorado State Rams · Mon 10:00 PM ET · EV +3.6% · min +486
-- James Madison Dukes ML -110 (-110) · Miami (OH) RedHawks at James Madison Dukes · Mon 7:00 PM ET · EV +3.5% · min -111
-- Coastal Carolina Chanticleers ML -115 (-115) · Eastern Michigan Eagles at Coastal Carolina Chanticleers · Mon 7:00 PM ET · EV +3.3% · min -116
 - The Citadel Bulldogs ML +950 (+950) · The Citadel Bulldogs at Loyola Chicago Ramblers · Mon 8:00 PM ET · EV +2.7% · min +953
-- James Madison Dukes -1.5 (+110) · Miami (OH) RedHawks at James Madison Dukes · Mon 7:00 PM ET · EV +2.6% · min +109
-- Western Michigan Broncos ML -118 (-118) · Western Michigan Broncos at Old Dominion Monarchs · Mon 7:00 PM ET · EV +1.9% · min -115
+- Chicago State Cougars +41.5 (-105) · Chicago State Cougars at Texas Longhorns · Mon 9:00 PM ET · EV +1.8% · min -104
+- OVER 143.5 (-105) · The Citadel Bulldogs at Loyola Chicago Ramblers · Mon 8:00 PM ET · EV +1.7% · min -102
+- OVER 143.5 (-105) · West Georgia Wolves at DePaul Blue Demons · Mon 8:00 PM ET · EV +1.6% · min -102
+- OVER 144.5 (-105) · Fordham Rams at Kansas Jayhawks · Mon 8:00 PM ET · EV +1.5% · min -102
+- OVER 144.5 (-105) · UT Martin Skyhawks at Tulane Green Wave · Mon 8:00 PM ET · EV +1.5% · min -102
+- OVER 160.5 (-105) · Ohio State Buckeyes at BYU Cougars · Mon 9:00 PM ET · EV +1.5% · min -102
 
 ## Data gaps
 
-- no line posted yet (30): Kentucky Christian Knights @ Eastern Kentucky Colonels, Cheyney (PA) Wolves @ Morgan State Bears, New College Mighty Banyans @ Florida International Panthers, Saint Vincent Bearcats @ Delaware State Hornets, Mount Olive Trojans @ UNC Wilmington Seahawks, Midway Eagles @ Kennesaw State Owls, Eureka Red Devils @ SIU Edwardsville Cougars, Paul Quinn Tigers @ Prairie View A&M Panthers, Coast Guard Bears @ Sacred Heart Pioneers, Rivier Raiders @ UMass Lowell River Hawks, Southeastern Baptist Chargers @ West Florida Argonauts, Notre Dame (MD) Gators @ Delaware Blue Hens, Trinity College of Jacksonville Eagles @ Jacksonville Dolphins, MIT Engineers @ Harvard Crimson, Curry Colonels @ Stonehill Skyhawks …
-- possession data coverage: 0.778
+- no line posted yet (30): Southern Wesleyan Warriors @ Charleston Cougars, Lawrence Vikings @ Green Bay Phoenix, Berry Vikings @ Samford Bulldogs, Lyon Scots @ Stephen F. Austin Lumberjacks, Pfeiffer Falcons @ Longwood Lancers, Tougaloo Bulldogs @ Southern Miss Golden Eagles, Mid America Christian Evangels @ Omaha Mavericks, Crookston (MN) Golden Eagles @ North Dakota State Bison, Cameron Aggies @ Tarleton State Texans, UNT Dallas Trailblazers @ UT Arlington Mavericks, IU Kokomo Cougars @ Evansville Purple Aces, Monmouth (IL) Fighting Scots @ Bradley Braves, Regent Royals @ Norfolk State Spartans, Ottawa (KS) OTTAWA (KS) @ Tulsa Golden Hurricane, Maryville (MO) MARYVILLE UNIVERSITY (MO) @ Southern Illinois Salukis …
+- possession data coverage: 0.889
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
