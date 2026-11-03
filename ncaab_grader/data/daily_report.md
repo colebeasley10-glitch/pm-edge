@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-02
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-03T02:30:34+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-03T02:45:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -45,6 +45,6 @@ LOGGED: 2026-11-02T16:12:03+00:00 · model ncaab_v1
 ## Data gaps
 
 - no line posted yet (25): La Verne Leopards @ UC Riverside Highlanders, West Coast Baptist Eagles @ Southern Utah Thunderbirds, George Fox Bruins @ Idaho Vandals, Whittier Poets @ UC San Diego Tritons, Jessup Warriors @ Sacramento State Hornets, Cal State San Marcos Cougars @ Cal Poly Mustangs, Milligan Buffaloes @ UNC Greensboro Spartans, Stetson Hatters @ South Carolina Gamecocks, Warren Wilson Owls @ North Carolina A&T Aggies, Coppin State Eagles @ Virginia Tech Hokies, Holy Cross Crusaders @ Rhode Island Rams, Wagner Seahawks @ Boston College Eagles, Arkansas-Pine Bluff Golden Lions @ Arkansas Razorbacks, Lincoln (MO) Blue Tigers @ Missouri State Bears, Cornell (IA) Rams @ Northern Iowa Panthers …
-- possession data coverage: 0.37
+- possession data coverage: 0.147
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
