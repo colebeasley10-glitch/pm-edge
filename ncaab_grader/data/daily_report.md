@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-03
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-03T18:45:43+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-03T19:00:48+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -22,7 +22,7 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 
 ## Data gaps
 
-- no line posted yet (25): Milligan Buffaloes @ UNC Greensboro Spartans, Warren Wilson Owls @ North Carolina A&T Aggies, Lincoln (MO) Blue Tigers @ Missouri State Bears, Cornell (IA) Rams @ Northern Iowa Panthers, Louisiana Christian Wildcats @ Houston Christian Huskies, Western New Mexico Mustangs @ New Mexico State Aggies, Regis University REGIS UNIVERSITY @ Wyoming Cowboys, Chapman Panthers @ UC Irvine Anteaters, Lewis & Clark River Otters @ Portland State Vikings, Bethesda Flames @ Pacific Tigers, Framingham State Rams @ Dartmouth Big Green, Regent Regent Royals @ Old Dominion Monarchs, Christendom Crusaders @ App State Mountaineers, Virginia Lynchburg Dragons @ Morgan State Bears, Concordia Chicago Cougars @ SIU Edwardsville Cougars …
+- no line posted yet (29): Milligan Buffaloes @ UNC Greensboro Spartans, Warren Wilson Owls @ North Carolina A&T Aggies, Lincoln (MO) Blue Tigers @ Missouri State Bears, Cornell (IA) Rams @ Northern Iowa Panthers, Louisiana Christian Wildcats @ Houston Christian Huskies, Western New Mexico Mustangs @ New Mexico State Aggies, Regis University REGIS UNIVERSITY @ Wyoming Cowboys, Chapman Panthers @ UC Irvine Anteaters, Lewis & Clark River Otters @ Portland State Vikings, Bethesda Flames @ Pacific Tigers, Framingham State Rams @ Dartmouth Big Green, Regent Regent Royals @ Old Dominion Monarchs, Christendom Crusaders @ App State Mountaineers, Virginia Lynchburg Dragons @ Morgan State Bears, Concordia Chicago Cougars @ SIU Edwardsville Cougars …
 - possession data coverage: 1.0
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
