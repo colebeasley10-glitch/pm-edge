@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-02
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-03T03:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-03T03:30:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -11,18 +11,17 @@ Markets with a tested rule: SPREAD · others are WATCH only until the backtest s
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (6) — positive EV but not a qualified bet
+## Watch list (5) — positive EV but not a qualified bet
 
 - OVER 155.5 (-105) · Cal State Fullerton Titans at San Diego State Aztecs · Tue 10:00 PM ET · EV +1.6% · min -102
 - Hampton Pirates ML +1100 (+1100) · Hampton Pirates at Georgia Tech Yellow Jackets · Tue 7:00 PM ET · EV +0.8% · min +1126
 - Kansas State Wildcats ML -750 (-750) · South Dakota State Jackrabbits at Kansas State Wildcats · Tue 8:00 PM ET · EV +0.8% · min -634
-- USC Trojans ML -9000 (-9000) · Milwaukee Panthers at USC Trojans · Mon 10:30 PM ET · EV +0.2% · min -2514
 - Missouri Tigers ML -10000 (-10000) · Cleveland State Vikings at Missouri Tigers · Tue 8:00 PM ET · EV +0.1% · min -2560
 - Alabama Crimson Tide ML -10000 (-10000) · Sam Houston Bearkats at Alabama Crimson Tide · Tue 7:30 PM ET · EV +0.1% · min -2523
 
 ## Data gaps
 
-- no line posted yet (20): Cal State San Marcos Cougars @ Cal Poly Mustangs, Milligan Buffaloes @ UNC Greensboro Spartans, Stetson Hatters @ South Carolina Gamecocks, Warren Wilson Owls @ North Carolina A&T Aggies, Coppin State Eagles @ Virginia Tech Hokies, Holy Cross Crusaders @ Rhode Island Rams, Wagner Seahawks @ Boston College Eagles, Arkansas-Pine Bluff Golden Lions @ Arkansas Razorbacks, Lincoln (MO) Blue Tigers @ Missouri State Bears, Cornell (IA) Rams @ Northern Iowa Panthers, Louisiana Christian Wildcats @ Houston Christian Huskies, LSU New Orleans Privateers @ LSU Tigers, Alabama State Hornets @ Texas A&M Aggies, Lipscomb Bisons @ Iowa Hawkeyes, Western New Mexico Mustangs @ New Mexico State Aggies …
-- possession data coverage: 0.206
+- no line posted yet (19): Milligan Buffaloes @ UNC Greensboro Spartans, Stetson Hatters @ South Carolina Gamecocks, Warren Wilson Owls @ North Carolina A&T Aggies, Coppin State Eagles @ Virginia Tech Hokies, Holy Cross Crusaders @ Rhode Island Rams, Wagner Seahawks @ Boston College Eagles, Arkansas-Pine Bluff Golden Lions @ Arkansas Razorbacks, Lincoln (MO) Blue Tigers @ Missouri State Bears, Cornell (IA) Rams @ Northern Iowa Panthers, Louisiana Christian Wildcats @ Houston Christian Huskies, LSU New Orleans Privateers @ LSU Tigers, Alabama State Hornets @ Texas A&M Aggies, Lipscomb Bisons @ Iowa Hawkeyes, Western New Mexico Mustangs @ New Mexico State Aggies, Regis University REGIS UNIVERSITY @ Wyoming Cowboys …
+- possession data coverage: 0.205
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
