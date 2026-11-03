@@ -207,6 +207,13 @@ jobs:
           [ -f .pm_edge_whale_state.json ] && git add .pm_edge_whale_state.json
           if ! git diff --cached --quiet; then
             git commit -m "Update PM Edge audit ledgers [skip ci]"
-            git push
+            # Other workflows push to main on the same tick; rebase and retry
+            # instead of failing (a bare push lost every race and nothing settled).
+            # Only this job writes these files, so a plain rebase never conflicts.
+            for i in 1 2 3 4 5; do
+              git pull --rebase origin main && git push origin HEAD:main && exit 0
+              sleep $((i * 5))
+            done
+            exit 1
 
           fi
