@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-03
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-03T20:30:29+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-03T20:45:37+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -11,9 +11,10 @@ Markets with a tested rule: SPREAD · others are WATCH only until the backtest s
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (6) — positive EV but not a qualified bet
+## Watch list (7) — positive EV but not a qualified bet
 
 - OVER 155.5 (-105) · Cal State Fullerton Titans at San Diego State Aztecs · Tue 10:00 PM ET · EV +1.6% · min -102
+- OVER 159.5 (-105) · Northern Kentucky Norse at South Dakota Coyotes · Wed 8:00 PM ET · EV +1.6% · min -102
 - Hampton Pirates ML +1100 (+1100) · Hampton Pirates at Georgia Tech Yellow Jackets · Tue 7:00 PM ET · EV +0.8% · min +1126
 - Kansas State Wildcats ML -750 (-750) · South Dakota State Jackrabbits at Kansas State Wildcats · Tue 8:00 PM ET · EV +0.8% · min -634
 - Texas A&M Aggies ML -10000 (-10000) · Alabama State Hornets at Texas A&M Aggies · Tue 8:00 PM ET · EV +0.4% · min -2734
