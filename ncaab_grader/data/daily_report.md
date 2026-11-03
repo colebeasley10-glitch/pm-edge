@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-02
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-03T00:15:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-03T00:30:32+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,7 +31,7 @@ WHY: Model line UCLA Bruins +1.5 vs market +4.5 (+3.1 pts) from opponent-adjuste
 LOGGED: 2026-11-02T16:12:03+00:00 · model ncaab_v1
 ```
 
-## Watch list (17) — positive EV but not a qualified bet
+## Watch list (20) — positive EV but not a qualified bet
 
 - Florida A&M Rattlers +27.5 (-115) · Florida A&M Rattlers at Florida State Seminoles · Mon 8:30 PM ET · EV +10.2% · min -137
 - San Francisco Dons ML -520 (-520) · Radford Highlanders at San Francisco Dons · Mon 10:00 PM ET · EV +7.1% · min -681
@@ -42,13 +42,13 @@ LOGGED: 2026-11-02T16:12:03+00:00 · model ncaab_v1
 - Chicago State Cougars +41.5 (-105) · Chicago State Cougars at Texas Longhorns · Mon 9:00 PM ET · EV +1.8% · min -104
 - OVER 143.5 (-105) · The Citadel Bulldogs at Loyola Chicago Ramblers · Mon 8:00 PM ET · EV +1.7% · min -102
 - OVER 143.5 (-105) · West Georgia Wolves at DePaul Blue Demons · Mon 8:00 PM ET · EV +1.6% · min -102
+- OVER 155.5 (-105) · Cal State Fullerton Titans at San Diego State Aztecs · Tue 10:00 PM ET · EV +1.6% · min -102
 - OVER 144.5 (-105) · Fordham Rams at Kansas Jayhawks · Mon 8:00 PM ET · EV +1.5% · min -102
 - OVER 144.5 (-105) · UT Martin Skyhawks at Tulane Green Wave · Mon 8:00 PM ET · EV +1.5% · min -102
-- OVER 160.5 (-105) · Ohio State Buckeyes at BYU Cougars · Mon 9:00 PM ET · EV +1.5% · min -102
 
 ## Data gaps
 
-- no line posted yet (30): Southern Wesleyan Warriors @ Charleston Cougars, Lawrence Vikings @ Green Bay Phoenix, Berry Vikings @ Samford Bulldogs, Lyon Scots @ Stephen F. Austin Lumberjacks, Pfeiffer Falcons @ Longwood Lancers, Tougaloo Bulldogs @ Southern Miss Golden Eagles, Mid America Christian Evangels @ Omaha Mavericks, Crookston (MN) Golden Eagles @ North Dakota State Bison, Cameron Aggies @ Tarleton State Texans, UNT Dallas Trailblazers @ UT Arlington Mavericks, IU Kokomo Cougars @ Evansville Purple Aces, Monmouth (IL) Fighting Scots @ Bradley Braves, Regent Royals @ Norfolk State Spartans, Ottawa (KS) OTTAWA (KS) @ Tulsa Golden Hurricane, Maryville (MO) MARYVILLE UNIVERSITY (MO) @ Southern Illinois Salukis …
+- no line posted yet (30): Tougaloo Bulldogs @ Southern Miss Golden Eagles, Mid America Christian Evangels @ Omaha Mavericks, Crookston (MN) Golden Eagles @ North Dakota State Bison, Cameron Aggies @ Tarleton State Texans, UNT Dallas Trailblazers @ UT Arlington Mavericks, IU Kokomo Cougars @ Evansville Purple Aces, Monmouth (IL) Fighting Scots @ Bradley Braves, Regent Royals @ Norfolk State Spartans, Ottawa (KS) OTTAWA (KS) @ Tulsa Golden Hurricane, Maryville (MO) MARYVILLE UNIVERSITY (MO) @ Southern Illinois Salukis, Western Colorado Mountaineers @ Utah Valley Wolverines, Adams State Grizzlies @ California Golden Bears, Lane College Dragons @ Austin Peay Governors, Willamette Bearcats @ Portland Pilots, LaGrange Panthers @ Jacksonville State Gamecocks …
 - possession data coverage: 0.889
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
