@@ -1,8 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-02
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-03T04:30:30+00:00
-
-**⚠️ BETS SUSPENDED:** possession data for only 69% of finals. Everything below is research only.
+Model ncaab_v1 · PAPER ONLY · run 2026-11-03T04:45:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -24,6 +22,6 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 ## Data gaps
 
 - no line posted yet (18): Milligan Buffaloes @ UNC Greensboro Spartans, Stetson Hatters @ South Carolina Gamecocks, Warren Wilson Owls @ North Carolina A&T Aggies, Coppin State Eagles @ Virginia Tech Hokies, Holy Cross Crusaders @ Rhode Island Rams, Wagner Seahawks @ Boston College Eagles, Lincoln (MO) Blue Tigers @ Missouri State Bears, Cornell (IA) Rams @ Northern Iowa Panthers, Louisiana Christian Wildcats @ Houston Christian Huskies, LSU New Orleans Privateers @ LSU Tigers, Alabama State Hornets @ Texas A&M Aggies, Lipscomb Bisons @ Iowa Hawkeyes, Western New Mexico Mustangs @ New Mexico State Aggies, Regis University REGIS UNIVERSITY @ Wyoming Cowboys, Chapman Panthers @ UC Irvine Anteaters …
-- possession data coverage: 0.693
+- possession data coverage: 0.703
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
