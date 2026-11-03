@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-02
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-03T00:45:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-03T01:00:35+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,24 +31,24 @@ WHY: Model line UCLA Bruins +1.5 vs market +4.5 (+3.1 pts) from opponent-adjuste
 LOGGED: 2026-11-02T16:12:03+00:00 · model ncaab_v1
 ```
 
-## Watch list (20) — positive EV but not a qualified bet
+## Watch list (13) — positive EV but not a qualified bet
 
 - Florida A&M Rattlers +27.5 (-115) · Florida A&M Rattlers at Florida State Seminoles · Mon 8:30 PM ET · EV +10.2% · min -137
 - San Francisco Dons ML -520 (-520) · Radford Highlanders at San Francisco Dons · Mon 10:00 PM ET · EV +7.1% · min -681
-- South Alabama Jaguars -1.5 (+110) · Ohio Bobcats at South Alabama Jaguars · Mon 8:00 PM ET · EV +4.2% · min +105
-- South Alabama Jaguars ML -112 (-112) · Ohio Bobcats at South Alabama Jaguars · Mon 8:00 PM ET · EV +4.1% · min -115
 - Montana State Bobcats ML +490 (+490) · Montana State Bobcats at Colorado State Rams · Mon 10:00 PM ET · EV +3.6% · min +486
-- The Citadel Bulldogs ML +950 (+950) · The Citadel Bulldogs at Loyola Chicago Ramblers · Mon 8:00 PM ET · EV +2.7% · min +953
 - Chicago State Cougars +41.5 (-105) · Chicago State Cougars at Texas Longhorns · Mon 9:00 PM ET · EV +1.8% · min -104
-- OVER 143.5 (-105) · The Citadel Bulldogs at Loyola Chicago Ramblers · Mon 8:00 PM ET · EV +1.7% · min -102
-- OVER 143.5 (-105) · West Georgia Wolves at DePaul Blue Demons · Mon 8:00 PM ET · EV +1.6% · min -102
 - OVER 155.5 (-105) · Cal State Fullerton Titans at San Diego State Aztecs · Tue 10:00 PM ET · EV +1.6% · min -102
-- OVER 144.5 (-105) · Fordham Rams at Kansas Jayhawks · Mon 8:00 PM ET · EV +1.5% · min -102
-- OVER 144.5 (-105) · UT Martin Skyhawks at Tulane Green Wave · Mon 8:00 PM ET · EV +1.5% · min -102
+- OVER 160.5 (-105) · Ohio State Buckeyes at BYU Cougars · Mon 9:00 PM ET · EV +1.5% · min -102
+- OVER 149.5 (-105) · Davidson Wildcats at Washington State Cougars · Mon 9:00 PM ET · EV +1.5% · min -102
+- Hampton Pirates ML +1100 (+1100) · Hampton Pirates at Georgia Tech Yellow Jackets · Tue 7:00 PM ET · EV +0.8% · min +1126
+- Kansas State Wildcats ML -750 (-750) · South Dakota State Jackrabbits at Kansas State Wildcats · Tue 8:00 PM ET · EV +0.8% · min -634
+- Utah State Aggies ML -10000 (-10000) · Idaho State Bengals at Utah State Aggies · Mon 9:30 PM ET · EV +0.3% · min -2675
+- USC Trojans ML -9000 (-9000) · Milwaukee Panthers at USC Trojans · Mon 10:30 PM ET · EV +0.2% · min -2514
+- Missouri Tigers ML -10000 (-10000) · Cleveland State Vikings at Missouri Tigers · Tue 8:00 PM ET · EV +0.1% · min -2560
 
 ## Data gaps
 
-- no line posted yet (30): Tougaloo Bulldogs @ Southern Miss Golden Eagles, Mid America Christian Evangels @ Omaha Mavericks, Crookston (MN) Golden Eagles @ North Dakota State Bison, Cameron Aggies @ Tarleton State Texans, UNT Dallas Trailblazers @ UT Arlington Mavericks, IU Kokomo Cougars @ Evansville Purple Aces, Monmouth (IL) Fighting Scots @ Bradley Braves, Regent Royals @ Norfolk State Spartans, Ottawa (KS) OTTAWA (KS) @ Tulsa Golden Hurricane, Maryville (MO) MARYVILLE UNIVERSITY (MO) @ Southern Illinois Salukis, Western Colorado Mountaineers @ Utah Valley Wolverines, Adams State Grizzlies @ California Golden Bears, Lane College Dragons @ Austin Peay Governors, Willamette Bearcats @ Portland Pilots, LaGrange Panthers @ Jacksonville State Gamecocks …
-- possession data coverage: 0.889
+- no line posted yet (30): LaGrange Panthers @ Jacksonville State Gamecocks, Southwestern Christian U Eagles @ North Texas Mean Green, Oakwood Ambassadors @ Alabama A&M Bulldogs, Texas A&M-Kingsville Javelinas @ UT Rio Grande Valley Vaqueros, Schreiner Mountaineers @ Lamar Cardinals, Fresno Pacific Sunbirds @ Fresno State Bulldogs, San Francisco State Gators @ UC Santa Barbara Gauchos, Colorado College Tigers @ Northern Colorado Bears, Biola Eagles @ San Diego Toreros, La Verne Leopards @ UC Riverside Highlanders, West Coast Baptist Eagles @ Southern Utah Thunderbirds, George Fox Bruins @ Idaho Vandals, Whittier Poets @ UC San Diego Tritons, Jessup Warriors @ Sacramento State Hornets, Cal State San Marcos Cougars @ Cal Poly Mustangs …
+- possession data coverage: 1.0
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
