@@ -38,6 +38,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import fair_calibration  # Nov 4, 2026: model fair values shrunk toward the market
 from research_lab import config
 from research_lab.ledger import _atomic_write_text, iso, parse_dt
 
@@ -57,6 +58,7 @@ EV_CAP = 0.10
 BAD_VERDICTS = ("Proven loser", "Losing to the close", "Demote")
 HUGE_EV_PINNACLE = 0.06  # 6%+ vs Pinnacle's no-vig price
 HUGE_EV_MODEL = 0.12     # 12%+ vs our own model's probability (model and copy-price fairs)
+MIN_EV_MODEL = 0.02      # Nov 4, 2026: a model play needs 2%+ EV at its calibrated fair to be queued
 MAX_ALERTS_PER_DAY = 6
 MIN_CLV_BETS = 20       # CLV readings a lane needs before its average counts
 MIN_LANE_BETS = 30       # a lane (or slice) needs this many settled bets before it can feed the queue
@@ -152,13 +154,13 @@ def candidates(root: Path = ROOT, base: Path | None = None) -> list[dict]:
     for r in _csv(root / "ncaa_grader" / "data" / "picks.csv"):
         if not r.get("result") and r.get("tier") == "STRONG" and r.get("source", "live") == "live":
             out.append(_cand("NCAA Grader — STRONG", "ncaa_grader", r["pick_id"], "NCAAF", f"{r['away']} at {r['home']}",
-                             r["side"], r.get("kickoff"), dec_from_american(r.get("odds")), _f(r.get("model_prob")),
-                             "Model"))
+                             r["side"], r.get("kickoff"), dec_from_american(r.get("odds")),
+                             fair_calibration.calibrated("ncaa_grader", r), "Model"))
     for r in _csv(root / "nba_grader" / "data" / "picks.csv"):
         if not r.get("result") and r.get("tier") in ("STRONG", "LEAN") and r.get("source", "live") == "live":
             out.append(_cand("NBA Model — Strong + Lean", "nba_grader", r["pick_id"], "NBA", f"{r['away']} at {r['home']}",
-                             r["side"], r.get("kickoff"), dec_from_american(r.get("odds")), _f(r.get("model_prob")),
-                             "Model"))
+                             r["side"], r.get("kickoff"), dec_from_american(r.get("odds")),
+                             fair_calibration.calibrated("nba_grader", r), "Model"))
     for r in _csv(root / "nba_grader" / "data" / "props.csv"):
         if not r.get("result") and r.get("tier") in ("STRONG", "LEAN") and r.get("source", "live") == "live":
             out.append(_cand("NBA Props — Strong + Lean", "nba_props", r["pick_id"], "NBA", f"{r['away']} at {r['home']}",
@@ -328,6 +330,8 @@ def update(now: datetime, base: Path | None = None, *, root: Path = ROOT, lanes:
     for c in candidates(root, base):
         start = parse_dt(c["game_start"])
         if c["lane"] not in ok or not start or not (now + MIN_LEAD <= start <= now + MAX_AHEAD):
+            continue
+        if c["fair_src"] == "Model" and c["ev"] < MIN_EV_MODEL:
             continue
         if f"{c['source']}:{c['source_id']}" in seen or c["_key"] in seen_props:
             continue

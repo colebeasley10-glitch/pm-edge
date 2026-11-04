@@ -22,6 +22,7 @@ data_sync.sync()
 
 sys.modules.pop("scorecard", None)   # Streamlit Cloud keeps old modules around
 import scorecard  # noqa: E402
+import fair_calibration  # noqa: E402
 import ui_theme  # noqa: E402
 
 st.set_page_config(page_title="SharpIQ", page_icon="🎯", layout="centered", initial_sidebar_state="collapsed")
@@ -534,18 +535,18 @@ def open_plays() -> list[dict]:
             add(r["game_start"], r.get("league") or "Prop", r["pick"], r.get("game") or "", "Odds Fam",
                 price=_am(dec) if dec else (r.get("bet_at") or ""), dec=dec, fair=r.get("fair_prob"),
                 bet=_prop_bet(r))
-    for path, league, lane in (("ncaa_grader/data/picks.csv", "NCAAF", "NCAA Grader"),
-                               ("nba_grader/data/picks.csv", "NBA", "NBA Model")):
+    for path, league, lane, src in (("ncaa_grader/data/picks.csv", "NCAAF", "NCAA Grader", "ncaa_grader"),
+                                    ("nba_grader/data/picks.csv", "NBA", "NBA Model", "nba_grader")):
         for r in rows(path):
             if not r.get("result") and r.get("tier") == "STRONG" and r.get("source", "live") == "live":
                 add(r["kickoff"], league, r["side"], f"{r['away']} at {r['home']}", lane,
                     price=fmt_american(r.get("odds")), dec=_dec_from_american(r.get("odds")),
-                    fair=r.get("model_prob"), fair_src="Model", bet=_grader_bet(r))
+                    fair=fair_calibration.calibrated(src, r), fair_src="Model", bet=_grader_bet(r))
     for r in rows("ncaab_grader/data/picks.csv"):   # NCAA basketball: BET tier only
         if not r.get("result") and r.get("tier") == "BET":
             add(r["tipoff"], "NCAAB", r["side"], f"{r['away']} at {r['home']} · min {r.get('min_odds', '')}",
                 "NCAAB Model", price=fmt_american(r.get("odds")), dec=_dec_from_american(r.get("odds")),
-                fair=r.get("model_prob"), fair_src="Model", bet={})
+                fair=fair_calibration.calibrated("ncaab_model", r), fair_src="Model", bet={})
     for r in rows("nba_grader/data/props.csv"):
         if not r.get("result") and r.get("tier") == "STRONG":
             add(r["kickoff"], "NBA", r["side"], f"{r['away']} at {r['home']} · proj {r['proj']}", "NBA Props",
