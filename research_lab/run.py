@@ -39,6 +39,14 @@ RUNNERS = {
 }
 
 
+def _prop_board_push(title: str, message: str) -> bool:
+    """Prop Board steam plays go straight to Cole's phone (Nov 4, 2026)."""
+    import os
+    import alert_gate
+    return alert_gate.send("prop_board", title, message, os.getenv("STREAMLIT_APP_URL") or None,
+                           url_title="Open SharpIQ")
+
+
 def status_path(base: Path | None = None) -> Path:
     return Path(base or config.DATA_DIR) / "status.json"
 
@@ -196,7 +204,7 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
             from research_lab import prop_board
             out["prop_board"] = prop_board.update(
                 getattr(ctx, "pinnacle_payloads", {}) or {}, now, base,
-                push=None,                           # Odds Fam sends the alerts
+                push=_prop_board_push if send_report else None,   # Nov 4, 2026: Prop Board buzzes itself
                 box=prop_board.BoxScores() if send_report else None)
         except Exception as exc:
             out["prop_board"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}

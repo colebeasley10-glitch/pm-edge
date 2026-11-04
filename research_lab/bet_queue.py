@@ -23,11 +23,10 @@ Each queued play records the price, the fair price and EV at queue time, and two
   * quarter-Kelly on a $1,000 paper bankroll, capped at 2% a bet -- how it would look sized up.
 Results, CLV and P/L come from the source lane once it settles the play. No orders.
 
-Phone alerts (Nov 1, 2026): a queued play with a HUGE edge pushes to Cole's phone -- these are the
-only Bet Queue plays he'd put real money on. Huge = EV of at least HUGE_EV_PINNACLE against a
-Pinnacle fair price, or HUGE_EV_MODEL against our own model's price (model probabilities run hot,
-so that bar is higher). At most MAX_ALERTS_PER_DAY a day. Sent through alert_gate as
-"bet_queue_huge"; every queued play is still tracked on paper whether it alerts or not.
+Phone alerts (Nov 4, 2026): every queued play pushes to Cole's phone (he takes them all at $1),
+except Prop Board plays, which Prop Board already pushed. Huge-edge plays (HUGE_EV_PINNACLE vs
+Pinnacle, HUGE_EV_MODEL vs our calibrated model price) get a 🔥 title. Sent through alert_gate
+as "bet_queue". Before Nov 4 only the huge-edge plays alerted.
 """
 from __future__ import annotations
 
@@ -59,7 +58,7 @@ BAD_VERDICTS = ("Proven loser", "Losing to the close", "Demote")
 HUGE_EV_PINNACLE = 0.06  # 6%+ vs Pinnacle's no-vig price
 HUGE_EV_MODEL = 0.12     # 12%+ vs our own model's probability (model and copy-price fairs)
 MIN_EV_MODEL = 0.02      # Nov 4, 2026: a model play needs 2%+ EV at its calibrated fair to be queued
-MAX_ALERTS_PER_DAY = 6
+MAX_ALERTS_PER_DAY = 15   # the queue's own daily max
 MIN_CLV_BETS = 20       # CLV readings a lane needs before its average counts
 MIN_LANE_BETS = 30       # a lane (or slice) needs this many settled bets before it can feed the queue
 FIELDS = ["queue_id", "alert_time", "day", "lane", "source", "source_id", "league", "game", "pick", "game_start",
@@ -281,7 +280,7 @@ def alert_text(q: dict) -> tuple[str, str]:
     start = parse_dt(q.get("game_start"))
     when = start.astimezone(ET).strftime("%a %-I:%M %p ET") if start else "?"
     ev = float(q["ev"])
-    title = f"🔥 Bet Queue {ev * 100:+.1f}% EV: {q['pick']}"[:250]
+    title = f"{'🔥' if is_huge(q) else '📋'} Bet Queue {ev * 100:+.1f}% EV: {q['pick']}"[:250]
     lines = [
         f"{q['pick']}",
         f"{q.get('league') or ''} · {q.get('game') or ''}".strip(" ·"),
@@ -295,7 +294,7 @@ def alert_text(q: dict) -> tuple[str, str]:
 
 def _default_push(title: str, message: str) -> bool:
     import alert_gate
-    return alert_gate.send("bet_queue_huge", title, message, os.getenv("STREAMLIT_APP_URL") or None,
+    return alert_gate.send("bet_queue", title, message, os.getenv("STREAMLIT_APP_URL") or None,
                            url_title="Open SharpIQ")
 
 
@@ -383,13 +382,15 @@ def update(now: datetime, base: Path | None = None, *, root: Path = ROOT, lanes:
         if pk:
             players.add(pk)
         info["queued"] += 1
-    info["alerted"] = _alert_new(today, now, push or _default_push)
+    pb_seen = {f"{r.get('pick')}|{r.get('game')}" for r in _csv(lab / "PROP_BOARD" / "plays.csv")}
+    info["alerted"] = _alert_new(today, now, push or _default_push, pb_seen)
     _save(rows, base)
     return info
 
 
-def _alert_new(today: list[dict], now: datetime, push) -> int:
-    """Push today's not-yet-alerted huge-EV plays (oldest first), up to MAX_ALERTS_PER_DAY.
+def _alert_new(today: list[dict], now: datetime, push, prop_board_seen: set | frozenset = frozenset()) -> int:
+    """Push every one of today's not-yet-alerted plays (oldest first), up to MAX_ALERTS_PER_DAY.
+    Nov 4, 2026: was huge-EV plays only; Cole now takes every queue play for $1.
     A failed push is retried next round; a muted/skipped one isn't marked, so it's never stuck."""
     sent_today = sum(q.get("alerted") == "Y" for q in today)
     n = 0
@@ -397,8 +398,10 @@ def _alert_new(today: list[dict], now: datetime, push) -> int:
         if sent_today >= MAX_ALERTS_PER_DAY:
             break
         start = parse_dt(q.get("game_start"))
-        if q.get("status") != "open" or q.get("alerted") or not is_huge(q) or not start or start <= now:
+        if q.get("status") != "open" or q.get("alerted") or not start or start <= now:
             continue
+        if q.get("source") == "prop_board" or f"{q.get('pick')}|{q.get('game')}" in prop_board_seen:
+            continue         # Prop Board already buzzed for this prop (Nov 4, 2026)
         if q.get("injury"):
             continue         # questionable player or no injury report: paper only, no buzz
         title, msg = alert_text(q)

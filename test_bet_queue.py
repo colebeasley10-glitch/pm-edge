@@ -90,23 +90,24 @@ def test_settles_from_source(tmp_path):
     assert float(r["pl_kelly"]) > 0 and r["clv"] == "0.01"
 
 
-def test_huge_ev_alerts_once_and_respect_thresholds():
-    """Nov 1, 2026: only huge-EV queue plays push (6%+ vs Pinnacle, 12%+ vs model), once each."""
+def test_every_queue_play_alerts_once_except_prop_board():
+    """Nov 4, 2026: every queue play pushes (huge ones get 🔥), once each; Prop Board props don't
+    (Prop Board already pushed them); started games never push."""
     from datetime import datetime, timezone
     now = datetime(2026, 11, 2, 15, 0, tzinfo=timezone.utc)
     later = "2026-11-02T20:00:00Z"
     base = {"status": "open", "game_start": later, "pick": "Chiefs ML", "league": "NFL", "game": "A at B",
-            "bet_at": "+120", "fair_odds": "+100", "lane": "X", "kelly_pct": "0.01", "alerted": ""}
-    today = [dict(base, ev="0.07", fair_src="Pinnacle"),       # huge
-             dict(base, ev="0.05", fair_src="Pinnacle"),       # not huge
-             dict(base, ev="0.10", fair_src="Model"),          # model bar is higher
-             dict(base, ev="0.15", fair_src="Model"),          # huge
+            "bet_at": "+120", "fair_odds": "+100", "lane": "X", "kelly_pct": "0.01", "alerted": "", "source": "x"}
+    today = [dict(base, ev="0.07", fair_src="Pinnacle"),                          # huge
+             dict(base, ev="0.03", fair_src="Pinnacle"),                          # ordinary
+             dict(base, ev="0.08", fair_src="Pinnacle", source="prop_board"),     # Prop Board already buzzed
+             dict(base, ev="0.08", fair_src="Pinnacle", source="odds_fam", pick="P Over 1.5", game="C at D"),
              dict(base, ev="0.20", fair_src="Pinnacle", game_start="2026-11-02T14:00:00Z")]  # started
     sent = []
-    n = bq._alert_new(today, now, lambda t, m: sent.append(t) or True)
-    assert n == 2 and [q["alerted"] for q in today] == ["Y", "", "", "Y", ""]
-    assert bq._alert_new(today, now, lambda t, m: sent.append(t) or True) == 0   # never twice
-    assert all(t.startswith("🔥 Bet Queue") for t in sent)
+    n = bq._alert_new(today, now, lambda t, m: sent.append(t) or True, {"P Over 1.5|C at D"})
+    assert n == 2 and [q["alerted"] for q in today] == ["Y", "Y", "", "", ""]
+    assert bq._alert_new(today, now, lambda t, m: sent.append(t) or True, {"P Over 1.5|C at D"}) == 0   # never twice
+    assert sent[0].startswith("🔥 Bet Queue") and sent[1].startswith("📋 Bet Queue")
 
 
 def test_muted_or_failed_push_retries_next_round():

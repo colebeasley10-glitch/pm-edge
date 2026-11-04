@@ -221,6 +221,8 @@ def test_btb_default_push_goes_through_gate(monkeypatch):
     class R:
         status_code = 200
     post = lambda url, data, timeout: sent.append(data) or R()
-    assert alert_gate.send("btb_nfl", "x", "y", post=post)
+    assert alert_gate.send("prop_board", "x", "y", post=post)    # Nov 4, 2026: Prop Board + Bet Queue only
+    assert alert_gate.send("bet_queue", "x", "y", post=post)
+    assert not alert_gate.send("btb_nfl", "x", "y", post=post)   # BreakTheBank muted since Nov 4
     assert not core.send_push("x", "y", post=post)          # generic source (Odds Fam etc.) is muted
-    assert len(sent) == 1
+    assert len(sent) == 2
