@@ -1,6 +1,10 @@
 """Research Lab: NCAA Model Grader (every pick logged at a frozen line, then graded). Read-only."""
 import sys
 
+import data_sync  # Nov 4, 2026: pull fresh CSVs; Streamlit Cloud misses bot commits
+
+data_sync.sync()
+
 # Streamlit Cloud keeps imported modules in memory across code updates; always load the newest code.
 for _m in [k for k in sys.modules if k == "ncaa_grader" or k.startswith("ncaa_grader.")]:
     del sys.modules[_m]

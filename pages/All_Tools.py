@@ -23,6 +23,9 @@ import sys as _sys
 import pandas as pd
 import streamlit as st
 
+import data_sync  # noqa: E402  Nov 4, 2026: pull fresh CSVs; Streamlit Cloud misses bot commits
+data_sync.sync()
+
 # Streamlit Cloud keeps imported modules in memory across code updates, so after a deploy the
 # new app.py can run against the old league code (e.g. a KeyError on a field the old code
 # doesn't return yet). Drop them so every run imports the newest league code.

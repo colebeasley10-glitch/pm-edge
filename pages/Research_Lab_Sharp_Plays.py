@@ -3,6 +3,9 @@ import sys
 
 import streamlit as st
 
+import data_sync  # noqa: E402  Nov 4, 2026: pull fresh CSVs; Streamlit Cloud misses bot commits
+data_sync.sync()
+
 for _m in [k for k in sys.modules if k == "research_lab.sharp_plays"]:
     del sys.modules[_m]   # Streamlit Cloud keeps old modules around
 from research_lab import sharp_plays as sp  # noqa: E402

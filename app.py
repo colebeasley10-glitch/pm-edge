@@ -17,6 +17,9 @@ from zoneinfo import ZoneInfo
 
 import streamlit as st
 
+import data_sync  # noqa: E402  Nov 4, 2026: pull fresh CSVs; Streamlit Cloud misses bot commits
+data_sync.sync()
+
 sys.modules.pop("scorecard", None)   # Streamlit Cloud keeps old modules around
 import scorecard  # noqa: E402
 import ui_theme  # noqa: E402
@@ -345,6 +348,7 @@ def lane_expander(l: dict, extra: str = "") -> None:
 
 
 def _refresh() -> None:
+    data_sync.sync(force=True)
     st.cache_data.clear()
 
 

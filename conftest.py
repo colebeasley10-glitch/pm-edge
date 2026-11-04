@@ -9,3 +9,4 @@ for _var, _name in (("LIVE_SHARP_LEDGER_PATH", "live.csv"), ("LEAGUE_LEDGER_PATH
                     ("LIVE_SHARP_BALANCE_LOG", "balance.csv")):
     os.environ.setdefault(_var, str(_tmp / _name))
 os.environ.setdefault("LEAGUE_PUSH", "0")
+os.environ.setdefault("SHARPIQ_NO_SYNC", "1")   # tests never pull from GitHub

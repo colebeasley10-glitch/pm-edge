@@ -20,6 +20,9 @@ from zoneinfo import ZoneInfo
 
 import requests
 import streamlit as st
+
+import data_sync  # noqa: E402  Nov 4, 2026: pull fresh CSVs; Streamlit Cloud misses bot commits
+data_sync.sync()
 import streamlit.components.v1 as components
 
 # Streamlit Cloud secrets -> environment used by approval/signing clients.

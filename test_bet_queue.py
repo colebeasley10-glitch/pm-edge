@@ -152,3 +152,22 @@ def test_out_player_never_queued_questionable_flagged(tmp_path):
     rows = {r["pick"].split(" Over")[0].split(" Under")[0]: r for r in bq.load(lab)}
     assert info["injury_blocked"] == 1 and "Hurt Guy1" not in rows
     assert rows["Maybe Guy2"]["injury"] == "Questionable" and rows["Fine Guy3"]["injury"] == ""
+
+
+def test_one_play_per_game_market_across_model_versions():
+    """Nov 4, 2026: core_v1 and scores_v1 both picked Akron +12.5; Ball State ML and UMass ML were both queued."""
+    k = bq._game_key
+    a = k("ncaa_grader", "live:core_v1:2026:401866453:SPREAD", "Ohio at Akron")
+    b = k("ncaa_grader", "live:scores_v1:2026:401866453:SPREAD", "Ohio at Akron")
+    assert a and a == b
+    assert k("ncaa_grader", "live:core_v1:2026:1:ML", "X at Y") == k("ncaa_grader", "live:scores_v1:2026:1:ML", "X at Y")
+    assert k("ncaa_grader", "live:core_v1:2026:1:ML", "X at Y") != k("ncaa_grader", "live:core_v1:2026:1:SPREAD", "X at Y")
+    assert k("trader_follow", "abc", "X at Y") is None
+    c1 = bq._cand("L", "ncaa_grader", "live:core_v1:2026:1:SPREAD", "NCAAF", "X at Y", "Y +3", "2026-11-05T00:00Z", 1.9, 0.6)
+    c2 = bq._cand("L", "ncaa_grader", "live:scores_v1:2026:1:SPREAD", "NCAAF", "X at Y", "X -3", "2026-11-05T00:00Z", 1.9, 0.6)
+    assert c1["_key"] == c2["_key"]
+
+
+def test_data_sync_skipped_in_tests():
+    import data_sync
+    assert data_sync.sync(force=True).get("last") == 0.0

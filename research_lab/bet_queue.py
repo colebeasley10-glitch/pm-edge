@@ -112,12 +112,27 @@ def _save(rows: list[dict], base: Path | None) -> None:
 
 
 # ------------------------------------------------------------------ candidates from every lane
+_GAME_MODEL_SOURCES = ("ncaa_grader", "nba_grader")
+
+
+def _game_key(source: str, sid: str, game) -> str | None:
+    """One play per game per market (Nov 4, 2026). The NCAA grader runs two model versions
+    (core_v1, scores_v1) that each log their own pick, so the same Akron +12.5 was queued twice,
+    and Ball State ML and UMass ML (both sides of one game) were queued together."""
+    if source not in _GAME_MODEL_SOURCES:
+        return None
+    market = str(sid).rsplit(":", 1)[-1].upper()
+    if market not in ("SPREAD", "ML", "TOTAL") or not game:
+        return None
+    return f"game:{source}|{str(game).strip().lower()}|{market}"
+
+
 def _cand(lane, source, sid, league, game, pick, start, dec, fair, fair_src="Pinnacle", key=None) -> dict | None:
     if not dec or dec <= 1 or not fair or not 0 < fair < 1 or not start:
         return None
     return {"lane": lane, "source": source, "source_id": sid, "league": league, "game": game, "pick": pick,
             "game_start": start, "decimal": round(dec, 4), "fair_prob": round(fair, 4), "fair_src": fair_src,
-            "ev": round(fair * dec - 1, 4), "_key": key or f"{source}:{sid}"}
+            "ev": round(fair * dec - 1, 4), "_key": key or _game_key(source, sid, game) or f"{source}:{sid}"}
 
 
 def candidates(root: Path = ROOT, base: Path | None = None) -> list[dict]:
@@ -308,6 +323,7 @@ def update(now: datetime, base: Path | None = None, *, root: Path = ROOT, lanes:
     today = [q for q in rows if q.get("day") == day]
     seen = {q["source"] + ":" + q["source_id"] for q in rows}
     seen_props = {f"prop:{q['pick']}|{q.get('game')}" for q in rows}
+    seen_props |= {k for q in rows if (k := _game_key(q.get("source", ""), q.get("source_id", ""), q.get("game")))}
     pool = []
     for c in candidates(root, base):
         start = parse_dt(c["game_start"])

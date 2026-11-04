@@ -3,6 +3,9 @@ import sys
 
 import streamlit as st
 
+import data_sync  # noqa: E402  Nov 4, 2026: pull fresh CSVs; Streamlit Cloud misses bot commits
+data_sync.sync()
+
 sys.modules.pop("scorecard", None)   # Streamlit Cloud keeps old modules around
 import scorecard as sc  # noqa: E402
 
