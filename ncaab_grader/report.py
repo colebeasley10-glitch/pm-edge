@@ -105,6 +105,12 @@ def daily(rows: list[dict], status: dict, card: dict, now: datetime | None = Non
                    f"EV {float(r['ev']) * 100:+.1f}% · min {_odds(r['min_odds'])}")
     if not watch:
         out.append("- none")
+    ht = status.get("home_test") or {}
+    if ht:
+        hb, hr = ht.get("bankroll", {}), ht.get("record", {})
+        out += ["", "## Home-court spread TEST (paper, own $500 — not bets)", "",
+                f"Bankroll ${hb.get('balance', 0):.2f} · {hr.get('w', 0)}-{hr.get('l', 0)}-{hr.get('p', 0)} · "
+                f"logged this run {ht.get('logged', 0)} · open {hr.get('open', 0)}"]
     out += ["", "## Data gaps", ""]
     for x in status.get("insufficient") or []:
         out.append(f"- insufficient data: {x}")

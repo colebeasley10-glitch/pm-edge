@@ -158,6 +158,10 @@ def main() -> None:
         reasons.append(f"{len(out['insufficient'])} D1 games couldn't be projected")
         core.downgrade_bets(out["new"])
     core.save_ledger(out["rows"])
+    # Home-court spread TEST lane (paper, own ledger). Paused, but still settled, while a guard fires.
+    ht_card = card if not reasons else {**card, "home_test": {**card.get("home_test", {}), "enabled": False}}
+    ht = core.run_home_test(games=games, lines=lines, project=project, card=ht_card, now=now)
+    core.save_ledger(ht["rows"], core.HOME_TEST_PATH)
     pushed = _notify(out["new"]) if not reasons else 0
 
     latest = Ratings(fit_rows, as_of=today + timedelta(days=1), prior=prior, league=league, **card["params"])
@@ -176,6 +180,9 @@ def main() -> None:
                    "games_with_lines": out["games_with_lines"], "insufficient": out["insufficient"],
                    "no_line": out["no_line"][:30], "out_of_scope_games": out["out_of_scope"], "bets_pushed": pushed, "suspended": "; ".join(reasons),
                    "calibration": cal, "bankroll": core.bankroll(out["rows"], card),
+                   "home_test": {"logged": ht["logged"], "settled": ht["settled"],
+                                 "bankroll": core.home_test_bankroll(ht["rows"], card),
+                                 "record": core.stats(ht["rows"], pl="pnl", risk="stake")},
                    "home_court_pts": round(latest.hca / 100 * latest.tempo, 2), "league_eff": round(latest.mu, 1),
                    "league_tempo": round(latest.tempo, 1), "ratings": table})
     core.write_status(status)

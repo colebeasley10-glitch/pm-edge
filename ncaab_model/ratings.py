@@ -34,6 +34,7 @@ DEFAULTS = dict(
     eff_cap=40.0,         # cap |eff - league| per team-game (pts/100) so one blowout can't dominate
     hca_prior=4.5,        # pts/100 poss; ridge target for home-court edge
     hca_games=200.0,      # how firmly hca is held near hca_prior
+    hca_pts=None,         # if set: home-court edge FIXED at this many points per game (overrides hca_prior)
     min_games=0,          # with a prior every D1 team can be projected from game 1
 )
 
@@ -78,8 +79,8 @@ class Ratings:
         hp = np.array([float(g["home_pts"]) for g in gs]); ap = np.array([float(g["away_pts"]) for g in gs])
         poss = np.array([float(g.get("poss") or 0.0) for g in gs])
         site = np.array([0.0 if g.get("neutral") else 1.0 for g in gs])
+        self._fit_tempo(h, a, poss, w)                      # tempo first: a fixed hca_pts needs it
         self._fit_eff(h, a, hp, ap, poss, site, w)
-        self._fit_tempo(h, a, poss, w)
 
     # ------------------------------------------------------------------ fitting
     def _prior_vec(self, k: int) -> np.ndarray:
@@ -109,7 +110,12 @@ class Ratings:
         lam = self.p["prior_games"] * 2.0               # ~one O row and one D row per team-game
         A[2:2 + n, 2:2 + n] += np.eye(n) * lam; b[2:2 + n] += lam * self._prior_vec(0)
         A[2 + n:, 2 + n:] += np.eye(n) * lam; b[2 + n:] += lam * self._prior_vec(1)
-        A[1, 1] += self.p["hca_games"]; b[1] += self.p["hca_games"] * self.p["hca_prior"]
+        if self.p.get("hca_pts") is not None:
+            # Fixed home court (pts/game -> pts/100 poss at this season's tempo), held hard so a small
+            # or lopsided sample (November buy games) can't drag it around.
+            A[1, 1] += 1e7; b[1] += 1e7 * 100.0 * float(self.p["hca_pts"]) / self.tempo
+        else:
+            A[1, 1] += self.p["hca_games"]; b[1] += self.p["hca_games"] * self.p["hca_prior"]
         A[0, 0] += 50.0; b[0] += 50.0 * self.mu0           # scoring level: weak pull to the prior season
         for lo, hi in ((2, 2 + n), (2 + n, N)):            # identify: mean O = mean D = 0 (soft)
             c = np.zeros(N); c[lo:hi] = 1.0

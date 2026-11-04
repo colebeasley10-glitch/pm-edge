@@ -25,12 +25,12 @@ def money(x) -> str:
 def bet_cards(rows: list[dict]) -> None:
     out = []
     for r in rows:
-        kind = "good" if r["tier"] == "BET" else "mute"
+        kind = "good" if r["tier"] in ("BET", "TEST") else "mute"
         sub = (f"{r['away']} at {r['home']} · model {r['model_line']} · proj {r['proj']}")
         chips = (f"<span class='chip {kind}'>EV {float(r['ev']) * 100:+.1f}%</span>"
                  f"<span class='chip mute'>win {float(r['model_prob']) * 100:.1f}% vs {float(r['breakeven']) * 100:.1f}% BE</span>"
                  f"<span class='chip mute'>min {core.fmt_odds(float(r['min_odds']))}</span>")
-        stake = f"${float(r.get('stake') or 0):.2f}" if r["tier"] == "BET" else "watch"
+        stake = f"${float(r.get('stake') or 0):.2f}" if r["tier"] in ("BET", "TEST") else "watch"
         out.append(f"<div class='play'><div class='play-l'><span class='lg'>{esc(r['tier'].title())}</span>"
                    f"<span class='tm'>{esc(tip(r['tipoff']))}</span></div>"
                    f"<div class='play-m'><div class='pt'>{esc(r['side'])} ({esc(core.fmt_odds(float(r['odds'])))})</div>"
@@ -102,6 +102,13 @@ def render() -> None:
         section("Watch list", f"{len(w)}")
         if w:
             bet_cards(w)
+        ht_open = sorted([r for r in core.load_ledger(core.HOME_TEST_PATH)
+                          if not r.get("result") and upcoming(r.get("tipoff"))], key=lambda r: -float(r["ev"]))
+        section("Home-court test (paper, separate $500)", f"{len(ht_open)} open")
+        if ht_open:
+            bet_cards(ht_open)
+        else:
+            quiet("No home-court test plays", "Logs home spreads at +3% EV or better. Not part of the $5 bets.")
         gaps = status.get("insufficient") or []
         if gaps:
             section("Insufficient data", str(len(gaps)))
@@ -115,6 +122,15 @@ def render() -> None:
         for m, lab in (("SPREAD", "Spread"), ("TOTAL", "Total"), ("ML", "Moneyline")):
             body.append([f"  {lab}"] + cells(core.stats([r for r in bets if r["market"] == m], pl="pnl", risk="stake"), True))
         table(["Group", "Bets", "W-L", "P/L", "ROI", "CLV", "Open"], body, minor={1, 2, 3, 4})
+        ht_rows = core.load_ledger(core.HOME_TEST_PATH)
+        htb = core.home_test_bankroll(ht_rows, card)
+        section("Home-court test (paper, own $500)", f"bankroll ${htb['balance']:,.2f}")
+        table(["Group", "Bets", "W-L", "P/L", "ROI", "CLV", "Open"],
+              [["Home spreads · flat $5"] + cells(core.stats(ht_rows, pl="pnl", risk="stake"), True)],
+              minor={1, 2, 3, 4})
+        st.markdown("<div class='fine'>Unproven: earns a place in the $5 lane only if it beats the closing line "
+                    "over a real sample. Home court fixed at "
+                    f"{esc(card.get('home_court', {}).get('pts', '—'))} pts.</div>", unsafe_allow_html=True)
         section("Model test (every game, 1u, not bets)")
         body = []
         for t in ("BET", "WATCH", "PASS"):
@@ -135,7 +151,7 @@ def render() -> None:
                     (money(_f(r.get("pnl"))), tone(_f(r.get("pnl")))), r.get("clv") or "—"] for r in done])
     elif view == "Ratings":
         rs = status.get("ratings") or []
-        section("Adjusted efficiency", f"home court ≈ {status.get('home_court_pts', '—')} pts")
+        section("Adjusted efficiency", f"home court {status.get('home_court_pts', '—')} pts (fixed)")
         if rs:
             table(["Team", "Net", "Off", "Def", "Tempo", "G", "Prior"],
                   [[r["team"], (f"{r['net']:+.1f}", tone(r["net"])), r["adj_o"], r["adj_d"], r["tempo"],

@@ -32,6 +32,7 @@ from ncaa_grader.core import _parse_dt, clv, consensus, devig, fmt_line, fmt_odd
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"
 LEDGER_PATH = DATA_DIR / "picks.csv"
+HOME_TEST_PATH = DATA_DIR / "home_test.csv"      # Nov 3, 2026: home-court spread TEST lane (own ledger)
 STATUS_PATH = DATA_DIR / "status.json"
 REPORT_PATH = DATA_DIR / "daily_report.md"
 CARD_PATH = ROOT.parent / "ncaab_model" / "data" / "model_card.json"
@@ -269,6 +270,16 @@ def run_live(*, games: list[dict], lines: dict, project, card: dict, now: dateti
         by_id[pid] = row
         new.append(row)
 
+    closed, settled = close_and_settle(by_id, games_by_id, lines, now, stamp)
+
+    return {"rows": list(by_id.values()), "new": new, "logged": len(new), "settled": settled,
+            "close_updates": closed, "upcoming_games": len(upcoming),
+            "games_with_lines": len(upcoming) - len(no_line) - len(out_of_scope), "insufficient": insufficient[:60],
+            "no_line": no_line[:60], "out_of_scope": len(out_of_scope)}
+
+
+def close_and_settle(by_id: dict, games_by_id: dict, lines: dict, now: datetime, stamp: str) -> tuple[int, int]:
+    """Re-read the line until tip (CLV), then grade finals. Shared by the BET ledger and the home test."""
     closed = 0
     for r in by_id.values():
         if r.get("result"):
@@ -297,11 +308,7 @@ def run_live(*, games: list[dict], lines: dict, project, card: dict, now: dateti
         r["pnl_kelly"] = round(float(r.get("stake_kelly") or 0) * units, 2)
         r["settled_at"] = stamp
         settled += 1
-
-    return {"rows": list(by_id.values()), "new": new, "logged": len(new), "settled": settled,
-            "close_updates": closed, "upcoming_games": len(upcoming),
-            "games_with_lines": len(upcoming) - len(no_line) - len(out_of_scope), "insufficient": insufficient[:60],
-            "no_line": no_line[:60], "out_of_scope": len(out_of_scope)}
+    return closed, settled
 
 
 def downgrade_bets(new_rows: list[dict]) -> int:
@@ -317,6 +324,74 @@ def downgrade_bets(new_rows: list[dict]) -> int:
 def _as_grader(r: dict) -> dict:
     """The shared grade()/clv() helpers expect the football grader's column names."""
     return {**r, "kickoff": r.get("tipoff")}
+
+
+# ---------------------------------------------------------------- home-court spread TEST lane
+def home_test_bankroll(rows: list[dict], card: dict) -> dict:
+    ht = card.get("home_test", {})
+    start = float(ht.get("start_bankroll", 500.0))
+    pnl = sum(float(r.get("pnl") or 0) for r in rows if r.get("result"))
+    at_risk = sum(float(r.get("stake") or 0) for r in rows if not r.get("result"))
+    return {"start": start, "pnl": round(pnl, 2), "balance": round(start + pnl, 2), "at_risk": round(at_risk, 2)}
+
+
+def run_home_test(*, games: list[dict], lines: dict, project, card: dict, now: datetime | None = None,
+                  rows: list[dict] | None = None) -> dict:
+    """PAPER TEST: home-court (non-neutral) spreads priced with the NEUTRAL-court calibration.
+
+    The main card shrinks home-game spreads almost all the way to the market (b_s 0.046), so they can
+    never reach a bet. This lane asks: with home court fixed at the card's value, is the model as
+    informative at home as on neutral floors? Flat stake, own $500 ledger (home_test.csv), logged only
+    when EV >= min_ev and the gap is <= max_edge_pts. Never touches picks.csv or the BET bankroll."""
+    ht = card.get("home_test") or {}
+    now = now or datetime.now(timezone.utc)
+    rows = load_ledger(HOME_TEST_PATH) if rows is None else rows
+    by_id = {r["pick_id"]: r for r in rows}
+    games_by_id = {str(g.get("id")): g for g in games}
+    lines = {str(k): v for k, v in lines.items()}
+    stamp = now.isoformat(timespec="seconds")
+    bank = home_test_bankroll(rows, card)
+    new = []
+    if ht.get("enabled"):
+        for g in games:
+            ko = _parse_dt(g.get("startDate") or "")
+            if g.get("completed") or g.get("state") == "in" or not ko or not (now + MIN_LEAD <= ko <= now + LOOKAHEAD):
+                continue
+            if g.get("neutralSite"):
+                continue                                   # neutral floors are the main lane's job
+            pid = f"home-test:{card['version']}:{g['id']}:SPREAD"
+            gl = lines.get(str(g.get("id")))
+            if pid in by_id or not gl:
+                continue
+            proj, info = project(g)
+            if proj is None:
+                continue
+            mkt = consensus(gl)
+            o = next((x for x in price_game(proj=proj, market=mkt, card=card, neutral=True)
+                      if x["market"] == "SPREAD"), None)
+            if not o or o["ev"] < ht.get("min_ev", 0.03):
+                continue
+            if ht.get("max_edge_pts") and abs(o["edge_pts"]) > ht["max_edge_pts"]:
+                continue
+            home, away = g["homeTeam"], g["awayTeam"]
+            team = home if o["team_side"] == "home" else away
+            row = {"pick_id": pid, "model": card["version"] + "+home_test", "logged_at": stamp,
+                   "season": g.get("season"), "day": g.get("week"), "game_id": g["id"],
+                   "tipoff": g.get("startDate") or "", "home": home, "away": away, "neutral": False,
+                   "market": "SPREAD", "side": f"{team} {fmt_line(o['line'])}", "pick_team": team, "direction": "",
+                   "line": o["line"], "odds": o["odds"],
+                   "model_line": f"{team} {fmt_line(round(o['model_line'] * 2) / 2)}", "market_line": fmt_line(o["line"]),
+                   "proj": f"{away} {proj.away_pts:.0f} - {home} {proj.home_pts:.0f}",
+                   "model_prob": round(o["p"], 4), "breakeven": round(o["breakeven"], 4), "ev": round(o["ev"], 4),
+                   "edge_pts": round(o["edge_pts"], 1), "min_odds": min_odds(o["p"], ht.get("min_ev", 0.03)),
+                   "tier": "TEST", "stake": float(ht.get("flat_stake", 5.0)), "stake_kelly": 0.0,
+                   "bankroll_at_log": bank["balance"],
+                   "flags": "; ".join(["HOME-COURT TEST (paper): unproven"] + _flags(g, info, card)),
+                   "home_games": info.get("home_games", ""), "away_games": info.get("away_games", "")}
+            by_id[pid] = row
+            new.append(row)
+    closed, settled = close_and_settle(by_id, games_by_id, lines, now, stamp)
+    return {"rows": list(by_id.values()), "new": new, "logged": len(new), "settled": settled, "close_updates": closed}
 
 
 # ---------------------------------------------------------------- ledger

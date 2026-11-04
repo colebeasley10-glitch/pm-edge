@@ -209,6 +209,9 @@ def lanes() -> list[dict]:
     ncb = _rows("ncaab_grader/data/picks.csv")   # Nov 2, 2026: NCAA basketball model, $500 paper bankroll
     out.append(grade("NCAAB Model — bets (flat $5)", [r for r in ncb if r.get("tier") == "BET"], pl="pnl",
                      risk="stake", clv="clv", clv_unit="mixed"))
+    nht = _rows("ncaab_grader/data/home_test.csv")   # Nov 3, 2026: home-court spread test, own $500 paper
+    out.append(grade("NCAAB Home-Court Test (flat $5)", nht, pl="pnl", risk="stake", clv="clv", clv_unit="mixed",
+                     note="Home spreads at +3% EV with home court fixed at 3.1; paper, separate from the $5 bets"))
     out.append(grade("NCAAB Model — every game (1u)", ncb, pl="units", risk=1.0, clv="clv", clv_unit="mixed",
                      reference=True))
 

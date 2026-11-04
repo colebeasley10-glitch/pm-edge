@@ -187,3 +187,54 @@ def test_shipped_card_and_priors_are_consistent():
     from ncaab_grader.run import load_priors
     prior, info, league = load_priors(2027)
     assert len(prior) > 350 and 95 < league[0] < 115
+
+
+def test_fixed_home_court_points():
+    games, O, D, end = synthetic()
+    r = Ratings(games, as_of=end, prior={}, hca_pts=3.1)
+    assert r.hca / 100 * r.tempo == pytest.approx(3.1, abs=0.01)
+    p_home = r.project("T1", "T2")
+    p_neut = r.project("T1", "T2", neutral=True)
+    assert p_home.home_margin - p_neut.home_margin == pytest.approx(3.1, abs=0.01)
+    free = Ratings(games, as_of=end, prior={})               # default path unchanged (fit with a prior)
+    assert free.hca / 100 * free.tempo != pytest.approx(3.1, abs=0.01)
+
+
+HT_CARD = {**CARD, "calibration": {**CARD["calibration"], "b_s": 0.05, "b_s_neutral": 0.3, "sd_s_neutral": 11.0},
+           "home_test": {"enabled": True, "min_ev": 0.03, "max_edge_pts": 8.0, "flat_stake": 5.0, "start_bankroll": 500.0}}
+
+
+def test_home_test_lane_logs_home_spreads_only_and_settles_separately():
+    now = datetime(2026, 11, 10, 15, tzinfo=timezone.utc)
+    home = _game("9", "2026-11-11T00:00Z")
+    neut = {**_game("8", "2026-11-11T00:00Z"), "neutralSite": True}
+    ln = {"spread": -4.0, "overUnder": 140.0, "homeSpreadOdds": -110, "awaySpreadOdds": -110}
+    lines = {"9": {"lines": [dict(ln)]}, "8": {"lines": [dict(ln)]}}
+    proj = lambda game: (Proj(80.0, 70.0, 68.0), {"home_games": 5, "away_games": 5})   # model -10 vs -4: 6-pt gap
+    # main lane: home shrink 0.05 -> no BET on the home game
+    live = core.run_live(games=[home, neut], lines=lines, project=proj, card=HT_CARD, now=now, rows=[])
+    assert not [r for r in live["rows"] if r["game_id"] == "9" and r["tier"] == "BET"]
+    ht = core.run_home_test(games=[home, neut], lines=lines, project=proj, card=HT_CARD, now=now, rows=[])
+    assert ht["logged"] == 1
+    r = ht["rows"][0]
+    assert r["game_id"] == "9" and r["tier"] == "TEST" and r["stake"] == 5.0 and r["side"] == "Home U -4"
+    assert r["ev"] >= 0.03 and r["pick_id"].startswith("home-test:")
+    # frozen + settled on its own bankroll
+    again = core.run_home_test(games=[home], lines=lines, project=proj, card=HT_CARD, now=now, rows=ht["rows"])
+    assert again["logged"] == 0
+    fin = _game("9", "2026-11-11T00:00Z", done=True, hp=75, ap=70)
+    done = core.run_home_test(games=[fin], lines={}, project=proj, card=HT_CARD, now=now + timedelta(hours=14),
+                              rows=ht["rows"])
+    assert done["rows"][0]["result"] == "W"
+    assert core.home_test_bankroll(done["rows"], HT_CARD)["balance"] == pytest.approx(504.55, abs=0.01)
+
+
+def test_home_test_respects_edge_cap_and_disable():
+    now = datetime(2026, 11, 10, 15, tzinfo=timezone.utc)
+    g = _game("9", "2026-11-11T00:00Z")
+    lines = {"9": {"lines": [{"spread": -4.0, "homeSpreadOdds": -110, "awaySpreadOdds": -110}]}}
+    big = lambda game: (Proj(85.0, 70.0, 68.0), {"home_games": 5, "away_games": 5})   # 11-pt gap > 8 cap
+    assert core.run_home_test(games=[g], lines=lines, project=big, card=HT_CARD, now=now, rows=[])["logged"] == 0
+    off = {**HT_CARD, "home_test": {**HT_CARD["home_test"], "enabled": False}}
+    ok = lambda game: (Proj(80.0, 70.0, 68.0), {"home_games": 5, "away_games": 5})
+    assert core.run_home_test(games=[g], lines=lines, project=ok, card=off, now=now, rows=[])["logged"] == 0

@@ -5,7 +5,8 @@
   "half_life": 90.0,
   "prior_games": 3.0,
   "tempo_prior_games": 3.0,
-  "eff_cap": 40.0
+  "eff_cap": 40.0,
+  "hca_pts": 3.1
  },
  "calibration": {
   "b_s": 0.0457,
@@ -109,5 +110,20 @@
    "roi_lo95": -78.3,
    "roi_hi95": 11.6
   }
+ },
+ "home_court": {
+  "pts": 3.1,
+  "set_on": "2026-11-03",
+  "why": "Fixed instead of re-fit daily (early-season fit drifted to 3.6). Evidence: our model fit on full seasons 2023-2026 = 3.54/3.10/3.25/2.92 pts; average home margin in conference games 2023-2026 = 3.27/2.86/3.04/2.60; bookmakers use ~3.0 (VSiN, Feb 2025); KenPom market-implied 3.2-3.7 in 2014-2018 and trending down."
+ },
+ "home_test": {
+  "enabled": true,
+  "paper_only": true,
+  "min_ev": 0.03,
+  "max_edge_pts": 8.0,
+  "flat_stake": 5.0,
+  "start_bankroll": 500.0,
+  "calibration": "neutral",
+  "why": "Nov 3, 2026 TEST lane: home-court spreads priced with the neutral-court calibration (as if the model were as informative at home as on neutral courts). The backtest says it is NOT (home shrink 0.046 vs 0.293), so this is a hypothesis to prove on the closing line. Separate ledger and bankroll; never touches the BET lane."
  }
 }
