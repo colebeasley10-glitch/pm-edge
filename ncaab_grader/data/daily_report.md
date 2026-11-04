@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-03
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-04T01:15:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-04T01:30:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -20,7 +20,7 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 
 ## Data gaps
 
-- no line posted yet (21): Western New Mexico Mustangs @ New Mexico State Aggies, Regis University REGIS UNIVERSITY @ Wyoming Cowboys, Chapman Panthers @ UC Irvine Anteaters, Lewis & Clark River Otters @ Portland State Vikings, Bethesda Flames @ Pacific Tigers, Framingham State Rams @ Dartmouth Big Green, Regent Regent Royals @ Old Dominion Monarchs, Christendom Crusaders @ App State Mountaineers, Virginia Lynchburg Dragons @ Morgan State Bears, Concordia Chicago Cougars @ SIU Edwardsville Cougars, Erskine Flying Fleet @ UNC Asheville Bulldogs, Central College Dutch @ Drake Bulldogs, Blue Mountain Christian Toppers @ Tennessee Tech Golden Eagles, Webster Gorloks @ Southeast Missouri State Redhawks, Bob Jones Bruins @ Furman Paladins …
+- no line posted yet (19): Chapman Panthers @ UC Irvine Anteaters, Lewis & Clark River Otters @ Portland State Vikings, Bethesda Flames @ Pacific Tigers, Framingham State Rams @ Dartmouth Big Green, Regent Regent Royals @ Old Dominion Monarchs, Christendom Crusaders @ App State Mountaineers, Virginia Lynchburg Dragons @ Morgan State Bears, Concordia Chicago Cougars @ SIU Edwardsville Cougars, Erskine Flying Fleet @ UNC Asheville Bulldogs, Central College Dutch @ Drake Bulldogs, Blue Mountain Christian Toppers @ Tennessee Tech Golden Eagles, Webster Gorloks @ Southeast Missouri State Redhawks, Bob Jones Bruins @ Furman Paladins, Champion Christian Tigers @ UL Monroe Warhawks, Randolph Wildcats @ Norfolk State Spartans …
 - possession data coverage: 0.992
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
