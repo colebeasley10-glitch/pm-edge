@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-03
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-03T23:45:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-04T00:00:42+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -11,11 +11,10 @@ Markets with a tested rule: SPREAD · others are WATCH only until the backtest s
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (7) — positive EV but not a qualified bet
+## Watch list (6) — positive EV but not a qualified bet
 
 - OVER 155.5 (-105) · Cal State Fullerton Titans at San Diego State Aztecs · Tue 10:00 PM ET · EV +1.6% · min -102
 - OVER 159.5 (-105) · Northern Kentucky Norse at South Dakota Coyotes · Wed 8:00 PM ET · EV +1.6% · min -102
-- Hampton Pirates ML +1100 (+1100) · Hampton Pirates at Georgia Tech Yellow Jackets · Tue 7:00 PM ET · EV +0.8% · min +1126
 - Kansas State Wildcats ML -750 (-750) · South Dakota State Jackrabbits at Kansas State Wildcats · Tue 8:00 PM ET · EV +0.8% · min -634
 - Texas A&M Aggies ML -10000 (-10000) · Alabama State Hornets at Texas A&M Aggies · Tue 8:00 PM ET · EV +0.4% · min -2734
 - Missouri Tigers ML -10000 (-10000) · Cleveland State Vikings at Missouri Tigers · Tue 8:00 PM ET · EV +0.1% · min -2560
@@ -23,7 +22,7 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 
 ## Data gaps
 
-- no line posted yet (30): Milligan Buffaloes @ UNC Greensboro Spartans, Warren Wilson Owls @ North Carolina A&T Aggies, Lincoln (MO) Blue Tigers @ Missouri State Bears, Cornell (IA) Rams @ Northern Iowa Panthers, Louisiana Christian Wildcats @ Houston Christian Huskies, Western New Mexico Mustangs @ New Mexico State Aggies, Regis University REGIS UNIVERSITY @ Wyoming Cowboys, Chapman Panthers @ UC Irvine Anteaters, Lewis & Clark River Otters @ Portland State Vikings, Bethesda Flames @ Pacific Tigers, Framingham State Rams @ Dartmouth Big Green, Regent Regent Royals @ Old Dominion Monarchs, Christendom Crusaders @ App State Mountaineers, Virginia Lynchburg Dragons @ Morgan State Bears, Concordia Chicago Cougars @ SIU Edwardsville Cougars …
+- no line posted yet (28): Lincoln (MO) Blue Tigers @ Missouri State Bears, Cornell (IA) Rams @ Northern Iowa Panthers, Louisiana Christian Wildcats @ Houston Christian Huskies, Western New Mexico Mustangs @ New Mexico State Aggies, Regis University REGIS UNIVERSITY @ Wyoming Cowboys, Chapman Panthers @ UC Irvine Anteaters, Lewis & Clark River Otters @ Portland State Vikings, Bethesda Flames @ Pacific Tigers, Framingham State Rams @ Dartmouth Big Green, Regent Regent Royals @ Old Dominion Monarchs, Christendom Crusaders @ App State Mountaineers, Virginia Lynchburg Dragons @ Morgan State Bears, Concordia Chicago Cougars @ SIU Edwardsville Cougars, Erskine Flying Fleet @ UNC Asheville Bulldogs, Fairleigh Dickinson Knights @ Butler Bulldogs …
 - possession data coverage: 1.0
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
