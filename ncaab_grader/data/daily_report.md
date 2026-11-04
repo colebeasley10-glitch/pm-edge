@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-03
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-04T03:15:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-04T03:30:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -19,11 +19,11 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $500.00 · 0-0-0 · logged this run 0 · open 0
+Bankroll $500.00 · 0-0-0 · logged this run 1 · open 1
 
 ## Data gaps
 
 - no line posted yet (16): Framingham State Rams @ Dartmouth Big Green, Regent Regent Royals @ Old Dominion Monarchs, Christendom Crusaders @ App State Mountaineers, Virginia Lynchburg Dragons @ Morgan State Bears, Concordia Chicago Cougars @ SIU Edwardsville Cougars, Erskine Flying Fleet @ UNC Asheville Bulldogs, Central College Dutch @ Drake Bulldogs, Blue Mountain Christian Toppers @ Tennessee Tech Golden Eagles, Webster Gorloks @ Southeast Missouri State Redhawks, Bob Jones Bruins @ Furman Paladins, Champion Christian Tigers @ UL Monroe Warhawks, Randolph Wildcats @ Norfolk State Spartans, Saint Mary of the Woods Pomeroys @ Southern Indiana Screaming Eagles, West Coast Baptist Eagles @ Boise State Broncos, Grace University Lancers @ Utah Tech Trailblazers …
-- possession data coverage: 0.931
+- possession data coverage: 0.891
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
