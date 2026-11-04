@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-04
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-04T21:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-04T21:30:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -11,11 +11,12 @@ Markets with a tested rule: SPREAD · others are WATCH only until the backtest s
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (3) — positive EV but not a qualified bet
+## Watch list (4) — positive EV but not a qualified bet
 
 - OVER 150.5 (-105) · Fairleigh Dickinson Knights at Butler Bulldogs · Wed 7:00 PM ET · EV +1.6% · min -102
 - OVER 151.5 (-105) · SE Louisiana Lions at Auburn Tigers · Wed 8:00 PM ET · EV +1.6% · min -102
 - OVER 159.5 (-105) · Northern Kentucky Norse at South Dakota Coyotes · Wed 8:00 PM ET · EV +1.6% · min -102
+- OVER 155.5 (-105) · Wake Forest Demon Deacons at Vanderbilt Commodores · Thu 6:00 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
