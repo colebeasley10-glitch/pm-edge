@@ -274,7 +274,10 @@ def lane_bets(lane: dict) -> None:
     unit = "u" if lane.get("pl_col") == "units" else ""
     views = [bet_view(r, lane.get("pl_col", "pl")) for r in lane.get("rows") or []]
     views = [v for v in views if not v["hidden"]]
-    open_ = sorted([v for v in views if not v["settled"]], key=lambda v: v["sort"])
+    pending = sorted([v for v in views if not v["settled"]], key=lambda v: v["sort"])
+    # Nov 3, 2026: unsettled bets split into Open (not started yet) and Live (game under way / awaiting the final)
+    open_ = [v for v in pending if not v["game_at"] or upcoming(v["game_at"])]
+    live_ = [v for v in pending if v["game_at"] and not upcoming(v["game_at"])]
     done = sorted([v for v in views if v["settled"]], key=lambda v: v["sort"], reverse=True)
 
     def money(x):
@@ -288,7 +291,7 @@ def lane_bets(lane: dict) -> None:
                     money(v["pl"]), tone(v["pl"]))
         late = v["game_at"] and not upcoming(v["game_at"])
         state = ("alert only (bet by hand)" if v["status"] == "alert"
-                 else "waiting to settle" if late else esc(v["status"]))
+                 else "live · waiting to settle" if late else esc(v["status"]))
         return (esc(v["title"]), " · ".join(bits + [state]) + fair_html(v["fair"]), "", "")
 
     rows_ = lane.get("rows") or []
@@ -299,7 +302,8 @@ def lane_bets(lane: dict) -> None:
         st.markdown(f"**He's put ${tot:,.0f} on these {len(rows_)} bets** · his estimated result "
                     f"**{'+' if his_pl >= 0 else '−'}${abs(his_pl):,.0f}** · "
                     f"your $10 copies: **{lane['pl']:+,.2f}**")
-    which = st.segmented_control("Bets", ["Calendar", f"Open ({len(open_)})", f"Closed ({len(done)})"],
+    which = st.segmented_control("Bets", ["Calendar", f"Open ({len(open_)})", f"Live ({len(live_)})",
+                                          f"Closed ({len(done)})"],
                                  default="Calendar", key=f"bets_{lane['name']}",
                                  label_visibility="collapsed", width="stretch") or "Calendar"
     if which == "Calendar":
@@ -309,6 +313,12 @@ def lane_bets(lane: dict) -> None:
             row_list([item(v, False) for v in open_])
         else:
             st.caption("No open bets right now.")
+    elif which.startswith("Live"):
+        if live_:
+            row_list([item(v, False) for v in live_])
+            st.caption("Started and waiting on the final score; they move to Closed once settled.")
+        else:
+            st.caption("Nothing live right now.")
     elif done:
         won = sum(1 for v in done if v["status"] == "won")
         lost = sum(1 for v in done if v["status"] == "lost")
