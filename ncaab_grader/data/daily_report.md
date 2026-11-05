@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-05
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-05T22:00:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-05T22:15:21+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -52,7 +52,7 @@ Bankroll $494.36 · 2-3-0 · logged this run 0 · open 19
 
 ## Data gaps
 
-- no line posted yet (30): Virginia Lynchburg Dragons @ Morehead State Eagles, King's Monarchs @ Lafayette Leopards, Mount St Mary Knights @ Army Black Knights, Fort Valley State Wildcats @ Florida A&M Rattlers, Howard Payne Yellow Jackets @ Texas State Bobcats, Central Bible Saints @ Lindenwood Lions, Kalamazoo Hornets @ Western Michigan Broncos, Southern Virginia Knights @ Richmond Spiders, College of Biblical Studies Ambassadors @ Prairie View A&M Panthers, SUNY Old Westbury Panthers @ Columbia Lions, Columbia International Rams @ Charleston Southern Buccaneers, Union (TN) Bulldogs @ North Alabama Lions, Kentucky Wesleyan Panthers @ Western Kentucky Hilltoppers, Arkansas Monticello Boll Weevils @ Louisiana Tech Bulldogs, Centre Colonels @ Belmont Bruins …
+- no line posted yet (30): King's Monarchs @ Lafayette Leopards, Mount St Mary Knights @ Army Black Knights, Fort Valley State Wildcats @ Florida A&M Rattlers, Howard Payne Yellow Jackets @ Texas State Bobcats, Central Bible Saints @ Lindenwood Lions, Kalamazoo Hornets @ Western Michigan Broncos, Southern Virginia Knights @ Richmond Spiders, College of Biblical Studies Ambassadors @ Prairie View A&M Panthers, SUNY Old Westbury Panthers @ Columbia Lions, Columbia International Rams @ Charleston Southern Buccaneers, Union (TN) Bulldogs @ North Alabama Lions, Kentucky Wesleyan Panthers @ Western Kentucky Hilltoppers, Arkansas Monticello Boll Weevils @ Louisiana Tech Bulldogs, Centre Colonels @ Belmont Bruins, Central State Marauders @ Illinois State Redbirds …
 - possession data coverage: 1.0
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
