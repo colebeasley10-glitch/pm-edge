@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-05
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-05T23:30:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-05T23:45:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,7 +31,7 @@ WHY: Model line Michigan Wolverines +0.5 vs market +5.5 (+4.9 pts) from opponent
 LOGGED: 2026-11-05T19:00:31+00:00 · model ncaab_v1
 ```
 
-## Watch list (16) — positive EV but not a qualified bet
+## Watch list (17) — positive EV but not a qualified bet
 
 - Stonehill Skyhawks ML +1500 (+1500) · Stonehill Skyhawks at Fordham Rams · Thu 7:30 PM ET · EV +12.4% · min +1367
 - Michigan Wolverines ML +190 (+190) · UConn Huskies at Michigan Wolverines · Fri 8:00 PM ET · EV +4.8% · min +185
@@ -48,7 +48,7 @@ LOGGED: 2026-11-05T19:00:31+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $494.36 · 2-3-0 · logged this run 0 · open 19
+Bankroll $494.36 · 2-3-0 · logged this run 1 · open 20
 
 ## Data gaps
 
