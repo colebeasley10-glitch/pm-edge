@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-04
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-04T23:45:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-05T00:00:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -11,10 +11,9 @@ Markets with a tested rule: SPREAD · others are WATCH only until the backtest s
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (9) — positive EV but not a qualified bet
+## Watch list (8) — positive EV but not a qualified bet
 
 - South Alabama Jaguars ML -148 (-148) · Jacksonville State Gamecocks at South Alabama Jaguars · Thu 8:00 PM ET · EV +3.6% · min -150
-- OVER 150.5 (-105) · Fairleigh Dickinson Knights at Butler Bulldogs · Wed 7:00 PM ET · EV +1.6% · min -102
 - OVER 151.5 (-105) · Buffalo Bulls at Pittsburgh Panthers · Thu 7:00 PM ET · EV +1.6% · min -102
 - OVER 141.5 (-105) · Towson Tigers at Utah Utes · Thu 9:00 PM ET · EV +1.6% · min -102
 - OVER 151.5 (-105) · SE Louisiana Lions at Auburn Tigers · Wed 8:00 PM ET · EV +1.6% · min -102
@@ -29,7 +28,7 @@ Bankroll $500.00 · 0-0-0 · logged this run 0 · open 8
 
 ## Data gaps
 
-- no line posted yet (30): Regent Regent Royals @ Old Dominion Monarchs, Christendom Crusaders @ App State Mountaineers, Virginia Lynchburg Dragons @ Morgan State Bears, Concordia Chicago Cougars @ SIU Edwardsville Cougars, Erskine Flying Fleet @ UNC Asheville Bulldogs, Central College Dutch @ Drake Bulldogs, Blue Mountain Christian Toppers @ Tennessee Tech Golden Eagles, Webster Gorloks @ Southeast Missouri State Redhawks, Bob Jones Bruins @ Furman Paladins, Champion Christian Tigers @ UL Monroe Warhawks, Randolph Wildcats @ Norfolk State Spartans, Saint Mary of the Woods Pomeroys @ Southern Indiana Screaming Eagles, West Coast Baptist Eagles @ Boise State Broncos, Grace University Lancers @ Utah Tech Trailblazers, Salish Kootenai Bison @ Montana Grizzlies …
+- no line posted yet (30): Central College Dutch @ Drake Bulldogs, Blue Mountain Christian Toppers @ Tennessee Tech Golden Eagles, Webster Gorloks @ Southeast Missouri State Redhawks, Bob Jones Bruins @ Furman Paladins, Champion Christian Tigers @ UL Monroe Warhawks, Randolph Wildcats @ Norfolk State Spartans, Saint Mary of the Woods Pomeroys @ Southern Indiana Screaming Eagles, West Coast Baptist Eagles @ Boise State Broncos, Grace University Lancers @ Utah Tech Trailblazers, Salish Kootenai Bison @ Montana Grizzlies, McNeese Cowboys @ North Texas Mean Green, Virginia Lynchburg Dragons @ Morehead State Eagles, King's Monarchs @ Lafayette Leopards, Chicago State Cougars @ Incarnate Word Cardinals, Bellarmine Knights @ Indiana Hoosiers …
 - possession data coverage: 1.0
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
