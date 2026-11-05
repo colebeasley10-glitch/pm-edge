@@ -259,6 +259,17 @@ def apply() -> None:
         a.lb-row:hover, a.lb-row:active { background:var(--panel2); }
         .lb-row.sub { padding-left:1.6rem; background:var(--panel2); }
         .lb-row.sub .lb-name { font-weight:600; color:var(--soft); }
+        /* Nov 4, 2026: collapsible breakdown rows under a lane */
+        details.lb-sub { border-bottom:1px solid var(--line); }
+        details.lb-sub:last-child { border-bottom:0; }
+        details.lb-sub > summary { list-style:none; cursor:pointer; padding:.5rem .95rem .55rem 3.6rem;
+                                   color:var(--muted); font-size:.74rem; font-weight:700; -webkit-tap-highlight-color:transparent; }
+        details.lb-sub > summary::-webkit-details-marker { display:none; }
+        details.lb-sub > summary span::before { content:"▸"; display:inline-block; margin-right:.4rem; transition:transform .15s; }
+        details.lb-sub[open] > summary span::before { transform:rotate(90deg); }
+        details.lb-sub[open] > summary { color:var(--soft); }
+        details.lb-sub .lb-row:last-child { border-bottom:0; }
+        details.lb-sub .lb-row { border-top:1px solid var(--line); border-bottom:0; }
         .lb-rank { width:1.85rem; height:1.85rem; border-radius:9px; display:flex; align-items:center; justify-content:center;
                    font-weight:800; font-size:.82rem; color:var(--muted); background:var(--deep); border:1px solid var(--line);
                    font-variant-numeric:tabular-nums; }

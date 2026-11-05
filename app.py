@@ -698,14 +698,17 @@ if view == "Leaderboard":
     board = []
     for i, l in enumerate(paper_active, 1):
         board.append(lane_row(l, i))
-        board += [lane_row(k, sub=True) for k in slices.get(l["name"], []) if k["n"]]
+        subs = [lane_row(k, sub=True) for k in slices.get(l["name"], []) if k["n"]]
+        if subs:   # Nov 4, 2026: breakdowns tucked away until you open them
+            board.append(f"<details class='lb-sub'><summary><span>{len(subs)} breakdown"
+                         f"{'s' if len(subs) != 1 else ''}</span></summary>" + "".join(subs) + "</details>")
     st.markdown("<div class='lb'>" + "".join(board) + "</div>", unsafe_allow_html=True)
     st.markdown(f"<div class='fine'>Ranked by ROI adjusted for sample size (ROI × bets ÷ (bets + "
                 f"{scorecard.RANK_PRIOR})), so a lane needs volume <i>and</i> results to sit on top. The bar under each "
                 f"lane is progress to the {scorecard.MIN_BETS}-bet go-live bar. Profit is paper dollars at $10 a bet (model lanes at "
                 f"$10 a unit); Units = profit ÷ stake; CLV = average edge over the closing price and how often the "
-                f"bet beat it. ↳ rows break a lane down (by sport, "
-                f"tier or market) and are ranked within it.</div>", unsafe_allow_html=True)
+                f"bet beat it. Tap “breakdowns” under a lane to see it split (by sport, "
+                f"tier or market), ranked within it.</div>", unsafe_allow_html=True)
     if paper_idle:
         st.markdown("<div class='section'><span>Waiting on first results</span>"
                     f"<span class='n'>{len(paper_idle)}</span></div>", unsafe_allow_html=True)
