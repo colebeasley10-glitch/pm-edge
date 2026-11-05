@@ -1,19 +1,40 @@
 # NCAA Basketball Model — daily report 2026-11-05
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-05T18:45:21+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-05T19:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $509.39 (start $500, at risk $0.00) · ¼-Kelly comparison $506.06
+**Paper bankroll:** $509.39 (start $500, at risk $5.00) · ¼-Kelly comparison $506.06
 **Season to date (BET tier):** 2-0-0 · flat P/L $+9.39 (+93.9% on risk) · ¼-Kelly P/L $+6.06 · beat close 0%
 
-## Qualified bets (0)
+## Qualified bets (1)
 
-None. No game cleared a tested threshold — that's a normal day, not a failure.
+```
+GAME: UConn Huskies at Michigan Wolverines (neutral)
+TIPOFF: Fri 8:00 PM ET
 
-## Watch list (17) — positive EV but not a qualified bet
+SPORTSBOOK LINE: Michigan Wolverines +5.5 (-112)
+MODEL LINE: Michigan Wolverines +0.5
+PROJECTED SCORE: UConn Huskies 74 - Michigan Wolverines 74
+
+MODEL COVER PROBABILITY: 54.9%
+BREAK-EVEN PROBABILITY: 52.83%
+EXPECTED ROI: +4.0%
+
+RECOMMENDATION: Michigan Wolverines +5.5
+MINIMUM ACCEPTABLE PRICE: -117
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $5.58
+CONFIDENCE/UNCERTAINTY: LOW — ratings are still mostly the preseason prior; calibrated win prob 54.9% (backtest-shrunk toward the market)
+FLAGS: early season (<4 games): mostly preseason prior; neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line Michigan Wolverines +0.5 vs market +5.5 (+4.9 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-05T19:00:31+00:00 · model ncaab_v1
+```
+
+## Watch list (18) — positive EV but not a qualified bet
 
 - Stonehill Skyhawks ML +1500 (+1500) · Stonehill Skyhawks at Fordham Rams · Thu 7:30 PM ET · EV +12.4% · min +1367
+- Michigan Wolverines ML +190 (+190) · UConn Huskies at Michigan Wolverines · Fri 8:00 PM ET · EV +4.8% · min +185
 - South Alabama Jaguars ML -148 (-148) · Jacksonville State Gamecocks at South Alabama Jaguars · Thu 8:00 PM ET · EV +3.6% · min -150
 - Fairfield Stags ML -120 (-120) · Vermont Catamounts at Fairfield Stags · Thu 7:00 PM ET · EV +2.3% · min -118
 - OVER 159.5 (-105) · Cornell Big Red at Lehigh Mountain Hawks · Thu 7:00 PM ET · EV +1.7% · min -102
@@ -24,7 +45,6 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 - OVER 155.5 (-105) · Wake Forest Demon Deacons at Vanderbilt Commodores · Thu 6:00 PM ET · EV +1.6% · min -102
 - OVER 143.5 (-105) · Stonehill Skyhawks at Fordham Rams · Thu 7:30 PM ET · EV +1.5% · min -102
 - OVER 144.5 (-105) · Maine Black Bears at Sacred Heart Pioneers · Thu 7:00 PM ET · EV +1.5% · min -102
-- Iona Gaels ML -395 (-395) · NJIT Highlanders at Iona Gaels · Thu 7:00 PM ET · EV +1.0% · min -359
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
