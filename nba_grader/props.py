@@ -46,7 +46,7 @@ MIN_PROJ_MIN = 12.0           # skip deep bench guys
 CUR_DECAY, PRIOR_DECAY, PRIOR_WEIGHT = 0.88, 0.96, 0.35
 B2B_MIN_FACTOR = 0.97
 MIN_LEAD = timedelta(minutes=10)
-SETTLE_AFTER = timedelta(hours=3)
+SETTLE_AFTER = timedelta(minutes=90)   # the feed's "completed" flag decides; was 3h (Nov 4, 2026)
 
 # stat -> box-score columns summed, and variance / mean (overdispersion). Rebounds, assists and threes
 # are close to Poisson; points come in 2s and 3s, so their spread is much wider.

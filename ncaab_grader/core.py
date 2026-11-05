@@ -40,7 +40,7 @@ CARD_PATH = ROOT.parent / "ncaab_model" / "data" / "model_card.json"
 ET = timezone(timedelta(hours=-5))
 LOOKAHEAD = timedelta(hours=float(os.getenv("NCAAB_LOOKAHEAD_HOURS", 30)))
 MIN_LEAD = timedelta(minutes=10)
-SETTLE_AFTER = timedelta(hours=3)
+SETTLE_AFTER = timedelta(minutes=90)   # the feed's "completed" flag decides; was 3h (Nov 4, 2026)
 DEFAULT_ODDS = -110.0
 OUT_OF_SCOPE = "not a D1-vs-D1 game"
 

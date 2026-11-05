@@ -50,7 +50,7 @@ TOTAL_SD = _env_float("NBA_MODEL_TOTAL_SD", 18.0)
 DEFAULT_ODDS = -110
 LOOKAHEAD = timedelta(hours=_env_float("NBA_MODEL_LOOKAHEAD_HOURS", 30))
 MIN_LEAD = timedelta(minutes=10)
-SETTLE_AFTER = timedelta(hours=3)
+SETTLE_AFTER = timedelta(minutes=90)   # the feed's "completed" flag decides; was 3h (Nov 4, 2026)
 
 FIELDS = ["pick_id", "source", "model", "logged_at", "season", "week", "game_id", "kickoff",
           "home", "away", "market", "side", "pick_team", "direction", "line", "odds",

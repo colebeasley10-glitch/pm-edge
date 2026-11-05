@@ -42,6 +42,10 @@ PROB_MOVE = 0.06
 # "P 4.7% · 14m" cards. That's the window when Courtside/Betr/Rebet/Onyx still show the old price.
 FAST_PROB_MOVE = 0.04
 FAST_WINDOW = timedelta(minutes=95)
+# Grading only checks ESPN once the game could be over; ESPN's "completed" flag is what decides.
+# Was 4 hours, which left NBA props showing open for 1-2 hours after the final (Nov 4, 2026).
+SETTLE_AFTER = timedelta(minutes=90)
+
 # Late steam: in the last LATE_WINDOW before kickoff (inactives, final sharp bets) a smaller move
 # counts. Hunter's George Pickens U4.5 play (Nov 1) was a ~5% move in the final 10 minutes.
 LATE_PROB_MOVE = 0.03
@@ -314,28 +318,7 @@ def update(payloads: dict, now: datetime, base: Path | None = None, *, push=None
                 p.pop(k, None)
     # grade finished props from box scores
     if box is not None:
-        for r in rows:
-            if r["status"] != "open":
-                continue
-            start = parse_dt(r["game_start"])
-            if not start or now - start < timedelta(hours=4):
-                continue
-            try:
-                actual = box(r)
-            except Exception:
-                actual = None
-            if actual is None:
-                if now - start > timedelta(days=3):
-                    r.update(status="ungraded", settled_time=iso(now))
-                continue
-            line = float(r["line"])
-            if actual == line:
-                res = "void"
-            else:
-                res = "won" if (actual > line) == (r["side"] == "over") else "lost"
-            pl = round(UNIT * (float(r["target_decimal"]) - 1), 2) if res == "won" else (-UNIT if res == "lost" else 0.0)
-            r.update(actual=actual, status=res, pl=pl, settled_time=iso(now))
-            info["settled"] += 1
+        info["settled"] += grade_rows(rows, now, box)
     cutoff = now - timedelta(days=1)
     hist = {k: v for k, v in hist.items() if (parse_dt(v.get("starts")) or now) >= cutoff}
     _atomic_write_text(_dir(base) / "history.json", json.dumps(hist, separators=(",", ":")))
@@ -429,6 +412,34 @@ def stat_value(stat: str, cats: dict[str, dict[str, str]]) -> float | None:
     vals = [g(x) for x in parts]
     return None if any(v is None for v in vals) else sum(vals)
 
+
+
+def grade_rows(rows: list[dict], now: datetime, box) -> int:
+    """Grade open props whose game ESPN marks final. box(play) returns None until it is."""
+    n = 0
+    for r in rows:
+        if r["status"] != "open":
+            continue
+        start = parse_dt(r["game_start"])
+        if not start or now - start < SETTLE_AFTER:
+            continue
+        try:
+            actual = box(r)
+        except Exception:
+            actual = None
+        if actual is None:
+            if now - start > timedelta(days=3):
+                r.update(status="ungraded", settled_time=iso(now))
+            continue
+        line = float(r["line"])
+        if actual == line:
+            res = "void"
+        else:
+            res = "won" if (actual > line) == (r["side"] == "over") else "lost"
+        pl = round(UNIT * (float(r["target_decimal"]) - 1), 2) if res == "won" else (-UNIT if res == "lost" else 0.0)
+        r.update(actual=actual, status=res, pl=pl, settled_time=iso(now))
+        n += 1
+    return n
 
 class BoxScores:
     """Callable(play) -> the player's actual stat, or None if the game isn't final / can't be read."""

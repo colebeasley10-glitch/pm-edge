@@ -60,9 +60,12 @@ jobs:
           git add research_lab/data
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "Research Lab round [skip ci]"
-          # Only this job writes research_lab/data, so a plain rebase never conflicts.
+          # The settle-only job (research-lab-settle.yml) also writes grades here. If both touched the
+          # same lines, keep this round's version (-X theirs = the commit being replayed); it graded
+          # from the same ESPN finals, and anything it missed is re-graded minutes later.
           for i in 1 2 3 4 5; do
-            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            git pull --rebase -X theirs origin main && git push origin HEAD:main && exit 0
+            git rebase --abort 2>/dev/null || true
             sleep $((i * 5))
           done
           exit 1

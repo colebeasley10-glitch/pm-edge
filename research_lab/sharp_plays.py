@@ -32,6 +32,7 @@ MAX_PER_DAY = 10
 MIN_HISTORY = timedelta(hours=2)     # need a real "open" before calling anything a move
 WINDOW = timedelta(hours=12)         # only fresh moves count: soft books lag recent steam, not old news
 MAX_AHEAD = timedelta(hours=36)
+SETTLE_AFTER = timedelta(minutes=90)   # ESPN's "completed" flag decides; this only skips games that can't be over yet
 PROB_MOVE = 0.04             # fair win-probability shift of the original line's side
 # line moves (points) that count as steam on their own, by league
 POINT_MOVE = {"NFL": {"total": 1.5, "spread": 1.0}, "NCAA": {"total": 2.0, "spread": 1.5},
@@ -264,17 +265,7 @@ def update(pinnacle_events: dict, now: datetime, base: Path | None = None, *, pu
         info["new_plays"] += 1
     # settle finished games from ESPN
     if scores is not None:
-        for r in rows:
-            if r["status"] != "open":
-                continue
-            start = parse_dt(r["game_start"])
-            if not start or now - start < timedelta(hours=3):
-                continue
-            res = scores(espn_row(r))
-            if res in {"won", "lost", "void"}:
-                pl = round(UNIT * (float(r["target_decimal"]) - 1), 2) if res == "won" else (-UNIT if res == "lost" else 0.0)
-                r.update(status=res, pl=pl, settled_time=iso(now))
-                info["settled"] += 1
+        info["settled"] += grade_rows(rows, now, scores)
     # forget games that started more than a day ago
     cutoff = now - timedelta(days=1)
     hist = {k: v for k, v in hist.items() if (parse_dt(v.get("starts")) or now) >= cutoff}
@@ -282,6 +273,23 @@ def update(pinnacle_events: dict, now: datetime, base: Path | None = None, *, pu
     _save(rows, base)
     return info
 
+
+
+def grade_rows(rows: list[dict], now: datetime, scores) -> int:
+    """Settle open plays once ESPN marks the game final (scores() returns None until then)."""
+    n = 0
+    for r in rows:
+        if r["status"] != "open":
+            continue
+        start = parse_dt(r["game_start"])
+        if not start or now - start < SETTLE_AFTER:
+            continue
+        res = scores(espn_row(r))
+        if res in {"won", "lost", "void"}:
+            pl = round(UNIT * (float(r["target_decimal"]) - 1), 2) if res == "won" else (-UNIT if res == "lost" else 0.0)
+            r.update(status=res, pl=pl, settled_time=iso(now))
+            n += 1
+    return n
 
 def espn_row(r: dict) -> dict:
     """Shape a play like a Polymarket signal so trader_follow.scores can grade it."""

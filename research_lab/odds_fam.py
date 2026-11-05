@@ -36,6 +36,7 @@ GAP_EV = 0.02                # price gaps need +2% EV vs Pinnacle...
 GAP_EV_FLOOR = 0.01          # ...or +1% late in the day if fewer than MIN_PER_DAY went out
 FLOOR_HOUR_ET = 15
 QUIET_START, QUIET_END = 23, 8   # ET: no phone pushes overnight; held plays go out in one 8am digest
+SETTLE_AFTER = timedelta(minutes=90)   # ESPN's "completed" flag decides; was 4h (Nov 4, 2026)
 GAP_MAX_AHEAD = timedelta(hours=30)   # price gaps only on games within ~a day (prices days out are noise)
 MIN_DEC, MAX_DEC = 1.5, 2.5  # -200 to +150, the range Cole bets
 ET = ZoneInfo("America/New_York")
@@ -329,7 +330,7 @@ def grade(rows: list[dict], now: datetime, base: Path | None, markets: dict, box
             continue
         if r["kind"] == "Pick'em gap":
             start = parse_dt(r["game_start"])
-            if box is None or not start or now - start < timedelta(hours=4):
+            if box is None or not start or now - start < SETTLE_AFTER:
                 continue
             try:
                 actual = box(r)
@@ -666,7 +667,7 @@ def settle_board_bets(now: datetime, base: Path | None = None, *, markets=None, 
         if not bid or bid in results or b.get("of_id") or not b.get("board_id"):
             continue
         start = parse_dt(b.get("game_start"))
-        if not start or now - start < timedelta(hours=4):
+        if not start or now - start < SETTLE_AFTER:
             continue
         res = None
         if b.get("kind") == "prop" and box is not None:
