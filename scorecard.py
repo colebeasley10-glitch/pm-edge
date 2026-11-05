@@ -21,6 +21,7 @@ from __future__ import annotations
 import csv
 import json
 import math
+import re
 from pathlib import Path
 
 MIN_BETS = 200
@@ -109,7 +110,120 @@ def grade(name: str, rows: list[dict], *, pl: str = "pl", risk=None, clv: str | 
             "risk": round(tot_risk, 2), "roi": None if roi is None else round(roi, 4),
             "clv": None if avg_clv is None else round(avg_clv, 4), "clv_n": len(clvs), "checks": checks, "verdict": verdict,
             "note": note, "rows": rows, "pl_col": pl, "reference": reference,
-            "roi_se": None if se is None else round(se, 4)}
+            "roi_se": None if se is None else round(se, 4),
+            # Nov 4, 2026: kept so the app can re-grade a slice of this lane (by sport / bet type)
+            "grade_args": {"pl": pl, "risk": risk, "clv": clv, "money": money, "clv_unit": clv_unit,
+                           "reference": reference}}
+
+
+# ------------------------------------------------------------------ categories (Nov 4, 2026)
+# Every lane's detail view can split its bets by sport and bet type ("NFL", "NCAAF", "NBA", "NBA Props"...).
+_TICKER_SPORTS = [("KXNCAAF", "NCAAF"), ("KXNCAAMB", "NCAAB"), ("KXNCAAB", "NCAAB"), ("KXNFL", "NFL"),
+                  ("KXNBA", "NBA"), ("KXWNBA", "WNBA"), ("KXNHL", "NHL"), ("KXMLB", "MLB"), ("KXATP", "Tennis"),
+                  ("KXWTA", "Tennis"), ("KXITF", "Tennis"), ("KXCHALLENGER", "Tennis"), ("KXEPL", "Soccer"),
+                  ("KXUCL", "Soccer"), ("KXUEL", "Soccer"), ("KXLALIGA", "Soccer"), ("KXSERIEA", "Soccer"),
+                  ("KXBUNDESLIGA", "Soccer"), ("KXLIGUE1", "Soccer"), ("KXMLS", "Soccer"), ("KXSAUDIPL", "Soccer"),
+                  ("KXTFF1LIG", "Soccer"), ("KXLIGAMX", "Soccer"), ("KXAFCCL", "Soccer"), ("KXSUPERLIG", "Soccer"),
+                  ("KXBRASILEIRO", "Soccer"), ("KXJLEAGUE", "Soccer"), ("KXJ2LEAGUE", "Soccer"), ("KXIDNSL", "Soccer"),
+                  ("KXECULP", "Soccer"), ("KXLIGAPORTUG", "Soccer"), ("KXEFL", "Soccer"), ("KXARGPREMDIV", "Soccer"),
+                  ("KXDIMAYOR", "Soccer"), ("KXALEAGUE", "Soccer"), ("KXCZEFNL", "Soccer"), ("KXKLEAGUE", "Soccer"),
+                  ("KXCONMEBOL", "Soccer"), ("KXUECL", "Soccer"), ("KXVLEAGUE", "Soccer"), ("KXPERLIGA", "Soccer"),
+                  ("KXSLGREECE", "Soccer"), ("KXT20", "Cricket"), ("KXWT20", "Cricket"), ("KXODI", "Cricket"),
+                  ("KXTEST", "Cricket"), ("KXNBL", "Intl basketball"), ("KXKBL", "Intl basketball"),
+                  ("KXKBO", "Intl baseball"), ("KXNPB", "Intl baseball"), ("KXBOXING", "Boxing"),
+                  ("KXMVE", "Parlays"), ("KXHEISMAN", "Futures"), ("KXCS2", "Esports"), ("KXDOTA", "Esports"),
+                  ("KXLOL", "Esports"), ("KXVALORANT", "Esports"), ("KXR6", "Esports"), ("KXHIGH", "Weather"),
+                  ("KXLOW", "Weather"), ("KXRAIN", "Weather"), ("KXBTC", "Crypto"), ("KXETH", "Crypto"),
+                  ("KXSOL", "Crypto"), ("KXXRP", "Crypto"), ("KXUFC", "MMA"), ("KXPGA", "Golf"), ("KXNASCAR", "NASCAR")]
+_LEAGUES = {"NFL": "NFL", "NCAAF": "NCAAF", "CFB": "NCAAF", "NCAA FCS": "NCAAF", "NCAAB": "NCAAB", "CBB": "NCAAB",
+            "NBA": "NBA", "WNBA": "WNBA", "NHL": "NHL", "MLB": "MLB", "EPL": "Soccer", "UCL": "Soccer",
+            "UEL": "Soccer", "MLS": "Soccer", "LALIGA": "Soccer", "SERIEA": "Soccer", "BUNDESLIGA": "Soccer",
+            "LIGUE1": "Soccer", "ATP": "Tennis", "WTA": "Tennis", "UFC": "MMA"}
+_SPORT_WORDS = {"football": "Football", "basketball": "Basketball", "hockey": "NHL", "baseball": "MLB",
+                "soccer": "Soccer", "tennis": "Tennis"}
+_HOOPS_STATS = ("point", "rebound", "assist", "three", "steal", "block", "pts", "rebs", "asts")
+_LANE_SPORTS = [("NCAA Grader", "NCAAF"), ("NCAAB", "NCAAB"), ("NBA Model", "NBA"), ("NBA Props", "NBA"),
+                ("Weather", "Weather"), ("Crypto", "Crypto")]
+
+
+def _ncaa(r: dict) -> str:
+    """Pinnacle-fed lanes label both college sports "NCAA": tell them apart by stat or by total size."""
+    stat = str(r.get("stat") or "").lower()
+    if stat:
+        return "NCAAB" if any(w in stat for w in _HOOPS_STATS) else "NCAAF"
+    if str(r.get("market") or "").lower() == "total" and (_f(r.get("line")) or 0) >= 100:
+        return "NCAAB"
+    return "NCAAF"
+
+
+def bet_sport(r: dict, lane_name: str = "") -> str:
+    lg = str(r.get("league") or r.get("sport") or "").strip()
+    up = lg.upper().replace(" ", "")
+    if up == "NCAA":
+        return _ncaa(r)
+    if lg.upper() in _LEAGUES:
+        return _LEAGUES[lg.upper()]
+    if up in _LEAGUES:
+        return _LEAGUES[up]
+    ticker = str(r.get("ticker") or r.get("settle_ticker") or "").upper()
+    for pre, sport in _TICKER_SPORTS:
+        if ticker.startswith(pre):
+            return sport
+    word = _SPORT_WORDS.get(lg.lower())
+    if word:
+        return word
+    for key, sport in _LANE_SPORTS:
+        if key in lane_name or key in str(r.get("lane") or ""):
+            return sport
+    return lg or "Other"
+
+
+def is_prop(r: dict) -> bool:
+    src = f"{r.get('source') or ''} {r.get('lane') or ''}".lower()
+    if "props" in src:                       # Bet Queue rows copied from a props lane
+        return True
+    return str(r.get("market") or "").lower() == "prop" or bool(str(r.get("stat") or "").strip()) or \
+        bool(str(r.get("player") or "").strip())
+
+
+def bet_category(r: dict, lane_name: str = "") -> str:
+    """'NFL', 'NCAAF', 'NBA', 'NBA Props', 'Tennis'... for any lane's row."""
+    sport = bet_sport(r, lane_name)
+    return f"{sport} Props" if is_prop(r) else sport
+
+
+def bet_type(r: dict) -> str:
+    """'Spread' / 'Moneyline' / 'Total' / 'Prop' / '' for any lane's row."""
+    if is_prop(r):
+        return "Prop"
+    m = str(r.get("market") or "").lower()
+    t = str(r.get("ticker") or "").upper()
+    if m in ("spread", "spreads") or "SPREAD" in t:
+        return "Spread"
+    if m in ("ml", "moneyline", "h2h") or "GAME" in t or "MATCH" in t:
+        return "Moneyline"
+    if m in ("total", "totals") or "TOTAL" in t:
+        return "Total"
+    pick = f" {r.get('pick') or ''} "
+    if " ML " in pick:
+        return "Moneyline"
+    if any(w in pick for w in (" Over ", " Under ", " OVER ", " UNDER ")):
+        return "Total"
+    if re.search(r"[+\-−]\d", pick):
+        return "Spread"
+    return ""
+
+
+def split(lane: dict, by: str = "category") -> list[dict]:
+    """Re-grade a lane's rows per category (or bet type), same stake/CLV rules as the lane. Biggest first."""
+    fn = bet_category if by == "category" else (lambda r, _n="": bet_type(r) or "Other")
+    groups: dict[str, list[dict]] = {}
+    for r in lane.get("rows") or []:
+        groups.setdefault(fn(r, lane["name"]), []).append(r)
+    args = lane.get("grade_args") or {"pl": lane.get("pl_col", "pl")}
+    out = [grade(name, rows, **args) for name, rows in groups.items()]
+    out.sort(key=lambda g: (-g["n"], -len(g["rows"]), g["name"]))
+    return out
 
 
 RANK_PRIOR = 50   # bets of "no edge" blended in before ranking, so 5 lucky bets can't top the board

@@ -274,7 +274,40 @@ def lane_calendar(lane: dict, done: list[dict]) -> None:
                + ("at $10 a unit." if to_usd == 10 else "at the paper stake."))
 
 
+def lane_breakdown(lane: dict) -> None:
+    """Nov 4, 2026: how this lane does in each sport (NFL, NCAAF, NBA, NBA Props...) or bet type."""
+    by = st.segmented_control("Split by", ["Sport", "Bet type"], default="Sport", key=f"split_{lane['name']}",
+                              label_visibility="collapsed") or "Sport"
+    groups = scorecard.split(lane, "category" if by == "Sport" else "type")
+    rows = []
+    for g in groups:
+        rows.append({by: g["name"], "Bets": g["n"], "Record": f"{g['won']}-{g['lost']}" if g["n"] else "—",
+                     "Profit": money_txt(g) if g["n"] else "—",
+                     "Units": "—" if g.get("units") is None else f"{g['units']:+.1f}u",
+                     "ROI": roi_txt(g["roi"]) if g["n"] else "—", "CLV": clv_txt(g),
+                     "Open": len(g["rows"]) - g["n"]})
+    st.dataframe(rows, hide_index=True, width="stretch")
+    st.caption("Same stakes and grading as the lane, just split up. Small samples swing a lot: "
+               f"a slice needs about {scorecard.MIN_BETS} bets and a positive CLV before it means much.")
+
+
 def lane_bets(lane: dict) -> None:
+    # Nov 4, 2026: filter a lane down to one sport (NFL, NCAAF, NBA, NBA Props...)
+    cats = scorecard.split(lane) if lane.get("rows") else []
+    filtered = False
+    if len(cats) > 1:
+        names = [c["name"] for c in cats]
+        sel = st.pills("Sport", ["All"] + names, default="All", key=f"cat_{lane['name']}",
+                       label_visibility="collapsed") or "All"
+        if sel != "All":
+            g = cats[names.index(sel)]
+            rec = f"{g['won']}-{g['lost']}" if g["n"] else "no settled bets"
+            bits = [f"**{sel}** · {rec}"]
+            if g["n"]:
+                bits += [money_txt(g), f"ROI {roi_txt(g['roi'])}", f"CLV {clv_txt(g)}"]
+            st.markdown(" · ".join(bits))
+            lane = {**lane, **{k: v for k, v in g.items() if k != "name"}, "name": f"{lane['name']} · {sel}"}
+            filtered = True
     unit = "u" if lane.get("pl_col") == "units" else ""
     views = [bet_view(r, lane.get("pl_col", "pl")) for r in lane.get("rows") or []]
     views = [v for v in views if not v["hidden"]]
@@ -306,11 +339,15 @@ def lane_bets(lane: dict) -> None:
         st.markdown(f"**He's put ${tot:,.0f} on these {len(rows_)} bets** · his estimated result "
                     f"**{'+' if his_pl >= 0 else '−'}${abs(his_pl):,.0f}** · "
                     f"your $10 copies: **{lane['pl']:+,.2f}**")
-    which = st.segmented_control("Bets", ["Calendar", f"Open ({len(open_)})", f"Live ({len(live_)})",
-                                          f"Closed ({len(done)})"],
+    tabs = ["Calendar", f"Open ({len(open_)})", f"Live ({len(live_)})", f"Closed ({len(done)})"]
+    if len(cats) > 1 and not filtered:
+        tabs.append("By sport")
+    which = st.segmented_control("Bets", tabs,
                                  default="Calendar", key=f"bets_{lane['name']}",
                                  label_visibility="collapsed", width="stretch") or "Calendar"
-    if which == "Calendar":
+    if which == "By sport":
+        lane_breakdown(lane)
+    elif which == "Calendar":
         lane_calendar(lane, done)
     elif which.startswith("Open"):
         if open_:
