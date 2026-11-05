@@ -584,6 +584,12 @@ def open_plays() -> list[dict]:
             add(r["tipoff"], "NCAAB", r["side"], f"{r['away']} at {r['home']} · min {r.get('min_odds', '')}",
                 "NCAAB Model", price=fmt_american(r.get("odds")), dec=_dec_from_american(r.get("odds")),
                 fair=fair_calibration.calibrated("ncaab_model", r), fair_src="Model", bet={})
+    # Nov 4, 2026: the home-court spread TEST lane too (its own paper $500, unproven), labeled as a test
+    for r in rows("ncaab_grader/data/home_test.csv"):
+        if not r.get("result"):
+            add(r["tipoff"], "NCAAB", r["side"], f"{r['away']} at {r['home']} · TEST · min {r.get('min_odds', '')}",
+                "NCAAB Home Test", price=fmt_american(r.get("odds")), dec=_dec_from_american(r.get("odds")),
+                fair=fair_calibration.calibrated("ncaab_model", r), fair_src="Model", bet={})
     for r in rows("nba_grader/data/props.csv"):
         if not r.get("result") and r.get("tier") == "STRONG":
             add(r["kickoff"], "NBA", r["side"], f"{r['away']} at {r['home']} · proj {r['proj']}", "NBA Props",
@@ -724,7 +730,9 @@ elif view == "Today":
     else:
         st.markdown("<div class='quiet'><strong>Nothing queued yet today</strong>The queue fills as lanes that "
                     "are earning their place post plays.</div>", unsafe_allow_html=True)
-    live_now = [p for p in plays if p["live"]]
+    # newest tip-off first: games in progress lead, finished-but-unsettled ones fall to the bottom (and past
+    # the 30-card cap) instead of pushing tonight's late games off the list
+    live_now = sorted((p for p in plays if p["live"]), key=lambda p: p["start"], reverse=True)
     upcoming_ = [p for p in plays if not p["live"]]
     if live_now:
         infos = live_info(json.dumps([p["bet"] for p in live_now[:30]], default=str))
