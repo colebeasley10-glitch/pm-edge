@@ -41,7 +41,7 @@ STAKE_KEY, STAKE_OTHER = 10.0, 5.0     # Cole's staking: $10 on ranks 1-3, $5 on
 WIN_AT_110 = 100 / 110
 LOCK_HOUR_ET = 12                       # picks lock Saturday noon ET
 CARD_FIELDS = ["pool", "season", "week", "rank", "key", "pick", "kind", "side", "away", "home", "line",
-               "prob", "value_pts", "market", "kickoff", "made_at", "frozen", "home_pts", "away_pts", "result"]
+               "prob", "value_pts", "market", "src", "kickoff", "made_at", "frozen", "home_pts", "away_pts", "result"]
 
 
 def _csv(p: Path) -> list[dict]:
@@ -118,6 +118,76 @@ class GameInfo:
     total: float | None = None      # latest market total
     first_spread: float | None = None
     first_total: float | None = None
+    pinn_spread: float | None = None    # Pinnacle main HOME spread (Nov 4, 2026)
+    pinn_total: float | None = None
+    pinn_at: datetime | None = None     # when Pinnacle generated that price
+
+
+# ------------------------------------------------------------------ Pinnacle main lines (Nov 4, 2026)
+# The research lab saves Pinnacle's NCAA main line every time it fetches football (no extra requests).
+# Pinnacle is the sharpest book, so its line is the model's market when it's fresh; ESPN fills in otherwise.
+PINN = ROOT / "research_lab" / "data" / "pinnacle_ncaaf_lines.json"
+PINN_MAX_AGE = timedelta(hours=6)
+MARKETS = ("pinnacle", "espn")
+
+
+def _pinn_aliases() -> dict:
+    from pmedge.matcher import load_aliases
+    from pmedge.utils import normalize_text
+    out = load_aliases(str(ROOT / "data" / "team_aliases.csv"))
+    p = ROOT / "research_lab" / "pinnacle_aliases.csv"
+    for r in _csv(p):
+        a, c = normalize_text(r.get("alias", "")), normalize_text(r.get("canonical", ""))
+        if a and c:
+            out[a] = c
+    return out
+
+
+def attach_pinnacle(feed: dict, path: Path | None = None, aliases: dict | None = None) -> int:
+    """Copy Pinnacle's main lines onto the grader feed's games (both teams must match, kickoff within 6h).
+    A game that could match two Pinnacle events is left alone. Returns games matched."""
+    import json
+    path = path or PINN
+    try:
+        pinn = list(json.loads(path.read_text()).get("games", {}).values()) if path.exists() else []
+    except ValueError:
+        pinn = []
+    if not pinn:
+        return 0
+    from pmedge.matcher import shadow_team_match
+    aliases = aliases if aliases is not None else _pinn_aliases()
+    n = 0
+    for games in feed.values():
+        for (away, home), g in games.items():
+            hits = []
+            for p in pinn:
+                ks = _dt(p.get("starts"))
+                if g.kickoff and ks and abs((ks - g.kickoff).total_seconds()) > 6 * 3600:
+                    continue
+                for flip, (pa, ph) in ((False, (p["away"], p["home"])), (True, (p["home"], p["away"]))):
+                    sa, _ = shadow_team_match(away, pa, aliases)
+                    sh, _ = shadow_team_match(home, ph, aliases)
+                    if sa >= 0.90 and sh >= 0.90:
+                        hits.append((sa + sh, flip, p))
+            if not hits:
+                continue
+            hits.sort(key=lambda h: -h[0])
+            if len(hits) > 1 and hits[1][0] == hits[0][0] and hits[1][2] is not hits[0][2]:
+                continue                     # ambiguous (e.g. two Miamis): don't guess
+            _, flip, p = hits[0]
+            sp = _f(p.get("spread"))
+            g.pinn_spread = (-sp if flip else sp) if sp is not None else None
+            g.pinn_total = _f(p.get("total"))
+            g.pinn_at = _dt(p.get("at"))
+            n += 1
+    return n
+
+
+def market_line(g: "GameInfo", market: str, now: datetime) -> tuple[float | None, float | None, str]:
+    """(home spread, total, source) the model should use. Pinnacle when fresh, else ESPN."""
+    if market == "pinnacle" and g.pinn_spread is not None and g.pinn_at and now - g.pinn_at <= PINN_MAX_AGE:
+        return g.pinn_spread, g.pinn_total if g.pinn_total is not None else g.total, "pinnacle"
+    return g.spread, g.total, "espn"
 
 
 def game_feed(path: Path = GRADER, aliases: dict | None = None) -> dict[tuple, dict]:
@@ -183,7 +253,7 @@ def _lookup(games: dict, away: str, home: str) -> tuple[GameInfo | None, bool]:
 
 
 def build(pool: str, slate: list[dict], games: dict, *, now: datetime, preview: bool = False,
-          pinned: list[dict] | None = None, aliases: dict | None = None) -> dict:
+          pinned: list[dict] | None = None, aliases: dict | None = None, market: str = "pinnacle") -> dict:
     """Card rows for one pool. `slate` rows: away, home, home_spread, total, exclude.
     preview=True: no pool lines yet, so the grader's first logged line stands in for the pool line.
     pinned: picks from the last snapshot whose games have kicked off (kept as they were)."""
@@ -197,29 +267,30 @@ def build(pool: str, slate: list[dict], games: dict, *, now: datetime, preview: 
         if r.get("exclude") or (away, home) in pinned_games:
             continue
         info, flipped = _lookup(games, away, home)
-        if not info or info.spread is None:
+        spread, total, src = market_line(info, market, now) if info else (None, None, "")
+        if spread is None:
             missing.append(f"{away} at {home}")
             continue
         if info.kickoff and info.kickoff <= now:
             continue                      # already started: can't be picked now
-        mspread = -info.spread if flipped else info.spread
+        mspread = -spread if flipped else spread
         pspread = _f(r.get("home_spread"))
         if pspread is None:
             continue
-        g = Game(away, home, pspread, mspread, _f(r.get("total")), info.total)
+        g = Game(away, home, pspread, mspread, _f(r.get("total")), total)
         cand.append(g)
-        by_game[(away, home)] = info
+        by_game[(away, home)] = (info, src)
     n_left = max(0, n - len(pinned))
     k_left = max(0, k - sum(p["key"] == "Y" for p in pinned))
     card = build_card(cand, n_left, k_left, allow_totals=False)
     rows = [dict(p) for p in pinned]
     for i, o in enumerate(card["picks"]):
         g = o.game
-        info = by_game.get((g.away, g.home))
+        info, src = by_game.get((g.away, g.home), (None, ""))
         line = g.pool_spread if o.side == "home" else -g.pool_spread
         rows.append({"pool": pool, "rank": 0, "key": "Y" if i < k_left else "N", "pick": o.label, "kind": o.kind,
                      "side": o.side, "away": g.away, "home": g.home, "line": line, "prob": round(o.prob, 4),
-                     "value_pts": round(o.gap, 2), "market": o.extra["market"],
+                     "value_pts": round(o.gap, 2), "market": o.extra["market"], "src": src,
                      "kickoff": info.kickoff.isoformat().replace("+00:00", "Z") if info and info.kickoff else "",
                      "made_at": now.isoformat(timespec="minutes").replace("+00:00", "Z"), "frozen": "",
                      "home_pts": "", "away_pts": "", "result": ""})
@@ -302,36 +373,79 @@ def slates() -> list[tuple[str, int, int, Path]]:
     return out
 
 
+# ------------------------------------------------------------------ shadow variants (Nov 4, 2026)
+# Cole: "track both in the background to see what would've worked better." Every week each pool gets four
+# paper cards, built the same way and graded the same way, differing only in the market line the model reads
+# and when the card is frozen:
+#   espn_fri  -- ESPN line, frozen Friday 8pm ET (the old model at Cole's usual Friday-evening lock)
+#   pinn_fri  -- Pinnacle line, frozen Friday 8pm ET
+#   espn_sat  -- ESPN line, frozen at the Saturday noon lock (the old main card)
+#   pinn_sat  -- Pinnacle line, frozen at the Saturday noon lock (the new main card)
+VARIANTS = DATA / "variants"
+VARIANT_SPECS = {"espn_fri": ("espn", "fri"), "pinn_fri": ("pinnacle", "fri"),
+                 "espn_sat": ("espn", "sat"), "pinn_sat": ("pinnacle", "sat")}
+VARIANT_NAMES = {"espn_fri": "ESPN · Fri 8pm", "pinn_fri": "Pinnacle · Fri 8pm",
+                 "espn_sat": "ESPN · Sat lock", "pinn_sat": "Pinnacle · Sat lock"}
+FRIDAY_LOCK_HOUR_ET = 20
+
+
+def variant_path(pool: str, season: int, week: int, variant: str) -> Path:
+    return VARIANTS / f"{pool}_{season}_w{week}__{variant}.csv"
+
+
+def friday_lock(lock: datetime | None) -> datetime | None:
+    if lock is None:
+        return None
+    d = lock.astimezone(ET).date() - timedelta(days=1)
+    return datetime(d.year, d.month, d.day, FRIDAY_LOCK_HOUR_ET, tzinfo=ET).astimezone(timezone.utc)
+
+
+def _refresh(cp: Path, pool: str, season: int, week: int, slate: list[dict], games: dict, now: datetime,
+             freeze_at: datetime | None, market: str, info: dict) -> list[dict]:
+    """Rebuild one card until freeze_at, then freeze it; grade finals. Writes the card and returns its rows."""
+    old = _csv(cp)
+    if freeze_at and now >= freeze_at and old:
+        rows = old
+        for r in rows:
+            if not r.get("frozen"):
+                r["frozen"] = "Y"
+                info["frozen"] += 1
+    else:
+        pinned = [r for r in old if (_dt(r.get("kickoff")) or now + timedelta(days=1)) <= now]
+        for r in pinned:
+            r["frozen"] = "Y"
+        rows = build(pool, slate, games, now=now, pinned=pinned, market=market)["rows"]
+        info["rebuilt"] += 1
+    for r in rows:
+        r["season"], r["week"] = season, week
+    before = sum(bool(r.get("result")) for r in rows)
+    grade_rows(rows, games)
+    info["graded"] += sum(bool(r.get("result")) for r in rows) - before
+    write_card(cp, rows)
+    return rows
+
+
 def snapshot(now: datetime | None = None, feed: dict | None = None) -> dict:
     """Hourly: refresh unlocked cards with the newest market, freeze locked picks, grade finals."""
     now = now or datetime.now(timezone.utc)
-    feed = feed if feed is not None else game_feed()
+    if feed is None:
+        feed = game_feed()
+        try:
+            attach_pinnacle(feed)
+        except Exception as exc:          # ESPN still works on its own
+            print(f"pinnacle lines unavailable: {type(exc).__name__}: {exc}")
     info = {"rebuilt": 0, "frozen": 0, "graded": 0}
+    shadow = {"rebuilt": 0, "frozen": 0, "graded": 0}
     for pool, season, week, path in slates():
         games = feed.get((season, week), {})
-        cp = card_path(pool, season, week)
-        old = _csv(cp)
+        slate = _csv(path)
         lock = lock_time(games)
-        locked = bool(lock and now >= lock)
-        if locked and old:
-            rows = old
-            for r in rows:
-                if not r.get("frozen"):
-                    r["frozen"] = "Y"
-                    info["frozen"] += 1
-        else:
-            pinned = [r for r in old if (_dt(r.get("kickoff")) or now + timedelta(days=1)) <= now]
-            for r in pinned:
-                r["frozen"] = "Y"
-            built = build(pool, _csv(path), games, now=now, pinned=pinned)
-            rows = built["rows"]
-            info["rebuilt"] += 1
-        for r in rows:
-            r["season"], r["week"] = season, week
-        before = sum(bool(r.get("result")) for r in rows)
-        grade_rows(rows, games)
-        info["graded"] += sum(bool(r.get("result")) for r in rows) - before
-        write_card(cp, rows)
+        _refresh(card_path(pool, season, week), pool, season, week, slate, games, now, lock, "pinnacle", info)
+        for v, (market, when) in VARIANT_SPECS.items():
+            freeze = lock if when == "sat" else friday_lock(lock)
+            _refresh(variant_path(pool, season, week, v), pool, season, week, slate, games, now, freeze, market,
+                     shadow)
+    info["shadow"] = shadow
     for p in sorted(MINE.glob("*.csv")):                    # your locked entries: grade only
         m = re.match(r"(clay|chappy)_(\d{4})_w(\d+)\.csv$", p.name)
         if not m:
@@ -386,6 +500,40 @@ def history(feed: dict | None = None) -> list[dict]:
     order = {"CPM card": 0, "Your picks": 1, "CPM v1 replay": 2}
     out.sort(key=lambda e: (-e["season"], -e["week"], e["pool"], order.get(e["source"], 9)))
     return out
+
+
+# ------------------------------------------------------------------ shadow comparison for the page
+def variant_results() -> dict:
+    """{'weeks': [{pool, season, week, variants: {v: {points, record, done}}}], 'totals': {pool: {v: {...}}}}.
+    'best' counts weeks where a variant scored the most points of the four (ties count for each)."""
+    weeks: dict[tuple, dict] = {}
+    for p in sorted(VARIANTS.glob("*.csv")):
+        m = re.match(r"(clay|chappy)_(\d{4})_w(\d+)__(\w+)\.csv$", p.name)
+        if not m or m[4] not in VARIANT_SPECS:
+            continue
+        rows = _csv(p)
+        if not rows:
+            continue
+        w, l, pu = record(rows)
+        weeks.setdefault((m[1], int(m[2]), int(m[3])), {})[m[4]] = {
+            "points": points(rows), "record": (w, l, pu), "money": money(rows),
+            "done": all(r.get("result") for r in rows), "frozen": all(r.get("frozen") for r in rows),
+            "picks": [r["pick"] for r in rows], "keys": [r["pick"] for r in rows if r.get("key") == "Y"]}
+    out, totals = [], {}
+    for (pool, season, week), vs in sorted(weeks.items(), key=lambda kv: (-kv[0][1], -kv[0][2], kv[0][0])):
+        out.append({"pool": pool, "season": season, "week": week, "variants": vs})
+        if not all(v["done"] for v in vs.values()):
+            continue
+        top = max(v["points"] for v in vs.values())
+        for name, v in vs.items():
+            t = totals.setdefault(pool, {}).setdefault(name, {"points": 0, "w": 0, "l": 0, "p": 0, "weeks": 0,
+                                                              "best": 0, "money": 0.0})
+            t["points"] += v["points"]
+            t["w"], t["l"], t["p"] = t["w"] + v["record"][0], t["l"] + v["record"][1], t["p"] + v["record"][2]
+            t["weeks"] += 1
+            t["best"] += v["points"] == top
+            t["money"] += v["money"]
+    return {"weeks": out, "totals": totals}
 
 
 # ------------------------------------------------------------------ saving a slate from the app

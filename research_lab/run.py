@@ -76,6 +76,11 @@ def pinnacle_round(ctx: RunContext, kalshi, pinn, base: Path) -> dict:
     """Fetch Pinnacle prices (if due) and the matching Kalshi series; fill ctx.pinnacle_quotes."""
     payloads, info = pinnacle.fetch_due(pinn, ctx.now, base)
     ctx.pinnacle_payloads = payloads
+    if 5 in payloads:                       # Nov 4, 2026: NCAA main lines for the pool model
+        try:
+            info["ncaaf_lines_saved"] = pinnacle.save_ncaaf_lines(payloads[5], ctx.now, base)
+        except Exception as exc:            # never let the pool feed break the lab round
+            info["errors"].append(f"ncaaf lines: {type(exc).__name__}: {str(exc)[:80]}")
     kalshi_events: dict[int, list] = {}
     for sid in payloads:
         evs = []

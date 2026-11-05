@@ -126,6 +126,9 @@ def show_card(pool: str, rows: list[dict]) -> None:
     kpis = [("Expected", f"{exp:.1f}<span style='color:var(--muted);font-size:.8rem'> / {mx}</span>"),
             ("Record", f"{w}-{l}{f'-{p}' if p else ''}" if graded else "—"),
             ("Points", f"{pts}" if graded else "—")]
+    if any(r.get("src") for r in rows):         # Nov 4, 2026: which market line the card read
+        n_pin = sum(r.get("src") == "pinnacle" for r in rows)
+        kpis.append(("Pinnacle line", f"{n_pin}<span style='color:var(--muted);font-size:.8rem'> / {len(rows)}</span>"))
     st.markdown("<div class='np-kpis'>" + "".join(f"<div class='np-kpi'><div class='l'>{k}</div><div class='v'>{v}</div></div>"
                                                  for k, v in kpis) + "</div>", unsafe_allow_html=True)
     if keys:
@@ -279,6 +282,41 @@ with tab_now:
                 "market now. Stakes: $10 on ranks 1-3, $5 on 4-12. Paper only.</div>", unsafe_allow_html=True)
 
 with tab_past:
+    # Nov 4, 2026: four paper cards a week, same model, different market line / freeze time.
+    vr = wk.variant_results()
+    if vr["weeks"]:
+        st.markdown("<div class='section'><span>Line source &amp; lock time test</span>"
+                    "<span class='n'>paper</span></div>", unsafe_allow_html=True)
+        for pool, tot in vr["totals"].items():
+            pname = "Clay" if pool == "clay" else "Chappy"
+            tiles = []
+            for v in wk.VARIANT_SPECS:
+                t = tot.get(v)
+                if not t:
+                    continue
+                rec = f"{t['w']}-{t['l']}" + (f"-{t['p']}" if t["p"] else "")
+                tiles.append((f"{pname} · {wk.VARIANT_NAMES[v]}", f"{t['points']} pts",
+                              f"{rec} · best {t['best']}/{t['weeks']} wk · {money(t['money'])}"))
+            st.markdown("<div class='np-kpis'>" + "".join(
+                f"<div class='np-kpi'><div class='l'>{esc(s)}</div><div class='v'>{v}</div>"
+                f"<div class='np-sub'>{esc(sub)}</div></div>" for s, v, sub in tiles) + "</div>",
+                unsafe_allow_html=True)
+        for wkrow in vr["weeks"][:6]:
+            pname = "Clay" if wkrow["pool"] == "clay" else "Chappy"
+            parts = []
+            for v in wk.VARIANT_SPECS:
+                x = wkrow["variants"].get(v)
+                if x:
+                    w, l, pu = x["record"]
+                    state = "" if x["done"] else (" · live" if not x["frozen"] else " · grading")
+                    parts.append(f"<b>{esc(wk.VARIANT_NAMES[v])}</b> {x['points']} pts ({w}-{l}{f'-{pu}' if pu else ''}){state}")
+            st.markdown(f"<div class='np-note'>Week {wkrow['week']} {pname}: " + " · ".join(parts) + "</div>",
+                        unsafe_allow_html=True)
+        st.markdown("<div class='fine'>Same model, four ways: the market line it reads (ESPN or Pinnacle) and when "
+                    "the card is frozen (Friday 8pm ET, your usual lock, or the Saturday noon lock). Totals count "
+                    "fully graded weeks only; <b>best</b> = weeks that version scored the most of the four. The main "
+                    "card above is Pinnacle · Sat lock.</div>", unsafe_allow_html=True)
+
     hist = wk.history()
     if not hist:
         st.markdown("<div class='np-note'>No past weeks yet.</div>", unsafe_allow_html=True)

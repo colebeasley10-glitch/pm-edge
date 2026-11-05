@@ -115,7 +115,7 @@ class PinnWire:
 # the evening slate always has requests left.
 BUSY_EVERY = timedelta(minutes=14)
 BUSY = {
-    5: {3: (18, 23), 5: (10, 23), 6: (11, 23), 0: (18, 23)},          # football: Thu/Sat/Sun/Mon
+    5: {3: (18, 23), 4: (19, 21), 5: (10, 23), 6: (11, 23), 0: (18, 23)},  # football: Thu/Fri 7-9pm (pool lock)/Sat/Sun/Mon
     3: {d: (16, 23) for d in range(7)},                               # basketball: every evening
 }
 OFF_WINDOW_SHARE = 0.75
@@ -342,3 +342,52 @@ def build_quotes(payloads: dict[int, dict], kalshi_events: dict[int, list[dict]]
     return quotes, markets, {"matched": len(quotes), "kalshi_markets": len(markets), "unmatched": reasons,
                              "pinnacle_games": sum(len(events_from(p, SPORTS[s][2], now)) for s, p in payloads.items()),
                              "samples": samples}
+
+
+# ------------------------------------------------------------------ NCAA football main lines for the pool model
+# Nov 4, 2026: the NCAA pool model (ncaa_pool) reads Pinnacle's main spread/total instead of ESPN's line.
+# No extra requests: every football fetch the lab already makes is saved here.
+NCAAF_LINES = "pinnacle_ncaaf_lines.json"
+
+
+def main_line(entries: dict, field: str, a: str, b: str) -> tuple[float, float, float] | None:
+    """(line, price_a, price_b) of the most balanced entry = Pinnacle's main line (alternates are lopsided)."""
+    best = None
+    for k, v in (entries or {}).items():
+        if not isinstance(v, dict):
+            continue
+        pa, pb = _f(v.get(a)), _f(v.get(b))
+        try:
+            line = float(v.get(field, k))
+        except (TypeError, ValueError):
+            continue
+        if pa is None or pb is None:
+            continue
+        score = abs(1 / pa - 1 / pb)
+        if best is None or score < best[0]:
+            best = (score, line, pa, pb)
+    return None if best is None else best[1:]
+
+
+def save_ncaaf_lines(payload: dict, now: datetime, base: Path | None = None) -> int:
+    """Merge this football payload's NCAA main lines into pinnacle_ncaaf_lines.json. Returns games saved."""
+    p = Path(base or config.DATA_DIR) / NCAAF_LINES
+    try:
+        old = json.loads(p.read_text()) if p.exists() else {}
+    except ValueError:
+        old = {}
+    games = old.get("games", {})
+    n = 0
+    for ev in events_from(payload, {"NCAA"}, now):
+        sp = main_line(ev.full.get("spreads"), "hdp", "home", "away")
+        tot = main_line(ev.full.get("totals"), "points", "over", "under")
+        if sp is None and tot is None:
+            continue
+        games[ev.id] = {"home": ev.home, "away": ev.away, "starts": iso(ev.starts) if ev.starts else "",
+                        "spread": sp[0] if sp else None, "total": tot[0] if tot else None,
+                        "at": iso(ev.generated_at or now)}
+        n += 1
+    cutoff = now - timedelta(days=3)
+    games = {k: g for k, g in games.items() if (parse_dt(g.get("starts")) or now) >= cutoff}
+    _atomic_write_text(p, json.dumps({"updated_at": iso(now), "games": games}, indent=1, sort_keys=True))
+    return n

@@ -38,7 +38,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install requests
+      - run: pip install requests rapidfuzz
 
       - name: Restore ESPN/CFBD cache (falls back to the NCAA beta's copy)
         uses: actions/cache@v4
@@ -68,13 +68,22 @@ jobs:
         continue-on-error: true
         run: python -m ncaa_pool.weekly
 
+      # Nov 4, 2026: Saturday 9am-noon ET, one phone alert if the model's card (Pinnacle line) has moved
+      # away from the picks locked in SharpIQ. No change, no alert.
+      - name: Saturday pool re-check
+        continue-on-error: true
+        env:
+          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
+          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
+        run: python -m ncaa_pool.recheck
+
       - name: Save picks
         if: always()
         run: |
           git config user.name "pm-edge-bot"
           git config user.email "pm-edge-bot@users.noreply.github.com"
           git add ncaa_grader/data
-          git add ncaa_pool/data/cards ncaa_pool/data/my_picks 2>/dev/null || true
+          git add ncaa_pool/data/cards ncaa_pool/data/my_picks ncaa_pool/data/variants ncaa_pool/data/recheck_alerts.json 2>/dev/null || true
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "NCAA grader round [skip ci]"
           # Only this job writes ncaa_grader/data, so a plain rebase never conflicts.

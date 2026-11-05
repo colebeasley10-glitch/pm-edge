@@ -900,3 +900,10 @@ def test_pinnacle_busy_windows_refresh_every_run(tmp_path):
     pinnacle.save_usage(u, tmp_path)
     out, info = pinnacle.fetch_due(Fake(), sat + timedelta(hours=6), tmp_path)
     assert set(out) == {5, 3} and any("game windows" in x for x in info["skipped"])   # 8pm: NBA busy too
+
+
+def test_save_ncaaf_main_lines(tmp_path):
+    n = pinnacle.save_ncaaf_lines(PIN_PAYLOAD, NOW, tmp_path)
+    import json
+    g = json.loads((tmp_path / pinnacle.NCAAF_LINES).read_text())["games"]["101"]
+    assert n == 1 and g["home"] == "Houston" and g["spread"] == -4.5 and g["total"] == 61

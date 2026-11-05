@@ -49,6 +49,7 @@ def test_card_has_keys_first_and_right_size():
 def test_snapshot_refreshes_then_freezes_and_grades(tmp_path, monkeypatch):
     monkeypatch.setattr(wk, "SLATES", tmp_path / "slates")
     monkeypatch.setattr(wk, "CARDS", tmp_path / "cards")
+    monkeypatch.setattr(wk, "VARIANTS", tmp_path / "variants")
     monkeypatch.setattr(wk, "_aliases", lambda: {})
     feed = _feed()
     games = feed[(2026, 10)]
@@ -124,6 +125,7 @@ def test_lock_and_unlock_my_picks(monkeypatch):
 def test_locked_picks_graded_and_in_history(tmp_path, monkeypatch):
     monkeypatch.setattr(wk, "SLATES", tmp_path / "slates")
     monkeypatch.setattr(wk, "CARDS", tmp_path / "cards")
+    monkeypatch.setattr(wk, "VARIANTS", tmp_path / "variants")
     monkeypatch.setattr(wk, "MINE", tmp_path / "mine")
     wk.MINE.mkdir()
     rows = [{"pool": "clay", "season": 2026, "week": 10, "rank": 1, "key": "Y", "pick": "Away0 +3", "kind": "spread",
@@ -133,3 +135,88 @@ def test_locked_picks_graded_and_in_history(tmp_path, monkeypatch):
     assert wk.snapshot(datetime(2026, 11, 8, tzinfo=UTC), feed)["graded"] == 1
     mine = [e for e in wk.history() if e["source"] == "Your picks" and e["week"] == 10]
     assert mine and mine[0]["rows"][0]["result"] == "W" and wk.points(mine[0]["rows"]) == 2
+
+
+# ---------------------------------------------------------------- Nov 4, 2026: Pinnacle line + shadow variants
+import json  # noqa: E402
+from datetime import timedelta  # noqa: E402
+
+from ncaa_pool import recheck  # noqa: E402
+
+
+def test_pinnacle_used_when_fresh_espn_when_stale():
+    now = datetime(2026, 11, 6, tzinfo=UTC)
+    g = wk.GameInfo(spread=-3.0, total=50.0, pinn_spread=-4.5, pinn_total=52.0, pinn_at=now - timedelta(hours=1))
+    assert wk.market_line(g, "pinnacle", now) == (-4.5, 52.0, "pinnacle")
+    assert wk.market_line(g, "espn", now) == (-3.0, 50.0, "espn")
+    g.pinn_at = now - timedelta(hours=7)
+    assert wk.market_line(g, "pinnacle", now) == (-3.0, 50.0, "espn")
+
+
+def test_attach_pinnacle_matches_flipped_and_skips_ambiguous(tmp_path):
+    kick = datetime(2026, 11, 7, 17, tzinfo=UTC)
+    feed = {(2026, 10): {("Ohio State", "Michigan"): wk.GameInfo(kickoff=kick),
+                         ("Miami", "Duke"): wk.GameInfo(kickoff=kick)}}
+    at = "2026-11-06T20:00:00Z"
+    games = {"1": {"home": "Ohio State", "away": "Michigan", "starts": "2026-11-07T17:00:00Z", "spread": -7.5,
+                   "total": 44.5, "at": at},                     # Pinnacle lists the teams the other way round
+             "2": {"home": "Duke", "away": "Miami", "starts": "2026-11-07T17:00:00Z", "spread": 3.0,
+                   "total": None, "at": at},
+             "3": {"home": "Duke", "away": "Miami", "starts": "2026-11-07T18:00:00Z", "spread": 2.5,
+                   "total": None, "at": at}}                     # two candidates: leave ESPN alone
+    p = tmp_path / "lines.json"
+    p.write_text(json.dumps({"games": games}))
+    assert wk.attach_pinnacle(feed, p, aliases={}) == 1
+    g = feed[(2026, 10)][("Ohio State", "Michigan")]
+    assert g.pinn_spread == 7.5 and g.pinn_total == 44.5
+    assert feed[(2026, 10)][("Miami", "Duke")].pinn_spread is None
+
+
+def _variant_setup(tmp_path, monkeypatch):
+    for name in ("SLATES", "CARDS", "VARIANTS", "MINE"):
+        monkeypatch.setattr(wk, name, tmp_path / name.lower())
+    monkeypatch.setattr(wk, "_aliases", lambda: {})
+    feed = _feed()
+    games = feed[(2026, 10)]
+    wk.SLATES.mkdir()
+    (wk.SLATES / "clay_2026_w10.csv").write_text(wk.render_slate(_slate(games)))
+    return feed, games
+
+
+def test_variants_freeze_friday_and_saturday(tmp_path, monkeypatch):
+    feed, games = _variant_setup(tmp_path, monkeypatch)
+    fri = datetime(2026, 11, 6, 22, tzinfo=UTC)                  # Fri 5pm ET
+    for g in games.values():
+        g.pinn_spread, g.pinn_at = g.spread - 1, fri
+    info = wk.snapshot(fri, feed)
+    assert info["shadow"]["rebuilt"] == 4
+    assert {r["src"] for r in wk._csv(wk.card_path("clay", 2026, 10))} == {"pinnacle"}
+    assert {r["src"] for r in wk._csv(wk.variant_path("clay", 2026, 10, "espn_sat"))} == {"espn"}
+    sat = datetime(2026, 11, 7, 14, tzinfo=UTC)                  # Sat 9am ET: Friday cards frozen, Saturday still live
+    info = wk.snapshot(sat, feed)
+    assert info["shadow"]["frozen"] == 24 and info["shadow"]["rebuilt"] == 2
+    final = _feed(home_pts=40.0)
+    wk.snapshot(datetime(2026, 11, 8, 12, tzinfo=UTC), final)
+    res = wk.variant_results()
+    assert set(res["totals"]["clay"]) == set(wk.VARIANT_SPECS)
+    assert all(t["weeks"] == 1 and t["w"] + t["l"] + t["p"] == 12 for t in res["totals"]["clay"].values())
+
+
+def test_saturday_recheck_alerts_once_on_change(tmp_path, monkeypatch):
+    feed, games = _variant_setup(tmp_path, monkeypatch)
+    monkeypatch.setattr(recheck, "STATE", tmp_path / "state.json")
+    sat = datetime(2026, 11, 7, 14, 20, tzinfo=UTC)              # Sat 9:20am ET
+    wk.snapshot(sat, feed)
+    card = wk._csv(wk.card_path("clay", 2026, 10))
+    sent = []
+    send = lambda t, m: sent.append((t, m)) or True              # noqa: E731
+    assert recheck.run(sat, send) == ["clay_2026_w10_reminder"] and "not locked" in sent[0][0]
+    wk.MINE.mkdir()
+    wk.mine_path("clay", 2026, 10).write_text(wk.render_card(card, "x"))
+    assert recheck.run(sat, send) == []                          # locked = model card: no alert
+    mine = [dict(r) for r in card]
+    mine[-1]["pick"] = "Somebody +3"
+    wk.mine_path("clay", 2026, 10).write_text(wk.render_card(mine, "x"))
+    assert recheck.run(sat, send) == ["clay_2026_w10"] and "Somebody +3" in sent[-1][1]
+    assert recheck.run(sat, send) == []                          # same change: don't repeat
+    assert recheck.run(datetime(2026, 11, 6, 14, tzinfo=UTC), send) == []   # not Saturday
