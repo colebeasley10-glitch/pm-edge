@@ -85,7 +85,7 @@ jobs:
           git add ncaa_grader/data
           # One path at a time: git rejects the whole list if any path is missing (recheck_alerts.json
           # only exists after a Saturday alert), which left files unstaged and blocked every push.
-          for p in ncaa_pool/data/cards ncaa_pool/data/my_picks ncaa_pool/data/variants ncaa_pool/data/recheck_alerts.json; do
+          for p in ncaa_pool/data/cards ncaa_pool/data/missed ncaa_pool/data/my_picks ncaa_pool/data/variants ncaa_pool/data/recheck_alerts.json; do
             [ -e "$p" ] && git add "$p"
           done
           if git diff --cached --quiet; then exit 0; fi

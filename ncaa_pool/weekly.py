@@ -427,6 +427,14 @@ def _refresh(cp: Path, pool: str, season: int, week: int, slate: list[dict], gam
         pinned = [r for r in old if (_dt(r.get("kickoff")) or now + timedelta(days=1)) <= now]
         for r in pinned:
             r["frozen"] = "Y"
+        # Nov 5, 2026: a started game marked `exclude` on the slate (e.g. "missed") comes off the card so the
+        # slot refills; the main card's copy is kept in data/missed/ and graded on its own.
+        dropped = _excluded_games(slate)
+        if dropped:
+            gone = [r for r in pinned if (r.get("away"), r.get("home")) in dropped]
+            pinned = [r for r in pinned if r not in gone]
+            if gone and cp.parent == CARDS:
+                _save_missed(pool, season, week, gone)
         rows = build(pool, slate, games, now=now, pinned=pinned, market=market, fade=fade)["rows"]
         info["rebuilt"] += 1
     for r in rows:
@@ -436,6 +444,28 @@ def _refresh(cp: Path, pool: str, season: int, week: int, slate: list[dict], gam
     info["graded"] += sum(bool(r.get("result")) for r in rows) - before
     write_card(cp, rows)
     return rows
+
+
+MISSED = DATA / "missed"
+
+
+def missed_path(pool: str, season: int, week: int) -> Path:
+    return MISSED / f"{pool}_{season}_w{week}.csv"
+
+
+def _excluded_games(slate: list[dict]) -> set:
+    aliases = _aliases()
+    return {(_norm(r["away"], aliases), _norm(r["home"], aliases)) for r in slate if r.get("exclude")}
+
+
+def _save_missed(pool: str, season: int, week: int, rows: list[dict]) -> None:
+    p = missed_path(pool, season, week)
+    have = _csv(p)
+    seen = {r["pick"] for r in have}
+    new = [dict(r, season=season, week=week, frozen="Y") for r in rows if r["pick"] not in seen]
+    if new:
+        MISSED.mkdir(parents=True, exist_ok=True)
+        write_card(p, have + new)
 
 
 # ------------------------------------------------------------------ tiebreaker (Nov 5, 2026)
@@ -518,6 +548,12 @@ def snapshot(now: datetime | None = None, feed: dict | None = None) -> dict:
             _refresh(variant_path(pool, season, week, v), pool, season, week, slate, games, now, freeze, market,
                      shadow, fade="fade" in opt)
     info["shadow"] = shadow
+    for p in sorted(MISSED.glob("*.csv")):                  # picks taken off the card after kickoff: grade only
+        m = re.match(r"(clay|chappy)_(\d{4})_w(\d+)\.csv$", p.name)
+        if m:
+            rows = _csv(p)
+            grade_rows(rows, feed.get((int(m[2]), int(m[3])), {}))
+            write_card(p, rows)
     for p in sorted(MINE.glob("*.csv")):                    # your locked entries: grade only
         m = re.match(r"(clay|chappy)_(\d{4})_w(\d+)\.csv$", p.name)
         if not m:
