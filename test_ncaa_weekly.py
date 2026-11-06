@@ -210,7 +210,8 @@ def test_saturday_recheck_alerts_once_on_change(tmp_path, monkeypatch):
     card = wk._csv(wk.card_path("clay", 2026, 10))
     sent = []
     send = lambda t, m: sent.append((t, m)) or True              # noqa: E731
-    assert recheck.run(sat, send) == ["clay_2026_w10_reminder"] and "not locked" in sent[0][0]
+    assert recheck.run(sat, send) == ["clay_2026_w10", "clay_2026_w10_reminder"]
+    assert "card is up" in sent[0][0] and "not locked" in sent[1][0]
     wk.MINE.mkdir()
     wk.mine_path("clay", 2026, 10).write_text(wk.render_card(card, "x"))
     assert recheck.run(sat, send) == []                          # locked = model card: no alert
@@ -219,7 +220,70 @@ def test_saturday_recheck_alerts_once_on_change(tmp_path, monkeypatch):
     wk.mine_path("clay", 2026, 10).write_text(wk.render_card(mine, "x"))
     assert recheck.run(sat, send) == ["clay_2026_w10"] and "Somebody +3" in sent[-1][1]
     assert recheck.run(sat, send) == []                          # same change: don't repeat
-    assert recheck.run(datetime(2026, 11, 6, 14, tzinfo=UTC), send) == []   # not Saturday
+
+
+def _alert_card(tmp_path, monkeypatch, picks):
+    for name in ("SLATES", "CARDS", "MINE"):
+        monkeypatch.setattr(wk, name, tmp_path / name.lower())
+    monkeypatch.setattr(recheck, "STATE", tmp_path / "state.json")
+    wk.SLATES.mkdir(exist_ok=True)
+    (wk.SLATES / "clay_2026_w10.csv").write_text("away,home,home_spread\n")
+    rows = [{"pool": "clay", "season": 2026, "week": 10, "rank": i, "key": "Y" if i <= 3 else "N", "pick": p,
+             "prob": 0.55, "market": -3, "kickoff": k} for i, (p, k) in enumerate(picks, 1)]
+    wk.write_card(wk.card_path("clay", 2026, 10), rows)
+
+
+SAT_KICK = "2026-11-07T17:00:00Z"
+THU_KICK = "2026-11-06T01:00:00Z"                                # Thu 8pm ET
+
+
+def test_card_alerts_all_week_on_change(tmp_path, monkeypatch):
+    picks = [(f"Team{i} -3", SAT_KICK) for i in range(12)]
+    _alert_card(tmp_path, monkeypatch, picks)
+    sent = []
+    send = lambda t, m: sent.append((t, m)) or True              # noqa: E731
+    wed = datetime(2026, 11, 4, 18, tzinfo=UTC)                  # Wed 1pm ET
+    assert recheck.run(wed, send) == ["clay_2026_w10"] and "card is up" in sent[-1][0]
+    assert recheck.run(wed, send) == []                          # unchanged: quiet
+    picks[11] = ("Southern Miss +14.5", THU_KICK)
+    _alert_card(tmp_path, monkeypatch, picks)
+    assert recheck.run(wed, send) == ["clay_2026_w10"]
+    assert "card changed" in sent[-1][0] and "Add: Southern Miss +14.5" in sent[-1][1]
+    assert "Drop: Team11 -3" in sent[-1][1] and "Thu 8:00pm" in sent[-1][1]
+    assert recheck.run(wed, send) == []
+
+
+def test_card_change_held_overnight(tmp_path, monkeypatch):
+    picks = [(f"Team{i} -3", SAT_KICK) for i in range(12)]
+    _alert_card(tmp_path, monkeypatch, picks)
+    sent = []
+    send = lambda t, m: sent.append((t, m)) or True              # noqa: E731
+    assert recheck.run(datetime(2026, 11, 6, 7, tzinfo=UTC), send) == []       # Fri 2am ET
+    assert recheck.run(datetime(2026, 11, 6, 12, tzinfo=UTC), send) == ["clay_2026_w10"]   # Fri 7am ET
+
+
+def test_early_game_heads_up_once(tmp_path, monkeypatch):
+    picks = [(f"Team{i} -3", SAT_KICK) for i in range(11)] + [("Southern Miss +14.5", THU_KICK)]
+    _alert_card(tmp_path, monkeypatch, picks)
+    sent = []
+    send = lambda t, m: sent.append((t, m)) or True              # noqa: E731
+    recheck.run(datetime(2026, 11, 5, 18, tzinfo=UTC), send)     # Thu 1pm: card alert only
+    assert [t for t, _ in sent] == ["Clay's pool: week 10 card is up"]
+    at = datetime(2026, 11, 5, 22, 30, tzinfo=UTC)               # Thu 5:30pm, 2.5h before kickoff
+    assert recheck.run(at, send) == ["clay_2026_w10_early:Southern Miss +14.5"]
+    assert "early game" in sent[-1][0] and "2h 30m" in sent[-1][1]
+    assert recheck.run(at + timedelta(minutes=15), send) == []
+
+
+def test_early_game_skipped_when_locked(tmp_path, monkeypatch):
+    picks = [(f"Team{i} -3", SAT_KICK) for i in range(11)] + [("Southern Miss +14.5", THU_KICK)]
+    _alert_card(tmp_path, monkeypatch, picks)
+    card = wk._csv(wk.card_path("clay", 2026, 10))
+    wk.MINE.mkdir()
+    wk.mine_path("clay", 2026, 10).write_text(wk.render_card(card, "x"))
+    sent = []
+    send = lambda t, m: sent.append((t, m)) or True              # noqa: E731
+    assert recheck.run(datetime(2026, 11, 5, 22, 30, tzinfo=UTC), send) == []
 
 
 # ---- Nov 5, 2026: tiebreaker + crowd-fade shadow

@@ -1,24 +1,31 @@
-"""Saturday-morning re-check for the NCAA pools (Nov 4, 2026).
+"""Phone alerts for the NCAA pool cards.
 
-Cole usually locks his pool picks Friday around 8pm, but lines keep moving into Saturday (injuries, weather,
-sharp money). Between 9am and noon ET on Saturday this compares the picks he locked in SharpIQ with the
-model's current card (Pinnacle line) and sends ONE phone alert per change -- only when the card is different
-from what he locked, and only when it's different from what was already alerted. No change, no alert.
-If he hasn't locked a pool in the app by then, it sends the model's keys once as a reminder.
+Nov 4, 2026: started as a Saturday-morning-only re-check against the picks locked in SharpIQ.
+Nov 5, 2026: Cole missed Southern Miss +14.5 (a Thursday-night game) because nothing told him it was on the
+card before kickoff. Alerts now run all week, every time the NCAA grader workflow ticks (~15 min):
 
-Runs after the hourly pool snapshot in the NCAA grader workflow. Paper only: nothing here bets.
+  1. Card alert -- the first time a week's card exists, and again whenever a pick is added or dropped or the
+     keys change. Compared against the picks he locked in SharpIQ if he has, otherwise against the last
+     card he was sent. One alert per distinct card; quiet 12am-7am ET (changes made overnight go out at 7am).
+  2. Early-game alert -- a card pick whose game kicks off before Saturday (Thu/Fri night) gets its own alert
+     about 3 hours before kickoff, so it can be entered in the pool before that game locks. Once per pick.
+     Not sent if that pick is already in his locked SharpIQ picks.
+  3. Saturday reminder -- if a pool still isn't locked in SharpIQ on Saturday morning, one reminder with the keys.
+
+Picks in early games are flagged with their kickoff time in every alert. Paper only: nothing here bets.
 """
 from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import datetime, timedelta, timezone
 
 from ncaa_pool import weekly as wk
 
 STATE = wk.DATA / "recheck_alerts.json"
-START_HOUR_ET = 9
+START_HOUR_ET = 9                 # Saturday "not locked" reminder window starts
+QUIET_START_ET, QUIET_END_ET = 0, 7
+EARLY_LEAD = timedelta(hours=3)
 POOL_NAMES = {"clay": "Clay's pool", "chappy": "Chappy's pool"}
 
 
@@ -49,11 +56,32 @@ def push(title: str, message: str) -> bool:
         return False
 
 
+def _kick(r: dict) -> datetime | None:
+    return wk._dt(r.get("kickoff"))
+
+
+def _is_early(r: dict) -> bool:
+    """Thursday/Friday games (kick off before Saturday ET)."""
+    k = _kick(r)
+    return bool(k) and k.astimezone(wk.ET).weekday() in (0, 1, 2, 3, 4)
+
+
+def _when(r: dict) -> str:
+    k = _kick(r)
+    if not k:
+        return ""
+    e = k.astimezone(wk.ET)
+    return f"{e:%a} {e:%I:%M%p}".replace(" 0", " ").replace("AM", "am").replace("PM", "pm")
+
+
 def _line(r: dict) -> str:
     try:
-        return f"{r['pick']} ({float(r['prob']) * 100:.0f}%, mkt {float(r['market']):+g})"
+        s = f"{r['pick']} ({float(r['prob']) * 100:.0f}%, mkt {float(r['market']):+g})"
     except (KeyError, TypeError, ValueError):
-        return r.get("pick", "?")
+        s = r.get("pick", "?")
+    if r.get("frozen"):
+        return s + " (already kicked off)"
+    return s + (f" ⏰ {_when(r)}" if _is_early(r) else "")
 
 
 def tb_line(tb: dict | None) -> str:
@@ -63,8 +91,21 @@ def tb_line(tb: dict | None) -> str:
     return f"\nTiebreaker {tb['away']} @ {tb['home']}: enter {tb['guess']} (mkt total {tb['total']:g})."
 
 
-def message(pool: str, mine: list[dict], model: list[dict], tb: dict | None = None) -> tuple[str, str] | None:
-    """Alert text when the model's card differs from the locked entry, else None."""
+def _sig(rows: list[dict]) -> str:
+    return "|".join(sorted(r["pick"] for r in rows)) + "#" + "|".join(sorted(
+        r["pick"] for r in rows if r.get("key") == "Y"))
+
+
+def card_text(model: list[dict]) -> str:
+    rows = sorted(model, key=lambda r: int(r.get("rank") or 99))
+    out = [f"{r.get('rank')}. {_line(r)}" + (" KEY" if r.get("key") == "Y" else "") for r in rows]
+    exp, mx = wk.expected_points(model)
+    return "\n".join(out) + f"\nExp. {exp:.1f} of {mx} pts."
+
+
+def message(pool: str, mine: list[dict], model: list[dict], tb: dict | None = None,
+            locked: bool = True) -> tuple[str, str] | None:
+    """Alert text when the model's card differs from `mine` (locked entry or last card sent), else None."""
     d = wk.diff(mine, model)
     if not d["dropped"] and not d["added"] and not d["keys_changed"]:
         return None
@@ -76,50 +117,77 @@ def message(pool: str, mine: list[dict], model: list[dict], tb: dict | None = No
         lines.append("Drop: " + "; ".join(d["dropped"]))
     if d["keys_changed"]:
         lines.append("Keys now: " + "; ".join(d["model_keys"]))
-    exp_mine, mx = wk.expected_points([{**r, "prob": by_pick.get(r["pick"], r).get("prob")} for r in mine])
-    exp_model, _ = wk.expected_points(model)
-    lines.append(f"Exp. points: yours {exp_mine:.1f} → model {exp_model:.1f} of {mx}. Picks lock at noon.")
-    return f"{POOL_NAMES[pool]}: lines moved — re-check", "\n".join(lines) + tb_line(tb)
+    exp_model, mx = wk.expected_points(model)
+    if locked:
+        exp_mine, _ = wk.expected_points([{**r, "prob": by_pick.get(r["pick"], r).get("prob")} for r in mine])
+        lines.append(f"Exp. points: yours {exp_mine:.1f} → model {exp_model:.1f} of {mx}.")
+        title = f"{POOL_NAMES[pool]}: card moved off your locked picks"
+    else:
+        lines.append(f"Exp. {exp_model:.1f} of {mx} pts. Full card in SharpIQ.")
+        title = f"{POOL_NAMES[pool]}: card changed"
+    return title, "\n".join(lines) + tb_line(tb)
 
 
 def run(now: datetime | None = None, send=push) -> list[str]:
     now = now or datetime.now(timezone.utc)
     et = now.astimezone(wk.ET)
-    if et.weekday() != 5 or not (START_HOUR_ET <= et.hour < wk.LOCK_HOUR_ET):
-        return []
+    quiet = QUIET_START_ET <= et.hour < QUIET_END_ET
     state, sent = _load(), []
     for pool, season, week, _path in wk.slates():
-        cp = wk.card_path(pool, season, week)
-        model = wk._csv(cp)
+        model = wk._csv(wk.card_path(pool, season, week))
         if not model or all(r.get("frozen") for r in model):
             continue
-        lock_date = et.date().isoformat()
-        kick = sorted(filter(None, (wk._dt(r.get("kickoff")) for r in model)))
-        if not kick or kick[-1].astimezone(wk.ET).date().isoformat() < lock_date:
+        kicks = sorted(filter(None, (_kick(r) for r in model)))
+        if not kicks or kicks[-1] < now:
             continue                                   # an old week's card
         key = f"{pool}_{season}_w{week}"
         mine = wk._csv(wk.mine_path(pool, season, week))
         tb = wk.load_tiebreaker(pool, season, week)
-        if mine:
-            msg = message(pool, mine, model, tb)
-            if msg is None:
-                continue
-            sig = "|".join(sorted(r["pick"] for r in model)) + "#" + "|".join(sorted(
-                r["pick"] for r in model if r.get("key") == "Y"))
-            if state.get(key) == sig:
-                continue
-            if send(*msg):
+        mine_picks = {r["pick"] for r in mine}
+
+        # 1. card alerts (new card, or a change)
+        if not quiet:
+            sig = _sig(model) + ("@" + _sig(mine) if mine else "")
+            if mine:
+                msg = message(pool, mine, model, tb, locked=True)
+            elif not state.get(key + "_card"):
+                msg = (f"{POOL_NAMES[pool]}: week {week} card is up", card_text(model) + tb_line(tb))
+            else:
+                last = [{"pick": p, "key": "Y" if p in state.get(key + "_keys", []) else "N"}
+                        for p in state[key + "_card"]]
+                msg = message(pool, last, model, tb, locked=False)
+            if msg and state.get(key) != sig and send(*msg):
                 state[key] = sig
                 sent.append(key)
-        elif not state.get(key + "_reminder"):
+            if mine or msg is None or state.get(key) == sig:
+                state[key + "_card"] = sorted(r["pick"] for r in model)
+                state[key + "_keys"] = sorted(r["pick"] for r in model if r.get("key") == "Y")
+
+        # 2. early-game heads-up, ~3h before a Thu/Fri kickoff
+        warned = set(state.get(key + "_early", []))
+        for r in model:
+            k = _kick(r)
+            if (r.get("frozen") or not _is_early(r) or not k or r["pick"] in warned
+                    or r["pick"] in mine_picks or not (k - EARLY_LEAD <= now < k)):
+                continue
+            mins = int((k - now).total_seconds() // 60)
+            body = (f"{_line(r)}{' — KEY (double points)' if r.get('key') == 'Y' else ''}\n"
+                    f"Kicks off in {mins // 60}h {mins % 60:02d}m — enter it in {POOL_NAMES[pool]} before then.")
+            if send(f"{POOL_NAMES[pool]}: early game on the card", body):
+                warned.add(r["pick"])
+                sent.append(f"{key}_early:{r['pick']}")
+        state[key + "_early"] = sorted(warned)
+
+        # 3. Saturday morning: not locked in SharpIQ yet
+        if (not mine and et.weekday() == 5 and START_HOUR_ET <= et.hour < wk.LOCK_HOUR_ET
+                and not state.get(key + "_reminder")):
             keys = [r["pick"] for r in model if r.get("key") == "Y"]
             exp, mx = wk.expected_points(model)
             if send(f"{POOL_NAMES[pool]}: not locked in SharpIQ",
                     f"Model keys: {'; '.join(keys)}. Exp. {exp:.1f} of {mx} pts. Lock by noon." + tb_line(tb)):
                 state[key + "_reminder"] = now.isoformat(timespec="minutes")
                 sent.append(key + "_reminder")
-    if sent:
-        _save(state)
+    _save(state)
     return sent
 
 

@@ -68,9 +68,9 @@ jobs:
         continue-on-error: true
         run: python -m ncaa_pool.weekly
 
-      # Nov 4, 2026: Saturday 9am-noon ET, one phone alert if the model's card (Pinnacle line) has moved
-      # away from the picks locked in SharpIQ. No change, no alert.
-      - name: Saturday pool re-check
+      # Nov 5, 2026: pool phone alerts all week -- new card, any pick added/dropped or keys changed,
+      # a heads-up ~3h before any Thu/Fri game on the card, and a Saturday "not locked" reminder.
+      - name: Pool card alerts
         continue-on-error: true
         env:
           PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
