@@ -189,12 +189,12 @@ def test_variants_freeze_friday_and_saturday(tmp_path, monkeypatch):
     for g in games.values():
         g.pinn_spread, g.pinn_at = g.spread - 1, fri
     info = wk.snapshot(fri, feed)
-    assert info["shadow"]["rebuilt"] == 4
+    assert info["shadow"]["rebuilt"] == 5
     assert {r["src"] for r in wk._csv(wk.card_path("clay", 2026, 10))} == {"pinnacle"}
     assert {r["src"] for r in wk._csv(wk.variant_path("clay", 2026, 10, "espn_sat"))} == {"espn"}
     sat = datetime(2026, 11, 7, 14, tzinfo=UTC)                  # Sat 9am ET: Friday cards frozen, Saturday still live
     info = wk.snapshot(sat, feed)
-    assert info["shadow"]["frozen"] == 24 and info["shadow"]["rebuilt"] == 2
+    assert info["shadow"]["frozen"] == 24 and info["shadow"]["rebuilt"] == 3
     final = _feed(home_pts=40.0)
     wk.snapshot(datetime(2026, 11, 8, 12, tzinfo=UTC), final)
     res = wk.variant_results()
@@ -220,3 +220,39 @@ def test_saturday_recheck_alerts_once_on_change(tmp_path, monkeypatch):
     assert recheck.run(sat, send) == ["clay_2026_w10"] and "Somebody +3" in sent[-1][1]
     assert recheck.run(sat, send) == []                          # same change: don't repeat
     assert recheck.run(datetime(2026, 11, 6, 14, tzinfo=UTC), send) == []   # not Saturday
+
+
+# ---- Nov 5, 2026: tiebreaker + crowd-fade shadow
+def test_parse_slate_marks_tiebreaker():
+    rows, bad = wk.parse_slate("Ohio at Akron -3.5\nAlabama at LSU -5.5, 52.5 tiebreaker\nA,B,3,40,TB")
+    assert not bad and [r["tiebreaker"] for r in rows] == ["", "Y", "Y"]
+    assert rows[1]["home"] == "LSU" and rows[1]["total"] == 52.5 and rows[2]["total"] == 40
+
+
+def test_tiebreaker_uses_market_total_and_freezes(tmp_path, monkeypatch):
+    feed, games = _variant_setup(tmp_path, monkeypatch)
+    slate = wk._csv(wk.SLATES / "clay_2026_w10.csv")
+    slate[0]["tiebreaker"] = "Y"
+    (wk.SLATES / "clay_2026_w10.csv").write_text(wk.render_slate(slate))
+    (away, home), g = next(iter(games.items()))
+    fri = datetime(2026, 11, 6, 22, tzinfo=UTC)
+    g.pinn_spread, g.pinn_total, g.pinn_at = -3.0, 52.5, fri
+    wk.snapshot(fri, feed)
+    tb = wk.load_tiebreaker("clay", 2026, 10)
+    assert (tb["away"], tb["home"], tb["guess"], tb["src"], tb["frozen"]) == (away, home, 53, "pinnacle", "")
+    g.pinn_total, g.pinn_at = 49.0, datetime(2026, 11, 7, 18, tzinfo=UTC)
+    wk.snapshot(datetime(2026, 11, 7, 18, tzinfo=UTC), feed)          # after the Saturday noon lock
+    tb = wk.load_tiebreaker("clay", 2026, 10)
+    assert tb["guess"] == 53 and tb["frozen"] == "Y"
+
+
+def test_crowd_fade_only_swaps_public_filler():
+    from ncaa_pool.model import Game, build_card
+    games = [Game(f"A{i}", f"H{i}", -10.5, -13.5) for i in range(3)]          # big edges -> keys
+    games += [Game(f"A{i}", f"H{i}", -3.5, -3.5) for i in range(3, 12)]       # no edge: coin flips
+    plain = build_card(games, 12, 3, allow_totals=False)
+    faded = build_card(games, 12, 3, allow_totals=False, fade=True)
+    assert [o.label for o in plain["keys"]] == [o.label for o in faded["keys"]]
+    assert all(o.side == "home" for o in plain["keys"])
+    flips = [o for o in faded["picks"][3:] if o.extra.get("faded")]
+    assert flips and all(o.side == "away" for o in flips)                     # off the favorite

@@ -56,7 +56,14 @@ def _line(r: dict) -> str:
         return r.get("pick", "?")
 
 
-def message(pool: str, mine: list[dict], model: list[dict]) -> tuple[str, str] | None:
+def tb_line(tb: dict | None) -> str:
+    """Nov 5, 2026: the tiebreaker guess rides along on every alert."""
+    if not tb:
+        return ""
+    return f"\nTiebreaker {tb['away']} @ {tb['home']}: enter {tb['guess']} (mkt total {tb['total']:g})."
+
+
+def message(pool: str, mine: list[dict], model: list[dict], tb: dict | None = None) -> tuple[str, str] | None:
     """Alert text when the model's card differs from the locked entry, else None."""
     d = wk.diff(mine, model)
     if not d["dropped"] and not d["added"] and not d["keys_changed"]:
@@ -72,7 +79,7 @@ def message(pool: str, mine: list[dict], model: list[dict]) -> tuple[str, str] |
     exp_mine, mx = wk.expected_points([{**r, "prob": by_pick.get(r["pick"], r).get("prob")} for r in mine])
     exp_model, _ = wk.expected_points(model)
     lines.append(f"Exp. points: yours {exp_mine:.1f} → model {exp_model:.1f} of {mx}. Picks lock at noon.")
-    return f"{POOL_NAMES[pool]}: lines moved — re-check", "\n".join(lines)
+    return f"{POOL_NAMES[pool]}: lines moved — re-check", "\n".join(lines) + tb_line(tb)
 
 
 def run(now: datetime | None = None, send=push) -> list[str]:
@@ -92,8 +99,9 @@ def run(now: datetime | None = None, send=push) -> list[str]:
             continue                                   # an old week's card
         key = f"{pool}_{season}_w{week}"
         mine = wk._csv(wk.mine_path(pool, season, week))
+        tb = wk.load_tiebreaker(pool, season, week)
         if mine:
-            msg = message(pool, mine, model)
+            msg = message(pool, mine, model, tb)
             if msg is None:
                 continue
             sig = "|".join(sorted(r["pick"] for r in model)) + "#" + "|".join(sorted(
@@ -107,7 +115,7 @@ def run(now: datetime | None = None, send=push) -> list[str]:
             keys = [r["pick"] for r in model if r.get("key") == "Y"]
             exp, mx = wk.expected_points(model)
             if send(f"{POOL_NAMES[pool]}: not locked in SharpIQ",
-                    f"Model keys: {'; '.join(keys)}. Exp. {exp:.1f} of {mx} pts. Lock by noon."):
+                    f"Model keys: {'; '.join(keys)}. Exp. {exp:.1f} of {mx} pts. Lock by noon." + tb_line(tb)):
                 state[key + "_reminder"] = now.isoformat(timespec="minutes")
                 sent.append(key + "_reminder")
     if sent:

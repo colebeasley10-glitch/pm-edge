@@ -20,7 +20,9 @@ Paper only: nothing here bets.
 from __future__ import annotations
 
 import csv
+import json
 import io
+import math
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -76,31 +78,37 @@ _LINE = re.compile(r"^\s*(?P<away>.+?)\s+(?:at|@|vs\.?)\s+(?P<home>.+?)\s+(?P<sp
                    r"(?:\s*(?:,|\s)\s*(?:o/u|ou|total|t)?\s*(?P<total>\d+(?:\.\d+)?))?\s*$")
 
 
+_TB = re.compile(r"\s*[,(]?\s*(?:tiebreaker|tie breaker|tb)\s*\)?\s*$", re.I)
+
+
 def parse_slate(text: str) -> tuple[list[dict], list[str]]:
     """Lines like 'Ohio at Akron -3.5' or 'Ohio @ Akron +7, 52.5' (spread = HOME team's line),
-    or CSV 'away,home,home_spread[,total]'. Returns (rows, lines it couldn't read)."""
+    or CSV 'away,home,home_spread[,total]'. End a line with 'tiebreaker' (or 'TB') to mark the
+    tiebreaker game (Nov 5, 2026). Returns (rows, lines it couldn't read)."""
     rows, bad = [], []
     for raw in (text or "").splitlines():
         line = raw.strip()
         if not line or line.lower().startswith("away,"):
             continue
+        tb = bool(_TB.search(line))
+        line = _TB.sub("", line).strip() if tb else line
         parts = [p.strip() for p in line.split(",")]
         if len(parts) >= 3 and _f(parts[2]) is not None and not _LINE.match(line):
             rows.append({"away": parts[0], "home": parts[1], "home_spread": _f(parts[2]),
-                         "total": _f(parts[3]) if len(parts) > 3 else None})
+                         "total": _f(parts[3]) if len(parts) > 3 else None, "tiebreaker": "Y" if tb else ""})
             continue
         m = _LINE.match(line)
         if not m:
             bad.append(line)
             continue
         rows.append({"away": m["away"].strip(), "home": m["home"].strip(), "home_spread": _f(m["spread"]),
-                     "total": _f(m["total"])})
+                     "total": _f(m["total"]), "tiebreaker": "Y" if tb else ""})
     return rows, bad
 
 
 def render_slate(rows: list[dict]) -> str:
     buf = io.StringIO()
-    w = csv.DictWriter(buf, fieldnames=["away", "home", "home_spread", "total", "exclude"], extrasaction="ignore",
+    w = csv.DictWriter(buf, fieldnames=["away", "home", "home_spread", "total", "exclude", "tiebreaker"], extrasaction="ignore",
                        lineterminator="\n")
     w.writeheader()
     for r in rows:
@@ -253,7 +261,8 @@ def _lookup(games: dict, away: str, home: str) -> tuple[GameInfo | None, bool]:
 
 
 def build(pool: str, slate: list[dict], games: dict, *, now: datetime, preview: bool = False,
-          pinned: list[dict] | None = None, aliases: dict | None = None, market: str = "pinnacle") -> dict:
+          pinned: list[dict] | None = None, aliases: dict | None = None, market: str = "pinnacle",
+          fade: bool = False) -> dict:
     """Card rows for one pool. `slate` rows: away, home, home_spread, total, exclude.
     preview=True: no pool lines yet, so the grader's first logged line stands in for the pool line.
     pinned: picks from the last snapshot whose games have kicked off (kept as they were)."""
@@ -282,7 +291,7 @@ def build(pool: str, slate: list[dict], games: dict, *, now: datetime, preview: 
         by_game[(away, home)] = (info, src)
     n_left = max(0, n - len(pinned))
     k_left = max(0, k - sum(p["key"] == "Y" for p in pinned))
-    card = build_card(cand, n_left, k_left, allow_totals=False)
+    card = build_card(cand, n_left, k_left, allow_totals=False, fade=fade)
     rows = [dict(p) for p in pinned]
     for i, o in enumerate(card["picks"]):
         g = o.game
@@ -382,10 +391,14 @@ def slates() -> list[tuple[str, int, int, Path]]:
 #   espn_sat  -- ESPN line, frozen at the Saturday noon lock (the old main card)
 #   pinn_sat  -- Pinnacle line, frozen at the Saturday noon lock (the new main card)
 VARIANTS = DATA / "variants"
+#   pinn_sat_fade -- (Nov 5, 2026) the main card with its coin-flip filler swapped to the less-public side
+#                    (model.FADE_*). Tests whether that wins more weeks outright; never touches the real card.
 VARIANT_SPECS = {"espn_fri": ("espn", "fri"), "pinn_fri": ("pinnacle", "fri"),
-                 "espn_sat": ("espn", "sat"), "pinn_sat": ("pinnacle", "sat")}
+                 "espn_sat": ("espn", "sat"), "pinn_sat": ("pinnacle", "sat"),
+                 "pinn_sat_fade": ("pinnacle", "sat", "fade")}
 VARIANT_NAMES = {"espn_fri": "ESPN · Fri 8pm", "pinn_fri": "Pinnacle · Fri 8pm",
-                 "espn_sat": "ESPN · Sat lock", "pinn_sat": "Pinnacle · Sat lock"}
+                 "espn_sat": "ESPN · Sat lock", "pinn_sat": "Pinnacle · Sat lock",
+                 "pinn_sat_fade": "Crowd fade · Sat lock"}
 FRIDAY_LOCK_HOUR_ET = 20
 
 
@@ -401,7 +414,7 @@ def friday_lock(lock: datetime | None) -> datetime | None:
 
 
 def _refresh(cp: Path, pool: str, season: int, week: int, slate: list[dict], games: dict, now: datetime,
-             freeze_at: datetime | None, market: str, info: dict) -> list[dict]:
+             freeze_at: datetime | None, market: str, info: dict, fade: bool = False) -> list[dict]:
     """Rebuild one card until freeze_at, then freeze it; grade finals. Writes the card and returns its rows."""
     old = _csv(cp)
     if freeze_at and now >= freeze_at and old:
@@ -414,7 +427,7 @@ def _refresh(cp: Path, pool: str, season: int, week: int, slate: list[dict], gam
         pinned = [r for r in old if (_dt(r.get("kickoff")) or now + timedelta(days=1)) <= now]
         for r in pinned:
             r["frozen"] = "Y"
-        rows = build(pool, slate, games, now=now, pinned=pinned, market=market)["rows"]
+        rows = build(pool, slate, games, now=now, pinned=pinned, market=market, fade=fade)["rows"]
         info["rebuilt"] += 1
     for r in rows:
         r["season"], r["week"] = season, week
@@ -423,6 +436,64 @@ def _refresh(cp: Path, pool: str, season: int, week: int, slate: list[dict], gam
     info["graded"] += sum(bool(r.get("result")) for r in rows) - before
     write_card(cp, rows)
     return rows
+
+
+# ------------------------------------------------------------------ tiebreaker (Nov 5, 2026)
+# Clay's pool: guess the combined score of one game; closest guess wins ties. The model's guess is the
+# market total (Pinnacle when fresh, else ESPN, else the pool's own total) rounded to a whole number -- the
+# market total is the median outcome, which is the guess that lands closest on average. Like the card, it
+# refreshes until the Saturday noon lock, then freezes.
+def tiebreaker_path(pool: str, season: int, week: int) -> Path:
+    return CARDS / f"{pool}_{season}_w{week}__tiebreaker.json"
+
+
+def tiebreaker(slate: list[dict], games: dict, now: datetime, market: str = "pinnacle",
+               aliases: dict | None = None) -> dict | None:
+    row = next((r for r in slate if str(r.get("tiebreaker") or "").strip()), None)
+    if row is None:
+        return None
+    aliases = aliases if aliases is not None else _aliases()
+    away, home = _norm(row["away"], aliases), _norm(row["home"], aliases)
+    info, _flipped = _lookup(games, away, home)
+    _s, total, src = market_line(info, market, now) if info else (None, None, "")
+    if total is None:
+        total, src = _f(row.get("total")), "pool"
+    if total is None:
+        return None
+    return {"away": away, "home": home, "guess": int(math.floor(total + 0.5)), "total": total, "src": src,
+            "pool_total": _f(row.get("total")), "made_at": now.isoformat(timespec="minutes").replace("+00:00", "Z"),
+            "frozen": ""}
+
+
+def load_tiebreaker(pool: str, season: int, week: int) -> dict | None:
+    p = tiebreaker_path(pool, season, week)
+    try:
+        return json.loads(p.read_text()) if p.exists() else None
+    except ValueError:
+        return None
+
+
+def refresh_tiebreaker(pool: str, season: int, week: int, slate: list[dict], games: dict, now: datetime,
+                       lock: datetime | None) -> dict | None:
+    old = load_tiebreaker(pool, season, week)
+    if old and lock and now >= lock:
+        if not old.get("frozen"):
+            old["frozen"] = "Y"
+            _write_json(tiebreaker_path(pool, season, week), old)
+        return old
+    tb = tiebreaker(slate, games, now)
+    if tb is None:
+        return old
+    if old and {k: old.get(k) for k in ("away", "home", "guess", "total", "src")} == \
+            {k: tb.get(k) for k in ("away", "home", "guess", "total", "src")}:
+        return old                                     # unchanged: don't churn the file
+    _write_json(tiebreaker_path(pool, season, week), tb)
+    return tb
+
+
+def _write_json(p: Path, obj: dict) -> None:
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(obj, indent=1, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def snapshot(now: datetime | None = None, feed: dict | None = None) -> dict:
@@ -441,10 +512,11 @@ def snapshot(now: datetime | None = None, feed: dict | None = None) -> dict:
         slate = _csv(path)
         lock = lock_time(games)
         _refresh(card_path(pool, season, week), pool, season, week, slate, games, now, lock, "pinnacle", info)
-        for v, (market, when) in VARIANT_SPECS.items():
+        refresh_tiebreaker(pool, season, week, slate, games, now, lock)
+        for v, (market, when, *opt) in VARIANT_SPECS.items():
             freeze = lock if when == "sat" else friday_lock(lock)
             _refresh(variant_path(pool, season, week, v), pool, season, week, slate, games, now, freeze, market,
-                     shadow)
+                     shadow, fade="fade" in opt)
     info["shadow"] = shadow
     for p in sorted(MINE.glob("*.csv")):                    # your locked entries: grade only
         m = re.match(r"(clay|chappy)_(\d{4})_w(\d+)\.csv$", p.name)
@@ -505,7 +577,7 @@ def history(feed: dict | None = None) -> list[dict]:
 # ------------------------------------------------------------------ shadow comparison for the page
 def variant_results() -> dict:
     """{'weeks': [{pool, season, week, variants: {v: {points, record, done}}}], 'totals': {pool: {v: {...}}}}.
-    'best' counts weeks where a variant scored the most points of the four (ties count for each)."""
+    'best' counts weeks where a variant scored the most points of all versions (ties count for each)."""
     weeks: dict[tuple, dict] = {}
     for p in sorted(VARIANTS.glob("*.csv")):
         m = re.match(r"(clay|chappy)_(\d{4})_w(\d+)__(\w+)\.csv$", p.name)

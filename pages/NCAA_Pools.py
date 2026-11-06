@@ -116,6 +116,17 @@ def pick_rows(rows: list[dict], show_stake: bool = True) -> str:
     return "".join(out)
 
 
+def show_tiebreaker(pool: str, season: int, week: int, slate: list[dict]) -> None:
+    """Nov 5, 2026: the model's tiebreaker guess (market total of the tiebreaker game, rounded)."""
+    tb = wk.load_tiebreaker(pool, season, week) or (wk.tiebreaker(slate, games, NOW) if slate else None)
+    if not tb:
+        return
+    src = {"pinnacle": "Pinnacle", "espn": "ESPN", "pool": "pool"}.get(tb.get("src"), tb.get("src") or "")
+    st.markdown(f"<div class='np-note'>🎯 <b>Tiebreaker:</b> {esc(tb['away'])} @ {esc(tb['home'])} — enter "
+                f"<b>{tb['guess']}</b> <span style='color:var(--muted)'>({src} total {tb['total']:g}"
+                f"{' · locked' if tb.get('frozen') else ''})</span></div>", unsafe_allow_html=True)
+
+
 def show_card(pool: str, rows: list[dict]) -> None:
     keys = [r for r in rows if r.get("key") == "Y"]
     rest = [r for r in rows if r.get("key") != "Y"]
@@ -145,7 +156,8 @@ def paste_form(pool: str, season: int, week: int) -> None:
     label = "Clay's" if pool == "clay" else "Chappy's"
     with st.expander(f"Enter {label} lines for week {week}", icon=":material/edit_note:"):
         st.caption("One game per line, the HOME team's spread: `Ohio at Akron -3.5` or `Ohio @ Akron +7`. "
-                   "CSV `away,home,home_spread` works too. Or just send Claude a screenshot of the pool.")
+                   "CSV `away,home,home_spread` works too. End the tiebreaker game's line with `tiebreaker`. "
+                   "Or just send Claude a screenshot of the pool.")
         text = st.text_area("Lines", key=f"paste_{pool}", height=180, label_visibility="collapsed",
                             placeholder="Ohio at Akron -3.5\nMissouri at Texas A&M -6.5\n…")
         if st.button("Save lines & build card", key=f"save_{pool}", type="primary", use_container_width=True):
@@ -238,6 +250,7 @@ with tab_now:
             st.markdown(f"<div class='np-note'>🔒 <b>Your picks — locked {esc(at)}.</b> This is your entry; it won't "
                         "change and it's what gets graded under Past weeks.</div>", unsafe_allow_html=True)
             show_card(pool, mine)
+            show_tiebreaker(pool, season, week, slate)
             if rows and not preview and not locked:
                 d = wk.diff(mine, rows)
                 if d["dropped"] or d["keys_changed"]:
@@ -265,6 +278,8 @@ with tab_now:
         st.markdown(f"<div class='np-note'>{note}</div>", unsafe_allow_html=True)
         if rows:
             show_card(pool, rows)
+            if not preview:
+                show_tiebreaker(pool, season, week, pasted or slate)
             if preview:
                 st.caption("Lock becomes available once Clay's real lines are in (this is an early look).")
             elif st.button("🔒 Lock my picks — I submitted this card", key=f"lock_{pool}", type="primary",
@@ -285,7 +300,7 @@ with tab_past:
     # Nov 4, 2026: four paper cards a week, same model, different market line / freeze time.
     vr = wk.variant_results()
     if vr["weeks"]:
-        st.markdown("<div class='section'><span>Line source &amp; lock time test</span>"
+        st.markdown("<div class='section'><span>Line source, lock time &amp; crowd-fade test</span>"
                     "<span class='n'>paper</span></div>", unsafe_allow_html=True)
         for pool, tot in vr["totals"].items():
             pname = "Clay" if pool == "clay" else "Chappy"
@@ -312,9 +327,10 @@ with tab_past:
                     parts.append(f"<b>{esc(wk.VARIANT_NAMES[v])}</b> {x['points']} pts ({w}-{l}{f'-{pu}' if pu else ''}){state}")
             st.markdown(f"<div class='np-note'>Week {wkrow['week']} {pname}: " + " · ".join(parts) + "</div>",
                         unsafe_allow_html=True)
-        st.markdown("<div class='fine'>Same model, four ways: the market line it reads (ESPN or Pinnacle) and when "
-                    "the card is frozen (Friday 8pm ET, your usual lock, or the Saturday noon lock). Totals count "
-                    "fully graded weeks only; <b>best</b> = weeks that version scored the most of the four. The main "
+        st.markdown("<div class='fine'>Same model, five ways: the market line it reads (ESPN or Pinnacle), when "
+                    "the card is frozen (Friday 8pm ET, your usual lock, or the Saturday noon lock), and a crowd-fade "
+                    "version that swaps the coin-flip filler (never the keys) to the less-public side. Totals count "
+                    "fully graded weeks only; <b>best</b> = weeks that version scored the most. The main "
                     "card above is Pinnacle · Sat lock.</div>", unsafe_allow_html=True)
 
     hist = wk.history()

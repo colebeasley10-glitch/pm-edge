@@ -142,9 +142,42 @@ def poisson_binomial(probs: list[float], weights: list[int]) -> dict[int, float]
     return dist
 
 
+# ---- crowd-fade shadow (Nov 5, 2026). Paper only. To win a week outright you need to gain on the field, and
+# the coin-flip filler picks at the bottom of the card carry no real edge either way. On those (never the keys),
+# take the side the crowd is less likely to be on when it costs almost nothing in cover chance.
+FADE_MAX_PROB = 0.53      # only filler with no real edge gets faded
+FADE_MAX_COST = 0.015     # give up at most 1.5 points of cover chance to get off the public side
+BRANDS = {"Alabama", "Georgia", "Ohio State", "Michigan", "Texas", "Notre Dame", "Oklahoma", "LSU", "Penn State",
+          "Oregon", "USC", "Florida State", "Clemson", "Tennessee", "Miami", "Auburn", "Florida", "Texas A&M",
+          "Ole Miss", "Nebraska", "Colorado", "Miami (FL)", "Wisconsin", "Iowa"}
+
+
+def public_side(g: Game) -> str | None:
+    """The side most pool players take: a big brand over a non-brand, otherwise the favorite at the pool line."""
+    hb, ab = g.home in BRANDS, g.away in BRANDS
+    if hb != ab:
+        return "home" if hb else "away"
+    if g.pool_spread is None or g.pool_spread == 0:
+        return None
+    return "home" if g.pool_spread < 0 else "away"
+
+
+def _fade(card_picks: list[Option], n_keys: int) -> list[Option]:
+    out = list(card_picks)
+    for i, o in enumerate(out):
+        if i < n_keys or o.kind != "spread" or o.prob >= FADE_MAX_PROB or public_side(o.game) != o.side:
+            continue
+        other = next((x for x in options(o.game) if x.kind == "spread" and x.side != o.side), None)
+        if other and other.prob >= o.prob - FADE_MAX_COST:
+            other.extra["faded"] = True
+            out[i] = other
+    return out
+
+
 def build_card(games: list[Game], n_picks: int = 12, n_keys: int = 3, allow_totals: bool = True,
-               exclude: set[str] | None = None) -> dict:
-    """Best side per game, top n by chance to score, keys = the n_keys most likely to score."""
+               exclude: set[str] | None = None, fade: bool = False) -> dict:
+    """Best side per game, top n by chance to score, keys = the n_keys most likely to score.
+    fade=True: crowd-fade shadow -- coin-flip filler swapped to the less-public side (see _fade)."""
     best = []
     for g in games:
         if exclude and (g.home in exclude or g.away in exclude):
@@ -154,6 +187,8 @@ def build_card(games: list[Game], n_picks: int = 12, n_keys: int = 3, allow_tota
             best.append(max(opts, key=lambda o: (o.prob, o.gap)))
     best.sort(key=lambda o: (-o.prob, -o.gap))
     picks = best[:n_picks]
+    if fade:
+        picks = _fade(picks, n_keys)
     probs = [o.prob for o in picks]
     weights = [2 if i < n_keys else 1 for i in range(len(picks))]
     dist = poisson_binomial(probs, weights)
