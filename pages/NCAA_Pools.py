@@ -17,6 +17,17 @@ data_sync.sync()
 for _m in [k for k in sys.modules if k == "ncaa_pool" or k.startswith("ncaa_pool.")]:
     del sys.modules[_m]   # Streamlit Cloud keeps old modules in memory across code updates
 
+import os  # noqa: E402
+
+# Nov 6, 2026: saving locks/lines writes to the repo through GITHUB_TOKEN; Streamlit keeps it in st.secrets,
+# so copy it into the environment like the other pages do (without this, saves failed on this page).
+for _name in ("GITHUB_TOKEN", "SHARPIQ_REPO"):
+    try:
+        if _name in st.secrets and not os.getenv(_name):
+            os.environ[_name] = str(st.secrets[_name])
+    except Exception:
+        pass
+
 import ui_theme  # noqa: E402
 from ncaa_pool import weekly as wk  # noqa: E402
 from ncaa_pool.run_card import POOLS  # noqa: E402
@@ -38,9 +49,9 @@ st.markdown("""<style>
 .np-right b { font-size:1.05rem; }
 .np-right small { display:block; color:var(--muted); font-size:.7rem; }
 .np-key { font-size:.62rem; font-weight:800; letter-spacing:.06em; color:#111; background:var(--gold);
-          border-radius:999px; padding:.1rem .45rem; margin-left:.4rem; vertical-align:middle; }
-.np-held { font-size:.62rem; font-weight:800; letter-spacing:.04em; color:var(--text); background:var(--deep);
-           border:1px solid var(--line, rgba(127,127,127,.3)); border-radius:999px; padding:.12rem .45rem; margin-left:.4rem; }
+          border-radius:999px; padding:.1rem .45rem; margin-left:.4rem; vertical-align:middle; white-space:nowrap; }
+.np-held { font-size:.62rem; font-weight:800; letter-spacing:.04em; color:#0b2a14; background:var(--up);
+           border-radius:999px; padding:.12rem .45rem; margin-left:.4rem; white-space:nowrap; vertical-align:middle; }
 .np-res { font-size:.66rem; font-weight:800; border-radius:999px; padding:.12rem .5rem; margin-left:.4rem; }
 .np-res.W { color:var(--up); background:rgba(34,197,94,.1); } .np-res.L { color:var(--down); background:rgba(240,82,82,.1); }
 .np-res.P { color:var(--muted); background:var(--deep); }
@@ -54,6 +65,8 @@ st.markdown("""<style>
 [class*="st-key-nprow_"] .np-row { border-top:none; }
 [class*="st-key-nprow_"] .stButton button, [class*="st-key-nprow_"] [data-testid="stPopover"] button {
   min-height:2.2rem; padding:.2rem .55rem; }
+[class*="st-key-nprow_"][class*="_held_"] { background:rgba(34,197,94,.09); box-shadow:inset 3px 0 0 var(--up);
+  margin:0 -.6rem 0 -.9rem; padding:0 .6rem 0 .9rem; }
 .np-lockdim { color:var(--muted); font-size:.95rem; padding:0 .55rem; }
 .np-kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:.5rem; margin:.3rem 0 .6rem; }
 .np-kpi { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:.6rem .7rem; }
@@ -131,7 +144,7 @@ def row_html(r: dict, show_stake: bool = True) -> str:
         res_html = f"<span class='np-res {res}'>{res}</span>" if res else ""
         key_html = "<span class='np-key'>KEY ×2</span>" if key else ""
         if r.get("held"):                         # Nov 6, 2026: locked in its spot
-            key_html += "<span class='np-held'>🔒 IN</span>"
+            key_html += "<span class='np-held'>🔒 LOCKED</span>"
         out.append(
             f"<div class='np-row'><div class='np-rank'>{esc(r.get('rank'))}</div><div class='np-main'>"
             f"<div class='np-pick'>{esc(r['pick'])}{key_html}{res_html}</div>"
@@ -161,13 +174,14 @@ def lockable_rows(rows: list[dict], section: str, ctl: dict) -> None:
             started = bool(r.get("frozen")) and not is_held
             slug = re.sub(r"\W+", "_", r["pick"])
             with st.container(horizontal=True, vertical_alignment="center", wrap=False,
-                              key=f"nprow_{'first_' if i == 0 else ''}{section}_{pool}_{slug}"):
+                              key=f"nprow_{'first_' if i == 0 else ''}{'held_' if is_held else ''}"
+                                  f"{section}_{pool}_{slug}"):
                 st.markdown(row_html(r), unsafe_allow_html=True, width="stretch")
                 if started:
                     st.markdown("<span class='np-lockdim' title='Game started'>⏱</span>", unsafe_allow_html=True,
                                 width="content")
                 elif is_held:
-                    with st.popover("🔒", key=f"unpop_{pool}_{slug}", help="Locked — enter the code to unlock"):
+                    with st.popover("🔒", type="primary", key=f"unpop_{pool}_{slug}", help="Locked — enter the code to unlock"):
                         code = st.text_input("Code to unlock", type="password", key=f"code_{pool}_{slug}")
                         if st.button("Unlock", key=f"unlock1_{pool}_{slug}", use_container_width=True):
                             if code.strip() != UNLOCK_CODE:
