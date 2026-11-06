@@ -21,12 +21,31 @@ import os  # noqa: E402
 
 # Nov 6, 2026: saving locks/lines writes to the repo through GITHUB_TOKEN; Streamlit keeps it in st.secrets,
 # so copy it into the environment like the other pages do (without this, saves failed on this page).
-for _name in ("GITHUB_TOKEN", "SHARPIQ_REPO"):
+def _seed_token() -> list[str]:
+    """Find the GitHub key in the app's secrets, top level or inside a [section], under any usual name.
+    Returns the secret NAMES seen (never values) so a failed save can say what's there."""
+    want = {"github_token", "gh_token", "github_pat", "token"}
+    seen = []
     try:
-        if _name in st.secrets and not os.getenv(_name):
-            os.environ[_name] = str(st.secrets[_name])
+        for k in st.secrets.keys():
+            v = st.secrets[k]
+            if hasattr(v, "keys"):
+                for k2 in v.keys():
+                    seen.append(f"{k}.{k2}")
+                    if k2.lower() in want and not os.getenv("GITHUB_TOKEN"):
+                        os.environ["GITHUB_TOKEN"] = str(v[k2]).strip()
+            else:
+                seen.append(k)
+                if k.lower() in want and k.lower() != "token" and not os.getenv("GITHUB_TOKEN"):
+                    os.environ["GITHUB_TOKEN"] = str(v).strip()
+                if k == "SHARPIQ_REPO" and not os.getenv(k):
+                    os.environ[k] = str(v)
     except Exception:
         pass
+    return seen
+
+
+SECRET_NAMES = _seed_token()
 
 import ui_theme  # noqa: E402
 from ncaa_pool import weekly as wk  # noqa: E402
@@ -204,7 +223,11 @@ def _save_hold(pool: str, season: int, week: int, r: dict, held: list[dict], rel
         st.session_state[f"held_{pool}"] = new
         st.session_state[f"msg_{pool}"] = ("ok", msg)
     except Exception as exc:
-        st.session_state[f"msg_{pool}"] = ("warn", f"Couldn't save that lock: {exc}")
+        hint = ""
+        if "GITHUB_TOKEN" in str(exc):
+            hint = (" Add your GitHub token to this app's Streamlit secrets as GITHUB_TOKEN. Secrets found: "
+                    + (", ".join(SECRET_NAMES) or "none") + ".")
+        st.session_state[f"msg_{pool}"] = ("warn", f"Couldn't save that lock: {exc}.{hint}")
     st.rerun()
 
 
