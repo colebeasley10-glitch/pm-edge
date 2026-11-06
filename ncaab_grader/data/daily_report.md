@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-05
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-06T01:00:29+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-06T01:15:23+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $509.39 (start $500, at risk $5.00) · ¼-Kelly comparison $506.06
+**Paper bankroll:** $509.39 (start $500, at risk $10.00) · ¼-Kelly comparison $506.06
 **Season to date (BET tier):** 2-0-0 · flat P/L $+9.39 (+93.9% on risk) · ¼-Kelly P/L $+6.06 · beat close 0%
 
-## Qualified bets (1)
+## Qualified bets (2)
 
 ```
 GAME: UConn Huskies at Michigan Wolverines (neutral)
@@ -31,9 +31,32 @@ WHY: Model line Michigan Wolverines +0.5 vs market +5.5 (+4.9 pts) from opponent
 LOGGED: 2026-11-05T19:00:31+00:00 · model ncaab_v1
 ```
 
-## Watch list (11) — positive EV but not a qualified bet
+```
+GAME: Saint Louis Billikens at Missouri Tigers (neutral)
+TIPOFF: Fri 7:00 PM ET
+
+SPORTSBOOK LINE: Missouri Tigers -2.5 (-105)
+MODEL LINE: Missouri Tigers -5.5
+PROJECTED SCORE: Saint Louis Billikens 76 - Missouri Tigers 81
+
+MODEL COVER PROBABILITY: 52.9%
+BREAK-EVEN PROBABILITY: 51.22%
+EXPECTED ROI: +3.2%
+
+RECOMMENDATION: Missouri Tigers -2.5
+MINIMUM ACCEPTABLE PRICE: -108
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $4.25
+CONFIDENCE/UNCERTAINTY: LOW — ratings are still mostly the preseason prior; calibrated win prob 52.9% (backtest-shrunk toward the market)
+FLAGS: early season (<4 games): mostly preseason prior; neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line Missouri Tigers -5.5 vs market -2.5 (+2.8 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-06T01:15:23+00:00 · model ncaab_v1
+```
+
+## Watch list (12) — positive EV but not a qualified bet
 
 - Michigan Wolverines ML +190 (+190) · UConn Huskies at Michigan Wolverines · Fri 8:00 PM ET · EV +4.8% · min +185
+- Missouri Tigers ML -142 (-142) · Saint Louis Billikens at Missouri Tigers · Fri 7:00 PM ET · EV +4.7% · min -148
 - OVER 150.5 (-105) · Northern Colorado Bears at Arizona State Sun Devils · Fri 9:00 PM ET · EV +1.6% · min -102
 - OVER 141.5 (-105) · Towson Tigers at Utah Utes · Thu 9:00 PM ET · EV +1.6% · min -102
 - OVER 169.5 (-105) · Northern Kentucky Norse at Texas A&M Aggies · Fri 8:00 PM ET · EV +1.6% · min -102
@@ -47,11 +70,11 @@ LOGGED: 2026-11-05T19:00:31+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $499.26 · 3-3-0 · logged this run 0 · open 27
+Bankroll $504.02 · 4-3-0 · logged this run 2 · open 28
 
 ## Data gaps
 
 - no line posted yet (30): Grace University Lancers @ Southern Utah Thunderbirds, Calumet St. Joseph Crimson Wave @ Air Force Falcons, Menlo Oaks @ UC Davis Aggies, Stanton Elks @ Cal State Bakersfield Roadrunners, La Sierra Golden Eagles @ Pepperdine Waves, West Florida Argonauts @ Florida International Panthers, Arkansas-Pine Bluff Golden Lions @ Baylor Bears, South Carolina State Bulldogs @ South Carolina Upstate Spartans, Midway Eagles @ Eastern Kentucky Colonels, Roberts Wesleyan Redhawks @ Kent State Golden Flashes, Newberry Wolves @ Charleston Cougars, Erskine Flying Fleet @ The Citadel Bulldogs, New Haven Chargers @ Rutgers Scarlet Knights, New College Mighty Banyans @ Florida Gulf Coast Eagles, Stetson Hatters @ West Virginia Mountaineers …
-- possession data coverage: 0.993
+- possession data coverage: 0.98
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
