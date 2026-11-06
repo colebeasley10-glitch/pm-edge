@@ -4,6 +4,7 @@ Paper only."""
 from __future__ import annotations
 
 import html
+import re
 import sys
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
@@ -43,6 +44,17 @@ st.markdown("""<style>
 .np-res { font-size:.66rem; font-weight:800; border-radius:999px; padding:.12rem .5rem; margin-left:.4rem; }
 .np-res.W { color:var(--up); background:rgba(34,197,94,.1); } .np-res.L { color:var(--down); background:rgba(240,82,82,.1); }
 .np-res.P { color:var(--muted); background:var(--deep); }
+[class*="st-key-npcard_"] { border:1px solid var(--line); background:var(--panel); border-radius:16px;
+  padding:.1rem .6rem .1rem .9rem; margin:.4rem 0 .8rem; gap:0 !important; }
+[class*="st-key-npcard_keys"] { border-color:rgba(245,184,0,.45);
+  background:linear-gradient(180deg, rgba(245,184,0,.07), var(--panel) 70%); }
+[class*="st-key-npcard_keys"] .np-rank { color:var(--gold); }
+[class*="st-key-nprow_"] { border-top:1px solid var(--line); gap:.4rem !important; }
+[class*="st-key-nprow_first_"] { border-top:none; }
+[class*="st-key-nprow_"] .np-row { border-top:none; }
+[class*="st-key-nprow_"] .stButton button, [class*="st-key-nprow_"] [data-testid="stPopover"] button {
+  min-height:2.2rem; padding:.2rem .55rem; }
+.np-lockdim { color:var(--muted); font-size:.95rem; padding:0 .55rem; }
 .np-kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:.5rem; margin:.3rem 0 .6rem; }
 .np-kpi { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:.6rem .7rem; }
 .np-kpi .l { color:var(--muted); font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
@@ -80,9 +92,16 @@ def load_feed():
     return wk.game_feed()
 
 
+UNLOCK_CODE = "10"                            # Nov 6, 2026: Cole types this to unlock a locked pick
+
+
 def pick_rows(rows: list[dict], show_stake: bool = True) -> str:
+    return "".join(row_html(r, show_stake) for r in rows)
+
+
+def row_html(r: dict, show_stake: bool = True) -> str:
     out = []
-    for r in rows:
+    for r in [r]:
         key = r.get("key") == "Y"
         res = r.get("result") or ""
         prob = float(r.get("prob") or 0)
@@ -131,7 +150,51 @@ def show_tiebreaker(pool: str, season: int, week: int, slate: list[dict]) -> Non
                 f"{' · locked' if tb.get('frozen') else ''})</span></div>", unsafe_allow_html=True)
 
 
-def show_card(pool: str, rows: list[dict]) -> None:
+def lockable_rows(rows: list[dict], section: str, ctl: dict) -> None:
+    """Nov 6, 2026: every pick on the card carries its own lock. Tap 🔒 to lock it in its spot;
+    a locked pick only unlocks with the code."""
+    pool, season, week, held = ctl["pool"], ctl["season"], ctl["week"], ctl["held"]
+    held_picks = {h["pick"] for h in held}
+    with st.container(key=f"npcard_{section}_{pool}"):
+        for i, r in enumerate(rows):
+            is_held = r["pick"] in held_picks
+            started = bool(r.get("frozen")) and not is_held
+            slug = re.sub(r"\W+", "_", r["pick"])
+            with st.container(horizontal=True, vertical_alignment="center", wrap=False,
+                              key=f"nprow_{'first_' if i == 0 else ''}{section}_{pool}_{slug}"):
+                st.markdown(row_html(r), unsafe_allow_html=True, width="stretch")
+                if started:
+                    st.markdown("<span class='np-lockdim' title='Game started'>⏱</span>", unsafe_allow_html=True,
+                                width="content")
+                elif is_held:
+                    with st.popover("🔒", key=f"unpop_{pool}_{slug}", help="Locked — enter the code to unlock"):
+                        code = st.text_input("Code to unlock", type="password", key=f"code_{pool}_{slug}")
+                        if st.button("Unlock", key=f"unlock1_{pool}_{slug}", use_container_width=True):
+                            if code.strip() != UNLOCK_CODE:
+                                st.error("Wrong code.")
+                            else:
+                                _save_hold(pool, season, week, r, held, release=True)
+                else:
+                    if st.button("Lock", key=f"hold_{pool}_{slug}", help="Lock this pick in its spot"):
+                        _save_hold(pool, season, week, r, held, release=False)
+
+
+def _save_hold(pool: str, season: int, week: int, r: dict, held: list[dict], release: bool) -> None:
+    try:
+        if release:
+            new = wk.release_pick(pool, season, week, r["pick"], held)
+            msg = f"Unlocked {r['pick']}. It can move again."
+        else:
+            new = wk.hold_pick(pool, season, week, r, held)
+            msg = f"Locked {r['pick']} at #{r.get('rank')}."
+        st.session_state[f"held_{pool}"] = new
+        st.session_state[f"msg_{pool}"] = ("ok", msg)
+    except Exception as exc:
+        st.session_state[f"msg_{pool}"] = ("warn", f"Couldn't save that lock: {exc}")
+    st.rerun()
+
+
+def show_card(pool: str, rows: list[dict], ctl: dict | None = None) -> None:
     keys = [r for r in rows if r.get("key") == "Y"]
     rest = [r for r in rows if r.get("key") != "Y"]
     exp, mx = wk.expected_points(rows) if rows else (0, 0)
@@ -149,47 +212,17 @@ def show_card(pool: str, rows: list[dict]) -> None:
     if keys:
         st.markdown(f"<div class='section'><span>Key picks</span><span class='n'>double points</span></div>",
                     unsafe_allow_html=True)
-        st.markdown(f"<div class='np-card keys'>{pick_rows(keys)}</div>", unsafe_allow_html=True)
+        if ctl:
+            lockable_rows(keys, "keys", ctl)
+        else:
+            st.markdown(f"<div class='np-card keys'>{pick_rows(keys)}</div>", unsafe_allow_html=True)
     if rest:
         st.markdown(f"<div class='section'><span>The rest of the card</span><span class='n'>{len(rest)}</span></div>",
                     unsafe_allow_html=True)
-        st.markdown(f"<div class='np-card'>{pick_rows(rest)}</div>", unsafe_allow_html=True)
-
-
-def hold_controls(pool: str, season: int, week: int, rows: list[dict], held: list[dict]) -> None:
-    """Nov 6, 2026: lock single picks as you enter them in the pool. A locked pick stays at its rank,
-    key status and line; the model only reshuffles the open spots around it."""
-    held_picks = {h["pick"] for h in held}
-    label = f"Lock picks one at a time · {len(held)} in" if held else "Lock picks one at a time"
-    with st.expander(label, icon=":material/lock:", expanded=bool(held)):
-        st.caption("Entered a pick in the pool already? Lock it here and it stays exactly where it is — "
-                   "same spot, same key, same line. The rest of the card keeps updating around it.")
-        for r in sorted(rows, key=lambda r: int(r.get("rank") or 99)):
-            is_held = r["pick"] in held_picks
-            started = bool(r.get("frozen")) and not is_held
-            c1, c2 = st.columns([3, 1.3], vertical_alignment="center")
-            with c1:
-                st.markdown(f"<div class='np-sub' style='font-size:.9rem'><b>{esc(r.get('rank'))}.</b> "
-                            f"{esc(r['pick'])}{' · KEY' if r.get('key') == 'Y' else ''}"
-                            f"{' · 🔒 locked' if is_held else ''}{' · started' if started else ''}</div>",
-                            unsafe_allow_html=True)
-            with c2:
-                if started:
-                    continue
-                if st.button("Unlock" if is_held else "🔒 Lock", key=f"hold_{pool}_{r['pick']}",
-                             type="secondary" if is_held else "primary", use_container_width=True):
-                    try:
-                        if is_held:
-                            new = wk.release_pick(pool, season, week, r["pick"], held)
-                            msg = f"Unlocked {r['pick']}. It can move again."
-                        else:
-                            new = wk.hold_pick(pool, season, week, r, held)
-                            msg = f"Locked {r['pick']} at #{r.get('rank')}. It won't move."
-                        st.session_state[f"held_{pool}"] = new
-                        st.session_state[f"msg_{pool}"] = ("ok", msg)
-                    except Exception as exc:
-                        st.session_state[f"msg_{pool}"] = ("warn", f"Couldn't save that lock: {exc}")
-                    st.rerun()
+        if ctl:
+            lockable_rows(rest, "rest", ctl)
+        else:
+            st.markdown(f"<div class='np-card'>{pick_rows(rest)}</div>", unsafe_allow_html=True)
 
 
 def paste_form(pool: str, season: int, week: int) -> None:
@@ -329,11 +362,13 @@ with tab_now:
 
         st.markdown(f"<div class='np-note'>{note}</div>", unsafe_allow_html=True)
         if rows:
-            show_card(pool, rows)
+            ctl = None if preview or locked else {"pool": pool, "season": season, "week": week, "held": held}
+            if ctl:
+                st.caption("Tap Lock on a pick once it's in the pool — it locks in its spot and won't move. "
+                           "Tap 🔒 and enter your code to unlock.")
+            show_card(pool, rows, ctl)
             if not preview:
                 show_tiebreaker(pool, season, week, pasted or slate)
-            if not preview and not locked:
-                hold_controls(pool, season, week, rows, held)
             if preview:
                 st.caption("Lock becomes available once Clay's real lines are in (this is an early look).")
             elif st.button("🔒 Lock my picks — I submitted this card", key=f"lock_{pool}", type="primary",
