@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-06T11:15:35.118684Z",
+ "ran_at": "2026-11-06T11:30:36.317938Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -46,9 +46,23 @@
     {
      "ticker": "KXSAUDIPLGAME-26NOV06FATRIY-FAT",
      "side": "NO",
-     "ask": 0.55,
+     "ask": 0.54,
      "fair": 0.995,
-     "edge": 0.4272
+     "edge": 0.4372
+    },
+    {
+     "ticker": "KXEKSTRAKLASAGAME-26NOV06WISCRA-CRA",
+     "side": "YES",
+     "ask": 0.24,
+     "fair": 0.535,
+     "edge": 0.2821
+    },
+    {
+     "ticker": "KXLIGAFGAME-26NOV08BARMAD-BAR",
+     "side": "NO",
+     "ask": 0.18,
+     "fair": 0.465,
+     "edge": 0.2746
     },
     {
      "ticker": "KXNCAAFGAME-26NOV07MORGDSU-DSU",
@@ -56,13 +70,6 @@
      "ask": 0.6,
      "fair": 0.88,
      "edge": 0.2631
-    },
-    {
-     "ticker": "KXLIGAFGAME-26NOV08BARMAD-BAR",
-     "side": "NO",
-     "ask": 0.2,
-     "fair": 0.465,
-     "edge": 0.2538
     },
     {
      "ticker": "KXSAUDIPLGAME-26NOV07FAIDIR-FAI",
@@ -79,31 +86,32 @@
      "edge": 0.154
     },
     {
-     "ticker": "KXEWSLGAME-26NOV08AVLMNU-AVL",
+     "ticker": "KXLIGAFGAME-26NOV08BARMAD-MAD",
      "side": "YES",
-     "ask": 0.21,
-     "fair": 0.305,
-     "edge": 0.0833
-    },
-    {
-     "ticker": "KXSAUDIPLGAME-26NOV07AASALT-ALT",
-     "side": "NO",
-     "ask": 0.91,
-     "fair": 0.9935,
-     "edge": 0.0775
+     "ask": 0.13,
+     "fair": 0.255,
+     "edge": 0.117
     }
    ],
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 216,
-    "kalshi_events": 1700,
-    "matched": 117,
-    "priced": 219,
+    "poly_games": 223,
+    "kalshi_events": 1694,
+    "matched": 121,
+    "priced": 226,
     "best_gaps": [
+     [
+      0.295,
+      "KXEKSTRAKLASAGAME-26NOV06WISCRA-CRA"
+     ],
      [
       0.28,
       "KXNCAAFGAME-26NOV07MORGDSU-DSU"
+     ],
+     [
+      0.125,
+      "KXLIGAFGAME-26NOV08BARMAD-MAD"
      ],
      [
       0.095,
@@ -115,10 +123,6 @@
      ],
      [
       0.055,
-      "KXLIGAFGAME-26NOV08BARMAD-MAD"
-     ],
-     [
-      0.055,
       "KXCS2GAME-26NOV061400LOWYOU-YOU"
      ],
      [
@@ -126,12 +130,8 @@
       "KXCODGAME-26NOV061100CRRG2M-G2M"
      ],
      [
-      0.015,
-      "KXCS2GAME-26NOV060700ILLHON-HON"
-     ],
-     [
-      0.01,
-      "KXBRASILEIROGAME-26NOV06VITFLU-FLU"
+      0.025,
+      "KXCS2GAME-26NOV061200THOSIN-THO"
      ]
     ]
    }
@@ -143,13 +143,13 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 0,
+   "opened": 1,
    "skipped": {
-    "already_holding": 3,
+    "already_holding": 2,
     "same_game": 1
    },
    "diag": {
-    "skipped_settles_late": 1
+    "skipped_settles_late": 2
    }
   },
   "crypto": {
@@ -162,8 +162,8 @@
    "diag": {
     "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.005770347561533642,
-     "ETH-USD": 0.007792423251474457
+     "BTC-USD": 0.005770764394621919,
+     "ETH-USD": 0.007794926265951923
     },
     "best": []
    }
@@ -176,8 +176,8 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 22,
-  "settled": 0
+  "marked": 18,
+  "settled": 1
  },
  "shadow_update": {
   "marked": 14,
@@ -207,16 +207,16 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 2437,
-   "open": 22,
-   "won": 1366,
-   "lost": 1049,
-   "pl": -442.66999999999894,
-   "risked": 24214.260000000042,
-   "clv_sum": 3.9400000000000546,
-   "clv_n": 2375,
-   "roi": -0.018281376346004304,
-   "clv": 0.0016589473684210756
+   "picks": 2438,
+   "open": 20,
+   "won": 1368,
+   "lost": 1050,
+   "pl": -429.21999999999895,
+   "risked": 24244.810000000038,
+   "clv_sum": 61.940000000000055,
+   "clv_n": 2378,
+   "roi": -0.017703582746162922,
+   "clv": 0.026047098402018527
   },
   {
    "strategy": "weather",
