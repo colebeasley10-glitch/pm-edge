@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-06
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-06T12:45:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-06T13:00:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -74,7 +74,7 @@ Bankroll $487.79 · 11-13-0 · logged this run 0 · open 23
 
 ## Data gaps
 
-- no line posted yet (18): Midway Eagles @ Eastern Kentucky Colonels, Roberts Wesleyan Redhawks @ Kent State Golden Flashes, Newberry Wolves @ Charleston Cougars, Erskine Flying Fleet @ The Citadel Bulldogs, New College Mighty Banyans @ Florida Gulf Coast Eagles, Michigan Dearborn Wolves @ Cleveland State Vikings, Alma Scots @ Central Michigan Chippewas, Texas Lutheran Bulldogs @ Stephen F. Austin Lumberjacks, Truman State Bulldogs @ Missouri State Bears, Mississippi U for Women Owls @ Alabama A&M Bulldogs, Briar Cliff Chargers @ South Dakota State Jackrabbits, Lincoln (CA) Oaklanders @ Loyola Marymount Lions, Bethesda Flames @ Hawai'i Rainbow Warriors, Morehead State Eagles @ Louisville Cardinals, North Dakota Fighting Hawks @ Winthrop Eagles …
+- no line posted yet (25): Midway Eagles @ Eastern Kentucky Colonels, Roberts Wesleyan Redhawks @ Kent State Golden Flashes, Newberry Wolves @ Charleston Cougars, Erskine Flying Fleet @ The Citadel Bulldogs, New College Mighty Banyans @ Florida Gulf Coast Eagles, Michigan Dearborn Wolves @ Cleveland State Vikings, Alma Scots @ Central Michigan Chippewas, Texas Lutheran Bulldogs @ Stephen F. Austin Lumberjacks, Truman State Bulldogs @ Missouri State Bears, Mississippi U for Women Owls @ Alabama A&M Bulldogs, Briar Cliff Chargers @ South Dakota State Jackrabbits, Lincoln (CA) Oaklanders @ Loyola Marymount Lions, Bethesda Flames @ Hawai'i Rainbow Warriors, Morehead State Eagles @ Louisville Cardinals, North Dakota Fighting Hawks @ Winthrop Eagles …
 - possession data coverage: 1.0
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
