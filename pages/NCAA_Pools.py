@@ -38,6 +38,8 @@ st.markdown("""<style>
 .np-right small { display:block; color:var(--muted); font-size:.7rem; }
 .np-key { font-size:.62rem; font-weight:800; letter-spacing:.06em; color:#111; background:var(--gold);
           border-radius:999px; padding:.1rem .45rem; margin-left:.4rem; vertical-align:middle; }
+.np-held { font-size:.62rem; font-weight:800; letter-spacing:.04em; color:var(--text); background:var(--deep);
+           border:1px solid var(--line, rgba(127,127,127,.3)); border-radius:999px; padding:.12rem .45rem; margin-left:.4rem; }
 .np-res { font-size:.66rem; font-weight:800; border-radius:999px; padding:.12rem .5rem; margin-left:.4rem; }
 .np-res.W { color:var(--up); background:rgba(34,197,94,.1); } .np-res.L { color:var(--down); background:rgba(240,82,82,.1); }
 .np-res.P { color:var(--muted); background:var(--deep); }
@@ -109,6 +111,8 @@ def pick_rows(rows: list[dict], show_stake: bool = True) -> str:
             right += f"<small>${wk.stake(int(r['rank'])):.0f}</small>"
         res_html = f"<span class='np-res {res}'>{res}</span>" if res else ""
         key_html = "<span class='np-key'>KEY ×2</span>" if key else ""
+        if r.get("held"):                         # Nov 6, 2026: locked in its spot
+            key_html += "<span class='np-held'>🔒 IN</span>"
         out.append(
             f"<div class='np-row'><div class='np-rank'>{esc(r.get('rank'))}</div><div class='np-main'>"
             f"<div class='np-pick'>{esc(r['pick'])}{key_html}{res_html}</div>"
@@ -150,6 +154,42 @@ def show_card(pool: str, rows: list[dict]) -> None:
         st.markdown(f"<div class='section'><span>The rest of the card</span><span class='n'>{len(rest)}</span></div>",
                     unsafe_allow_html=True)
         st.markdown(f"<div class='np-card'>{pick_rows(rest)}</div>", unsafe_allow_html=True)
+
+
+def hold_controls(pool: str, season: int, week: int, rows: list[dict], held: list[dict]) -> None:
+    """Nov 6, 2026: lock single picks as you enter them in the pool. A locked pick stays at its rank,
+    key status and line; the model only reshuffles the open spots around it."""
+    held_picks = {h["pick"] for h in held}
+    label = f"Lock picks one at a time · {len(held)} in" if held else "Lock picks one at a time"
+    with st.expander(label, icon=":material/lock:", expanded=bool(held)):
+        st.caption("Entered a pick in the pool already? Lock it here and it stays exactly where it is — "
+                   "same spot, same key, same line. The rest of the card keeps updating around it.")
+        for r in sorted(rows, key=lambda r: int(r.get("rank") or 99)):
+            is_held = r["pick"] in held_picks
+            started = bool(r.get("frozen")) and not is_held
+            c1, c2 = st.columns([3, 1.3], vertical_alignment="center")
+            with c1:
+                st.markdown(f"<div class='np-sub' style='font-size:.9rem'><b>{esc(r.get('rank'))}.</b> "
+                            f"{esc(r['pick'])}{' · KEY' if r.get('key') == 'Y' else ''}"
+                            f"{' · 🔒 locked' if is_held else ''}{' · started' if started else ''}</div>",
+                            unsafe_allow_html=True)
+            with c2:
+                if started:
+                    continue
+                if st.button("Unlock" if is_held else "🔒 Lock", key=f"hold_{pool}_{r['pick']}",
+                             type="secondary" if is_held else "primary", use_container_width=True):
+                    try:
+                        if is_held:
+                            new = wk.release_pick(pool, season, week, r["pick"], held)
+                            msg = f"Unlocked {r['pick']}. It can move again."
+                        else:
+                            new = wk.hold_pick(pool, season, week, r, held)
+                            msg = f"Locked {r['pick']} at #{r.get('rank')}. It won't move."
+                        st.session_state[f"held_{pool}"] = new
+                        st.session_state[f"msg_{pool}"] = ("ok", msg)
+                    except Exception as exc:
+                        st.session_state[f"msg_{pool}"] = ("warn", f"Couldn't save that lock: {exc}")
+                    st.rerun()
 
 
 def paste_form(pool: str, season: int, week: int) -> None:
@@ -210,18 +250,30 @@ with tab_now:
         saved = wk._csv(wk.card_path(pool, season, week))
         pasted = st.session_state.get(f"slate_{pool}")
         slate = wk._csv(wk.slate_path(pool, season, week))
+        held = st.session_state.get(f"held_{pool}")
+        if held is None:
+            held = wk.load_held(pool, season, week)
         if pasted:
-            built = wk.build(pool, pasted, games, now=NOW)
+            built = wk.build(pool, pasted, games, now=NOW,
+                             pinned=wk.live_pinned(pool, season, week, saved, pasted, NOW, held))
             rows = built["rows"]
             wk.grade_rows(rows, games)
             note = "Built just now from the lines you entered and the newest market read."
+        elif saved and held and slate and not locked:
+            # Nov 6, 2026: show held picks right away instead of waiting for the hourly refresh
+            built = wk.build(pool, slate, games, now=NOW,
+                             pinned=wk.live_pinned(pool, season, week, saved, slate, NOW, held))
+            rows = built["rows"]
+            wk.grade_rows(rows, games)
+            note = ("Your locked picks stay put; the open spots refresh hourly with the newest market until "
+                    "Saturday noon.")
         elif saved:
             rows = saved
             note = ("Locked at Saturday noon." if locked else
                     "Refreshes hourly with the newest market until Saturday noon; picks freeze as their games kick off.")
             built = None
         elif slate:
-            built = wk.build(pool, slate, games, now=NOW)
+            built = wk.build(pool, slate, games, now=NOW, pinned=wk.merge_held([], held))
             rows = built["rows"]
             wk.grade_rows(rows, games)
             note = "Built live from the saved lines and the newest market read."
@@ -280,6 +332,8 @@ with tab_now:
             show_card(pool, rows)
             if not preview:
                 show_tiebreaker(pool, season, week, pasted or slate)
+            if not preview and not locked:
+                hold_controls(pool, season, week, rows, held)
             if preview:
                 st.caption("Lock becomes available once Clay's real lines are in (this is an early look).")
             elif st.button("🔒 Lock my picks — I submitted this card", key=f"lock_{pool}", type="primary",

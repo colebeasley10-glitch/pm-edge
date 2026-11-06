@@ -37,13 +37,15 @@ DATA = ROOT / "ncaa_pool" / "data"
 SLATES = DATA / "slates"
 CARDS = DATA / "cards"
 MINE = DATA / "my_picks"                # Nov 1, 2026: "Lock my picks" -- exactly what Cole submitted
+HELD = DATA / "held"                    # Nov 6, 2026: single picks Cole already entered -- frozen in their spot
 GRADER = ROOT / "ncaa_grader" / "data" / "picks.csv"
 ET = ZoneInfo("America/New_York")
 STAKE_KEY, STAKE_OTHER = 10.0, 5.0     # Cole's staking: $10 on ranks 1-3, $5 on ranks 4-12
 WIN_AT_110 = 100 / 110
 LOCK_HOUR_ET = 12                       # picks lock Saturday noon ET
 CARD_FIELDS = ["pool", "season", "week", "rank", "key", "pick", "kind", "side", "away", "home", "line",
-               "prob", "value_pts", "market", "src", "kickoff", "made_at", "frozen", "home_pts", "away_pts", "result"]
+               "prob", "value_pts", "market", "src", "kickoff", "made_at", "frozen", "home_pts", "away_pts", "result",
+               "held"]
 
 
 def _csv(p: Path) -> list[dict]:
@@ -303,10 +305,23 @@ def build(pool: str, slate: list[dict], games: dict, *, now: datetime, preview: 
                      "kickoff": info.kickoff.isoformat().replace("+00:00", "Z") if info and info.kickoff else "",
                      "made_at": now.isoformat(timespec="minutes").replace("+00:00", "Z"), "frozen": "",
                      "home_pts": "", "away_pts": "", "result": ""})
-    # keys first, then by chance to score
-    rows.sort(key=lambda r: (r["key"] != "Y", -float(r["prob"] or 0)))
-    for i, r in enumerate(rows, 1):
-        r["rank"] = i
+    # keys first, then by chance to score. Nov 6, 2026: a held pick ("lock this one in its spot") keeps its
+    # rank; everything else fills the open ranks in order.
+    held = [r for r in rows if r.get("held")]
+    taken = set()
+    for r in held:
+        try:
+            rk = int(r.get("rank") or 0)
+        except ValueError:
+            rk = 0
+        r["rank"] = rk if 1 <= rk <= max(n, len(rows)) and rk not in taken else 0
+        taken.add(r["rank"])
+    free = sorted((r for r in rows if not r.get("held") or not r["rank"]),
+                  key=lambda r: (r["key"] != "Y", -float(r["prob"] or 0)))
+    slots = (i for i in range(1, len(rows) + 1 + len(taken)) if i not in taken)
+    for r in free:
+        r["rank"] = next(slots)
+    rows.sort(key=lambda r: int(r["rank"]))
     return {"rows": rows, "missing": missing, "bench": [(o.label, o.prob) for o in card["bench"]],
             "preview": preview}
 
@@ -435,6 +450,8 @@ def _refresh(cp: Path, pool: str, season: int, week: int, slate: list[dict], gam
             pinned = [r for r in pinned if r not in gone]
             if gone and cp.parent == CARDS:
                 _save_missed(pool, season, week, gone)
+        if cp.parent == CARDS:                     # Nov 6, 2026: held picks (main card only, not the shadows)
+            pinned = merge_held(pinned, load_held(pool, season, week))
         rows = build(pool, slate, games, now=now, pinned=pinned, market=market, fade=fade)["rows"]
         info["rebuilt"] += 1
     for r in rows:
@@ -711,6 +728,65 @@ def lock_picks(pool: str, season: int, week: int, rows: list[dict], now: datetim
 def unlock_picks(pool: str, season: int, week: int, session=None) -> None:
     _github_write(f"ncaa_pool/data/my_picks/{pool}_{season}_w{week}.csv", None,
                   f"NCAA {pool} pool: unlocked my picks, week {week}", session)
+
+
+# ------------------------------------------------------------------ "Lock this pick" (Nov 6, 2026)
+# Cole enters picks in the pool one at a time (e.g. TCU on Friday morning). Once a pick is in, the model
+# must not move it: a held pick stays on the card at the same rank with the same key status and line, and
+# the model only rebuilds the open spots around it. Held picks live in data/held/<pool>_<season>_w<week>.csv.
+def held_path(pool: str, season: int, week: int) -> Path:
+    return HELD / f"{pool}_{season}_w{week}.csv"
+
+
+def load_held(pool: str, season: int, week: int) -> list[dict]:
+    return _csv(held_path(pool, season, week))
+
+
+def merge_held(pinned: list[dict], held: list[dict]) -> list[dict]:
+    """Kicked-off picks + held picks, one row per game; the held copy wins (it keeps its rank)."""
+    games = {(h.get("away"), h.get("home")) for h in held}
+    out = [r for r in pinned if (r.get("away"), r.get("home")) not in games]
+    return out + [{**h, "held": "Y", "frozen": "Y"} for h in held]
+
+
+def _render_held(rows: list[dict]) -> str:
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=CARD_FIELDS + ["locked_at"], extrasaction="ignore", lineterminator="\n")
+    w.writeheader()
+    w.writerows(rows)
+    return buf.getvalue()
+
+
+def hold_pick(pool: str, season: int, week: int, row: dict, held: list[dict] | None = None,
+              now: datetime | None = None, session=None) -> list[dict]:
+    """Lock one pick where it is on the card (rank, key, line). Returns the new held list."""
+    at = (now or datetime.now(timezone.utc)).isoformat(timespec="minutes").replace("+00:00", "Z")
+    held = load_held(pool, season, week) if held is None else held
+    game = (row.get("away"), row.get("home"))
+    held = [h for h in held if (h.get("away"), h.get("home")) != game]
+    held.append({**row, "season": season, "week": week, "held": "Y", "frozen": "Y", "locked_at": at})
+    held.sort(key=lambda r: int(r.get("rank") or 99))
+    _github_write(f"ncaa_pool/data/held/{pool}_{season}_w{week}.csv", _render_held(held),
+                  f"NCAA {pool} pool: locked {row.get('pick')} in its spot, week {week}", session)
+    return held
+
+
+def release_pick(pool: str, season: int, week: int, pick: str, held: list[dict] | None = None,
+                 session=None) -> list[dict]:
+    held = load_held(pool, season, week) if held is None else held
+    held = [h for h in held if h.get("pick") != pick]
+    _github_write(f"ncaa_pool/data/held/{pool}_{season}_w{week}.csv", _render_held(held) if held else None,
+                  f"NCAA {pool} pool: unlocked {pick}, week {week}", session)
+    return held
+
+
+def live_pinned(pool: str, season: int, week: int, saved: list[dict], slate: list[dict], now: datetime,
+                held: list[dict] | None = None) -> list[dict]:
+    """What the next hourly refresh would pin: kicked-off picks from the saved card + held picks."""
+    pinned = [dict(r, frozen="Y") for r in saved if (_dt(r.get("kickoff")) or now + timedelta(days=1)) <= now]
+    dropped = _excluded_games(slate)
+    pinned = [r for r in pinned if (r.get("away"), r.get("home")) not in dropped]
+    return merge_held(pinned, load_held(pool, season, week) if held is None else held)
 
 
 def diff(mine: list[dict], model: list[dict]) -> dict:

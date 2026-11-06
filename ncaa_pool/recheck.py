@@ -9,7 +9,7 @@ card before kickoff. Alerts now run all week, every time the NCAA grader workflo
      card he was sent. One alert per distinct card; quiet 12am-7am ET (changes made overnight go out at 7am).
   2. Early-game alert -- a card pick whose game kicks off before Saturday (Thu/Fri night) gets its own alert
      about 3 hours before kickoff, so it can be entered in the pool before that game locks. Once per pick.
-     Not sent if that pick is already in his locked SharpIQ picks.
+     Not sent if that pick is already in his locked SharpIQ picks or locked on its own ("Lock this pick").
   3. Saturday reminder -- if a pool still isn't locked in SharpIQ on Saturday morning, one reminder with the keys.
 
 Picks in early games are flagged with their kickoff time in every alert. Paper only: nothing here bets.
@@ -143,7 +143,7 @@ def run(now: datetime | None = None, send=push) -> list[str]:
         key = f"{pool}_{season}_w{week}"
         mine = wk._csv(wk.mine_path(pool, season, week))
         tb = wk.load_tiebreaker(pool, season, week)
-        mine_picks = {r["pick"] for r in mine}
+        mine_picks = {r["pick"] for r in mine} | {r["pick"] for r in wk.load_held(pool, season, week)}
 
         # 1. card alerts (new card, or a change)
         if not quiet:
