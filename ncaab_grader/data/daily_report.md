@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-06
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-06T23:30:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-06T23:45:19+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -75,12 +75,13 @@ WHY: Model line Missouri Tigers -5.5 vs market -2.5 (+2.8 pts) from opponent-adj
 LOGGED: 2026-11-06T01:15:23+00:00 · model ncaab_v1
 ```
 
-## Watch list (14) — positive EV but not a qualified bet
+## Watch list (15) — positive EV but not a qualified bet
 
 - Colorado Buffaloes ML +124 (+124) · San Diego State Aztecs at Colorado Buffaloes · Sat 3:30 PM ET · EV +7.6% · min +114
 - Portland Pilots ML -120 (-120) · UT Arlington Mavericks at Portland Pilots · Fri 10:30 PM ET · EV +6.2% · min -129
 - Michigan Wolverines ML +190 (+190) · UConn Huskies at Michigan Wolverines · Fri 8:00 PM ET · EV +4.8% · min +185
 - Missouri Tigers ML -142 (-142) · Saint Louis Billikens at Missouri Tigers · Fri 7:00 PM ET · EV +4.7% · min -148
+- Marshall Thundering Herd ML -135 (-135) · Toledo Rockets at Marshall Thundering Herd · Sat 2:00 PM ET · EV +3.0% · min -135
 - OVER 150.5 (-105) · Northern Colorado Bears at Arizona State Sun Devils · Fri 9:00 PM ET · EV +1.6% · min -102
 - OVER 169.5 (-105) · Northern Kentucky Norse at Texas A&M Aggies · Fri 8:00 PM ET · EV +1.6% · min -102
 - OVER 142.5 (-105) · Coppin State Eagles at George Mason Patriots · Fri 7:00 PM ET · EV +1.6% · min -102
@@ -88,15 +89,14 @@ LOGGED: 2026-11-06T01:15:23+00:00 · model ncaab_v1
 - Elon Phoenix ML -290 (-290) · UNC Greensboro Spartans at Elon Phoenix · Fri 7:00 PM ET · EV +1.4% · min -274
 - UIC Flames ML -535 (-535) · Robert Morris Colonials at UIC Flames · Fri 8:00 PM ET · EV +1.2% · min -481
 - UIC Flames -11.5 (+100) · Robert Morris Colonials at UIC Flames · Fri 8:00 PM ET · EV +1.0% · min +102
-- Alabama Crimson Tide ML -8000 (-8000) · Arkansas State Red Wolves at Alabama Crimson Tide · Fri 7:30 PM ET · EV +0.1% · min -2404
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $487.79 · 11-13-0 · logged this run 0 · open 36
+Bankroll $487.79 · 11-13-0 · logged this run 5 · open 41
 
 ## Data gaps
 
-- no line posted yet (30): Midway Eagles @ Eastern Kentucky Colonels, Roberts Wesleyan Redhawks @ Kent State Golden Flashes, Newberry Wolves @ Charleston Cougars, Erskine Flying Fleet @ The Citadel Bulldogs, New College Mighty Banyans @ Florida Gulf Coast Eagles, Michigan Dearborn Wolves @ Cleveland State Vikings, Alma Scots @ Central Michigan Chippewas, Texas Lutheran Bulldogs @ Stephen F. Austin Lumberjacks, Truman State Bulldogs @ Missouri State Bears, Mississippi U for Women Owls @ Alabama A&M Bulldogs, Briar Cliff Chargers @ South Dakota State Jackrabbits, Lincoln (CA) Oaklanders @ Loyola Marymount Lions, Bethesda Flames @ Hawai'i Rainbow Warriors, Morehead State Eagles @ Louisville Cardinals, North Dakota Fighting Hawks @ Winthrop Eagles …
-- possession data coverage: 1.0
+- no line posted yet (30): Midway Eagles @ Eastern Kentucky Colonels, Roberts Wesleyan Redhawks @ Kent State Golden Flashes, Newberry Wolves @ Charleston Cougars, Erskine Flying Fleet @ The Citadel Bulldogs, New College Mighty Banyans @ Florida Gulf Coast Eagles, Michigan Dearborn Wolves @ Cleveland State Vikings, Alma Scots @ Central Michigan Chippewas, Texas Lutheran Bulldogs @ Stephen F. Austin Lumberjacks, Truman State Bulldogs @ Missouri State Bears, Mississippi U for Women Owls @ Alabama A&M Bulldogs, Briar Cliff Chargers @ South Dakota State Jackrabbits, Lincoln (CA) Oaklanders @ Loyola Marymount Lions, Bethesda Flames @ Hawai'i Rainbow Warriors, City College NY Beavers @ Fairleigh Dickinson Knights, Andrew Fighting Tigers @ Georgia State Panthers …
+- possession data coverage: 0.995
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
