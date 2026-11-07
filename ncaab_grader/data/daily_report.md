@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-06
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-07T02:00:30+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-07T02:15:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -42,8 +42,8 @@ LOGGED: 2026-11-06T20:00:29+00:00 · model ncaab_v1
 - Samford Bulldogs ML +575 (+575) · Samford Bulldogs at UNLV Rebels · Sat 4:00 PM ET · EV +2.2% · min +580
 - North Carolina Central Eagles ML +575 (+575) · North Carolina Central Eagles at Longwood Lancers · Sat 3:00 PM ET · EV +2.2% · min +581
 - OVER 150.5 (-105) · Omaha Mavericks at Utah State Aggies · Sat 4:00 PM ET · EV +1.6% · min -102
-- OVER 146.5 (-105) · St. Bonaventure Bonnies at Canisius Golden Griffins · Sat 7:00 PM ET · EV +1.6% · min -102
 - OVER 148.5 (-105) · North Carolina Central Eagles at Longwood Lancers · Sat 3:00 PM ET · EV +1.6% · min -102
+- OVER 146.5 (-105) · St. Bonaventure Bonnies at Canisius Golden Griffins · Sat 7:00 PM ET · EV +1.6% · min -102
 - OVER 146.5 (-105) · Long Island University Sharks at La Salle Explorers · Sat 3:30 PM ET · EV +1.5% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
