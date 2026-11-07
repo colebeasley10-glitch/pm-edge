@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-07
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-07T21:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-07T21:30:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -25,11 +25,11 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $500.97 · 32-30-0 · logged this run 0 · open 19
+Bankroll $511.12 · 34-30-0 · logged this run 0 · open 17
 
 ## Data gaps
 
-- no line posted yet (30): East West Phantoms @ Lindenwood Lions, Cheyney (PA) Wolves @ Maryland Eastern Shore Hawks, Albion Britons @ Purdue Fort Wayne Mastodons, Central State Marauders @ Duquesne Dukes, Northwestern (OK) Rangers @ Oral Roberts Golden Eagles, Bethesda Flames @ Southern Utah Thunderbirds, Bethesda Flames @ Pepperdine Waves, Iona Gaels @ St. John's Red Storm, Ripon Red Hawks @ Milwaukee Panthers, Princeton Tigers @ Siena Saints, Southeast Missouri State Redhawks @ South Carolina Gamecocks, Marist Red Foxes @ UMass Lowell River Hawks, Sacred Heart Pioneers @ New Hampshire Wildcats, Manhattan Jaspers @ Maine Black Bears, Fairfield Stags @ Bryant Bulldogs …
-- possession data coverage: 0.996
+- no line posted yet (30): Albion Britons @ Purdue Fort Wayne Mastodons, Central State Marauders @ Duquesne Dukes, Northwestern (OK) Rangers @ Oral Roberts Golden Eagles, Bethesda Flames @ Southern Utah Thunderbirds, Bethesda Flames @ Pepperdine Waves, Iona Gaels @ St. John's Red Storm, Ripon Red Hawks @ Milwaukee Panthers, Princeton Tigers @ Siena Saints, Southeast Missouri State Redhawks @ South Carolina Gamecocks, Marist Red Foxes @ UMass Lowell River Hawks, Sacred Heart Pioneers @ New Hampshire Wildcats, Manhattan Jaspers @ Maine Black Bears, Fairfield Stags @ Bryant Bulldogs, Central Penn Knights @ Navy Midshipmen, Harvard Crimson @ Chicago Maroons …
+- possession data coverage: 0.981
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
