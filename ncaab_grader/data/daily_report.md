@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-06
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-07T00:15:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-07T00:30:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -61,18 +61,18 @@ LOGGED: 2026-11-05T19:00:31+00:00 · model ncaab_v1
 - Marshall Thundering Herd ML -135 (-135) · Toledo Rockets at Marshall Thundering Herd · Sat 2:00 PM ET · EV +3.0% · min -135
 - OVER 150.5 (-105) · Northern Colorado Bears at Arizona State Sun Devils · Fri 9:00 PM ET · EV +1.6% · min -102
 - OVER 169.5 (-105) · Northern Kentucky Norse at Texas A&M Aggies · Fri 8:00 PM ET · EV +1.6% · min -102
+- OVER 154.5 (-105) · Northern Arizona Lumberjacks at New Mexico Lobos · Sat 6:00 PM ET · EV +1.5% · min -102
 - UIC Flames ML -535 (-535) · Robert Morris Colonials at UIC Flames · Fri 8:00 PM ET · EV +1.2% · min -481
 - UIC Flames -11.5 (+100) · Robert Morris Colonials at UIC Flames · Fri 8:00 PM ET · EV +1.0% · min +102
-- Alabama Crimson Tide ML -8000 (-8000) · Arkansas State Red Wolves at Alabama Crimson Tide · Fri 7:30 PM ET · EV +0.1% · min -2404
 - Texas A&M Aggies ML -6500 (-6500) · Northern Kentucky Norse at Texas A&M Aggies · Fri 8:00 PM ET · EV +0.1% · min -2220
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $487.79 · 11-13-0 · logged this run 0 · open 41
+Bankroll $487.55 · 12-14-0 · logged this run 1 · open 40
 
 ## Data gaps
 
-- no line posted yet (30): Texas Lutheran Bulldogs @ Stephen F. Austin Lumberjacks, Truman State Bulldogs @ Missouri State Bears, Mississippi U for Women Owls @ Alabama A&M Bulldogs, Briar Cliff Chargers @ South Dakota State Jackrabbits, Lincoln (CA) Oaklanders @ Loyola Marymount Lions, Bethesda Flames @ Hawai'i Rainbow Warriors, City College NY Beavers @ Fairleigh Dickinson Knights, Andrew Fighting Tigers @ Georgia State Panthers, Boyce Bulldogs @ Liberty Flames, Loyola New Orleans Wolfpack @ LSU New Orleans Privateers, Lamar Cardinals @ Abilene Christian Wildcats, North Carolina Central Eagles @ Longwood Lancers, Howard Payne Yellow Jackets @ Sam Houston Bearkats, Long Island University Sharks @ La Salle Explorers, Omaha Mavericks @ Utah State Aggies …
-- possession data coverage: 0.995
+- no line posted yet (30): Truman State Bulldogs @ Missouri State Bears, Mississippi U for Women Owls @ Alabama A&M Bulldogs, Briar Cliff Chargers @ South Dakota State Jackrabbits, Lincoln (CA) Oaklanders @ Loyola Marymount Lions, Bethesda Flames @ Hawai'i Rainbow Warriors, City College NY Beavers @ Fairleigh Dickinson Knights, Andrew Fighting Tigers @ Georgia State Panthers, Boyce Bulldogs @ Liberty Flames, Loyola New Orleans Wolfpack @ LSU New Orleans Privateers, Lamar Cardinals @ Abilene Christian Wildcats, North Carolina Central Eagles @ Longwood Lancers, Howard Payne Yellow Jackets @ Sam Houston Bearkats, Long Island University Sharks @ La Salle Explorers, Omaha Mavericks @ Utah State Aggies, Oakland Golden Grizzlies @ UC Santa Barbara Gauchos …
+- possession data coverage: 0.98
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
