@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-07
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-07T21:45:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-07T22:00:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -11,17 +11,15 @@ Markets with a tested rule: SPREAD · others are WATCH only until the backtest s
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (9) — positive EV but not a qualified bet
+## Watch list (7) — positive EV but not a qualified bet
 
 - St. Bonaventure Bonnies ML -305 (-305) · St. Bonaventure Bonnies at Canisius Golden Griffins · Sat 7:00 PM ET · EV +6.4% · min -350
 - Portland State Vikings ML +500 (+500) · Portland State Vikings at Seattle U Redhawks · Sat 10:00 PM ET · EV +4.2% · min +493
 - UC Irvine Anteaters ML -258 (-258) · San José State Spartans at UC Irvine Anteaters · Sat 10:00 PM ET · EV +3.4% · min -262
-- UT Martin Skyhawks ML -130 (-130) · UT Martin Skyhawks at IU Indianapolis Jaguars · Sat 5:00 PM ET · EV +3.1% · min -130
 - UT Rio Grande Valley Vaqueros ML -325 (-325) · Prairie View A&M Panthers at UT Rio Grande Valley Vaqueros · Sat 5:30 PM ET · EV +2.1% · min -314
 - OVER 146.5 (-105) · St. Bonaventure Bonnies at Canisius Golden Griffins · Sat 7:00 PM ET · EV +1.6% · min -102
 - OVER 154.5 (-105) · Northern Arizona Lumberjacks at New Mexico Lobos · Sat 6:00 PM ET · EV +1.5% · min -102
 - OVER 153.5 (-105) · Northwestern State Demons at Murray State Racers · Sat 8:00 PM ET · EV +1.5% · min -102
-- Washington State Cougars ML +575 (+575) · Washington State Cougars at High Point Panthers · Sat 5:00 PM ET · EV +0.6% · min +591
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -30,6 +28,6 @@ Bankroll $511.12 · 34-30-0 · logged this run 0 · open 17
 ## Data gaps
 
 - no line posted yet (30): Albion Britons @ Purdue Fort Wayne Mastodons, Central State Marauders @ Duquesne Dukes, Northwestern (OK) Rangers @ Oral Roberts Golden Eagles, Bethesda Flames @ Southern Utah Thunderbirds, Bethesda Flames @ Pepperdine Waves, Iona Gaels @ St. John's Red Storm, Ripon Red Hawks @ Milwaukee Panthers, Princeton Tigers @ Siena Saints, Southeast Missouri State Redhawks @ South Carolina Gamecocks, Marist Red Foxes @ UMass Lowell River Hawks, Sacred Heart Pioneers @ New Hampshire Wildcats, Manhattan Jaspers @ Maine Black Bears, Fairfield Stags @ Bryant Bulldogs, Central Penn Knights @ Navy Midshipmen, Harvard Crimson @ Chicago Maroons …
-- possession data coverage: 0.981
+- possession data coverage: 0.985
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
