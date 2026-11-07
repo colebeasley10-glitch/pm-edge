@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-06
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-07T02:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-07T02:30:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -52,7 +52,7 @@ Bankroll $487.08 · 14-16-0 · logged this run 0 · open 36
 
 ## Data gaps
 
-- no line posted yet (30): Briar Cliff Chargers @ South Dakota State Jackrabbits, Lincoln (CA) Oaklanders @ Loyola Marymount Lions, Bethesda Flames @ Hawai'i Rainbow Warriors, City College NY Beavers @ Fairleigh Dickinson Knights, Andrew Fighting Tigers @ Georgia State Panthers, Boyce Bulldogs @ Liberty Flames, Loyola New Orleans Wolfpack @ LSU New Orleans Privateers, Lamar Cardinals @ Abilene Christian Wildcats, Howard Payne Yellow Jackets @ Sam Houston Bearkats, Monmouth Hawks @ Rhode Island Rams, Penn State Shenango Nittany Lions @ Mercyhurst Lakers, East West Phantoms @ Lindenwood Lions, Cheyney (PA) Wolves @ Maryland Eastern Shore Hawks, Old Dominion Monarchs @ Bucknell Bison, UT Martin Skyhawks @ IU Indianapolis Jaguars …
+- no line posted yet (29): Lincoln (CA) Oaklanders @ Loyola Marymount Lions, Bethesda Flames @ Hawai'i Rainbow Warriors, City College NY Beavers @ Fairleigh Dickinson Knights, Andrew Fighting Tigers @ Georgia State Panthers, Boyce Bulldogs @ Liberty Flames, Loyola New Orleans Wolfpack @ LSU New Orleans Privateers, Lamar Cardinals @ Abilene Christian Wildcats, Howard Payne Yellow Jackets @ Sam Houston Bearkats, Monmouth Hawks @ Rhode Island Rams, Penn State Shenango Nittany Lions @ Mercyhurst Lakers, East West Phantoms @ Lindenwood Lions, Cheyney (PA) Wolves @ Maryland Eastern Shore Hawks, Old Dominion Monarchs @ Bucknell Bison, UT Martin Skyhawks @ IU Indianapolis Jaguars, SIU Edwardsville Cougars @ Lipscomb Bisons …
 - possession data coverage: 0.975
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
