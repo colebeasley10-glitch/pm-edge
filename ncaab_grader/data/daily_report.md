@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-06
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-07T02:30:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-07T02:45:23+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $509.39 (start $500, at risk $15.00) · ¼-Kelly comparison $506.06
-**Season to date (BET tier):** 2-0-0 · flat P/L $+9.39 (+93.9% on risk) · ¼-Kelly P/L $+6.06 · beat close 0%
+**Paper bankroll:** $504.39 (start $500, at risk $10.00) · ¼-Kelly comparison $501.81
+**Season to date (BET tier):** 2-1-0 · flat P/L $+4.39 (+29.3% on risk) · ¼-Kelly P/L $+1.81 · beat close 0%
 
 ## Qualified bets (1)
 
@@ -48,11 +48,11 @@ LOGGED: 2026-11-06T20:00:29+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $487.08 · 14-16-0 · logged this run 0 · open 36
+Bankroll $518.63 · 23-18-0 · logged this run 1 · open 26
 
 ## Data gaps
 
 - no line posted yet (29): Lincoln (CA) Oaklanders @ Loyola Marymount Lions, Bethesda Flames @ Hawai'i Rainbow Warriors, City College NY Beavers @ Fairleigh Dickinson Knights, Andrew Fighting Tigers @ Georgia State Panthers, Boyce Bulldogs @ Liberty Flames, Loyola New Orleans Wolfpack @ LSU New Orleans Privateers, Lamar Cardinals @ Abilene Christian Wildcats, Howard Payne Yellow Jackets @ Sam Houston Bearkats, Monmouth Hawks @ Rhode Island Rams, Penn State Shenango Nittany Lions @ Mercyhurst Lakers, East West Phantoms @ Lindenwood Lions, Cheyney (PA) Wolves @ Maryland Eastern Shore Hawks, Old Dominion Monarchs @ Bucknell Bison, UT Martin Skyhawks @ IU Indianapolis Jaguars, SIU Edwardsville Cougars @ Lipscomb Bisons …
-- possession data coverage: 0.975
+- possession data coverage: 0.879
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
