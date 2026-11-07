@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-07
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-07T22:15:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-07T22:30:27+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -75,7 +75,7 @@ WHY: Model line Saint Mary's Gaels -1.5 vs market -1.5 (-0.0 pts) from opponent-
 LOGGED: 2026-11-07T22:15:22+00:00 · model ncaab_v1
 ```
 
-## Watch list (17) — positive EV but not a qualified bet
+## Watch list (16) — positive EV but not a qualified bet
 
 - California Golden Bears ML +1200 (+1200) · Houston Cougars at California Golden Bears · Sun 8:30 PM ET · EV +18.8% · min +1027
 - Boise State Broncos ML -115 (-115) · Butler Bulldogs at Boise State Broncos · Sun 2:00 PM ET · EV +10.2% · min -134
@@ -86,13 +86,13 @@ LOGGED: 2026-11-07T22:15:22+00:00 · model ncaab_v1
 - Saint Mary's Gaels ML -115 (-115) · Saint Mary's Gaels at Nevada Wolf Pack · Sun 4:30 PM ET · EV +3.2% · min -115
 - Princeton Tigers ML -118 (-118) · Princeton Tigers at Siena Saints · Sun 1:00 PM ET · EV +3.0% · min -118
 - St. Thomas Tommies ML -270 (-270) · Green Bay Phoenix at St. Thomas Tommies · Sun 2:00 PM ET · EV +2.3% · min -263
-- UT Rio Grande Valley Vaqueros ML -325 (-325) · Prairie View A&M Panthers at UT Rio Grande Valley Vaqueros · Sat 5:30 PM ET · EV +2.1% · min -314
 - Princeton Tigers -1.5 (+102) · Princeton Tigers at Siena Saints · Sun 1:00 PM ET · EV +1.8% · min +102
 - OVER 145.5 (-105) · Houston Cougars at California Golden Bears · Sun 8:30 PM ET · EV +1.7% · min -102
+- OVER 145.5 (-105) · Southeast Missouri State Redhawks at South Carolina Gamecocks · Sun 1:00 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $515.88 · 35-30-0 · logged this run 1 · open 17
+Bankroll $515.88 · 35-30-0 · logged this run 0 · open 17
 
 ## Data gaps
 
