@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-07
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-07T06:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-07T06:30:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,6 +53,6 @@ Bankroll $501.42 · 31-29-0 · logged this run 0 · open 14
 ## Data gaps
 
 - no line posted yet (13): City College NY Beavers @ Fairleigh Dickinson Knights, Andrew Fighting Tigers @ Georgia State Panthers, Boyce Bulldogs @ Liberty Flames, Loyola New Orleans Wolfpack @ LSU New Orleans Privateers, Howard Payne Yellow Jackets @ Sam Houston Bearkats, Penn State Shenango Nittany Lions @ Mercyhurst Lakers, East West Phantoms @ Lindenwood Lions, Cheyney (PA) Wolves @ Maryland Eastern Shore Hawks, Albion Britons @ Purdue Fort Wayne Mastodons, Central State Marauders @ Duquesne Dukes, Northwestern (OK) Rangers @ Oral Roberts Golden Eagles, Bethesda Flames @ Southern Utah Thunderbirds, Bethesda Flames @ Pepperdine Waves
-- possession data coverage: 0.976
+- possession data coverage: 0.988
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
