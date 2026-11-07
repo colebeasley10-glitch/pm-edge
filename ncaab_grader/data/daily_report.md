@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-06
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-07T03:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-07T03:30:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,11 +31,10 @@ WHY: Model line Colorado Buffaloes -4 vs market +2.5 (+6.6 pts) from opponent-ad
 LOGGED: 2026-11-06T20:00:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (14) — positive EV but not a qualified bet
+## Watch list (13) — positive EV but not a qualified bet
 
 - Colorado Buffaloes ML +124 (+124) · San Diego State Aztecs at Colorado Buffaloes · Sat 3:30 PM ET · EV +7.6% · min +114
 - St. Bonaventure Bonnies ML -305 (-305) · St. Bonaventure Bonnies at Canisius Golden Griffins · Sat 7:00 PM ET · EV +6.4% · min -350
-- Portland Pilots ML -120 (-120) · UT Arlington Mavericks at Portland Pilots · Fri 10:30 PM ET · EV +6.2% · min -129
 - Portland State Vikings ML +500 (+500) · Portland State Vikings at Seattle U Redhawks · Sat 10:00 PM ET · EV +4.2% · min +493
 - UC Irvine Anteaters ML -258 (-258) · San José State Spartans at UC Irvine Anteaters · Sat 10:00 PM ET · EV +3.4% · min -262
 - Marshall Thundering Herd ML -135 (-135) · Toledo Rockets at Marshall Thundering Herd · Sat 2:00 PM ET · EV +3.0% · min -135
@@ -45,14 +44,15 @@ LOGGED: 2026-11-06T20:00:29+00:00 · model ncaab_v1
 - OVER 148.5 (-105) · North Carolina Central Eagles at Longwood Lancers · Sat 3:00 PM ET · EV +1.6% · min -102
 - OVER 146.5 (-105) · St. Bonaventure Bonnies at Canisius Golden Griffins · Sat 7:00 PM ET · EV +1.6% · min -102
 - OVER 146.5 (-105) · Long Island University Sharks at La Salle Explorers · Sat 3:30 PM ET · EV +1.5% · min -102
+- OVER 154.5 (-105) · Northern Arizona Lumberjacks at New Mexico Lobos · Sat 6:00 PM ET · EV +1.5% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $518.63 · 23-18-0 · logged this run 0 · open 26
+Bankroll $522.79 · 27-21-0 · logged this run 3 · open 22
 
 ## Data gaps
 
 - no line posted yet (28): Bethesda Flames @ Hawai'i Rainbow Warriors, City College NY Beavers @ Fairleigh Dickinson Knights, Andrew Fighting Tigers @ Georgia State Panthers, Boyce Bulldogs @ Liberty Flames, Loyola New Orleans Wolfpack @ LSU New Orleans Privateers, Lamar Cardinals @ Abilene Christian Wildcats, Howard Payne Yellow Jackets @ Sam Houston Bearkats, Monmouth Hawks @ Rhode Island Rams, Penn State Shenango Nittany Lions @ Mercyhurst Lakers, East West Phantoms @ Lindenwood Lions, Cheyney (PA) Wolves @ Maryland Eastern Shore Hawks, Old Dominion Monarchs @ Bucknell Bison, UT Martin Skyhawks @ IU Indianapolis Jaguars, SIU Edwardsville Cougars @ Lipscomb Bisons, Bellarmine Knights @ Miami (OH) RedHawks …
-- possession data coverage: 0.884
+- possession data coverage: 0.855
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
