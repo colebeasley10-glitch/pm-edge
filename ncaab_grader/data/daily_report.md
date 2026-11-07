@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-07
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-07T22:45:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-07T23:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $499.39 (start $500, at risk $20.00) · ¼-Kelly comparison $496.23
-**Season to date (BET tier):** 2-2-0 · flat P/L $-0.61 (-3.1% on risk) · ¼-Kelly P/L $-3.77 · beat close 0%
+**Paper bankroll:** $494.39 (start $500, at risk $15.00) · ¼-Kelly comparison $486.23
+**Season to date (BET tier):** 2-3-0 · flat P/L $-5.61 (-22.4% on risk) · ¼-Kelly P/L $-13.77 · beat close 0%
 
 ## Qualified bets (3)
 
@@ -92,11 +92,11 @@ LOGGED: 2026-11-07T22:15:22+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $515.88 · 35-30-0 · logged this run 0 · open 17
+Bankroll $520.64 · 36-30-0 · logged this run 1 · open 17
 
 ## Data gaps
 
-- no line posted yet (27): Albion Britons @ Purdue Fort Wayne Mastodons, Central State Marauders @ Duquesne Dukes, Northwestern (OK) Rangers @ Oral Roberts Golden Eagles, Bethesda Flames @ Southern Utah Thunderbirds, Bethesda Flames @ Pepperdine Waves, Iona Gaels @ St. John's Red Storm, Ripon Red Hawks @ Milwaukee Panthers, Marist Red Foxes @ UMass Lowell River Hawks, Sacred Heart Pioneers @ New Hampshire Wildcats, Manhattan Jaspers @ Maine Black Bears, Fairfield Stags @ Bryant Bulldogs, Central Penn Knights @ Navy Midshipmen, Harvard Crimson @ Chicago Maroons, Allen Yellow Jackets @ Wofford Terriers, Keuka Storm @ Cornell Big Red …
+- no line posted yet (25): Albion Britons @ Purdue Fort Wayne Mastodons, Central State Marauders @ Duquesne Dukes, Northwestern (OK) Rangers @ Oral Roberts Golden Eagles, Bethesda Flames @ Southern Utah Thunderbirds, Bethesda Flames @ Pepperdine Waves, Ripon Red Hawks @ Milwaukee Panthers, Marist Red Foxes @ UMass Lowell River Hawks, Sacred Heart Pioneers @ New Hampshire Wildcats, Manhattan Jaspers @ Maine Black Bears, Fairfield Stags @ Bryant Bulldogs, Central Penn Knights @ Navy Midshipmen, Harvard Crimson @ Chicago Maroons, Allen Yellow Jackets @ Wofford Terriers, Keuka Storm @ Cornell Big Red, Merrimack Warriors @ UAlbany Great Danes …
 - possession data coverage: 0.977
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
