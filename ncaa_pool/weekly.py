@@ -29,7 +29,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from ncaa_pool.model import Game, build_card
+from ncaa_pool.model import Game, build_card, options
 from ncaa_pool.run_card import POOLS, _aliases, _f, _norm
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -322,8 +322,12 @@ def build(pool: str, slate: list[dict], games: dict, *, now: datetime, preview: 
     for r in free:
         r["rank"] = next(slots)
     rows.sort(key=lambda r: int(r["rank"]))
+    # Nov 6, 2026: every pickable spread's current chance, so the locked-picks alert can price picks that fell
+    # off the card (recheck only alerts when a change is actually worth making).
+    probs = {o.label: {"prob": round(o.prob, 4), "market": o.extra["market"]}
+             for g in cand for o in options(g) if o.kind == "spread"}
     return {"rows": rows, "missing": missing, "bench": [(o.label, o.prob) for o in card["bench"]],
-            "preview": preview}
+            "preview": preview, "probs": probs}
 
 
 def preview_slate(games: dict) -> list[dict]:
@@ -452,7 +456,11 @@ def _refresh(cp: Path, pool: str, season: int, week: int, slate: list[dict], gam
                 _save_missed(pool, season, week, gone)
         if cp.parent == CARDS:                     # Nov 6, 2026: held picks (main card only, not the shadows)
             pinned = merge_held(pinned, load_held(pool, season, week))
-        rows = build(pool, slate, games, now=now, pinned=pinned, market=market, fade=fade)["rows"]
+        built = build(pool, slate, games, now=now, pinned=pinned, market=market, fade=fade)
+        rows = built["rows"]
+        if cp.parent == CARDS:
+            _write_json(probs_path(pool, season, week), {"at": now.isoformat(timespec="minutes"),
+                                                         "probs": built["probs"]})
         info["rebuilt"] += 1
     for r in rows:
         r["season"], r["week"] = season, week
@@ -461,6 +469,18 @@ def _refresh(cp: Path, pool: str, season: int, week: int, slate: list[dict], gam
     info["graded"] += sum(bool(r.get("result")) for r in rows) - before
     write_card(cp, rows)
     return rows
+
+
+def probs_path(pool: str, season: int, week: int) -> Path:
+    return CARDS / f"{pool}_{season}_w{week}__probs.json"
+
+
+def load_probs(pool: str, season: int, week: int) -> dict:
+    p = probs_path(pool, season, week)
+    try:
+        return json.loads(p.read_text()).get("probs", {}) if p.exists() else {}
+    except ValueError:
+        return {}
 
 
 MISSED = DATA / "missed"

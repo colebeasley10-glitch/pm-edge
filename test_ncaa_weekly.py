@@ -173,7 +173,7 @@ def test_attach_pinnacle_matches_flipped_and_skips_ambiguous(tmp_path):
 
 
 def _variant_setup(tmp_path, monkeypatch):
-    for name in ("SLATES", "CARDS", "VARIANTS", "MINE"):
+    for name in ("SLATES", "CARDS", "VARIANTS", "MINE", "HELD"):
         monkeypatch.setattr(wk, name, tmp_path / name.lower())
     monkeypatch.setattr(wk, "_aliases", lambda: {})
     feed = _feed()
@@ -216,10 +216,35 @@ def test_saturday_recheck_alerts_once_on_change(tmp_path, monkeypatch):
     wk.mine_path("clay", 2026, 10).write_text(wk.render_card(card, "x"))
     assert recheck.run(sat, send) == []                          # locked = model card: no alert
     mine = [dict(r) for r in card]
-    mine[-1]["pick"] = "Somebody +3"
+    mine[-1]["pick"], mine[-1]["prob"] = "Somebody +3", float(card[-1]["prob"]) - 0.005
+    wk.mine_path("clay", 2026, 10).write_text(wk.render_card(mine, "x"))
+    assert recheck.run(sat, send) == []                          # Nov 6: a tiny filler swap isn't worth an alert
+    mine[-1]["prob"] = 0.42                                      # locked pick is now on the wrong side
     wk.mine_path("clay", 2026, 10).write_text(wk.render_card(mine, "x"))
     assert recheck.run(sat, send) == ["clay_2026_w10"] and "Somebody +3" in sent[-1][1]
+    assert "CHANGE NEEDED" in sent[-1][0] and "42%" in sent[-1][1]
     assert recheck.run(sat, send) == []                          # same change: don't repeat
+
+
+def test_locked_alert_reprices_dropped_pick_from_slate_probs(tmp_path, monkeypatch):
+    feed, games = _variant_setup(tmp_path, monkeypatch)
+    monkeypatch.setattr(recheck, "STATE", tmp_path / "state.json")
+    fri = datetime(2026, 11, 7, 1, tzinfo=UTC)                   # Fri 8pm ET: he locks
+    wk.snapshot(fri, feed)
+    probs = wk.load_probs("clay", 2026, 10)
+    card = wk._csv(wk.card_path("clay", 2026, 10))
+    assert all(r["pick"] in probs for r in card)                 # every card pick is in the full-slate prices
+    wk.MINE.mkdir()
+    wk.mine_path("clay", 2026, 10).write_text(wk.render_card(card, "x"))
+    sent = []
+    send = lambda t, m: sent.append((t, m)) or True              # noqa: E731
+    recheck.run(fri, send)
+    sent.clear()
+    mine_now = recheck.current_mine(card, card, probs, fri)
+    assert recheck.material(mine_now, card, fri)[0] is False     # locked = card: nothing to do
+    worse = [dict(r) for r in card]
+    worse[0]["prob"] = 0.30                                      # a locked KEY collapsed overnight
+    assert recheck.material(worse, card, fri)[0] is True
 
 
 def _alert_card(tmp_path, monkeypatch, picks):

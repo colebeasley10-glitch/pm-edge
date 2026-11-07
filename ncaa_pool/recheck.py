@@ -12,6 +12,11 @@ card before kickoff. Alerts now run all week, every time the NCAA grader workflo
      Not sent if that pick is already in his locked SharpIQ picks or locked on its own ("Lock this pick").
   3. Saturday reminder -- if a pool still isn't locked in SharpIQ on Saturday morning, one reminder with the keys.
 
+Nov 6, 2026: once picks are locked in SharpIQ, card alerts only fire when a change is actually worth making --
+Cole locks Friday night and is busy Saturday. "Worth it" = the model card beats his locked entry by at least
+MATERIAL_PTS expected pool points, or a locked pick that hasn't kicked off is now under 50% to cover. Small
+half-point reshuffles at the bottom of the card stay quiet (they're worth ~0.01 pts).
+
 Picks in early games are flagged with their kickoff time in every alert. Paper only: nothing here bets.
 """
 from __future__ import annotations
@@ -27,6 +32,8 @@ START_HOUR_ET = 9                 # Saturday "not locked" reminder window starts
 QUIET_START_ET, QUIET_END_ET = 0, 7
 EARLY_LEAD = timedelta(hours=3)
 POOL_NAMES = {"clay": "Clay's pool", "chappy": "Chappy's pool"}
+MATERIAL_PTS = 0.25               # expected pool points a locked entry must be losing before we alert
+BAD_PROB = 0.50                   # a locked pick under this is on the wrong side now: always alert
 
 
 def _load() -> dict:
@@ -103,6 +110,29 @@ def card_text(model: list[dict]) -> str:
     return "\n".join(out) + f"\nExp. {exp:.1f} of {mx} pts."
 
 
+def current_mine(mine: list[dict], model: list[dict], probs: dict, now: datetime) -> list[dict]:
+    """Locked picks repriced at today's market (card row first, then the full-slate probs; started games and
+    picks we can't price keep the chance they were locked at)."""
+    by_pick = {r["pick"]: r for r in model}
+    out = []
+    for r in mine:
+        k = _kick(r)
+        cur = by_pick.get(r["pick"]) or probs.get(r["pick"])
+        if cur and not r.get("frozen") and not (k and k <= now):
+            out.append({**r, "prob": cur.get("prob"), "market": cur.get("market", r.get("market"))})
+        else:
+            out.append(dict(r))
+    return out
+
+
+def material(mine_now: list[dict], model: list[dict], now: datetime) -> tuple[bool, float, list[dict]]:
+    """(worth changing?, expected points gained by switching to the card, locked picks now under 50%)."""
+    gain = wk.expected_points(model)[0] - wk.expected_points(mine_now)[0]
+    bad = [r for r in mine_now if not r.get("frozen") and not ((_kick(r) or now) < now)
+           and r.get("prob") not in (None, "") and float(r["prob"]) < BAD_PROB]
+    return gain >= MATERIAL_PTS or bool(bad), gain, bad
+
+
 def message(pool: str, mine: list[dict], model: list[dict], tb: dict | None = None,
             locked: bool = True) -> tuple[str, str] | None:
     """Alert text when the model's card differs from `mine` (locked entry or last card sent), else None."""
@@ -149,7 +179,13 @@ def run(now: datetime | None = None, send=push) -> list[str]:
         if not quiet:
             sig = _sig(model) + ("@" + _sig(mine) if mine else "")
             if mine:
-                msg = message(pool, mine, model, tb, locked=True)
+                mine_now = current_mine(mine, model, wk.load_probs(pool, season, week), now)
+                worth, gain, bad = material(mine_now, model, now)
+                msg = message(pool, mine_now, model, tb, locked=True) if worth else None
+                if msg:
+                    head = [f"Worth changing: +{gain:.2f} expected pts."]
+                    head += [f"{r['pick']} is now only {float(r['prob']) * 100:.0f}% to cover." for r in bad]
+                    msg = (f"{POOL_NAMES[pool]}: CHANGE NEEDED before noon", "\n".join(head) + "\n" + msg[1])
             elif not state.get(key + "_card"):
                 msg = (f"{POOL_NAMES[pool]}: week {week} card is up", card_text(model) + tb_line(tb))
             else:
