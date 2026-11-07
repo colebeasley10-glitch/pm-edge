@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-06
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-07T01:45:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-07T02:00:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,24 +31,28 @@ WHY: Model line Colorado Buffaloes -4 vs market +2.5 (+6.6 pts) from opponent-ad
 LOGGED: 2026-11-06T20:00:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (8) — positive EV but not a qualified bet
+## Watch list (14) — positive EV but not a qualified bet
 
 - Colorado Buffaloes ML +124 (+124) · San Diego State Aztecs at Colorado Buffaloes · Sat 3:30 PM ET · EV +7.6% · min +114
+- St. Bonaventure Bonnies ML -305 (-305) · St. Bonaventure Bonnies at Canisius Golden Griffins · Sat 7:00 PM ET · EV +6.4% · min -350
 - Portland Pilots ML -120 (-120) · UT Arlington Mavericks at Portland Pilots · Fri 10:30 PM ET · EV +6.2% · min -129
+- Portland State Vikings ML +500 (+500) · Portland State Vikings at Seattle U Redhawks · Sat 10:00 PM ET · EV +4.2% · min +493
 - UC Irvine Anteaters ML -258 (-258) · San José State Spartans at UC Irvine Anteaters · Sat 10:00 PM ET · EV +3.4% · min -262
 - Marshall Thundering Herd ML -135 (-135) · Toledo Rockets at Marshall Thundering Herd · Sat 2:00 PM ET · EV +3.0% · min -135
 - Samford Bulldogs ML +575 (+575) · Samford Bulldogs at UNLV Rebels · Sat 4:00 PM ET · EV +2.2% · min +580
-- OVER 150.5 (-105) · Northern Colorado Bears at Arizona State Sun Devils · Fri 9:00 PM ET · EV +1.6% · min -102
-- OVER 154.5 (-105) · Northern Arizona Lumberjacks at New Mexico Lobos · Sat 6:00 PM ET · EV +1.5% · min -102
-- Washington State Cougars ML +575 (+575) · Washington State Cougars at High Point Panthers · Sat 5:00 PM ET · EV +0.6% · min +591
+- North Carolina Central Eagles ML +575 (+575) · North Carolina Central Eagles at Longwood Lancers · Sat 3:00 PM ET · EV +2.2% · min +581
+- OVER 150.5 (-105) · Omaha Mavericks at Utah State Aggies · Sat 4:00 PM ET · EV +1.6% · min -102
+- OVER 146.5 (-105) · St. Bonaventure Bonnies at Canisius Golden Griffins · Sat 7:00 PM ET · EV +1.6% · min -102
+- OVER 148.5 (-105) · North Carolina Central Eagles at Longwood Lancers · Sat 3:00 PM ET · EV +1.6% · min -102
+- OVER 146.5 (-105) · Long Island University Sharks at La Salle Explorers · Sat 3:30 PM ET · EV +1.5% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $492.45 · 13-14-0 · logged this run 0 · open 39
+Bankroll $487.08 · 14-16-0 · logged this run 0 · open 36
 
 ## Data gaps
 
-- no line posted yet (30): Briar Cliff Chargers @ South Dakota State Jackrabbits, Lincoln (CA) Oaklanders @ Loyola Marymount Lions, Bethesda Flames @ Hawai'i Rainbow Warriors, City College NY Beavers @ Fairleigh Dickinson Knights, Andrew Fighting Tigers @ Georgia State Panthers, Boyce Bulldogs @ Liberty Flames, Loyola New Orleans Wolfpack @ LSU New Orleans Privateers, Lamar Cardinals @ Abilene Christian Wildcats, North Carolina Central Eagles @ Longwood Lancers, Howard Payne Yellow Jackets @ Sam Houston Bearkats, Long Island University Sharks @ La Salle Explorers, Omaha Mavericks @ Utah State Aggies, Oakland Golden Grizzlies @ UC Santa Barbara Gauchos, Lafayette Leopards @ Saint Joseph's Hawks, Monmouth Hawks @ Rhode Island Rams …
-- possession data coverage: 0.98
+- no line posted yet (30): Briar Cliff Chargers @ South Dakota State Jackrabbits, Lincoln (CA) Oaklanders @ Loyola Marymount Lions, Bethesda Flames @ Hawai'i Rainbow Warriors, City College NY Beavers @ Fairleigh Dickinson Knights, Andrew Fighting Tigers @ Georgia State Panthers, Boyce Bulldogs @ Liberty Flames, Loyola New Orleans Wolfpack @ LSU New Orleans Privateers, Lamar Cardinals @ Abilene Christian Wildcats, Howard Payne Yellow Jackets @ Sam Houston Bearkats, Monmouth Hawks @ Rhode Island Rams, Penn State Shenango Nittany Lions @ Mercyhurst Lakers, East West Phantoms @ Lindenwood Lions, Cheyney (PA) Wolves @ Maryland Eastern Shore Hawks, Old Dominion Monarchs @ Bucknell Bison, UT Martin Skyhawks @ IU Indianapolis Jaguars …
+- possession data coverage: 0.975
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
