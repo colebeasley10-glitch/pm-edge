@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-06
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-07T04:00:30+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-07T04:15:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $504.39 (start $500, at risk $10.00) · ¼-Kelly comparison $501.81
-**Season to date (BET tier):** 2-1-0 · flat P/L $+4.39 (+29.3% on risk) · ¼-Kelly P/L $+1.81 · beat close 0%
+**Paper bankroll:** $499.39 (start $500, at risk $5.00) · ¼-Kelly comparison $496.23
+**Season to date (BET tier):** 2-2-0 · flat P/L $-0.61 (-3.1% on risk) · ¼-Kelly P/L $-3.77 · beat close 0%
 
 ## Qualified bets (1)
 
@@ -48,11 +48,11 @@ LOGGED: 2026-11-06T20:00:29+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $522.79 · 27-21-0 · logged this run 0 · open 22
+Bankroll $521.42 · 31-25-0 · logged this run 0 · open 14
 
 ## Data gaps
 
-- no line posted yet (28): Bethesda Flames @ Hawai'i Rainbow Warriors, City College NY Beavers @ Fairleigh Dickinson Knights, Andrew Fighting Tigers @ Georgia State Panthers, Boyce Bulldogs @ Liberty Flames, Loyola New Orleans Wolfpack @ LSU New Orleans Privateers, Lamar Cardinals @ Abilene Christian Wildcats, Howard Payne Yellow Jackets @ Sam Houston Bearkats, Monmouth Hawks @ Rhode Island Rams, Penn State Shenango Nittany Lions @ Mercyhurst Lakers, East West Phantoms @ Lindenwood Lions, Cheyney (PA) Wolves @ Maryland Eastern Shore Hawks, Old Dominion Monarchs @ Bucknell Bison, UT Martin Skyhawks @ IU Indianapolis Jaguars, SIU Edwardsville Cougars @ Lipscomb Bisons, Bellarmine Knights @ Miami (OH) RedHawks …
-- possession data coverage: 0.936
+- no line posted yet (27): Bethesda Flames @ Hawai'i Rainbow Warriors, City College NY Beavers @ Fairleigh Dickinson Knights, Andrew Fighting Tigers @ Georgia State Panthers, Boyce Bulldogs @ Liberty Flames, Loyola New Orleans Wolfpack @ LSU New Orleans Privateers, Lamar Cardinals @ Abilene Christian Wildcats, Howard Payne Yellow Jackets @ Sam Houston Bearkats, Penn State Shenango Nittany Lions @ Mercyhurst Lakers, East West Phantoms @ Lindenwood Lions, Cheyney (PA) Wolves @ Maryland Eastern Shore Hawks, Old Dominion Monarchs @ Bucknell Bison, UT Martin Skyhawks @ IU Indianapolis Jaguars, SIU Edwardsville Cougars @ Lipscomb Bisons, Bellarmine Knights @ Miami (OH) RedHawks, Prairie View A&M Panthers @ UT Rio Grande Valley Vaqueros …
+- possession data coverage: 0.898
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
