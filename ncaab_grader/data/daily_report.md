@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-07
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-07T18:45:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-07T19:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,20 +31,20 @@ WHY: Model line Colorado Buffaloes -4 vs market +2.5 (+6.6 pts) from opponent-ad
 LOGGED: 2026-11-06T20:00:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (16) — positive EV but not a qualified bet
+## Watch list (15) — positive EV but not a qualified bet
 
 - Colorado Buffaloes ML +124 (+124) · San Diego State Aztecs at Colorado Buffaloes · Sat 3:30 PM ET · EV +7.6% · min +114
 - St. Bonaventure Bonnies ML -305 (-305) · St. Bonaventure Bonnies at Canisius Golden Griffins · Sat 7:00 PM ET · EV +6.4% · min -350
 - Portland State Vikings ML +500 (+500) · Portland State Vikings at Seattle U Redhawks · Sat 10:00 PM ET · EV +4.2% · min +493
 - UC Irvine Anteaters ML -258 (-258) · San José State Spartans at UC Irvine Anteaters · Sat 10:00 PM ET · EV +3.4% · min -262
 - UT Martin Skyhawks ML -130 (-130) · UT Martin Skyhawks at IU Indianapolis Jaguars · Sat 5:00 PM ET · EV +3.1% · min -130
-- Marshall Thundering Herd ML -135 (-135) · Toledo Rockets at Marshall Thundering Herd · Sat 2:00 PM ET · EV +3.0% · min -135
 - Samford Bulldogs ML +575 (+575) · Samford Bulldogs at UNLV Rebels · Sat 4:00 PM ET · EV +2.2% · min +580
 - North Carolina Central Eagles ML +575 (+575) · North Carolina Central Eagles at Longwood Lancers · Sat 3:00 PM ET · EV +2.2% · min +581
 - UT Rio Grande Valley Vaqueros ML -325 (-325) · Prairie View A&M Panthers at UT Rio Grande Valley Vaqueros · Sat 5:30 PM ET · EV +2.1% · min -314
 - OVER 150.5 (-105) · Omaha Mavericks at Utah State Aggies · Sat 4:00 PM ET · EV +1.6% · min -102
 - OVER 148.5 (-105) · North Carolina Central Eagles at Longwood Lancers · Sat 3:00 PM ET · EV +1.6% · min -102
 - OVER 146.5 (-105) · St. Bonaventure Bonnies at Canisius Golden Griffins · Sat 7:00 PM ET · EV +1.6% · min -102
+- OVER 146.5 (-105) · Long Island University Sharks at La Salle Explorers · Sat 3:30 PM ET · EV +1.5% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -52,7 +52,7 @@ Bankroll $501.42 · 31-29-0 · logged this run 0 · open 21
 
 ## Data gaps
 
-- no line posted yet (30): Boyce Bulldogs @ Liberty Flames, Loyola New Orleans Wolfpack @ LSU New Orleans Privateers, Howard Payne Yellow Jackets @ Sam Houston Bearkats, Penn State Shenango Nittany Lions @ Mercyhurst Lakers, East West Phantoms @ Lindenwood Lions, Cheyney (PA) Wolves @ Maryland Eastern Shore Hawks, Albion Britons @ Purdue Fort Wayne Mastodons, Central State Marauders @ Duquesne Dukes, Northwestern (OK) Rangers @ Oral Roberts Golden Eagles, Bethesda Flames @ Southern Utah Thunderbirds, Bethesda Flames @ Pepperdine Waves, Iona Gaels @ St. John's Red Storm, Ripon Red Hawks @ Milwaukee Panthers, Princeton Tigers @ Siena Saints, Southeast Missouri State Redhawks @ South Carolina Gamecocks …
+- no line posted yet (30): Howard Payne Yellow Jackets @ Sam Houston Bearkats, Penn State Shenango Nittany Lions @ Mercyhurst Lakers, East West Phantoms @ Lindenwood Lions, Cheyney (PA) Wolves @ Maryland Eastern Shore Hawks, Albion Britons @ Purdue Fort Wayne Mastodons, Central State Marauders @ Duquesne Dukes, Northwestern (OK) Rangers @ Oral Roberts Golden Eagles, Bethesda Flames @ Southern Utah Thunderbirds, Bethesda Flames @ Pepperdine Waves, Iona Gaels @ St. John's Red Storm, Ripon Red Hawks @ Milwaukee Panthers, Princeton Tigers @ Siena Saints, Southeast Missouri State Redhawks @ South Carolina Gamecocks, Marist Red Foxes @ UMass Lowell River Hawks, Sacred Heart Pioneers @ New Hampshire Wildcats …
 - possession data coverage: 1.0
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
