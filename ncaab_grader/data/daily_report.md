@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-07
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-07T23:45:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-08T00:00:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -75,11 +75,10 @@ WHY: Model line Saint Mary's Gaels -1.5 vs market -1.5 (-0.0 pts) from opponent-
 LOGGED: 2026-11-07T22:15:22+00:00 · model ncaab_v1
 ```
 
-## Watch list (16) — positive EV but not a qualified bet
+## Watch list (14) — positive EV but not a qualified bet
 
 - California Golden Bears ML +1200 (+1200) · Houston Cougars at California Golden Bears · Sun 8:30 PM ET · EV +18.8% · min +1027
 - Boise State Broncos ML -115 (-115) · Butler Bulldogs at Boise State Broncos · Sun 2:00 PM ET · EV +10.2% · min -134
-- St. Bonaventure Bonnies ML -305 (-305) · St. Bonaventure Bonnies at Canisius Golden Griffins · Sat 7:00 PM ET · EV +6.4% · min -350
 - Richmond Spiders ML -120 (-120) · Richmond Spiders at Temple Owls · Sun 5:00 PM ET · EV +5.8% · min -127
 - Portland State Vikings ML +500 (+500) · Portland State Vikings at Seattle U Redhawks · Sat 10:00 PM ET · EV +4.2% · min +493
 - UC Irvine Anteaters ML -258 (-258) · San José State Spartans at UC Irvine Anteaters · Sat 10:00 PM ET · EV +3.4% · min -262
@@ -89,6 +88,7 @@ LOGGED: 2026-11-07T22:15:22+00:00 · model ncaab_v1
 - Princeton Tigers -1.5 (+102) · Princeton Tigers at Siena Saints · Sun 1:00 PM ET · EV +1.8% · min +102
 - OVER 145.5 (-105) · Houston Cougars at California Golden Bears · Sun 8:30 PM ET · EV +1.7% · min -102
 - OVER 145.5 (-105) · Southeast Missouri State Redhawks at South Carolina Gamecocks · Sun 1:00 PM ET · EV +1.6% · min -102
+- OVER 149.5 (-105) · Green Bay Phoenix at St. Thomas Tommies · Sun 2:00 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -96,7 +96,7 @@ Bankroll $515.64 · 36-31-0 · logged this run 0 · open 16
 
 ## Data gaps
 
-- no line posted yet (25): Albion Britons @ Purdue Fort Wayne Mastodons, Central State Marauders @ Duquesne Dukes, Northwestern (OK) Rangers @ Oral Roberts Golden Eagles, Bethesda Flames @ Southern Utah Thunderbirds, Bethesda Flames @ Pepperdine Waves, Ripon Red Hawks @ Milwaukee Panthers, Marist Red Foxes @ UMass Lowell River Hawks, Sacred Heart Pioneers @ New Hampshire Wildcats, Manhattan Jaspers @ Maine Black Bears, Fairfield Stags @ Bryant Bulldogs, Central Penn Knights @ Navy Midshipmen, Harvard Crimson @ Chicago Maroons, Allen Yellow Jackets @ Wofford Terriers, Keuka Storm @ Cornell Big Red, Merrimack Warriors @ UAlbany Great Danes …
-- possession data coverage: 0.963
+- no line posted yet (24): Central State Marauders @ Duquesne Dukes, Northwestern (OK) Rangers @ Oral Roberts Golden Eagles, Bethesda Flames @ Southern Utah Thunderbirds, Bethesda Flames @ Pepperdine Waves, Ripon Red Hawks @ Milwaukee Panthers, Marist Red Foxes @ UMass Lowell River Hawks, Sacred Heart Pioneers @ New Hampshire Wildcats, Manhattan Jaspers @ Maine Black Bears, Fairfield Stags @ Bryant Bulldogs, Central Penn Knights @ Navy Midshipmen, Harvard Crimson @ Chicago Maroons, Allen Yellow Jackets @ Wofford Terriers, Keuka Storm @ Cornell Big Red, Merrimack Warriors @ UAlbany Great Danes, Quinnipiac Bobcats @ Vermont Catamounts …
+- possession data coverage: 0.974
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
