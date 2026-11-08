@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-08
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-08T22:45:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-08T23:00:33+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,7 +53,7 @@ WHY: Model line Seton Hall Pirates -8.5 vs market -4.5 (+3.9 pts) from opponent-
 LOGGED: 2026-11-08T21:30:26+00:00 · model ncaab_v1
 ```
 
-## Watch list (7) — positive EV but not a qualified bet
+## Watch list (8) — positive EV but not a qualified bet
 
 - California Golden Bears ML +1200 (+1200) · Houston Cougars at California Golden Bears · Sun 8:30 PM ET · EV +18.8% · min +1027
 - Seton Hall Pirates ML -205 (-205) · Seton Hall Pirates at Charlotte 49ers · Mon 9:30 PM ET · EV +2.5% · min -202
@@ -61,15 +61,16 @@ LOGGED: 2026-11-08T21:30:26+00:00 · model ncaab_v1
 - OVER 147.5 (-105) · Syracuse Orange at Indiana Hoosiers · Mon 6:30 PM ET · EV +1.7% · min -102
 - OVER 145.5 (-105) · Houston Cougars at California Golden Bears · Sun 8:30 PM ET · EV +1.7% · min -102
 - OVER 135.5 (-105) · Seton Hall Pirates at Charlotte 49ers · Mon 9:30 PM ET · EV +1.7% · min -102
+- Oregon State Beavers ML -1100 (-1100) · Eastern Washington Eagles at Oregon State Beavers · Mon 9:30 PM ET · EV +0.2% · min -823
 - Hawai'i Rainbow Warriors ML -410 (-410) · UT Arlington Mavericks at Hawai'i Rainbow Warriors · Sun 11:00 PM ET · EV +0.1% · min -357
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $505.10 · 46-43-0 · logged this run 0 · open 5
+Bankroll $500.10 · 46-44-0 · logged this run 2 · open 6
 
 ## Data gaps
 
-- no line posted yet (30): Portland Pilots @ Bethesda Flames, Cheyney (PA) Wolves @ Coppin State Eagles, Georgia Gwinnett Grizzlies @ Alabama State Hornets, McDaniel Green Terror @ UMBC Retrievers, Hiram Terriers @ Canisius Golden Griffins, Howard Bison @ Pennsylvania Quakers, Penn State Schuylkill Nittany Lions @ Buffalo Bulls, Wagner Seahawks @ UConn Huskies, Grambling Tigers @ Texas Longhorns, Radford Highlanders @ Tennessee Volunteers, North Florida Ospreys @ Miami Hurricanes, Simpson (IA) Storm @ Western Illinois Leathernecks, Muskingum Fighting Muskies @ Akron Zips, UNC Greensboro Spartans @ UIC Flames, Baptist (Fl) Eagles @ West Florida Argonauts …
-- possession data coverage: 0.978
+- no line posted yet (30): Portland Pilots @ Bethesda Flames, Cheyney (PA) Wolves @ Coppin State Eagles, Georgia Gwinnett Grizzlies @ Alabama State Hornets, McDaniel Green Terror @ UMBC Retrievers, Hiram Terriers @ Canisius Golden Griffins, Howard Bison @ Pennsylvania Quakers, Penn State Schuylkill Nittany Lions @ Buffalo Bulls, Wagner Seahawks @ UConn Huskies, Grambling Tigers @ Texas Longhorns, Radford Highlanders @ Tennessee Volunteers, North Florida Ospreys @ Miami Hurricanes, Simpson (IA) Storm @ Western Illinois Leathernecks, Muskingum Fighting Muskies @ Akron Zips, Baptist (Fl) Eagles @ West Florida Argonauts, South Carolina Upstate Spartans @ Coastal Carolina Chanticleers …
+- possession data coverage: 0.987
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
