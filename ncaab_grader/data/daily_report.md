@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-08
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-08T14:30:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-08T14:45:21+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -75,7 +75,7 @@ WHY: Model line Saint Mary's Gaels -1.5 vs market -1.5 (-0.0 pts) from opponent-
 LOGGED: 2026-11-07T22:15:22+00:00 · model ncaab_v1
 ```
 
-## Watch list (14) — positive EV but not a qualified bet
+## Watch list (15) — positive EV but not a qualified bet
 
 - California Golden Bears ML +1200 (+1200) · Houston Cougars at California Golden Bears · Sun 8:30 PM ET · EV +18.8% · min +1027
 - UMass Lowell River Hawks -1.5 (+136) · Marist Red Foxes at UMass Lowell River Hawks · Sun 1:00 PM ET · EV +18.1% · min +104
@@ -92,11 +92,11 @@ LOGGED: 2026-11-07T22:15:22+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $512.97 · 43-38-0 · logged this run 0 · open 8
+Bankroll $512.97 · 43-38-0 · logged this run 1 · open 9
 
 ## Data gaps
 
-- no line posted yet (16): Ripon Red Hawks @ Milwaukee Panthers, Central Penn Knights @ Navy Midshipmen, Harvard Crimson @ Chicago Maroons, Allen Yellow Jackets @ Wofford Terriers, Keuka Storm @ Cornell Big Red, Quinnipiac Bobcats @ Vermont Catamounts, Brown Bears @ Lehigh Mountain Hawks, Southern Jaguars @ Drake Bulldogs, Saint Peter's Peacocks @ NJIT Highlanders, Rider Broncs @ Binghamton Bearcats, Lincoln (CA) Oaklanders @ Idaho Vandals, Norfolk State Spartans @ William & Mary Tribe, Incarnate Word Cardinals @ UTEP Miners, Portland Pilots @ Bethesda Flames, South Carolina State Bulldogs @ Chicago State Cougars …
+- no line posted yet (9): Ripon Red Hawks @ Milwaukee Panthers, Central Penn Knights @ Navy Midshipmen, Harvard Crimson @ Chicago Maroons, Allen Yellow Jackets @ Wofford Terriers, Keuka Storm @ Cornell Big Red, Lincoln (CA) Oaklanders @ Idaho Vandals, Portland Pilots @ Bethesda Flames, South Carolina State Bulldogs @ Chicago State Cougars, Cheyney (PA) Wolves @ Coppin State Eagles
 - possession data coverage: 1.0
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
