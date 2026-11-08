@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-07
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-08T01:15:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-08T01:30:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -92,11 +92,11 @@ LOGGED: 2026-11-07T22:15:22+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $505.30 · 38-35-0 · logged this run 2 · open 12
+Bankroll $505.30 · 38-35-0 · logged this run 0 · open 12
 
 ## Data gaps
 
-- no line posted yet (22): Bethesda Flames @ Southern Utah Thunderbirds, Bethesda Flames @ Pepperdine Waves, Ripon Red Hawks @ Milwaukee Panthers, Marist Red Foxes @ UMass Lowell River Hawks, Sacred Heart Pioneers @ New Hampshire Wildcats, Manhattan Jaspers @ Maine Black Bears, Fairfield Stags @ Bryant Bulldogs, Central Penn Knights @ Navy Midshipmen, Harvard Crimson @ Chicago Maroons, Allen Yellow Jackets @ Wofford Terriers, Keuka Storm @ Cornell Big Red, Merrimack Warriors @ UAlbany Great Danes, Quinnipiac Bobcats @ Vermont Catamounts, Central Connecticut Blue Devils @ Dartmouth Big Green, Brown Bears @ Lehigh Mountain Hawks …
+- no line posted yet (21): Bethesda Flames @ Pepperdine Waves, Ripon Red Hawks @ Milwaukee Panthers, Marist Red Foxes @ UMass Lowell River Hawks, Sacred Heart Pioneers @ New Hampshire Wildcats, Manhattan Jaspers @ Maine Black Bears, Fairfield Stags @ Bryant Bulldogs, Central Penn Knights @ Navy Midshipmen, Harvard Crimson @ Chicago Maroons, Allen Yellow Jackets @ Wofford Terriers, Keuka Storm @ Cornell Big Red, Merrimack Warriors @ UAlbany Great Danes, Quinnipiac Bobcats @ Vermont Catamounts, Central Connecticut Blue Devils @ Dartmouth Big Green, Brown Bears @ Lehigh Mountain Hawks, Southern Jaguars @ Drake Bulldogs …
 - possession data coverage: 0.957
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
