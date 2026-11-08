@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-08
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-08T21:45:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-08T22:00:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $494.39 (start $500, at risk $20.00) · ¼-Kelly comparison $486.23
 **Season to date (BET tier):** 2-3-0 · flat P/L $-5.61 (-22.4% on risk) · ¼-Kelly P/L $-13.77 · beat close 0%
 
-## Qualified bets (3)
+## Qualified bets (2)
 
 ```
 GAME: Houston Cougars at California Golden Bears (neutral)
@@ -28,28 +28,6 @@ CONFIDENCE/UNCERTAINTY: LOW — ratings are still mostly the preseason prior; ca
 FLAGS: early season (<4 games): mostly preseason prior; neutral site; injuries/lineups not modeled — check before betting
 
 WHY: Model line California Golden Bears +10 vs market +17.5 (+7.5 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-07T22:15:22+00:00 · model ncaab_v1
-```
-
-```
-GAME: Richmond Spiders at Temple Owls (neutral)
-TIPOFF: Sun 5:00 PM ET
-
-SPORTSBOOK LINE: Richmond Spiders -1.5 (+100)
-MODEL LINE: Richmond Spiders -4
-PROJECTED SCORE: Richmond Spiders 77 - Temple Owls 74
-
-MODEL COVER PROBABILITY: 52.5%
-BREAK-EVEN PROBABILITY: 50.00%
-EXPECTED ROI: +5.0%
-
-RECOMMENDATION: Richmond Spiders -1.5
-MINIMUM ACCEPTABLE PRICE: -106
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $6.30
-CONFIDENCE/UNCERTAINTY: LOW — ratings are still mostly the preseason prior; calibrated win prob 52.5% (backtest-shrunk toward the market)
-FLAGS: early season (<4 games): mostly preseason prior; neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Richmond Spiders -4 vs market -1.5 (+2.5 pts) from opponent-adjusted efficiency and venue.
 LOGGED: 2026-11-07T22:15:22+00:00 · model ncaab_v1
 ```
 
@@ -75,10 +53,9 @@ WHY: Model line Seton Hall Pirates -8.5 vs market -4.5 (+3.9 pts) from opponent-
 LOGGED: 2026-11-08T21:30:26+00:00 · model ncaab_v1
 ```
 
-## Watch list (8) — positive EV but not a qualified bet
+## Watch list (7) — positive EV but not a qualified bet
 
 - California Golden Bears ML +1200 (+1200) · Houston Cougars at California Golden Bears · Sun 8:30 PM ET · EV +18.8% · min +1027
-- Richmond Spiders ML -120 (-120) · Richmond Spiders at Temple Owls · Sun 5:00 PM ET · EV +5.8% · min -127
 - Seton Hall Pirates ML -205 (-205) · Seton Hall Pirates at Charlotte 49ers · Mon 9:30 PM ET · EV +2.5% · min -202
 - OVER 144.5 (-105) · Illinois State Redbirds at Purdue Boilermakers · Mon 8:30 PM ET · EV +1.9% · min -103
 - OVER 147.5 (-105) · Syracuse Orange at Indiana Hoosiers · Mon 6:30 PM ET · EV +1.7% · min -102
@@ -92,7 +69,7 @@ Bankroll $505.10 · 46-43-0 · logged this run 0 · open 5
 
 ## Data gaps
 
-- no line posted yet (30): Lincoln (CA) Oaklanders @ Idaho Vandals, Portland Pilots @ Bethesda Flames, Cheyney (PA) Wolves @ Coppin State Eagles, Georgia Gwinnett Grizzlies @ Alabama State Hornets, McDaniel Green Terror @ UMBC Retrievers, Hiram Terriers @ Canisius Golden Griffins, Howard Bison @ Pennsylvania Quakers, Penn State Schuylkill Nittany Lions @ Buffalo Bulls, Wagner Seahawks @ UConn Huskies, Grambling Tigers @ Texas Longhorns, Radford Highlanders @ Tennessee Volunteers, North Florida Ospreys @ Miami Hurricanes, Simpson (IA) Storm @ Western Illinois Leathernecks, Muskingum Fighting Muskies @ Akron Zips, UNC Greensboro Spartans @ UIC Flames …
-- possession data coverage: 0.956
+- no line posted yet (30): Portland Pilots @ Bethesda Flames, Cheyney (PA) Wolves @ Coppin State Eagles, Georgia Gwinnett Grizzlies @ Alabama State Hornets, McDaniel Green Terror @ UMBC Retrievers, Hiram Terriers @ Canisius Golden Griffins, Howard Bison @ Pennsylvania Quakers, Penn State Schuylkill Nittany Lions @ Buffalo Bulls, Wagner Seahawks @ UConn Huskies, Grambling Tigers @ Texas Longhorns, Radford Highlanders @ Tennessee Volunteers, North Florida Ospreys @ Miami Hurricanes, Simpson (IA) Storm @ Western Illinois Leathernecks, Muskingum Fighting Muskies @ Akron Zips, UNC Greensboro Spartans @ UIC Flames, Baptist (Fl) Eagles @ West Florida Argonauts …
+- possession data coverage: 0.978
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
