@@ -1,10 +1,10 @@
 # NCAA Basketball Model — daily report 2026-11-08
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-08T21:15:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-08T21:30:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $494.39 (start $500, at risk $15.00) · ¼-Kelly comparison $486.23
+**Paper bankroll:** $494.39 (start $500, at risk $20.00) · ¼-Kelly comparison $486.23
 **Season to date (BET tier):** 2-3-0 · flat P/L $-5.61 (-22.4% on risk) · ¼-Kelly P/L $-13.77 · beat close 0%
 
 ## Qualified bets (3)
@@ -54,43 +54,45 @@ LOGGED: 2026-11-07T22:15:22+00:00 · model ncaab_v1
 ```
 
 ```
-GAME: Saint Mary's Gaels at Nevada Wolf Pack (neutral)
-TIPOFF: Sun 4:30 PM ET
+GAME: Seton Hall Pirates at Charlotte 49ers (neutral)
+TIPOFF: Mon 9:30 PM ET
 
-SPORTSBOOK LINE: Saint Mary's Gaels -1.5 (+105)
-MODEL LINE: Saint Mary's Gaels -1.5
-PROJECTED SCORE: Saint Mary's Gaels 76 - Nevada Wolf Pack 74
+SPORTSBOOK LINE: Seton Hall Pirates -4.5 (-112)
+MODEL LINE: Seton Hall Pirates -8.5
+PROJECTED SCORE: Seton Hall Pirates 73 - Charlotte 49ers 64
 
-MODEL COVER PROBABILITY: 50.0%
-BREAK-EVEN PROBABILITY: 48.78%
-EXPECTED ROI: +2.5%
+MODEL COVER PROBABILITY: 54.0%
+BREAK-EVEN PROBABILITY: 52.83%
+EXPECTED ROI: +2.2%
 
-RECOMMENDATION: Saint Mary's Gaels -1.5
-MINIMUM ACCEPTABLE PRICE: +104
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $2.95
-CONFIDENCE/UNCERTAINTY: LOW — ratings are still mostly the preseason prior; calibrated win prob 50.0% (backtest-shrunk toward the market)
+RECOMMENDATION: Seton Hall Pirates -4.5
+MINIMUM ACCEPTABLE PRICE: -112
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $3.08
+CONFIDENCE/UNCERTAINTY: LOW — ratings are still mostly the preseason prior; calibrated win prob 54.0% (backtest-shrunk toward the market)
 FLAGS: early season (<4 games): mostly preseason prior; neutral site; injuries/lineups not modeled — check before betting
 
-WHY: Model line Saint Mary's Gaels -1.5 vs market -1.5 (-0.0 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-07T22:15:22+00:00 · model ncaab_v1
+WHY: Model line Seton Hall Pirates -8.5 vs market -4.5 (+3.9 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-08T21:30:26+00:00 · model ncaab_v1
 ```
 
-## Watch list (6) — positive EV but not a qualified bet
+## Watch list (8) — positive EV but not a qualified bet
 
 - California Golden Bears ML +1200 (+1200) · Houston Cougars at California Golden Bears · Sun 8:30 PM ET · EV +18.8% · min +1027
 - Richmond Spiders ML -120 (-120) · Richmond Spiders at Temple Owls · Sun 5:00 PM ET · EV +5.8% · min -127
-- Saint Mary's Gaels ML -115 (-115) · Saint Mary's Gaels at Nevada Wolf Pack · Sun 4:30 PM ET · EV +3.2% · min -115
+- Seton Hall Pirates ML -205 (-205) · Seton Hall Pirates at Charlotte 49ers · Mon 9:30 PM ET · EV +2.5% · min -202
+- OVER 144.5 (-105) · Illinois State Redbirds at Purdue Boilermakers · Mon 8:30 PM ET · EV +1.9% · min -103
 - OVER 147.5 (-105) · Syracuse Orange at Indiana Hoosiers · Mon 6:30 PM ET · EV +1.7% · min -102
 - OVER 145.5 (-105) · Houston Cougars at California Golden Bears · Sun 8:30 PM ET · EV +1.7% · min -102
+- OVER 135.5 (-105) · Seton Hall Pirates at Charlotte 49ers · Mon 9:30 PM ET · EV +1.7% · min -102
 - Hawai'i Rainbow Warriors ML -410 (-410) · UT Arlington Mavericks at Hawai'i Rainbow Warriors · Sun 11:00 PM ET · EV +0.1% · min -357
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $504.77 · 44-41-0 · logged this run 0 · open 7
+Bankroll $505.10 · 46-43-0 · logged this run 2 · open 5
 
 ## Data gaps
 
-- no line posted yet (30): Lincoln (CA) Oaklanders @ Idaho Vandals, Portland Pilots @ Bethesda Flames, Cheyney (PA) Wolves @ Coppin State Eagles, Georgia Gwinnett Grizzlies @ Alabama State Hornets, McDaniel Green Terror @ UMBC Retrievers, Hiram Terriers @ Canisius Golden Griffins, Marshall Thundering Herd @ Ohio State Buckeyes, Howard Bison @ Pennsylvania Quakers, Penn State Schuylkill Nittany Lions @ Buffalo Bulls, Wagner Seahawks @ UConn Huskies, Grambling Tigers @ Texas Longhorns, Radford Highlanders @ Tennessee Volunteers, North Florida Ospreys @ Miami Hurricanes, Simpson (IA) Storm @ Western Illinois Leathernecks, Muskingum Fighting Muskies @ Akron Zips …
-- possession data coverage: 0.977
+- no line posted yet (30): Lincoln (CA) Oaklanders @ Idaho Vandals, Portland Pilots @ Bethesda Flames, Cheyney (PA) Wolves @ Coppin State Eagles, Georgia Gwinnett Grizzlies @ Alabama State Hornets, McDaniel Green Terror @ UMBC Retrievers, Hiram Terriers @ Canisius Golden Griffins, Howard Bison @ Pennsylvania Quakers, Penn State Schuylkill Nittany Lions @ Buffalo Bulls, Wagner Seahawks @ UConn Huskies, Grambling Tigers @ Texas Longhorns, Radford Highlanders @ Tennessee Volunteers, North Florida Ospreys @ Miami Hurricanes, Simpson (IA) Storm @ Western Illinois Leathernecks, Muskingum Fighting Muskies @ Akron Zips, UNC Greensboro Spartans @ UIC Flames …
+- possession data coverage: 0.956
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
