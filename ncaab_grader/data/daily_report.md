@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-07
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-08T02:30:29+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-08T02:45:07+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -92,11 +92,11 @@ LOGGED: 2026-11-07T22:15:22+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $505.30 · 38-35-0 · logged this run 0 · open 13
+Bankroll $509.20 · 40-36-0 · logged this run 0 · open 10
 
 ## Data gaps
 
 - no line posted yet (20): Ripon Red Hawks @ Milwaukee Panthers, Marist Red Foxes @ UMass Lowell River Hawks, Sacred Heart Pioneers @ New Hampshire Wildcats, Manhattan Jaspers @ Maine Black Bears, Fairfield Stags @ Bryant Bulldogs, Central Penn Knights @ Navy Midshipmen, Harvard Crimson @ Chicago Maroons, Allen Yellow Jackets @ Wofford Terriers, Keuka Storm @ Cornell Big Red, Merrimack Warriors @ UAlbany Great Danes, Quinnipiac Bobcats @ Vermont Catamounts, Central Connecticut Blue Devils @ Dartmouth Big Green, Brown Bears @ Lehigh Mountain Hawks, Southern Jaguars @ Drake Bulldogs, Saint Peter's Peacocks @ NJIT Highlanders …
-- possession data coverage: 0.986
+- possession data coverage: 0.966
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
