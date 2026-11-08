@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-07
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-08T02:45:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-08T03:00:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -75,13 +75,11 @@ WHY: Model line Saint Mary's Gaels -1.5 vs market -1.5 (-0.0 pts) from opponent-
 LOGGED: 2026-11-07T22:15:22+00:00 · model ncaab_v1
 ```
 
-## Watch list (13) — positive EV but not a qualified bet
+## Watch list (11) — positive EV but not a qualified bet
 
 - California Golden Bears ML +1200 (+1200) · Houston Cougars at California Golden Bears · Sun 8:30 PM ET · EV +18.8% · min +1027
 - Boise State Broncos ML -115 (-115) · Butler Bulldogs at Boise State Broncos · Sun 2:00 PM ET · EV +10.2% · min -134
 - Richmond Spiders ML -120 (-120) · Richmond Spiders at Temple Owls · Sun 5:00 PM ET · EV +5.8% · min -127
-- Portland State Vikings ML +500 (+500) · Portland State Vikings at Seattle U Redhawks · Sat 10:00 PM ET · EV +4.2% · min +493
-- UC Irvine Anteaters ML -258 (-258) · San José State Spartans at UC Irvine Anteaters · Sat 10:00 PM ET · EV +3.4% · min -262
 - Saint Mary's Gaels ML -115 (-115) · Saint Mary's Gaels at Nevada Wolf Pack · Sun 4:30 PM ET · EV +3.2% · min -115
 - Princeton Tigers ML -118 (-118) · Princeton Tigers at Siena Saints · Sun 1:00 PM ET · EV +3.0% · min -118
 - St. Thomas Tommies ML -270 (-270) · Green Bay Phoenix at St. Thomas Tommies · Sun 2:00 PM ET · EV +2.3% · min -263
@@ -89,6 +87,7 @@ LOGGED: 2026-11-07T22:15:22+00:00 · model ncaab_v1
 - OVER 145.5 (-105) · Houston Cougars at California Golden Bears · Sun 8:30 PM ET · EV +1.7% · min -102
 - OVER 145.5 (-105) · Southeast Missouri State Redhawks at South Carolina Gamecocks · Sun 1:00 PM ET · EV +1.6% · min -102
 - OVER 149.5 (-105) · Green Bay Phoenix at St. Thomas Tommies · Sun 2:00 PM ET · EV +1.6% · min -102
+- Hawai'i Rainbow Warriors ML -410 (-410) · UT Arlington Mavericks at Hawai'i Rainbow Warriors · Sun 11:00 PM ET · EV +0.1% · min -357
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -97,6 +96,6 @@ Bankroll $509.20 · 40-36-0 · logged this run 0 · open 10
 ## Data gaps
 
 - no line posted yet (20): Ripon Red Hawks @ Milwaukee Panthers, Marist Red Foxes @ UMass Lowell River Hawks, Sacred Heart Pioneers @ New Hampshire Wildcats, Manhattan Jaspers @ Maine Black Bears, Fairfield Stags @ Bryant Bulldogs, Central Penn Knights @ Navy Midshipmen, Harvard Crimson @ Chicago Maroons, Allen Yellow Jackets @ Wofford Terriers, Keuka Storm @ Cornell Big Red, Merrimack Warriors @ UAlbany Great Danes, Quinnipiac Bobcats @ Vermont Catamounts, Central Connecticut Blue Devils @ Dartmouth Big Green, Brown Bears @ Lehigh Mountain Hawks, Southern Jaguars @ Drake Bulldogs, Saint Peter's Peacocks @ NJIT Highlanders …
-- possession data coverage: 0.966
+- possession data coverage: 0.972
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
