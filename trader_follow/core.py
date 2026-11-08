@@ -32,7 +32,10 @@ DATA_DIR = Path(__file__).resolve().parent / "data"
 STATE_PATH = DATA_DIR / "state.json"
 LEDGER_PATH = DATA_DIR / "signals.csv"
 
-TRADES_URL = "https://data-api.polymarket.com/trades"
+# Nov 8, 2026: Polymarket retired Data API v1 on Nov 2 (GET /trades -> 410 Gone), which silently
+# stopped every followed trader. v2 lives at /v2/trades, wraps rows in "data", uses snake_case.
+TRADES_URL = "https://data-api.polymarket.com/v2/trades"
+TRADES_URL_V1 = "https://data-api.polymarket.com/trades"
 GAMMA_MARKETS_URL = "https://gamma-api.polymarket.com/markets"
 PUSH_URL = "https://api.pushover.net/1/messages.json"
 
@@ -155,12 +158,55 @@ def _float(value) -> float | None:
 
 # ------------------------------------------------------------------ public data
 
+def _camel(key: str) -> str:
+    head, *rest = key.split("_")
+    return head + "".join(w[:1].upper() + w[1:] for w in rest)
+
+
+def _epoch(value) -> int | None:
+    if value in (None, ""):
+        return None
+    if isinstance(value, (int, float)):
+        v = int(value)
+        return v // 1000 if v > 10**12 else v  # tolerate milliseconds
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        pass
+    try:
+        return int(datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp())
+    except ValueError:
+        return None
+
+
+def normalize_trade(row: dict) -> dict:
+    """v2 snake_case row -> the v1 camelCase shape the rest of this module reads."""
+    out = dict(row)
+    for k, v in row.items():
+        out.setdefault(_camel(k), v)
+    out["timestamp"] = _epoch(out.get("timestamp"))
+    if out.get("side") is not None:
+        out["side"] = str(out["side"]).upper()
+    return out
+
+
 def fetch_trades(wallet: str, session=requests, limit: int = 100) -> list[dict]:
-    """Newest trades for a wallet. takerOnly=false so his resting limit orders count too."""
-    r = session.get(TRADES_URL, params={"user": wallet, "limit": limit, "takerOnly": "false"}, timeout=20)
-    r.raise_for_status()
-    data = r.json()
-    return data if isinstance(data, list) else []
+    """Newest trades for a wallet (makers included so his resting limit orders count too)."""
+    attempts = (
+        {"user": wallet, "limit": limit, "taker_only": "false"},
+        {"user": wallet, "limit": limit},
+    )
+    last_exc: Exception | None = None
+    for params in attempts:
+        r = session.get(TRADES_URL, params=params, timeout=20)
+        if r.status_code == 400:  # unknown param on v2: retry without the taker filter
+            last_exc = requests.HTTPError(f"400 from v2 trades: {r.text[:200]}")
+            continue
+        r.raise_for_status()
+        data = r.json()
+        rows = data.get("data") if isinstance(data, dict) else data
+        return [normalize_trade(t) for t in (rows or []) if isinstance(t, dict)]
+    raise last_exc or RuntimeError("v2 trades request failed")
 
 
 def fetch_market(condition_id: str, session=requests) -> dict | None:
