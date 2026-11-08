@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-08
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-08T17:45:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-08T18:00:27+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -75,20 +75,19 @@ WHY: Model line Saint Mary's Gaels -1.5 vs market -1.5 (-0.0 pts) from opponent-
 LOGGED: 2026-11-07T22:15:22+00:00 · model ncaab_v1
 ```
 
-## Watch list (15) — positive EV but not a qualified bet
+## Watch list (11) — positive EV but not a qualified bet
 
 - California Golden Bears ML +1200 (+1200) · Houston Cougars at California Golden Bears · Sun 8:30 PM ET · EV +18.8% · min +1027
-- UMass Lowell River Hawks -1.5 (+136) · Marist Red Foxes at UMass Lowell River Hawks · Sun 1:00 PM ET · EV +18.1% · min +104
 - Boise State Broncos ML -115 (-115) · Butler Bulldogs at Boise State Broncos · Sun 2:00 PM ET · EV +10.2% · min -134
 - Merrimack Warriors ML -118 (-118) · Merrimack Warriors at UAlbany Great Danes · Sun 2:00 PM ET · EV +7.5% · min -130
 - Richmond Spiders ML -120 (-120) · Richmond Spiders at Temple Owls · Sun 5:00 PM ET · EV +5.8% · min -127
 - Saint Mary's Gaels ML -115 (-115) · Saint Mary's Gaels at Nevada Wolf Pack · Sun 4:30 PM ET · EV +3.2% · min -115
-- Princeton Tigers ML -118 (-118) · Princeton Tigers at Siena Saints · Sun 1:00 PM ET · EV +3.0% · min -118
 - St. Thomas Tommies ML -270 (-270) · Green Bay Phoenix at St. Thomas Tommies · Sun 2:00 PM ET · EV +2.3% · min -263
-- Princeton Tigers -1.5 (+102) · Princeton Tigers at Siena Saints · Sun 1:00 PM ET · EV +1.8% · min +102
 - OVER 145.5 (-105) · Houston Cougars at California Golden Bears · Sun 8:30 PM ET · EV +1.7% · min -102
-- OVER 145.5 (-105) · Southeast Missouri State Redhawks at South Carolina Gamecocks · Sun 1:00 PM ET · EV +1.6% · min -102
 - OVER 149.5 (-105) · Green Bay Phoenix at St. Thomas Tommies · Sun 2:00 PM ET · EV +1.6% · min -102
+- OVER 142.5 (-105) · Central Connecticut Blue Devils at Dartmouth Big Green · Sun 2:00 PM ET · EV +1.6% · min -102
+- OVER 140.5 (-105) · Brown Bears at Lehigh Mountain Hawks · Sun 2:00 PM ET · EV +1.5% · min -102
+- Hawai'i Rainbow Warriors ML -410 (-410) · UT Arlington Mavericks at Hawai'i Rainbow Warriors · Sun 11:00 PM ET · EV +0.1% · min -357
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -96,7 +95,7 @@ Bankroll $512.97 · 43-38-0 · logged this run 0 · open 11
 
 ## Data gaps
 
-- no line posted yet (15): Ripon Red Hawks @ Milwaukee Panthers, Central Penn Knights @ Navy Midshipmen, Harvard Crimson @ Chicago Maroons, Allen Yellow Jackets @ Wofford Terriers, Keuka Storm @ Cornell Big Red, Lincoln (CA) Oaklanders @ Idaho Vandals, Portland Pilots @ Bethesda Flames, Cheyney (PA) Wolves @ Coppin State Eagles, Georgia Gwinnett Grizzlies @ Alabama State Hornets, McDaniel Green Terror @ UMBC Retrievers, Hiram Terriers @ Canisius Golden Griffins, Marshall Thundering Herd @ Ohio State Buckeyes, Howard Bison @ Pennsylvania Quakers, Penn State Schuylkill Nittany Lions @ Buffalo Bulls, Syracuse Orange @ Indiana Hoosiers
+- no line posted yet (30): Allen Yellow Jackets @ Wofford Terriers, Keuka Storm @ Cornell Big Red, Lincoln (CA) Oaklanders @ Idaho Vandals, Portland Pilots @ Bethesda Flames, Cheyney (PA) Wolves @ Coppin State Eagles, Georgia Gwinnett Grizzlies @ Alabama State Hornets, McDaniel Green Terror @ UMBC Retrievers, Hiram Terriers @ Canisius Golden Griffins, Marshall Thundering Herd @ Ohio State Buckeyes, Howard Bison @ Pennsylvania Quakers, Penn State Schuylkill Nittany Lions @ Buffalo Bulls, Syracuse Orange @ Indiana Hoosiers, Wagner Seahawks @ UConn Huskies, Grambling Tigers @ Texas Longhorns, Radford Highlanders @ Tennessee Volunteers …
 - possession data coverage: 1.0
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
