@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-08
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-08T16:45:20+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-08T17:00:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -96,7 +96,7 @@ Bankroll $512.97 · 43-38-0 · logged this run 0 · open 11
 
 ## Data gaps
 
-- no line posted yet (8): Ripon Red Hawks @ Milwaukee Panthers, Central Penn Knights @ Navy Midshipmen, Harvard Crimson @ Chicago Maroons, Allen Yellow Jackets @ Wofford Terriers, Keuka Storm @ Cornell Big Red, Lincoln (CA) Oaklanders @ Idaho Vandals, Portland Pilots @ Bethesda Flames, Cheyney (PA) Wolves @ Coppin State Eagles
+- no line posted yet (12): Ripon Red Hawks @ Milwaukee Panthers, Central Penn Knights @ Navy Midshipmen, Harvard Crimson @ Chicago Maroons, Allen Yellow Jackets @ Wofford Terriers, Keuka Storm @ Cornell Big Red, Lincoln (CA) Oaklanders @ Idaho Vandals, Portland Pilots @ Bethesda Flames, Cheyney (PA) Wolves @ Coppin State Eagles, Georgia Gwinnett Grizzlies @ Alabama State Hornets, McDaniel Green Terror @ UMBC Retrievers, Hiram Terriers @ Canisius Golden Griffins, Marshall Thundering Herd @ Ohio State Buckeyes
 - possession data coverage: 1.0
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
