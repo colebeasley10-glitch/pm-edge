@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-09
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-09T22:00:32+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-09T22:15:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,7 +53,7 @@ WHY: Model line Seton Hall Pirates -8.5 vs market -4.5 (+3.9 pts) from opponent-
 LOGGED: 2026-11-08T21:30:26+00:00 · model ncaab_v1
 ```
 
-## Watch list (12) — positive EV but not a qualified bet
+## Watch list (13) — positive EV but not a qualified bet
 
 - Kentucky Wildcats ML +225 (+225) · Kansas Jayhawks at Kentucky Wildcats · Tue 9:30 PM ET · EV +15.2% · min +190
 - Florida State Seminoles ML +425 (+425) · Florida Gators at Florida State Seminoles · Tue 6:00 PM ET · EV +2.5% · min +427
@@ -63,14 +63,14 @@ LOGGED: 2026-11-08T21:30:26+00:00 · model ncaab_v1
 - OVER 147.5 (-105) · Syracuse Orange at Indiana Hoosiers · Mon 6:30 PM ET · EV +1.7% · min -102
 - OVER 143.5 (-105) · Virginia Tech Hokies at Iowa Hawkeyes · Tue 7:00 PM ET · EV +1.7% · min -102
 - OVER 135.5 (-105) · Seton Hall Pirates at Charlotte 49ers · Mon 9:30 PM ET · EV +1.7% · min -102
+- OVER 152.5 (-105) · Youngstown State Penguins at Central Michigan Chippewas · Tue 7:00 PM ET · EV +1.6% · min -102
 - OVER 141.5 (-105) · Long Island University Sharks at Towson Tigers · Mon 7:00 PM ET · EV +1.6% · min -102
 - OVER 149.5 (-105) · SIU Edwardsville Cougars at Missouri Tigers · Mon 8:00 PM ET · EV +1.6% · min -102
 - Oregon State Beavers ML -1100 (-1100) · Eastern Washington Eagles at Oregon State Beavers · Mon 9:30 PM ET · EV +0.2% · min -823
-- Georgia Bulldogs ML -6500 (-6500) · Florida Gulf Coast Eagles at Georgia Bulldogs · Mon 7:00 PM ET · EV +0.1% · min -2225
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $500.00 · 47-45-0 · logged this run 0 · open 15
+Bankroll $500.00 · 47-45-0 · logged this run 1 · open 16
 
 ## Data gaps
 
