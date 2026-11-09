@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-09T13:45:46.305557Z",
+ "ran_at": "2026-11-09T14:00:49.865172Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -17,22 +17,34 @@
    }
   },
   "polymarket": {
-   "picks_found": 0,
+   "picks_found": 1,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [],
-   "shadow_opened": 0,
+   "shadow": [
+    {
+     "ticker": "KXCS2GAME-26NOV091000NXSBTF-BTF",
+     "side": "NO",
+     "ask": 0.58,
+     "fair": 0.615,
+     "edge": 0.0179
+    }
+   ],
+   "shadow_opened": 1,
    "diag": {
     "poly_events": 600,
-    "poly_games": 123,
-    "kalshi_events": 1060,
-    "matched": 63,
-    "priced": 120,
+    "poly_games": 119,
+    "kalshi_events": 1056,
+    "matched": 59,
+    "priced": 110,
     "best_gaps": [
      [
       0.025,
       "KXDOTA2GAME-26NOV091100CYXARIKIPRAN-CYXARIKI"
+     ],
+     [
+      0.025,
+      "KXCS2GAME-26NOV091000NXSBTF-NXS"
      ],
      [
       0.015,
@@ -57,10 +69,6 @@
      [
       0.005,
       "KXUEFANLGAME-26NOV12ALBFIN-ALB"
-     ],
-     [
-      0.005,
-      "KXNCAAMBGAME-26NOV09UMKCJAC-JAC"
      ]
     ]
    }
@@ -72,52 +80,81 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 1,
+   "opened": 0,
    "skipped": {
-    "same_game": 2,
-    "already_holding": 1
+    "already_holding": 1,
+    "same_game": 3
    },
    "diag": {
-    "skipped_settles_late": 2
+    "skipped_settles_late": 3
    }
   },
   "crypto": {
-   "picks_found": 0,
+   "picks_found": 4,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [],
+   "shadow": [
+    {
+     "ticker": "KXBTCD-26NOV0910-T74899.99",
+     "side": "NO",
+     "ask": 0.78,
+     "fair": 0.8987,
+     "edge": 0.1062
+    },
+    {
+     "ticker": "KXBTCD-26NOV0910-T74799.99",
+     "side": "NO",
+     "ask": 0.73,
+     "fair": 0.8344,
+     "edge": 0.0906
+    },
+    {
+     "ticker": "KXBTCD-26NOV0910-T74099.99",
+     "side": "YES",
+     "ask": 0.78,
+     "fair": 0.8764,
+     "edge": 0.0839
+    },
+    {
+     "ticker": "KXBTCD-26NOV0910-T74699.99",
+     "side": "NO",
+     "ask": 0.67,
+     "fair": 0.7482,
+     "edge": 0.0625
+    }
+   ],
    "shadow_opened": 0,
    "diag": {
-    "markets_priced": 120,
+    "markets_priced": 608,
     "vol": {
-     "BTC-USD": 0.003621154679865832,
-     "ETH-USD": 0.006165620599997146
+     "BTC-USD": 0.0035578049783672673,
+     "ETH-USD": 0.006155906949686743
     },
     "best": [
      [
-      -0.054,
-      "KXBTCD-26NOV0917-T75749.99"
+      -0.129,
+      "KXBTCD-26NOV0910-T74899.99"
      ],
      [
-      -0.051,
-      "KXBTCD-26NOV0917-T76249.99"
+      -0.114,
+      "KXBTCD-26NOV0910-T74799.99"
      ],
      [
-      -0.049,
-      "KXBTCD-26NOV0917-T75999.99"
+      0.096,
+      "KXBTCD-26NOV0910-T74099.99"
      ],
      [
-      0.046,
-      "KXBTCD-26NOV0917-T72999.99"
+      -0.093,
+      "KXBTCD-26NOV0910-T74999.99"
      ],
      [
-      0.045,
-      "KXBTCD-26NOV0917-T72749.99"
+      -0.09,
+      "KXBTCD-26NOV0910-T75099.99"
      ],
      [
-      0.045,
-      "KXBTCD-26NOV0917-T73249.99"
+      -0.088,
+      "KXBTCD-26NOV0910-T74699.99"
      ]
     ]
    }
@@ -130,8 +167,8 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 21,
-  "settled": 1
+  "marked": 20,
+  "settled": 0
  },
  "shadow_update": {
   "marked": 4,
@@ -162,15 +199,15 @@
   {
    "strategy": "sharp",
    "picks": 2886,
-   "open": 22,
-   "won": 1622,
-   "lost": 1242,
-   "pl": -629.3399999999997,
-   "risked": 28716.930000000062,
-   "clv_sum": -58.059999999999945,
-   "clv_n": 2821,
-   "roi": -0.0219152952631078,
-   "clv": -0.020581354129741207
+   "open": 20,
+   "won": 1623,
+   "lost": 1243,
+   "pl": -631.5999999999997,
+   "risked": 28737.190000000064,
+   "clv_sum": -65.05999999999995,
+   "clv_n": 2823,
+   "roi": -0.02197848850218126,
+   "clv": -0.023046404534183475
   },
   {
    "strategy": "weather",
@@ -215,8 +252,8 @@
  "shadow_standings": [
   {
    "strategy": "polymarket",
-   "picks": 137,
-   "open": 8,
+   "picks": 138,
+   "open": 9,
    "won": 55,
    "lost": 74,
    "pl": -11.560000000000027,
