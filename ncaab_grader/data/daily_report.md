@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-09
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-09T20:30:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-09T20:45:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,13 +53,15 @@ WHY: Model line Seton Hall Pirates -8.5 vs market -4.5 (+3.9 pts) from opponent-
 LOGGED: 2026-11-08T21:30:26+00:00 · model ncaab_v1
 ```
 
-## Watch list (10) — positive EV but not a qualified bet
+## Watch list (12) — positive EV but not a qualified bet
 
 - Kentucky Wildcats ML +225 (+225) · Kansas Jayhawks at Kentucky Wildcats · Tue 9:30 PM ET · EV +15.2% · min +190
+- Florida State Seminoles ML +425 (+425) · Florida Gators at Florida State Seminoles · Tue 6:00 PM ET · EV +2.5% · min +427
 - Seton Hall Pirates ML -205 (-205) · Seton Hall Pirates at Charlotte 49ers · Mon 9:30 PM ET · EV +2.5% · min -202
 - Jacksonville Dolphins ML -205 (-205) · Kansas City Roos at Jacksonville Dolphins · Mon 7:00 PM ET · EV +1.9% · min -199
 - OVER 144.5 (-105) · Illinois State Redbirds at Purdue Boilermakers · Mon 8:30 PM ET · EV +1.9% · min -103
 - OVER 147.5 (-105) · Syracuse Orange at Indiana Hoosiers · Mon 6:30 PM ET · EV +1.7% · min -102
+- OVER 143.5 (-105) · Virginia Tech Hokies at Iowa Hawkeyes · Tue 7:00 PM ET · EV +1.7% · min -102
 - OVER 135.5 (-105) · Seton Hall Pirates at Charlotte 49ers · Mon 9:30 PM ET · EV +1.7% · min -102
 - OVER 141.5 (-105) · Long Island University Sharks at Towson Tigers · Mon 7:00 PM ET · EV +1.6% · min -102
 - OVER 149.5 (-105) · SIU Edwardsville Cougars at Missouri Tigers · Mon 8:00 PM ET · EV +1.6% · min -102
