@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-08
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-09T02:45:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-09T03:00:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -45,11 +45,11 @@ LOGGED: 2026-11-08T21:30:26+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $500.00 · 47-45-0 · logged this run 2 · open 8
+Bankroll $500.00 · 47-45-0 · logged this run 0 · open 8
 
 ## Data gaps
 
 - no line posted yet (19): Cheyney (PA) Wolves @ Coppin State Eagles, Georgia Gwinnett Grizzlies @ Alabama State Hornets, Baptist (Fl) Eagles @ West Florida Argonauts, McDaniel Green Terror @ UMBC Retrievers, Hiram Terriers @ Canisius Golden Griffins, Penn State Schuylkill Nittany Lions @ Buffalo Bulls, Wagner Seahawks @ UConn Huskies, Simpson (IA) Storm @ Western Illinois Leathernecks, Muskingum Fighting Muskies @ Akron Zips, Washington Maryland Shoremen @ Loyola Maryland Greyhounds, Covenant Fighting Scots @ Chattanooga Mocs, Elmira Soaring Eagles @ Le Moyne Dolphins, Brescia Bearcats @ Ball State Cardinals, Florida Gulf Coast Eagles @ Georgia Bulldogs, College of Biblical Studies Ambassadors @ McNeese Cowboys …
-- possession data coverage: 0.991
+- possession data coverage: 0.997
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
