@@ -1,13 +1,35 @@
 # NCAA Basketball Model — daily report 2026-11-09
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-09T20:15:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-09T20:30:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $499.15 (start $500, at risk $5.00) · ¼-Kelly comparison $499.10
+**Paper bankroll:** $499.15 (start $500, at risk $10.00) · ¼-Kelly comparison $499.10
 **Season to date (BET tier):** 4-4-0 · flat P/L $-0.85 (-2.1% on risk) · ¼-Kelly P/L $-0.90 · beat close 12%
 
-## Qualified bets (1)
+## Qualified bets (2)
+
+```
+GAME: Kansas Jayhawks at Kentucky Wildcats (neutral)
+TIPOFF: Tue 9:30 PM ET
+
+SPORTSBOOK LINE: Kentucky Wildcats +5.5 (-110)
+MODEL LINE: Kentucky Wildcats +1.5
+PROJECTED SCORE: Kansas Jayhawks 77 - Kentucky Wildcats 76
+
+MODEL COVER PROBABILITY: 54.2%
+BREAK-EVEN PROBABILITY: 52.38%
+EXPECTED ROI: +3.5%
+
+RECOMMENDATION: Kentucky Wildcats +5.5
+MINIMUM ACCEPTABLE PRICE: -114
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $4.85
+CONFIDENCE/UNCERTAINTY: LOW — ratings are still mostly the preseason prior; calibrated win prob 54.2% (backtest-shrunk toward the market)
+FLAGS: early season (<4 games): mostly preseason prior; neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line Kentucky Wildcats +1.5 vs market +5.5 (+4.2 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-09T20:30:24+00:00 · model ncaab_v1
+```
 
 ```
 GAME: Seton Hall Pirates at Charlotte 49ers (neutral)
@@ -31,8 +53,9 @@ WHY: Model line Seton Hall Pirates -8.5 vs market -4.5 (+3.9 pts) from opponent-
 LOGGED: 2026-11-08T21:30:26+00:00 · model ncaab_v1
 ```
 
-## Watch list (9) — positive EV but not a qualified bet
+## Watch list (10) — positive EV but not a qualified bet
 
+- Kentucky Wildcats ML +225 (+225) · Kansas Jayhawks at Kentucky Wildcats · Tue 9:30 PM ET · EV +15.2% · min +190
 - Seton Hall Pirates ML -205 (-205) · Seton Hall Pirates at Charlotte 49ers · Mon 9:30 PM ET · EV +2.5% · min -202
 - Jacksonville Dolphins ML -205 (-205) · Kansas City Roos at Jacksonville Dolphins · Mon 7:00 PM ET · EV +1.9% · min -199
 - OVER 144.5 (-105) · Illinois State Redbirds at Purdue Boilermakers · Mon 8:30 PM ET · EV +1.9% · min -103
