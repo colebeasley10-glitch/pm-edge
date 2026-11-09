@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-09
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-09T23:30:29+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-09T23:45:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,7 +53,7 @@ WHY: Model line Seton Hall Pirates -8.5 vs market -4.5 (+3.9 pts) from opponent-
 LOGGED: 2026-11-08T21:30:26+00:00 · model ncaab_v1
 ```
 
-## Watch list (14) — positive EV but not a qualified bet
+## Watch list (15) — positive EV but not a qualified bet
 
 - Kentucky Wildcats ML +225 (+225) · Kansas Jayhawks at Kentucky Wildcats · Tue 9:30 PM ET · EV +15.2% · min +190
 - Florida State Seminoles ML +425 (+425) · Florida Gators at Florida State Seminoles · Tue 6:00 PM ET · EV +2.5% · min +427
@@ -61,20 +61,20 @@ LOGGED: 2026-11-08T21:30:26+00:00 · model ncaab_v1
 - Jacksonville Dolphins ML -205 (-205) · Kansas City Roos at Jacksonville Dolphins · Mon 7:00 PM ET · EV +1.9% · min -199
 - OVER 144.5 (-105) · Illinois State Redbirds at Purdue Boilermakers · Mon 8:30 PM ET · EV +1.9% · min -103
 - OVER 151.5 (-105) · South Alabama Jaguars at UCF Knights · Tue 7:00 PM ET · EV +1.8% · min -103
+- OVER 151.5 (-105) · San Diego Toreros at Colorado Buffaloes · Tue 9:00 PM ET · EV +1.8% · min -103
 - OVER 143.5 (-105) · Virginia Tech Hokies at Iowa Hawkeyes · Tue 7:00 PM ET · EV +1.7% · min -102
 - OVER 135.5 (-105) · Seton Hall Pirates at Charlotte 49ers · Mon 9:30 PM ET · EV +1.7% · min -102
 - OVER 152.5 (-105) · Youngstown State Penguins at Central Michigan Chippewas · Tue 7:00 PM ET · EV +1.6% · min -102
 - OVER 141.5 (-105) · Long Island University Sharks at Towson Tigers · Mon 7:00 PM ET · EV +1.6% · min -102
 - OVER 159.5 (-105) · Wright State Raiders at Toledo Rockets · Tue 7:00 PM ET · EV +1.6% · min -102
-- OVER 149.5 (-105) · SIU Edwardsville Cougars at Missouri Tigers · Mon 8:00 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $500.00 · 47-45-0 · logged this run 0 · open 18
+Bankroll $500.00 · 47-45-0 · logged this run 1 · open 19
 
 ## Data gaps
 
-- no line posted yet (30): Simpson (IA) Storm @ Western Illinois Leathernecks, Muskingum Fighting Muskies @ Akron Zips, Baptist (Fl) Eagles @ West Florida Argonauts, Washington Maryland Shoremen @ Loyola Maryland Greyhounds, Covenant Fighting Scots @ Chattanooga Mocs, Elmira Soaring Eagles @ Le Moyne Dolphins, Brescia Bearcats @ Ball State Cardinals, College of Biblical Studies Ambassadors @ McNeese Cowboys, Southern New Orleans Knights @ Louisiana Ragin' Cajuns, Fisk Bulldogs @ Tennessee State Tigers, UT Arlington Mavericks @ Bethesda Flames, NJIT Highlanders @ Rutgers Scarlet Knights, Delaware State Hornets @ Georgetown Hoyas, College of Biblical Studies Ambassadors @ Texas Southern Tigers, Apprentice School Builders @ Hampton Pirates …
+- no line posted yet (30): Simpson (IA) Storm @ Western Illinois Leathernecks, Muskingum Fighting Muskies @ Akron Zips, Georgia Gwinnett Grizzlies @ Alabama State Hornets, Baptist (Fl) Eagles @ West Florida Argonauts, Washington Maryland Shoremen @ Loyola Maryland Greyhounds, Covenant Fighting Scots @ Chattanooga Mocs, Elmira Soaring Eagles @ Le Moyne Dolphins, Brescia Bearcats @ Ball State Cardinals, College of Biblical Studies Ambassadors @ McNeese Cowboys, Southern New Orleans Knights @ Louisiana Ragin' Cajuns, Fisk Bulldogs @ Tennessee State Tigers, UT Arlington Mavericks @ Bethesda Flames, NJIT Highlanders @ Rutgers Scarlet Knights, Delaware State Hornets @ Georgetown Hoyas, College of Biblical Studies Ambassadors @ Texas Southern Tigers …
 - possession data coverage: 1.0
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
