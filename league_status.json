@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-09T12:45:34.822130Z",
+ "ran_at": "2026-11-09T13:00:38.974169Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -25,18 +25,14 @@
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 121,
-    "kalshi_events": 1055,
-    "matched": 61,
-    "priced": 115,
+    "poly_games": 122,
+    "kalshi_events": 1063,
+    "matched": 62,
+    "priced": 116,
     "best_gaps": [
      [
       0.015,
       "KXLOLGAME-26NOV100000NHFNL-FNL"
-     ],
-     [
-      0.015,
-      "KXDOTA2GAME-26NOV091400CHHUL-HUL"
      ],
      [
       0.015,
@@ -61,6 +57,10 @@
      [
       0.005,
       "KXUEFANLGAME-26NOV12ALBFIN-ALB"
+     ],
+     [
+      0.005,
+      "KXSERIECGAME-26NOV09PINP98-PIN"
      ]
     ]
    }
@@ -72,51 +72,60 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 3,
+   "opened": 0,
    "skipped": {
+    "already_holding": 3,
     "same_game": 1
    },
    "diag": {
-    "skipped_settles_late": 1
+    "skipped_settles_late": 0
    }
   },
   "crypto": {
-   "picks_found": 0,
+   "picks_found": 1,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [],
+   "shadow": [
+    {
+     "ticker": "KXETHD-26NOV0909-T2109.99",
+     "side": "NO",
+     "ask": 0.19,
+     "fair": 0.2557,
+     "edge": 0.0547
+    }
+   ],
    "shadow_opened": 0,
    "diag": {
-    "markets_priced": 120,
+    "markets_priced": 608,
     "vol": {
-     "BTC-USD": 0.003554314759657229,
-     "ETH-USD": 0.006169448384881203
+     "BTC-USD": 0.00359326960425295,
+     "ETH-USD": 0.006154768915506331
     },
     "best": [
      [
-      -0.066,
-      "KXBTCD-26NOV0917-T75999.99"
+      -0.086,
+      "KXETHD-26NOV0909-T2109.99"
      ],
      [
-      -0.065,
-      "KXBTCD-26NOV0917-T75749.99"
+      -0.077,
+      "KXETHD-26NOV0909-T2104.99"
      ],
      [
       -0.064,
-      "KXBTCD-26NOV0917-T76249.99"
-     ],
-     [
-      -0.06,
-      "KXBTCD-26NOV0917-T75499.99"
+      "KXETHD-26NOV0909-T2114.99"
      ],
      [
       -0.06,
       "KXBTCD-26NOV0917-T76499.99"
      ],
      [
-      -0.057,
-      "KXBTCD-26NOV0917-T76749.99"
+      -0.059,
+      "KXBTCD-26NOV0917-T75749.99"
+     ],
+     [
+      -0.059,
+      "KXBTCD-26NOV0917-T76249.99"
      ]
     ]
    }
@@ -129,8 +138,8 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 20,
-  "settled": 1
+  "marked": 23,
+  "settled": 0
  },
  "shadow_update": {
   "marked": 5,
