@@ -7,8 +7,8 @@ the same thing for free:
   * Pinnacle's player props (the Prop Board) give the fair probability of each Over/Under.
   * Each pick'em app gives its line and what one pick pays:
       - Sleeper: a payout multiplier on each side, which works like decimal odds.
-      - Underdog: a decimal/American price per side when it shows one, otherwise its multiplier
-        times the standard per-pick payout.
+      - Underdog: the LOWEST of the prices it shows for a pick (decimal price, its fantasy odds, and
+        its payout multiplier times the 3x 2-pick payout split per pick), so an edge holds at the worst.
       - PrizePicks: standard lines only (no goblins/demons), each pick worth the 2-pick Power
         payout (3x) split per pick = sqrt(3) = 1.73 decimal (about -137).
   * Props Pinnacle posts with a limit under MIN_PIN_LIMIT are skipped: its price there is barely tested.
@@ -230,10 +230,16 @@ def underdog_lines(session, now: datetime, base: Path | None, info: dict) -> lis
             side = {"higher": "over", "over": "over", "lower": "under", "under": "under"}.get(choice)
             if not side:
                 continue
-            dec = _f(o.get("decimal_price")) or dec_from_american(o.get("american_price"))
-            if not dec:
-                mult = _f(o.get("payout_multiplier"))
-                dec = UNDERDOG_PICK * mult if mult else None
+            # Nov 10, 2026: Underdog shows several prices for one pick (decimal_price, its "fantasy" odds and
+            # the payout multiplier on a 3x 2-pick). Which one an entry really pays isn't certain, so take
+            # the LOWEST: an edge only counts if it holds at the worst of them.
+            fan = (o.get("odds") or {}).get("fantasy") or {}
+            mult = _f(o.get("payout_multiplier"))
+            prices = [_f(o.get("decimal_price")), dec_from_american(o.get("american_price")),
+                      _f(fan.get("decimal")), dec_from_american(fan.get("american")),
+                      UNDERDOG_PICK * mult if mult else None]
+            prices = [p for p in prices if p and p > 1]
+            dec = min(prices) if prices else None
             if dec and dec > 1:
                 sides[side] = round(dec, 4)
         if sides:

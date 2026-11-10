@@ -89,7 +89,8 @@ def test_underdog_and_prizepicks_parsers():
           "over_under_lines": [{"stat_value": "25.5", "status": "active",
                                 "over_under": {"appearance_stat": {"appearance_id": "a1", "display_stat": "Points"}},
                                 "options": [{"choice": "higher", "american_price": "-120"},
-                                            {"choice": "lower", "payout_multiplier": "1.1"}]}]}
+                                            {"choice": "lower", "payout_multiplier": "1.1", "decimal_price": "2.39",
+                                             "odds": {"fantasy": {"decimal": "2.54"}}}]}]}
     pp = {"data": [{"attributes": {"line_score": 25.5, "stat_type": "Points", "odds_type": "standard",
                                    "status": "pre_game"},
                     "relationships": {"new_player": {"data": {"id": "9", "type": "new_player"}}}},
