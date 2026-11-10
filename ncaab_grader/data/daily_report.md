@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-09
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-10T02:15:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-10T02:30:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $499.15 (start $500, at risk $10.00) · ¼-Kelly comparison $499.10
 **Season to date (BET tier):** 4-4-0 · flat P/L $-0.85 (-2.1% on risk) · ¼-Kelly P/L $-0.90 · beat close 12%
 
-## Qualified bets (2)
+## Qualified bets (1)
 
 ```
 GAME: Kansas Jayhawks at Kentucky Wildcats (neutral)
@@ -31,40 +31,15 @@ WHY: Model line Kentucky Wildcats +1.5 vs market +5.5 (+4.2 pts) from opponent-a
 LOGGED: 2026-11-09T20:30:24+00:00 · model ncaab_v1
 ```
 
-```
-GAME: Seton Hall Pirates at Charlotte 49ers (neutral)
-TIPOFF: Mon 9:30 PM ET
-
-SPORTSBOOK LINE: Seton Hall Pirates -4.5 (-112)
-MODEL LINE: Seton Hall Pirates -8.5
-PROJECTED SCORE: Seton Hall Pirates 73 - Charlotte 49ers 64
-
-MODEL COVER PROBABILITY: 54.0%
-BREAK-EVEN PROBABILITY: 52.83%
-EXPECTED ROI: +2.2%
-
-RECOMMENDATION: Seton Hall Pirates -4.5
-MINIMUM ACCEPTABLE PRICE: -112
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $3.08
-CONFIDENCE/UNCERTAINTY: LOW — ratings are still mostly the preseason prior; calibrated win prob 54.0% (backtest-shrunk toward the market)
-FLAGS: early season (<4 games): mostly preseason prior; neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Seton Hall Pirates -8.5 vs market -4.5 (+3.9 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-08T21:30:26+00:00 · model ncaab_v1
-```
-
-## Watch list (10) — positive EV but not a qualified bet
+## Watch list (7) — positive EV but not a qualified bet
 
 - Kentucky Wildcats ML +225 (+225) · Kansas Jayhawks at Kentucky Wildcats · Tue 9:30 PM ET · EV +15.2% · min +190
 - Florida State Seminoles ML +425 (+425) · Florida Gators at Florida State Seminoles · Tue 6:00 PM ET · EV +2.5% · min +427
-- Seton Hall Pirates ML -205 (-205) · Seton Hall Pirates at Charlotte 49ers · Mon 9:30 PM ET · EV +2.5% · min -202
 - OVER 151.5 (-105) · South Alabama Jaguars at UCF Knights · Tue 7:00 PM ET · EV +1.8% · min -103
 - OVER 151.5 (-105) · San Diego Toreros at Colorado Buffaloes · Tue 9:00 PM ET · EV +1.8% · min -103
 - OVER 143.5 (-105) · Virginia Tech Hokies at Iowa Hawkeyes · Tue 7:00 PM ET · EV +1.7% · min -102
-- OVER 135.5 (-105) · Seton Hall Pirates at Charlotte 49ers · Mon 9:30 PM ET · EV +1.7% · min -102
 - OVER 152.5 (-105) · Youngstown State Penguins at Central Michigan Chippewas · Tue 7:00 PM ET · EV +1.6% · min -102
 - OVER 159.5 (-105) · Wright State Raiders at Toledo Rockets · Tue 7:00 PM ET · EV +1.6% · min -102
-- Oregon State Beavers ML -1100 (-1100) · Eastern Washington Eagles at Oregon State Beavers · Mon 9:30 PM ET · EV +0.2% · min -823
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -72,7 +47,7 @@ Bankroll $514.32 · 51-46-0 · logged this run 0 · open 17
 
 ## Data gaps
 
-- no line posted yet (30): UT Arlington Mavericks @ Bethesda Flames, NJIT Highlanders @ Rutgers Scarlet Knights, Delaware State Hornets @ Georgetown Hoyas, College of Biblical Studies Ambassadors @ Texas Southern Tigers, Apprentice School Builders @ Hampton Pirates, Virginia Lynchburg Dragons @ The Citadel Bulldogs, Winthrop Eagles @ Kennesaw State Owls, Penn State Lehigh Valley Nittany Lions @ Lafayette Leopards, St. Mary's (MD) Seahawks @ Longwood Lancers, Maine Black Bears @ Rhode Island Rams, Presbyterian Blue Hose @ NC State Wolfpack, Army Black Knights @ New Haven Chargers, Charleston Southern Buccaneers @ Wake Forest Demon Deacons, Maryland Eastern Shore Hawks @ Boston College Eagles, Bryant Bulldogs @ Providence Friars …
+- no line posted yet (30): NJIT Highlanders @ Rutgers Scarlet Knights, Delaware State Hornets @ Georgetown Hoyas, College of Biblical Studies Ambassadors @ Texas Southern Tigers, Apprentice School Builders @ Hampton Pirates, Virginia Lynchburg Dragons @ The Citadel Bulldogs, Winthrop Eagles @ Kennesaw State Owls, Penn State Lehigh Valley Nittany Lions @ Lafayette Leopards, St. Mary's (MD) Seahawks @ Longwood Lancers, Maine Black Bears @ Rhode Island Rams, Presbyterian Blue Hose @ NC State Wolfpack, Army Black Knights @ New Haven Chargers, Charleston Southern Buccaneers @ Wake Forest Demon Deacons, Maryland Eastern Shore Hawks @ Boston College Eagles, Bryant Bulldogs @ Providence Friars, Texas State Bobcats @ UT Rio Grande Valley Vaqueros …
 - possession data coverage: 0.976
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
