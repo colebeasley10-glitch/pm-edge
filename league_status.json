@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-10T11:15:35.589722Z",
+ "ran_at": "2026-11-10T11:30:43.741002Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -17,22 +17,34 @@
    }
   },
   "polymarket": {
-   "picks_found": 0,
+   "picks_found": 1,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [],
-   "shadow_opened": 0,
+   "shadow": [
+    {
+     "ticker": "KXDOTA2GAME-26NOV100800IAPYB-YB",
+     "side": "NO",
+     "ask": 0.54,
+     "fair": 0.575,
+     "edge": 0.0172
+    }
+   ],
+   "shadow_opened": 1,
    "diag": {
     "poly_events": 600,
-    "poly_games": 148,
-    "kalshi_events": 1241,
-    "matched": 79,
-    "priced": 145,
+    "poly_games": 145,
+    "kalshi_events": 1237,
+    "matched": 76,
+    "priced": 140,
     "best_gaps": [
      [
-      0.015,
+      0.025,
       "KXDOTA2GAME-26NOV100800IAPYB-IAP"
+     ],
+     [
+      0.015,
+      "KXCS2GAME-26NOV110200FUTTS-TS"
      ],
      [
       0.015,
@@ -57,10 +69,6 @@
      [
       0.005,
       "KXUEFANLGAME-26NOV12ITAFRA-ITA"
-     ],
-     [
-      0.005,
-      "KXUEFANLGAME-26NOV12ALBFIN-FIN"
      ]
     ]
    }
@@ -72,13 +80,13 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 1,
+   "opened": 0,
    "skipped": {
-    "already_holding": 2,
-    "same_game": 1
+    "same_game": 1,
+    "already_holding": 3
    },
    "diag": {
-    "skipped_settles_late": 0
+    "skipped_settles_late": 3
    }
   },
   "crypto": {
@@ -91,8 +99,8 @@
    "diag": {
     "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.003910882582814163,
-     "ETH-USD": 0.006363654082001249
+     "BTC-USD": 0.0038996378673135114,
+     "ETH-USD": 0.006347583931667603
     },
     "best": []
    }
@@ -106,7 +114,7 @@
  },
  "update": {
   "marked": 18,
-  "settled": 0
+  "settled": 1
  },
  "shadow_update": {
   "marked": 2,
@@ -137,15 +145,15 @@
   {
    "strategy": "sharp",
    "picks": 3011,
-   "open": 21,
+   "open": 20,
    "won": 1687,
-   "lost": 1303,
-   "pl": -865.379999999999,
-   "risked": 29979.97000000004,
-   "clv_sum": -392.4599999999999,
-   "clv_n": 2947,
-   "roi": -0.028865272380192434,
-   "clv": -0.1331727180183237
+   "lost": 1304,
+   "pl": -875.599999999999,
+   "risked": 29990.190000000042,
+   "clv_sum": -437.9599999999999,
+   "clv_n": 2948,
+   "roi": -0.02919621382858854,
+   "clv": -0.14856173677069195
   },
   {
    "strategy": "weather",
@@ -190,8 +198,8 @@
  "shadow_standings": [
   {
    "strategy": "polymarket",
-   "picks": 143,
-   "open": 3,
+   "picks": 144,
+   "open": 4,
    "won": 57,
    "lost": 83,
    "pl": -32.19000000000002,
