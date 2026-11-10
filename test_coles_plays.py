@@ -173,3 +173,11 @@ def test_bet_queue_ignores_borrowed_plays(tmp_path):
     cp.update([], NOW, lab, root=root, apps={}, lanes=[lane("Sharp Plays (line steam)")])
     assert len(cp.load(lab)) == 1
     assert [c["lane"] for c in bq.candidates(root, lab)] == ["Sharp Plays (line steam)"]
+
+
+def test_low_limit_pinnacle_props_skipped():
+    props = [{"app": "PrizePicks", "player": "Jalen Brunson", "stat": "Points", "line": 25.5, "over": 1.8,
+              "under": 1.8}]
+    thin = {**board(), "limit": 50}
+    assert cp.edges(props, [thin], NOW)[0] == []
+    assert len(cp.edges(props, [board()], NOW)[0]) == 1

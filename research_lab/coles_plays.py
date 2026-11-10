@@ -11,6 +11,7 @@ the same thing for free:
         times the standard per-pick payout.
       - PrizePicks: standard lines only (no goblins/demons), each pick worth the 2-pick Power
         payout (3x) split per pick = sqrt(3) = 1.73 decimal (about -137).
+  * Props Pinnacle posts with a limit under MIN_PIN_LIMIT are skipped: its price there is barely tested.
   * A side is a play when the app pays at least MIN_EV over Pinnacle's fair price. A different line
     only counts when it's a better number than Pinnacle's (Under higher / Over lower): Pinnacle's
     probability at its own line is then a floor for ours.
@@ -62,6 +63,7 @@ SLEEPER_SPORTS = ("nfl", "nba", "nhl", "cbb", "cfb")
 TOP_LANES = 3            # best-of: only the top lanes on the scorecard
 BEST_MIN_EV = 0.03       # ...and only their plays with 3%+ edge
 MAX_BEST_PER_DAY = 8
+MIN_PIN_LIMIT = 100      # Nov 10, 2026: skip props Pinnacle barely takes action on (same floor as the Prop Board)
 # Nov 10, 2026: Underdog answered v5 with 426 "Upgrade Required" from GitHub; try newer versions first and
 # PrizePicks' partner host when the app host refuses datacenter IPs (403). status.json records which worked.
 UNDERDOG_URLS = ("https://api.underdogfantasy.com/beta/v7/over_under_lines",
@@ -296,6 +298,8 @@ def edges(app_props: list[dict], board_rows: list[dict], now: datetime, min_ev: 
         start = parse_dt(r.get("starts"))
         st = canon_stat(r.get("stat"))
         if not start or not st or not (now + MIN_LEAD <= start <= now + MAX_AHEAD):
+            continue
+        if (_f(r.get("limit")) or 0) < MIN_PIN_LIMIT:      # a tiny limit = a shaky fair price
             continue
         pin[(norm_name(r["player"]), st)] = r
     match = {"matched": 0, "by_app": {}, "closest": []}
