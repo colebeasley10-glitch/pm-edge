@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-09
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-10T00:45:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-10T01:00:32+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,7 +53,7 @@ WHY: Model line Seton Hall Pirates -8.5 vs market -4.5 (+3.9 pts) from opponent-
 LOGGED: 2026-11-08T21:30:26+00:00 · model ncaab_v1
 ```
 
-## Watch list (12) — positive EV but not a qualified bet
+## Watch list (11) — positive EV but not a qualified bet
 
 - Kentucky Wildcats ML +225 (+225) · Kansas Jayhawks at Kentucky Wildcats · Tue 9:30 PM ET · EV +15.2% · min +190
 - Florida State Seminoles ML +425 (+425) · Florida Gators at Florida State Seminoles · Tue 6:00 PM ET · EV +2.5% · min +427
@@ -65,7 +65,6 @@ LOGGED: 2026-11-08T21:30:26+00:00 · model ncaab_v1
 - OVER 135.5 (-105) · Seton Hall Pirates at Charlotte 49ers · Mon 9:30 PM ET · EV +1.7% · min -102
 - OVER 152.5 (-105) · Youngstown State Penguins at Central Michigan Chippewas · Tue 7:00 PM ET · EV +1.6% · min -102
 - OVER 159.5 (-105) · Wright State Raiders at Toledo Rockets · Tue 7:00 PM ET · EV +1.6% · min -102
-- OVER 149.5 (-105) · SIU Edwardsville Cougars at Missouri Tigers · Mon 8:00 PM ET · EV +1.6% · min -102
 - Oregon State Beavers ML -1100 (-1100) · Eastern Washington Eagles at Oregon State Beavers · Mon 9:30 PM ET · EV +0.2% · min -823
 
 ## Home-court spread TEST (paper, own $500 — not bets)
@@ -74,7 +73,7 @@ Bankroll $500.00 · 47-45-0 · logged this run 0 · open 22
 
 ## Data gaps
 
-- no line posted yet (30): Southern New Orleans Knights @ Louisiana Ragin' Cajuns, Fisk Bulldogs @ Tennessee State Tigers, UT Arlington Mavericks @ Bethesda Flames, NJIT Highlanders @ Rutgers Scarlet Knights, Delaware State Hornets @ Georgetown Hoyas, College of Biblical Studies Ambassadors @ Texas Southern Tigers, Apprentice School Builders @ Hampton Pirates, Virginia Lynchburg Dragons @ The Citadel Bulldogs, Winthrop Eagles @ Kennesaw State Owls, Penn State Lehigh Valley Nittany Lions @ Lafayette Leopards, St. Mary's (MD) Seahawks @ Longwood Lancers, Maine Black Bears @ Rhode Island Rams, Presbyterian Blue Hose @ NC State Wolfpack, Army Black Knights @ New Haven Chargers, Charleston Southern Buccaneers @ Wake Forest Demon Deacons …
+- no line posted yet (30): UT Arlington Mavericks @ Bethesda Flames, NJIT Highlanders @ Rutgers Scarlet Knights, Delaware State Hornets @ Georgetown Hoyas, College of Biblical Studies Ambassadors @ Texas Southern Tigers, Apprentice School Builders @ Hampton Pirates, Virginia Lynchburg Dragons @ The Citadel Bulldogs, Winthrop Eagles @ Kennesaw State Owls, Penn State Lehigh Valley Nittany Lions @ Lafayette Leopards, St. Mary's (MD) Seahawks @ Longwood Lancers, Maine Black Bears @ Rhode Island Rams, Presbyterian Blue Hose @ NC State Wolfpack, Army Black Knights @ New Haven Chargers, Charleston Southern Buccaneers @ Wake Forest Demon Deacons, Maryland Eastern Shore Hawks @ Boston College Eagles, Bryant Bulldogs @ Providence Friars …
 - possession data coverage: 1.0
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
