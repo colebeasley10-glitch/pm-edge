@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-10
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-10T22:45:27+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-10T23:00:33+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,24 +31,24 @@ WHY: Model line Kentucky Wildcats +1.5 vs market +5.5 (+4.2 pts) from opponent-a
 LOGGED: 2026-11-09T20:30:24+00:00 · model ncaab_v1
 ```
 
-## Watch list (21) — positive EV but not a qualified bet
+## Watch list (25) — positive EV but not a qualified bet
 
 - Kentucky Wildcats ML +225 (+225) · Kansas Jayhawks at Kentucky Wildcats · Tue 9:30 PM ET · EV +15.2% · min +190
+- Sam Houston Bearkats ML -115 (-115) · Pepperdine Waves at Sam Houston Bearkats · Wed 7:30 PM ET · EV +4.6% · min -119
+- Santa Clara Broncos ML -115 (-115) · Santa Clara Broncos at North Texas Mean Green · Wed 8:00 PM ET · EV +3.7% · min -117
 - Temple Owls ML -115 (-115) · Charleston Cougars at Temple Owls · Wed 6:30 PM ET · EV +3.0% · min -115
-- Florida State Seminoles ML +425 (+425) · Florida Gators at Florida State Seminoles · Tue 6:00 PM ET · EV +2.5% · min +427
+- Santa Clara Broncos -1.5 (+105) · Santa Clara Broncos at North Texas Mean Green · Wed 8:00 PM ET · EV +2.7% · min +104
+- Sam Houston Bearkats -1.5 (+102) · Pepperdine Waves at Sam Houston Bearkats · Wed 7:30 PM ET · EV +2.2% · min +102
 - Temple Owls -1.5 (+105) · Charleston Cougars at Temple Owls · Wed 6:30 PM ET · EV +2.0% · min +105
 - OVER 151.5 (-105) · South Alabama Jaguars at UCF Knights · Tue 7:00 PM ET · EV +1.8% · min -103
 - OVER 151.5 (-105) · San Diego Toreros at Colorado Buffaloes · Tue 9:00 PM ET · EV +1.8% · min -103
+- OVER 145.5 (-105) · Nevada Wolf Pack at UC Santa Barbara Gauchos · Wed 9:00 PM ET · EV +1.8% · min -102
 - OVER 132.5 (-105) · Army Black Knights at New Haven Chargers · Tue 7:00 PM ET · EV +1.7% · min -102
 - OVER 143.5 (-105) · Virginia Tech Hokies at Iowa Hawkeyes · Tue 7:00 PM ET · EV +1.7% · min -102
-- OVER 128.5 (-105) · Saint Peter's Peacocks at South Carolina Gamecocks · Wed 7:00 PM ET · EV +1.7% · min -102
-- OVER 148.5 (-105) · Presbyterian Blue Hose at NC State Wolfpack · Tue 7:00 PM ET · EV +1.7% · min -102
-- South Florida Bulls ML -265 (-265) · Saint Joseph's Hawks at South Florida Bulls · Wed 3:00 PM ET · EV +1.7% · min -253
-- OVER 130.5 (-105) · Maryland Eastern Shore Hawks at Boston College Eagles · Tue 7:00 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $498.50 · 55-53-0 · logged this run 0 · open 21
+Bankroll $498.50 · 55-53-0 · logged this run 3 · open 24
 
 ## Data gaps
 
