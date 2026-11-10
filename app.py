@@ -566,6 +566,15 @@ def open_plays() -> list[dict]:
             add(r["game_start"], r.get("league") or "Prop", r["pick"], f"{r['game']} · {r['move']}",
                 "Prop Board steam", price=r.get("target_odds") or "", dec=_num(r.get("target_decimal")),
                 fair=r.get("fair_prob"), bet=_prop_bet(r))
+    for r in rows("research_lab/data/COLES_PLAYS/plays.csv"):   # Nov 10, 2026: Cole's elite list
+        if r.get("status") == "open":
+            pickem = (r.get("origin") or "pickem") == "pickem"
+            sub = f"{r.get('via') or r.get('app')} {r.get('target_odds')} · {r['game']}"
+            if r.get("also_at"):
+                sub += f" · also {r['also_at']}"
+            add(r["game_start"], r.get("league") or "Prop", r["pick"], sub, "Cole's Plays",
+                price=r.get("target_odds") or "", dec=_num(r.get("target_decimal")), fair=r.get("fair_prob"),
+                bet=_prop_bet(r) if pickem else {})
     for r in rows("research_lab/data/ODDS_FAM/plays.csv"):
         if r.get("status") == "open" and r.get("kind") == "Prop steam":
             dec = _num(r.get("best_decimal")) or _num(r.get("bet_at_decimal"))
@@ -767,5 +776,7 @@ with c1:
 with c2:
     st.page_link("pages/Scorecard.py", label="Full scorecard", icon=":material/fact_check:", use_container_width=True)
 st.page_link("pages/NCAA_Pools.py", label="NCAA Pools — this week's card & past weeks", icon=":material/sports_football:",
+             use_container_width=True)
+st.page_link("pages/Coles_Plays.py", label="Cole's Plays — your elite list", icon=":material/target:",
              use_container_width=True)
 st.page_link("pages/All_Tools.py", label="Every tool & research lane", icon=":material/apps:", use_container_width=True)

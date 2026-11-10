@@ -1,4 +1,5 @@
 """Cole's Plays: pick'em apps vs Pinnacle fair (paper)."""
+import csv
 from datetime import datetime, timedelta, timezone
 
 from research_lab import coles_plays as cp
@@ -57,17 +58,17 @@ def test_update_logs_once_tracks_clv_and_grades(tmp_path):
     apps = {"PrizePicks": app("PrizePicks", [{"player": "Jalen Brunson", "stat": "Points", "line": 25.5,
                                              "over": 1.732, "under": 1.732}]),
             "Broken": lambda *a: (_ for _ in ()).throw(RuntimeError("403"))}
-    info = cp.update([board()], NOW, tmp_path, apps=apps)
+    info = cp.update([board()], NOW, tmp_path, apps=apps, lanes=[])
     assert info["new_plays"] == 1 and info["apps"]["Broken"]["error"].startswith("RuntimeError")
     # Pinnacle moves toward us; the other side now also "clears" but a prop is only ever played one way
-    info = cp.update([board(p_over=0.66)], NOW + timedelta(minutes=15), tmp_path,
+    info = cp.update([board(p_over=0.66)], NOW + timedelta(minutes=15), tmp_path, lanes=[],
                      apps={"PrizePicks": app("PrizePicks", [{"player": "Jalen Brunson", "stat": "Points",
                                                              "line": 25.5, "over": 1.732, "under": 3.0}])})
     rows = cp.load(tmp_path)
     assert info["new_plays"] == 0 and len(rows) == 1
     assert rows[0]["clv"] == "0.04" and rows[0]["pick"] == "Jalen Brunson Over 25.5 Points"
     later = NOW + timedelta(hours=9)
-    cp.update([], later, tmp_path, apps={}, box=lambda play: 31.0)
+    cp.update([], later, tmp_path, apps={}, box=lambda play: 31.0, lanes=[])
     r = cp.load(tmp_path)[0]
     assert r["status"] == "won" and float(r["pl"]) == round(10 * (1.732 - 1), 2)
 
@@ -112,7 +113,7 @@ def test_bet_queue_takes_coles_plays_when_earned(tmp_path):
     from research_lab import bet_queue as bq
     root, lab = tmp_path / "root", tmp_path / "lab"
     lab.mkdir(parents=True)
-    cp.update([board()], NOW, lab, apps={"PrizePicks": app("PrizePicks", [
+    cp.update([board()], NOW, lab, root=root, lanes=[], apps={"PrizePicks": app("PrizePicks", [
         {"player": "Jalen Brunson", "stat": "Points", "line": 25.5, "over": 1.732, "under": 1.732}])})
     lanes = [{"name": "Cole's Plays", "n": 100, "roi": 0.08, "verdict": "Too early", "reference": False,
               "clv": 0.01, "clv_n": 50}]
@@ -124,3 +125,51 @@ def test_bet_queue_takes_coles_plays_when_earned(tmp_path):
     cp._save(rows, lab)
     assert bq.update(NOW + timedelta(hours=9), lab, root=root, lanes=lanes)["settled"] == 1
     assert bq.load(lab)[0]["status"] == "won"
+
+
+# ---------------------------------------------------------------- best of SharpIQ
+def lane(name, roi=0.08, n=100):
+    return {"name": name, "n": n, "roi": roi, "verdict": "Too early", "reference": False, "clv": 0.01, "clv_n": 50}
+
+
+def steam(i, ev_fair=0.55, dec="2.0", status="open"):
+    return {"play_id": f"s{i}", "league": "NHL", "game": f"A{i} at B{i}", "pick": f"B{i} ML",
+            "game_start": START, "target_decimal": dec, "fair_prob": str(ev_fair), "clv": "0.02", "status": status}
+
+
+def write(path, rows):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(rows[0]))
+        w.writeheader()
+        w.writerows(rows)
+
+
+def test_best_of_takes_only_top_lanes_big_edges_capped_and_settles(tmp_path):
+    root, lab = tmp_path / "root", tmp_path / "lab"
+    write(lab / "SHARP_PLAYS/plays.csv", [steam(i) for i in range(12)] + [steam(99, ev_fair=0.505)])
+    write(lab / "PROP_BOARD/plays.csv", [{"play_id": "pb1", "league": "NBA", "game": "C at D", "pick": "X Over 9.5 Points",
+                                          "game_start": START, "target_decimal": "2.0", "fair_prob": "0.6",
+                                          "status": "open"}])
+    lanes = [lane("Sharp Plays (line steam)", 0.20), lane("A", 0.15), lane("B", 0.12), lane("Prop Board steam", 0.05),
+             lane("Cole's Plays", 0.5), lane("Bet Queue", 0.5)]
+    info = cp.update([], NOW, lab, root=root, apps={}, lanes=lanes)
+    assert info["best_of"]["top_lanes"] == ["Sharp Plays (line steam)", "A", "B"]   # never itself / the queue
+    rows = cp.load(lab)
+    assert len(rows) == cp.MAX_BEST_PER_DAY and all(r["via"] == "Sharp Plays (line steam)" for r in rows)
+    assert "s99" not in {r["source_id"] for r in rows}
+    cp.update([], NOW + timedelta(minutes=15), lab, root=root, apps={}, lanes=lanes)
+    assert len(cp.load(lab)) == cp.MAX_BEST_PER_DAY                               # daily cap holds
+    write(lab / "SHARP_PLAYS/plays.csv", [steam(i, status="won") for i in range(12)])
+    info = cp.update([], NOW + timedelta(hours=9), lab, root=root, apps={}, lanes=[])
+    done = cp.load(lab)
+    assert info["settled"] == cp.MAX_BEST_PER_DAY and all(r["status"] == "won" and float(r["pl"]) == 10.0 for r in done)
+
+
+def test_bet_queue_ignores_borrowed_plays(tmp_path):
+    from research_lab import bet_queue as bq
+    root, lab = tmp_path / "root", tmp_path / "lab"
+    write(lab / "SHARP_PLAYS/plays.csv", [steam(1)])
+    cp.update([], NOW, lab, root=root, apps={}, lanes=[lane("Sharp Plays (line steam)")])
+    assert len(cp.load(lab)) == 1
+    assert [c["lane"] for c in bq.candidates(root, lab)] == ["Sharp Plays (line steam)"]

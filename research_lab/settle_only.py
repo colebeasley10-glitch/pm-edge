@@ -4,7 +4,7 @@ Full rounds run every ~15 minutes behind PM Edge Watch, so a play could sit "ope
 ESPN already called the game final. This job only grades: no scanning, no new plays, no phone alerts.
 
 Lanes it settles (all graded from ESPN finals, the same way the full round does):
-  Prop Board, Sharp Plays, Odds Fam (plays, your logged bets, board bets) and the Bet Queue.
+  Prop Board, Sharp Plays, Odds Fam (plays, your logged bets, board bets), Cole's Plays and the Bet Queue.
 Odds Fam price-gap plays still settle from Kalshi's public result, read here too.
 
 Only files whose grades changed are written, so an idle run commits nothing.
@@ -15,7 +15,7 @@ import json
 import sys
 from pathlib import Path
 
-from research_lab import bet_queue, config, odds_fam, prop_board, sharp_plays
+from research_lab import bet_queue, coles_plays, config, odds_fam, prop_board, sharp_plays
 from research_lab.ledger import LedgerError, now_utc, run_lock
 
 
@@ -66,6 +66,15 @@ def run(now=None, base: Path | None = None, *, box=None, scores=None, kalshi=Non
             out["odds_fam_board_bets"] = odds_fam.settle_board_bets(now, base, markets=markets, box=box)
         except Exception as exc:
             out["odds_fam"] = f"error: {type(exc).__name__}: {str(exc)[:120]}"
+        # Cole's Plays: pick'em picks from the same box scores, borrowed plays from their lanes
+        try:
+            rows = coles_plays.load(base)
+            n = coles_plays.grade(rows, now, box, base)
+            if n:
+                coles_plays._save(rows, base)
+            out["coles_plays"] = n
+        except Exception as exc:
+            out["coles_plays"] = f"error: {type(exc).__name__}: {str(exc)[:120]}"
         # Bet Queue last: it reads the grades the lanes above just wrote
         try:
             rows = bet_queue.load(base)

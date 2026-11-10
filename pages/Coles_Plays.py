@@ -18,9 +18,9 @@ try:
 except Exception:
     pass
 st.title("Cole's Plays")
-st.caption("Pick'em app lines that pay more than Pinnacle's no-vig fair price (2%+ edge), the way Hunter finds "
-           "his plays. One pick per prop at the best app; other apps that also clear are listed. Pair picks into "
-           "2+ pick entries. Paper: $10 a pick, graded from ESPN box scores.")
+st.caption("Your elite list. Two parts: pick'em app lines paying 2%+ over Pinnacle's no-vig fair price (the way "
+           f"Hunter finds his plays), plus the best plays (3%+ edge, at most {cp.MAX_BEST_PER_DAY} a day) from the top "
+           f"{cp.TOP_LANES} lanes on the scorecard. Paper: $10 a pick. Pair pick'em picks into 2+ pick entries.")
 
 plays = cp.load()
 s = cp.summary(plays)
@@ -40,7 +40,7 @@ tab_open, tab_done, tab_feeds = st.tabs(["Open", "Results", "App feeds"])
 with tab_open:
     opn = sorted((r for r in plays if r["status"] == "open"), key=lambda r: (r["game_start"], -float(r["ev"] or 0)))
     if opn:
-        st.dataframe([{"Starts": when(r), "League": r["league"], "Pick": r["pick"], "App": r["app"],
+        st.dataframe([{"Starts": when(r), "League": r["league"], "Pick": r["pick"], "From": r.get("via") or r["app"],
                        "Pays": r["target_odds"], "Fair": r["fair_odds"], "Edge": f"{float(r['ev']) * 100:.1f}%",
                        "Pinnacle line": r["pin_line"], "Also at": r.get("also_at") or "",
                        "CLV (pts)": "—" if r.get("clv") in ("", None) else f"{float(r['clv']) * 100:+.1f}",
@@ -53,7 +53,7 @@ with tab_done:
                   reverse=True)[:200]
     if done:
         st.dataframe([{"Settled": (r.get("settled_time") or "")[:10], "League": r["league"], "Pick": r["pick"],
-                       "App": r["app"], "Paid": r["target_odds"], "Fair": r["fair_odds"],
+                       "From": r.get("via") or r["app"], "Paid": r["target_odds"], "Fair": r["fair_odds"],
                        "CLV (pts)": "—" if r.get("clv") in ("", None) else f"{float(r['clv']) * 100:+.1f}",
                        "Actual": r.get("actual") or "—", "Result": r["status"], "P/L": r.get("pl") or "—"}
                       for r in done], hide_index=True, width="stretch")
@@ -68,6 +68,9 @@ with tab_feeds:
     if not stat:
         st.write("No scan yet.")
     else:
+        bo = stat.get("best_of") or {}
+        if bo.get("top_lanes") is not None:
+            st.caption("Borrowing from: " + (", ".join(bo["top_lanes"]) or "no lane has earned it yet"))
         st.caption(f"Last scan {(stat.get('at') or '')[:16].replace('T', ' ')} UTC · "
                    f"{stat.get('board_props', 0)} Pinnacle props · {stat.get('matched', 0)} app lines matched · "
                    f"{stat.get('edges', 0)} edges")

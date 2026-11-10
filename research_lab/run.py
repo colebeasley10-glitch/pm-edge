@@ -213,6 +213,12 @@ def run_round(*, now: datetime | None = None, kalshi=None, base: Path | None = N
                 box=prop_board.BoxScores() if send_report else None)
         except Exception as exc:
             out["prop_board"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
+        try:   # Cole's Plays (Nov 10, 2026): pick'em apps vs Pinnacle fair + the best of the top lanes, paper
+            from research_lab import coles_plays, prop_board as _pbc
+            out["coles_plays"] = coles_plays.update(_pbc.load_board(base).get("rows") or [], now, base,
+                                                    box=_pbc.BoxScores() if send_report else None)
+        except Exception as exc:
+            out["coles_plays"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
         try:
             out["ev"] = ev_round(ctx, base, poly_fetch=poly_fetch, odds_session=odds_session, odds_key=odds_key)
         except Exception as exc:  # only affects the +EV Finder

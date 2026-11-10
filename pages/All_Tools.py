@@ -1536,7 +1536,8 @@ with tab_lab:
     from research_lab.ledger import Store as _LStore
     st.markdown("<div class='pe-lede'>Strategies tested side by side on <b>paper</b>, each with its own "
                 "$500 virtual bankroll. Tap one for its bets, misses and model checks.</div>", unsafe_allow_html=True)
-    _tools = [("Research_Lab_Prop_Board", "Prop Board", "Every Pinnacle player prop: fair odds to shop against"),
+    _tools = [("Coles_Plays", "Cole's Plays", "Your elite list: pick'em edges + the best of the top lanes"),
+              ("Research_Lab_Prop_Board", "Prop Board", "Every Pinnacle player prop: fair odds to shop against"),
               ("Research_Lab_Sharp_Plays", "Sharp Plays", "Pinnacle steam: bet it anywhere at the target price"),
               ("Research_Lab_EV_Finder", "+EV Finder", "Best price across all your books vs Pinnacle"),
               ("Research_Lab_Best_Price", "Best Price", "Were your Sharp picks cheaper on Polymarket?"),

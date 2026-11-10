@@ -303,6 +303,12 @@ def lanes() -> list[dict]:
     for kind in sorted({r.get("kind") for r in of if r.get("kind")}):
         out.append(grade(f"Odds Fam — {kind}", [r for r in of if r.get("kind") == kind], risk=10.0, clv="clv"))
     out.append(grade("Sharp Plays (line steam)", _rows("research_lab/data/SHARP_PLAYS/plays.csv"), risk=10.0, clv="clv"))
+    cp = _rows("research_lab/data/COLES_PLAYS/plays.csv")   # Nov 10, 2026: Cole's elite list
+    out.append(grade("Cole's Plays", cp, risk=10.0, clv="clv",
+                     note="Elite list: pick'em apps beating Pinnacle's fair + the best plays from the top 3 lanes; $10 a pick, paper"))
+    via = lambda r: r.get("via") or r.get("app") or ""   # noqa: E731
+    for v in sorted({via(r) for r in cp if via(r)}):
+        out.append(grade(f"Cole's Plays — {v}", [r for r in cp if via(r) == v], risk=10.0, clv="clv"))
 
     ncaa = _rows("ncaa_grader/data/picks.csv")   # open picks kept so the bet list shows them; grade() skips unsettled
     out.append(grade("NCAA Grader — all", ncaa, pl="units", risk=1.0, clv="clv", clv_unit="mixed", reference=True))

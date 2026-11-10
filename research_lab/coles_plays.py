@@ -24,6 +24,13 @@ own (Bet Queue alerts its plays once this lane earns a place there).
 Pick'em apps don't take single bets: in real life these get paired into 2+ pick entries. The paper
 record grades each pick on its own at its per-pick price, which is how the entry's value adds up.
 
+Best of SharpIQ (Nov 10, 2026): Cole's Plays is also the elite list. Each round it takes the open plays
+of the TOP_LANES best lanes on the scorecard (the same lanes the Bet Queue trusts: 30+ settled bets,
+beating the close, positive sample-shrunk ROI, no bad verdict), keeps only plays with BEST_MIN_EV+ edge
+over their fair price, and logs the best at most MAX_BEST_PER_DAY a day. They settle from their source
+lane. As lanes prove or fail, what Cole's Plays borrows changes on its own. `via` says where each play
+came from (an app or a lane), so the scorecard shows which part is making money.
+
 status.json keeps each app's last fetch (counts, errors and a small sample) so a broken feed shows up.
 """
 from __future__ import annotations
@@ -52,12 +59,15 @@ UNDERDOG_PICK = math.sqrt(3.0)     # Underdog's standard 2-pick also pays 3x bef
 UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) "
                     "Chrome/130.0 Safari/537.36", "Accept": "application/json"}
 SLEEPER_SPORTS = ("nfl", "nba", "nhl", "cbb", "cfb")
+TOP_LANES = 3            # best-of: only the top lanes on the scorecard
+BEST_MIN_EV = 0.03       # ...and only their plays with 3%+ edge
+MAX_BEST_PER_DAY = 8
 UNDERDOG_URL = "https://api.underdogfantasy.com/beta/v5/over_under_lines"
 PRIZEPICKS_URL = "https://api.prizepicks.com/projections"
 
 FIELDS = ["play_id", "alert_time", "app", "league", "game", "player", "stat", "pick", "side", "line", "pin_line",
           "target_odds", "target_decimal", "fair_prob", "fair_odds", "ev", "also_at", "limit", "game_start",
-          "close_prob", "clv", "actual", "status", "settled_time", "pl"]
+          "close_prob", "clv", "actual", "status", "settled_time", "pl", "origin", "via", "source", "source_id"]
 
 
 # ------------------------------------------------------------------ names and stats
@@ -344,7 +354,12 @@ def make_play(e: dict, now: datetime) -> dict:
             "line": e["line"], "pin_line": e["pin_line"], "target_odds": american(e["dec"]),
             "target_decimal": round(e["dec"], 4), "fair_prob": round(e["p"], 4), "fair_odds": american(1 / e["p"]),
             "ev": round(e["ev"], 4), "also_at": e["also_at"], "limit": e["limit"], "game_start": e["starts"],
-            "close_prob": "", "clv": "", "actual": "", "status": "open", "settled_time": "", "pl": ""}
+            "close_prob": "", "clv": "", "actual": "", "status": "open", "settled_time": "", "pl": "",
+            "origin": "pickem", "via": e["app"], "source": "", "source_id": ""}
+
+
+def is_pickem(r: dict) -> bool:
+    return (r.get("origin") or "pickem") == "pickem"
 
 
 def track_close(rows: list[dict], board_rows: list[dict], now: datetime) -> int:
@@ -352,7 +367,7 @@ def track_close(rows: list[dict], board_rows: list[dict], now: datetime) -> int:
     by_key = {str(r["key"]): r for r in board_rows}
     n = 0
     for r in rows:
-        if r["status"] != "open":
+        if r["status"] != "open" or not is_pickem(r):
             continue
         start = parse_dt(r["game_start"])
         if start and start <= now:
@@ -366,14 +381,80 @@ def track_close(rows: list[dict], board_rows: list[dict], now: datetime) -> int:
     return n
 
 
-def grade(rows: list[dict], now: datetime, box) -> int:
-    from research_lab import prop_board
-    return prop_board.grade_rows(rows, now, box)      # same ESPN box scores, line/side/target_decimal, $10
+def grade(rows: list[dict], now: datetime, box, base: Path | None = None, root: Path | None = None) -> int:
+    """Pick'em picks from ESPN box scores; best-of plays from the lane they came from."""
+    from research_lab import bet_queue, prop_board
+    mine = [r for r in rows if is_pickem(r)]
+    n = prop_board.grade_rows(mine, now, box) if box is not None else 0   # same line/side/target_decimal, $10
+    lab, root = Path(base or config.DATA_DIR), Path(root or bet_queue.ROOT)
+    for r in rows:
+        if r["status"] != "open" or is_pickem(r):
+            continue
+        got = bet_queue._source_result({"source": r["source"], "source_id": r["source_id"]}, root, lab)
+        if not got:
+            continue
+        res, clv = got
+        dec = float(r["target_decimal"])
+        pl = round(UNIT * (dec - 1), 2) if res == "won" else (-UNIT if res == "lost" else 0.0)
+        r.update(status=res, pl=pl, settled_time=iso(now), clv="" if clv is None else round(clv, 4))
+        n += 1
+    return n
+
+
+def best_of(rows: list[dict], now: datetime, base: Path | None = None, root: Path | None = None,
+            lanes: list[dict] | None = None, injury_report=None) -> dict:
+    """Add the best open plays from SharpIQ's top lanes (see module docstring). Returns info."""
+    from research_lab import bet_queue as bq
+    root = Path(root or bq.ROOT)
+    if lanes is None:
+        import scorecard
+        lanes = scorecard.lanes()
+    ok = {k: v for k, v in bq.lane_scores(lanes).items()
+          if not k.startswith(("Cole's Plays", "Bet Queue"))}
+    top = dict(sorted(ok.items(), key=lambda kv: -kv[1])[:TOP_LANES])
+    info = {"top_lanes": list(top), "added": 0}
+    day = bq.et_day(now)
+    today = sum(1 for r in rows if not is_pickem(r) and bq.et_day(parse_dt(r["alert_time"]) or now) == day)
+    seen = {f"{r['source']}:{r['source_id']}" for r in rows if not is_pickem(r)}
+    seen_props = {f"prop:{r['pick']}|{r['game']}" for r in rows}
+    pool = []
+    for c in bq.candidates(root, base):
+        start = parse_dt(c["game_start"])
+        if c["lane"] not in top or not start or not (now + MIN_LEAD <= start <= now + MAX_AHEAD):
+            continue
+        if c["ev"] < BEST_MIN_EV or not c.get("decimal") or c["decimal"] > MAX_DECIMAL:
+            continue
+        if f"{c['source']}:{c['source_id']}" in seen or c["_key"] in seen_props:
+            continue
+        if c["source"] == "nba_props":          # same injury check as the Bet Queue: Out/Doubtful never
+            import nba_injuries
+            if injury_report is None:
+                injury_report = nba_injuries.fetch()          # None = no report: props then skipped
+            if injury_report is None or nba_injuries.check(bq._prop_player(c["pick"]), injury_report) in ("block", "unknown"):
+                continue
+        pool.append((top[c["lane"]] + 0.5 * min(c["ev"], bq.EV_CAP), c))
+    for _, c in sorted(pool, key=lambda x: -x[0]):
+        if today >= MAX_BEST_PER_DAY:
+            break
+        if c["_key"] in seen_props:
+            continue
+        dec, fair = c["decimal"], c["fair_prob"]
+        rows.append({"play_id": f"lane:{c['source']}:{c['source_id']}", "alert_time": iso(now), "app": "",
+                     "league": c.get("league") or "", "game": c.get("game") or "", "player": "", "stat": "",
+                     "pick": c["pick"], "side": "", "line": "", "pin_line": "", "target_odds": american(dec),
+                     "target_decimal": round(dec, 4), "fair_prob": round(fair, 4), "fair_odds": american(1 / fair),
+                     "ev": round(c["ev"], 4), "also_at": "", "limit": "", "game_start": c["game_start"],
+                     "close_prob": "", "clv": "", "actual": "", "status": "open", "settled_time": "", "pl": "",
+                     "origin": "lane", "via": c["lane"], "source": c["source"], "source_id": c["source_id"]})
+        seen_props.add(c["_key"])
+        today += 1
+        info["added"] += 1
+    return info
 
 
 # ------------------------------------------------------------------ one round
 def update(board_rows: list[dict], now: datetime, base: Path | None = None, *, box=None, session=requests,
-           apps: dict | None = None) -> dict:
+           apps: dict | None = None, root: Path | None = None, lanes: list[dict] | None = None) -> dict:
     rows = load(base)
     have = {r["play_id"] for r in rows}
     taken = {r["play_id"].rsplit(":", 1)[0] for r in rows}          # never both sides of one prop
@@ -390,8 +471,11 @@ def update(board_rows: list[dict], now: datetime, base: Path | None = None, *, b
         taken.add(e["key"])
         info["new_plays"] += 1
     info["clv_tracked"] = track_close(rows, board_rows, now)
-    if box is not None:
-        info["settled"] = grade(rows, now, box)
+    try:
+        info["best_of"] = best_of(rows, now, base, root, lanes)
+    except Exception as exc:              # the borrowed half never breaks the pick'em half
+        info["best_of"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
+    info["settled"] = grade(rows, now, box, base, root)
     _save(rows, base)
     for k, m in match["by_app"].items():
         status.setdefault(k, {}).update(matched=m["matched"], unmatched_stats=m["unmatched_stats"])

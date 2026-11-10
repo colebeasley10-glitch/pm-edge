@@ -17,7 +17,7 @@ get in; BreakTheBank's NFL bets still alert straight from Trader Follow.
 NBA props are checked against ESPN's injury report first (nba_injuries.py): Out/Doubtful players are
 never queued, Questionable ones are queued on paper but never alerted, and no report = no alert. Steam plays from the Prop Board and Odds Fam are
 the same props, so each prop is queued once.
-Nov 10, 2026: every sport, same gates. Sources are Prop Board, Odds Fam, Sharp Plays (line steam), the
+Nov 10, 2026: every sport, same gates. Sources are Prop Board, Odds Fam, Cole's Plays (pick'em part), Sharp Plays (line steam), the
 NCAA football grader, the NBA model and props, the NCAA basketball model (bets + home-court test) and
 Trader Follow; Pinnacle's college basketball now flows into the Pinnacle-fed lanes as "NCAAB".
 
@@ -176,6 +176,11 @@ def candidates(root: Path = ROOT, base: Path | None = None) -> list[dict]:
                 out.append(_cand(lane, src, r["pick_id"], "NCAAB", f"{r['away']} at {r['home']}", r["side"],
                                  r.get("tipoff"), dec_from_american(r.get("odds")),
                                  fair_calibration.calibrated("ncaab_model", r), "Model"))
+    for r in _csv(lab / "COLES_PLAYS" / "plays.csv"):    # Nov 10, 2026: pick'em part only (the rest is already here)
+        if r.get("status") == "open" and (r.get("origin") or "pickem") == "pickem":
+            out.append(_cand("Cole's Plays", "coles_plays", r["play_id"], r.get("league"), r.get("game"),
+                             f"{r['pick']} ({r.get('app')})", r.get("game_start"), _f(r.get("target_decimal")),
+                             _f(r.get("fair_prob")), key=f"prop:{r['pick']}|{r.get('game')}"))
     for r in _csv(lab / "SHARP_PLAYS" / "plays.csv"):
         if r.get("status") == "open":
             out.append(_cand("Sharp Plays (line steam)", "sharp_plays", r["play_id"], r.get("league"), r.get("game"),
@@ -227,9 +232,9 @@ def kelly(fair: float, dec: float) -> float:
 def _source_result(q: dict, root: Path, lab: Path) -> tuple[str, float | None] | None:
     """(won/lost/void, clv in probability points or None) once the source has settled the play."""
     src, sid = q["source"], q["source_id"]
-    if src in ("prop_board", "odds_fam", "sharp_plays"):
+    if src in ("prop_board", "odds_fam", "sharp_plays", "coles_plays"):
         f = lab / {"prop_board": "PROP_BOARD/plays.csv", "odds_fam": "ODDS_FAM/plays.csv",
-                   "sharp_plays": "SHARP_PLAYS/plays.csv"}[src]
+                   "sharp_plays": "SHARP_PLAYS/plays.csv", "coles_plays": "COLES_PLAYS/plays.csv"}[src]
         col = "of_id" if src == "odds_fam" else "play_id"
         r = next((x for x in _csv(f) if x.get(col) == sid), None)
         if not r or r.get("status") not in ("won", "lost", "void", "ungraded"):
