@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-09
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-10T00:15:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-10T00:30:27+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -70,11 +70,11 @@ LOGGED: 2026-11-08T21:30:26+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $500.00 · 47-45-0 · logged this run 0 · open 19
+Bankroll $500.00 · 47-45-0 · logged this run 3 · open 22
 
 ## Data gaps
 
-- no line posted yet (30): College of Biblical Studies Ambassadors @ McNeese Cowboys, Southern New Orleans Knights @ Louisiana Ragin' Cajuns, Fisk Bulldogs @ Tennessee State Tigers, UT Arlington Mavericks @ Bethesda Flames, NJIT Highlanders @ Rutgers Scarlet Knights, Delaware State Hornets @ Georgetown Hoyas, College of Biblical Studies Ambassadors @ Texas Southern Tigers, Apprentice School Builders @ Hampton Pirates, Virginia Lynchburg Dragons @ The Citadel Bulldogs, Winthrop Eagles @ Kennesaw State Owls, Penn State Lehigh Valley Nittany Lions @ Lafayette Leopards, St. Mary's (MD) Seahawks @ Longwood Lancers, Maine Black Bears @ Rhode Island Rams, Presbyterian Blue Hose @ NC State Wolfpack, Army Black Knights @ New Haven Chargers …
+- no line posted yet (30): Southern New Orleans Knights @ Louisiana Ragin' Cajuns, Fisk Bulldogs @ Tennessee State Tigers, UT Arlington Mavericks @ Bethesda Flames, NJIT Highlanders @ Rutgers Scarlet Knights, Delaware State Hornets @ Georgetown Hoyas, College of Biblical Studies Ambassadors @ Texas Southern Tigers, Apprentice School Builders @ Hampton Pirates, Virginia Lynchburg Dragons @ The Citadel Bulldogs, Winthrop Eagles @ Kennesaw State Owls, Penn State Lehigh Valley Nittany Lions @ Lafayette Leopards, St. Mary's (MD) Seahawks @ Longwood Lancers, Maine Black Bears @ Rhode Island Rams, Presbyterian Blue Hose @ NC State Wolfpack, Army Black Knights @ New Haven Chargers, Charleston Southern Buccaneers @ Wake Forest Demon Deacons …
 - possession data coverage: 1.0
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
