@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-10
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-10T05:30:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-10T05:45:22+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,7 +31,7 @@ WHY: Model line Kentucky Wildcats +1.5 vs market +5.5 (+4.2 pts) from opponent-a
 LOGGED: 2026-11-09T20:30:24+00:00 · model ncaab_v1
 ```
 
-## Watch list (11) — positive EV but not a qualified bet
+## Watch list (14) — positive EV but not a qualified bet
 
 - Kentucky Wildcats ML +225 (+225) · Kansas Jayhawks at Kentucky Wildcats · Tue 9:30 PM ET · EV +15.2% · min +190
 - Florida State Seminoles ML +425 (+425) · Florida Gators at Florida State Seminoles · Tue 6:00 PM ET · EV +2.5% · min +427
@@ -43,15 +43,16 @@ LOGGED: 2026-11-09T20:30:24+00:00 · model ncaab_v1
 - OVER 130.5 (-105) · Maryland Eastern Shore Hawks at Boston College Eagles · Tue 7:00 PM ET · EV +1.6% · min -102
 - OVER 152.5 (-105) · Youngstown State Penguins at Central Michigan Chippewas · Tue 7:00 PM ET · EV +1.6% · min -102
 - OVER 159.5 (-105) · Wright State Raiders at Toledo Rockets · Tue 7:00 PM ET · EV +1.6% · min -102
-- BYU Cougars ML -10000 (-10000) · Queens University Royals at BYU Cougars · Tue 9:00 PM ET · EV +0.3% · min -2712
+- OVER 158.5 (-105) · Belmont Bruins at Lipscomb Bisons · Tue 8:00 PM ET · EV +1.5% · min -102
+- Montana Grizzlies ML +550 (+550) · Montana Grizzlies at San Francisco Dons · Tue 10:00 PM ET · EV +1.4% · min +561
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $493.74 · 54-53-0 · logged this run 0 · open 10
+Bankroll $498.50 · 55-53-0 · logged this run 4 · open 13
 
 ## Data gaps
 
-- no line posted yet (19): College of Biblical Studies Ambassadors @ Texas Southern Tigers, Apprentice School Builders @ Hampton Pirates, Virginia Lynchburg Dragons @ The Citadel Bulldogs, Penn State Lehigh Valley Nittany Lions @ Lafayette Leopards, St. Mary's (MD) Seahawks @ Longwood Lancers, Texas State Bobcats @ UT Rio Grande Valley Vaqueros, Millsaps Majors @ Northwestern State Demons, Ecclesia Royals @ Central Arkansas Bears, York (NE) Panthers @ Omaha Mavericks, UT Dallas Comets @ Tarleton State Texans, Newman Jets @ Missouri State Bears, Northern New Mexico Eagles @ Northern Colorado Bears, Alcorn State Braves @ Murray State Racers, Dallas Christian Crusaders @ Texas A&M-Corpus Christi Islanders, Houston Christian Huskies @ South Dakota Coyotes …
-- possession data coverage: 0.986
+- no line posted yet (13): College of Biblical Studies Ambassadors @ Texas Southern Tigers, Apprentice School Builders @ Hampton Pirates, Virginia Lynchburg Dragons @ The Citadel Bulldogs, Penn State Lehigh Valley Nittany Lions @ Lafayette Leopards, St. Mary's (MD) Seahawks @ Longwood Lancers, Millsaps Majors @ Northwestern State Demons, Ecclesia Royals @ Central Arkansas Bears, York (NE) Panthers @ Omaha Mavericks, UT Dallas Comets @ Tarleton State Texans, Newman Jets @ Missouri State Bears, Northern New Mexico Eagles @ Northern Colorado Bears, Dallas Christian Crusaders @ Texas A&M-Corpus Christi Islanders, Livingstone Blue Bears @ Austin Peay Governors
+- possession data coverage: 0.983
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
