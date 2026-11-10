@@ -1,11 +1,11 @@
-# NCAA Basketball Model — daily report 2026-11-09
+# NCAA Basketball Model — daily report 2026-11-10
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-10T04:45:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-10T05:00:36+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $499.15 (start $500, at risk $10.00) · ¼-Kelly comparison $499.10
-**Season to date (BET tier):** 4-4-0 · flat P/L $-0.85 (-2.1% on risk) · ¼-Kelly P/L $-0.90 · beat close 12%
+**Paper bankroll:** $503.61 (start $500, at risk $5.00) · ¼-Kelly comparison $501.85
+**Season to date (BET tier):** 5-4-0 · flat P/L $+3.61 (+8.0% on risk) · ¼-Kelly P/L $+1.85 · beat close 11%
 
 ## Qualified bets (1)
 
@@ -31,23 +31,27 @@ WHY: Model line Kentucky Wildcats +1.5 vs market +5.5 (+4.2 pts) from opponent-a
 LOGGED: 2026-11-09T20:30:24+00:00 · model ncaab_v1
 ```
 
-## Watch list (7) — positive EV but not a qualified bet
+## Watch list (11) — positive EV but not a qualified bet
 
 - Kentucky Wildcats ML +225 (+225) · Kansas Jayhawks at Kentucky Wildcats · Tue 9:30 PM ET · EV +15.2% · min +190
 - Florida State Seminoles ML +425 (+425) · Florida Gators at Florida State Seminoles · Tue 6:00 PM ET · EV +2.5% · min +427
 - OVER 151.5 (-105) · South Alabama Jaguars at UCF Knights · Tue 7:00 PM ET · EV +1.8% · min -103
 - OVER 151.5 (-105) · San Diego Toreros at Colorado Buffaloes · Tue 9:00 PM ET · EV +1.8% · min -103
+- OVER 132.5 (-105) · Army Black Knights at New Haven Chargers · Tue 7:00 PM ET · EV +1.7% · min -102
 - OVER 143.5 (-105) · Virginia Tech Hokies at Iowa Hawkeyes · Tue 7:00 PM ET · EV +1.7% · min -102
+- OVER 148.5 (-105) · Presbyterian Blue Hose at NC State Wolfpack · Tue 7:00 PM ET · EV +1.7% · min -102
+- OVER 130.5 (-105) · Maryland Eastern Shore Hawks at Boston College Eagles · Tue 7:00 PM ET · EV +1.6% · min -102
 - OVER 152.5 (-105) · Youngstown State Penguins at Central Michigan Chippewas · Tue 7:00 PM ET · EV +1.6% · min -102
 - OVER 159.5 (-105) · Wright State Raiders at Toledo Rockets · Tue 7:00 PM ET · EV +1.6% · min -102
+- BYU Cougars ML -10000 (-10000) · Queens University Royals at BYU Cougars · Tue 9:00 PM ET · EV +0.3% · min -2712
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $493.74 · 54-53-0 · logged this run 0 · open 9
+Bankroll $493.74 · 54-53-0 · logged this run 1 · open 10
 
 ## Data gaps
 
-- no line posted yet (30): NJIT Highlanders @ Rutgers Scarlet Knights, Delaware State Hornets @ Georgetown Hoyas, College of Biblical Studies Ambassadors @ Texas Southern Tigers, Apprentice School Builders @ Hampton Pirates, Virginia Lynchburg Dragons @ The Citadel Bulldogs, Winthrop Eagles @ Kennesaw State Owls, Penn State Lehigh Valley Nittany Lions @ Lafayette Leopards, St. Mary's (MD) Seahawks @ Longwood Lancers, Maine Black Bears @ Rhode Island Rams, Presbyterian Blue Hose @ NC State Wolfpack, Army Black Knights @ New Haven Chargers, Charleston Southern Buccaneers @ Wake Forest Demon Deacons, Maryland Eastern Shore Hawks @ Boston College Eagles, Bryant Bulldogs @ Providence Friars, Texas State Bobcats @ UT Rio Grande Valley Vaqueros …
-- possession data coverage: 0.98
+- no line posted yet (19): College of Biblical Studies Ambassadors @ Texas Southern Tigers, Apprentice School Builders @ Hampton Pirates, Virginia Lynchburg Dragons @ The Citadel Bulldogs, Penn State Lehigh Valley Nittany Lions @ Lafayette Leopards, St. Mary's (MD) Seahawks @ Longwood Lancers, Texas State Bobcats @ UT Rio Grande Valley Vaqueros, Millsaps Majors @ Northwestern State Demons, Ecclesia Royals @ Central Arkansas Bears, York (NE) Panthers @ Omaha Mavericks, UT Dallas Comets @ Tarleton State Texans, Newman Jets @ Missouri State Bears, Northern New Mexico Eagles @ Northern Colorado Bears, Alcorn State Braves @ Murray State Racers, Dallas Christian Crusaders @ Texas A&M-Corpus Christi Islanders, Houston Christian Huskies @ South Dakota Coyotes …
+- possession data coverage: 0.983
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
