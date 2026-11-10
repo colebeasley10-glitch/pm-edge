@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-10
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-10T13:45:34+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-10T14:00:32+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -48,11 +48,11 @@ LOGGED: 2026-11-09T20:30:24+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $498.50 · 55-53-0 · logged this run 0 · open 13
+Bankroll $498.50 · 55-53-0 · logged this run 1 · open 14
 
 ## Data gaps
 
-- no line posted yet (17): College of Biblical Studies Ambassadors @ Texas Southern Tigers, Apprentice School Builders @ Hampton Pirates, Virginia Lynchburg Dragons @ The Citadel Bulldogs, Penn State Lehigh Valley Nittany Lions @ Lafayette Leopards, St. Mary's (MD) Seahawks @ Longwood Lancers, Millsaps Majors @ Northwestern State Demons, Ecclesia Royals @ Central Arkansas Bears, York (NE) Panthers @ Omaha Mavericks, UT Dallas Comets @ Tarleton State Texans, Newman Jets @ Missouri State Bears, Northern New Mexico Eagles @ Northern Colorado Bears, Dallas Christian Crusaders @ Texas A&M-Corpus Christi Islanders, Livingstone Blue Bears @ Austin Peay Governors, Fairleigh Dickinson Knights @ East Texas A&M Lions, Kansas City Roos @ Florida A&M Rattlers …
+- no line posted yet (19): College of Biblical Studies Ambassadors @ Texas Southern Tigers, Apprentice School Builders @ Hampton Pirates, Virginia Lynchburg Dragons @ The Citadel Bulldogs, Penn State Lehigh Valley Nittany Lions @ Lafayette Leopards, St. Mary's (MD) Seahawks @ Longwood Lancers, Millsaps Majors @ Northwestern State Demons, Ecclesia Royals @ Central Arkansas Bears, York (NE) Panthers @ Omaha Mavericks, UT Dallas Comets @ Tarleton State Texans, Newman Jets @ Missouri State Bears, Northern New Mexico Eagles @ Northern Colorado Bears, Dallas Christian Crusaders @ Texas A&M-Corpus Christi Islanders, Livingstone Blue Bears @ Austin Peay Governors, Fairleigh Dickinson Knights @ East Texas A&M Lions, Kansas City Roos @ Florida A&M Rattlers …
 - possession data coverage: 1.0
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
