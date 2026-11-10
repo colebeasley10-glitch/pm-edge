@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-10
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-10T22:00:33+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-10T22:15:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,24 +31,24 @@ WHY: Model line Kentucky Wildcats +1.5 vs market +5.5 (+4.2 pts) from opponent-a
 LOGGED: 2026-11-09T20:30:24+00:00 · model ncaab_v1
 ```
 
-## Watch list (14) — positive EV but not a qualified bet
+## Watch list (21) — positive EV but not a qualified bet
 
 - Kentucky Wildcats ML +225 (+225) · Kansas Jayhawks at Kentucky Wildcats · Tue 9:30 PM ET · EV +15.2% · min +190
+- Temple Owls ML -115 (-115) · Charleston Cougars at Temple Owls · Wed 6:30 PM ET · EV +3.0% · min -115
 - Florida State Seminoles ML +425 (+425) · Florida Gators at Florida State Seminoles · Tue 6:00 PM ET · EV +2.5% · min +427
+- Temple Owls -1.5 (+105) · Charleston Cougars at Temple Owls · Wed 6:30 PM ET · EV +2.0% · min +105
 - OVER 151.5 (-105) · South Alabama Jaguars at UCF Knights · Tue 7:00 PM ET · EV +1.8% · min -103
 - OVER 151.5 (-105) · San Diego Toreros at Colorado Buffaloes · Tue 9:00 PM ET · EV +1.8% · min -103
 - OVER 132.5 (-105) · Army Black Knights at New Haven Chargers · Tue 7:00 PM ET · EV +1.7% · min -102
 - OVER 143.5 (-105) · Virginia Tech Hokies at Iowa Hawkeyes · Tue 7:00 PM ET · EV +1.7% · min -102
+- OVER 128.5 (-105) · Saint Peter's Peacocks at South Carolina Gamecocks · Wed 7:00 PM ET · EV +1.7% · min -102
 - OVER 148.5 (-105) · Presbyterian Blue Hose at NC State Wolfpack · Tue 7:00 PM ET · EV +1.7% · min -102
+- South Florida Bulls ML -265 (-265) · Saint Joseph's Hawks at South Florida Bulls · Wed 3:00 PM ET · EV +1.7% · min -253
 - OVER 130.5 (-105) · Maryland Eastern Shore Hawks at Boston College Eagles · Tue 7:00 PM ET · EV +1.6% · min -102
-- OVER 152.5 (-105) · Youngstown State Penguins at Central Michigan Chippewas · Tue 7:00 PM ET · EV +1.6% · min -102
-- OVER 159.5 (-105) · Wright State Raiders at Toledo Rockets · Tue 7:00 PM ET · EV +1.6% · min -102
-- OVER 158.5 (-105) · Belmont Bruins at Lipscomb Bisons · Tue 8:00 PM ET · EV +1.5% · min -102
-- Montana Grizzlies ML +550 (+550) · Montana Grizzlies at San Francisco Dons · Tue 10:00 PM ET · EV +1.4% · min +561
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $498.50 · 55-53-0 · logged this run 0 · open 18
+Bankroll $498.50 · 55-53-0 · logged this run 3 · open 21
 
 ## Data gaps
 
