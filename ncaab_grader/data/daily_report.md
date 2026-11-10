@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-10
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-10T05:15:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-10T05:30:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -52,6 +52,6 @@ Bankroll $493.74 · 54-53-0 · logged this run 0 · open 10
 ## Data gaps
 
 - no line posted yet (19): College of Biblical Studies Ambassadors @ Texas Southern Tigers, Apprentice School Builders @ Hampton Pirates, Virginia Lynchburg Dragons @ The Citadel Bulldogs, Penn State Lehigh Valley Nittany Lions @ Lafayette Leopards, St. Mary's (MD) Seahawks @ Longwood Lancers, Texas State Bobcats @ UT Rio Grande Valley Vaqueros, Millsaps Majors @ Northwestern State Demons, Ecclesia Royals @ Central Arkansas Bears, York (NE) Panthers @ Omaha Mavericks, UT Dallas Comets @ Tarleton State Texans, Newman Jets @ Missouri State Bears, Northern New Mexico Eagles @ Northern Colorado Bears, Alcorn State Braves @ Murray State Racers, Dallas Christian Crusaders @ Texas A&M-Corpus Christi Islanders, Houston Christian Huskies @ South Dakota Coyotes …
-- possession data coverage: 0.983
+- possession data coverage: 0.986
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
