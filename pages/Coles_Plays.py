@@ -74,7 +74,7 @@ with tab_feeds:
         st.caption(f"Last scan {(stat.get('at') or '')[:16].replace('T', ' ')} UTC · "
                    f"{stat.get('board_props', 0)} Pinnacle props · {stat.get('matched', 0)} app lines matched · "
                    f"{stat.get('edges', 0)} edges")
-        st.dataframe([{"App": k, "Lines": v.get("props", "—"), "Matched to Pinnacle": v.get("matched", "—"),
+        st.dataframe([{"App": k, "Lines": str(v.get("props", "—")), "Matched to Pinnacle": str(v.get("matched", "—")),
                        "Problem": v.get("error") or ""} for k, v in (stat.get("detail") or {}).items()],
                      hide_index=True, width="stretch")
         if stat.get("closest"):
