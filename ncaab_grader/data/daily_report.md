@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-09
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-10T01:15:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-10T01:30:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,12 +53,11 @@ WHY: Model line Seton Hall Pirates -8.5 vs market -4.5 (+3.9 pts) from opponent-
 LOGGED: 2026-11-08T21:30:26+00:00 · model ncaab_v1
 ```
 
-## Watch list (11) — positive EV but not a qualified bet
+## Watch list (10) — positive EV but not a qualified bet
 
 - Kentucky Wildcats ML +225 (+225) · Kansas Jayhawks at Kentucky Wildcats · Tue 9:30 PM ET · EV +15.2% · min +190
 - Florida State Seminoles ML +425 (+425) · Florida Gators at Florida State Seminoles · Tue 6:00 PM ET · EV +2.5% · min +427
 - Seton Hall Pirates ML -205 (-205) · Seton Hall Pirates at Charlotte 49ers · Mon 9:30 PM ET · EV +2.5% · min -202
-- OVER 144.5 (-105) · Illinois State Redbirds at Purdue Boilermakers · Mon 8:30 PM ET · EV +1.9% · min -103
 - OVER 151.5 (-105) · South Alabama Jaguars at UCF Knights · Tue 7:00 PM ET · EV +1.8% · min -103
 - OVER 151.5 (-105) · San Diego Toreros at Colorado Buffaloes · Tue 9:00 PM ET · EV +1.8% · min -103
 - OVER 143.5 (-105) · Virginia Tech Hokies at Iowa Hawkeyes · Tue 7:00 PM ET · EV +1.7% · min -102
