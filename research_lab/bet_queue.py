@@ -151,7 +151,7 @@ def candidates(root: Path = ROOT, base: Path | None = None) -> list[dict]:
         if r.get("status") == "open" and r.get("kind"):
             dec = _f(r.get("best_decimal")) or _f(r.get("bet_at_decimal"))
             key = f"prop:{r['pick']}|{r.get('game')}" if r.get("market") == "prop" else None
-            out.append(_cand(f"Odds Fam — {r['kind']}", "odds_fam", r["of_id"], r.get("league"), r.get("game"),
+            out.append(_cand(f"Hunter's Plays — {r['kind']}", "odds_fam", r["of_id"], r.get("league"), r.get("game"),
                              r["pick"], r.get("game_start"), dec, _f(r.get("fair_prob")), key=key))
     for r in _csv(root / "ncaa_grader" / "data" / "picks.csv"):
         if not r.get("result") and r.get("tier") == "STRONG" and r.get("source", "live") == "live":

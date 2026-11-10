@@ -300,8 +300,11 @@ def lanes() -> list[dict]:
 
     out.append(grade("Prop Board steam", _rows("research_lab/data/PROP_BOARD/plays.csv"), risk=10.0, clv="clv"))
     of = _rows("research_lab/data/ODDS_FAM/plays.csv")
+    # Nov 10, 2026: the Odds Fam paper lane (built to run like Hunter's plays) as one lane, its play types as breakdowns
+    out.append(grade("Hunter's Plays", [r for r in of if r.get("kind")], risk=10.0, clv="clv",
+                     note="Odds Fam paper lane run like Hunter's picks (not his real bets); $10 a play"))
     for kind in sorted({r.get("kind") for r in of if r.get("kind")}):
-        out.append(grade(f"Odds Fam — {kind}", [r for r in of if r.get("kind") == kind], risk=10.0, clv="clv"))
+        out.append(grade(f"Hunter's Plays — {kind}", [r for r in of if r.get("kind") == kind], risk=10.0, clv="clv"))
     out.append(grade("Sharp Plays (line steam)", _rows("research_lab/data/SHARP_PLAYS/plays.csv"), risk=10.0, clv="clv"))
     cp = _rows("research_lab/data/COLES_PLAYS/plays.csv")   # Nov 10, 2026: Cole's elite list
     out.append(grade("Cole's Plays", cp, risk=10.0, clv="clv",

@@ -578,7 +578,7 @@ def open_plays() -> list[dict]:
     for r in rows("research_lab/data/ODDS_FAM/plays.csv"):
         if r.get("status") == "open" and r.get("kind") == "Prop steam":
             dec = _num(r.get("best_decimal")) or _num(r.get("bet_at_decimal"))
-            add(r["game_start"], r.get("league") or "Prop", r["pick"], r.get("game") or "", "Odds Fam",
+            add(r["game_start"], r.get("league") or "Prop", r["pick"], r.get("game") or "", "Hunter's Plays",
                 price=_am(dec) if dec else (r.get("bet_at") or ""), dec=dec, fair=r.get("fair_prob"),
                 bet=_prop_bet(r))
     for path, league, lane, src in (("ncaa_grader/data/picks.csv", "NCAAF", "NCAA Grader", "ncaa_grader"),
