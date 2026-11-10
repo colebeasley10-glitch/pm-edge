@@ -154,7 +154,10 @@ def decide(row: dict, ev: dict, i: int) -> str | None:
 
 
 def fetch_scoreboard(path: str, day: str, session=requests) -> dict:
-    r = session.get(ESPN.format(path=path), params={"dates": day, "limit": 300}, timeout=20)
+    params = {"dates": day, "limit": 300}
+    if "mens-college-basketball" in path:
+        params["groups"] = 50          # Nov 10, 2026: all of Division I, not just ESPN's featured games
+    r = session.get(ESPN.format(path=path), params=params, timeout=20)
     r.raise_for_status()
     return r.json()
 

@@ -19,7 +19,8 @@ from trader_follow.scores import LEAGUES as POLY_LEAGUES, canon, team_matches
 ET = ZoneInfo("America/New_York")
 BASE = "https://site.api.espn.com/apis/site/v2/sports/{path}/{kind}"
 PATHS = {"NFL": "football/nfl", "NCAA": "football/college-football", "NCAAF": "football/college-football",
-         "NBA": "basketball/nba", "NHL": "hockey/nhl", "MLB": "baseball/mlb"}
+         "NBA": "basketball/nba", "NHL": "hockey/nhl", "MLB": "baseball/mlb",
+         "NCAAB": "basketball/mens-college-basketball"}
 
 
 def path_for(league: str) -> str | None:
@@ -51,7 +52,7 @@ class Live:
         names = [n for n in bet.get("teams") or [] if n] or [bet.get("team")]
         best = None
         for day in sorted({start.astimezone(ET).strftime("%Y%m%d"), start.strftime("%Y%m%d")}):
-            extra = {"groups": 80} if "college-football" in path else {}
+            extra = {"groups": 80} if "college-football" in path else ({"groups": 50} if "college-basketball" in path else {})
             board = self._get(path, "scoreboard", dates=day, limit=300, **extra)
             for ev in board.get("events") or []:
                 comp = (ev.get("competitions") or [{}])[0]

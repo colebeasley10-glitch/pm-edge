@@ -17,6 +17,9 @@ get in; BreakTheBank's NFL bets still alert straight from Trader Follow.
 NBA props are checked against ESPN's injury report first (nba_injuries.py): Out/Doubtful players are
 never queued, Questionable ones are queued on paper but never alerted, and no report = no alert. Steam plays from the Prop Board and Odds Fam are
 the same props, so each prop is queued once.
+Nov 10, 2026: every sport, same gates. Sources are Prop Board, Odds Fam, Sharp Plays (line steam), the
+NCAA football grader, the NBA model and props, the NCAA basketball model (bets + home-court test) and
+Trader Follow; Pinnacle's college basketball now flows into the Pinnacle-fed lanes as "NCAAB".
 
 Each queued play records the price, the fair price and EV at queue time, and two paper stakes:
   * flat $10 (the lane's main record, like every other lane),
@@ -113,7 +116,7 @@ def _save(rows: list[dict], base: Path | None) -> None:
 
 
 # ------------------------------------------------------------------ candidates from every lane
-_GAME_MODEL_SOURCES = ("ncaa_grader", "nba_grader")
+_GAME_MODEL_SOURCES = ("ncaa_grader", "nba_grader", "ncaab_model", "ncaab_home")
 
 
 def _game_key(source: str, sid: str, game) -> str | None:
@@ -165,6 +168,18 @@ def candidates(root: Path = ROOT, base: Path | None = None) -> list[dict]:
             out.append(_cand("NBA Props — Strong + Lean", "nba_props", r["pick_id"], "NBA", f"{r['away']} at {r['home']}",
                              r["side"], r.get("kickoff"), dec_from_american(r.get("odds")), _f(r.get("model_prob")),
                              "Model", key=f"prop:{r['side']}|{r['away']} at {r['home']}"))
+    # Nov 10, 2026: every sport, same gates -- NCAA basketball model lanes and Sharp Plays line steam
+    for f, src, lane, tier in (("picks.csv", "ncaab_model", "NCAAB Model — bets (flat $5)", "BET"),
+                               ("home_test.csv", "ncaab_home", "NCAAB Home-Court Test (flat $5)", "TEST")):
+        for r in _csv(root / "ncaab_grader" / "data" / f):
+            if not r.get("result") and r.get("tier") == tier and str(r.get("pick_id", "")).startswith(("live:", "home-test:")):
+                out.append(_cand(lane, src, r["pick_id"], "NCAAB", f"{r['away']} at {r['home']}", r["side"],
+                                 r.get("tipoff"), dec_from_american(r.get("odds")),
+                                 fair_calibration.calibrated("ncaab_model", r), "Model"))
+    for r in _csv(lab / "SHARP_PLAYS" / "plays.csv"):
+        if r.get("status") == "open":
+            out.append(_cand("Sharp Plays (line steam)", "sharp_plays", r["play_id"], r.get("league"), r.get("game"),
+                             r["pick"], r.get("game_start"), _f(r.get("target_decimal")), _f(r.get("fair_prob"))))
     for r in _csv(root / "trader_follow" / "data" / "signals.csv"):
         if r.get("status") == "open" and r.get("in_band") == "True":
             cp = _f(r.get("copy_price"))
@@ -212,16 +227,18 @@ def kelly(fair: float, dec: float) -> float:
 def _source_result(q: dict, root: Path, lab: Path) -> tuple[str, float | None] | None:
     """(won/lost/void, clv in probability points or None) once the source has settled the play."""
     src, sid = q["source"], q["source_id"]
-    if src in ("prop_board", "odds_fam"):
-        f = lab / ("PROP_BOARD/plays.csv" if src == "prop_board" else "ODDS_FAM/plays.csv")
-        col = "play_id" if src == "prop_board" else "of_id"
+    if src in ("prop_board", "odds_fam", "sharp_plays"):
+        f = lab / {"prop_board": "PROP_BOARD/plays.csv", "odds_fam": "ODDS_FAM/plays.csv",
+                   "sharp_plays": "SHARP_PLAYS/plays.csv"}[src]
+        col = "of_id" if src == "odds_fam" else "play_id"
         r = next((x for x in _csv(f) if x.get(col) == sid), None)
         if not r or r.get("status") not in ("won", "lost", "void", "ungraded"):
             return None
         return ("void" if r["status"] == "ungraded" else r["status"]), _f(r.get("clv"))
-    if src in ("ncaa_grader", "nba_grader", "nba_props"):
+    if src in ("ncaa_grader", "nba_grader", "nba_props", "ncaab_model", "ncaab_home"):
         f = {"ncaa_grader": "ncaa_grader/data/picks.csv", "nba_grader": "nba_grader/data/picks.csv",
-             "nba_props": "nba_grader/data/props.csv"}[src]
+             "nba_props": "nba_grader/data/props.csv", "ncaab_model": "ncaab_grader/data/picks.csv",
+             "ncaab_home": "ncaab_grader/data/home_test.csv"}[src]
         r = next((x for x in _csv(root / f) if x.get("pick_id") == sid), None)
         if not r or r.get("result") not in ("W", "L", "P", "V"):
             return None

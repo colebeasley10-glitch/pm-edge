@@ -52,7 +52,7 @@ LATE_PROB_MOVE = 0.03
 LATE_WINDOW = timedelta(minutes=45)
 MIN_LIMIT = 100                # ignore props Pinnacle barely takes action on
 LEAGUES = {"NBA": "basketball/nba", "NFL": "football/nfl", "NCAA": "football/college-football",
-           "NHL": "hockey/nhl"}
+           "NHL": "hockey/nhl", "NCAAB": "basketball/mens-college-basketball"}   # Nov 10, 2026: + college hoops
 FIELDS = ["play_id", "alert_time", "league", "game", "player", "stat", "pick", "side", "line", "open_line",
           "move", "limit", "fair_prob", "fair_odds", "target_odds", "target_decimal", "game_start", "pushed",
           "close_prob", "clv", "actual", "status", "settled_time", "pl"]
@@ -464,7 +464,8 @@ class BoxScores:
         home = play["game"].split(" at ")[-1]
         event = None
         for day in {start.strftime("%Y%m%d"), (start - timedelta(hours=8)).strftime("%Y%m%d")}:
-            board = self._get(path, "scoreboard", dates=day, limit=300)
+            extra = {"groups": 50} if "mens-college-basketball" in path else {}   # all of D-I
+            board = self._get(path, "scoreboard", dates=day, limit=300, **extra)
             for ev in board.get("events") or []:
                 comp = (ev.get("competitions") or [{}])[0]
                 done = ((comp.get("status") or {}).get("type") or {}).get("completed")

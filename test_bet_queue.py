@@ -172,3 +172,63 @@ def test_one_play_per_game_market_across_model_versions():
 def test_data_sync_skipped_in_tests():
     import data_sync
     assert data_sync.sync(force=True).get("last") == 0.0
+
+
+# ---------------------------------------------------------------- Nov 10, 2026: every sport, same gates
+def hoops(i, tier="BET", result="", start=NOW + timedelta(hours=3), prefix="live", odds="+150"):
+    return {"pick_id": f"{prefix}:ncaab_v1:{i}:SPREAD", "tipoff": start.strftime("%Y-%m-%dT%H:%MZ"),
+            "home": f"Home{i}", "away": f"Away{i}", "market": "SPREAD", "side": f"Away{i} +7.5",
+            "odds": odds, "model_prob": 0.55, "market_prob": "", "tier": tier, "result": result, "clv": "1.0"}
+
+
+def steam(i, status="open", start=NOW + timedelta(hours=3)):
+    return {"play_id": f"s{i}", "league": "NCAAB", "game": f"A{i} at B{i}", "pick": f"B{i} -3.5",
+            "game_start": start.isoformat().replace("+00:00", "Z"), "target_decimal": "2.0", "fair_prob": "0.53",
+            "clv": "0.01", "status": status}
+
+
+def test_ncaab_and_sharp_plays_feed_the_queue_when_they_earn_it(tmp_path):
+    root, lab = setup(tmp_path, [prop(1, tier="NO_EDGE")])
+    write(root / "ncaab_grader/data/picks.csv", [hoops(1), hoops(2, tier="PASS")])
+    write(root / "ncaab_grader/data/home_test.csv", [hoops(3, tier="TEST", prefix="home-test")])
+    write(lab / "SHARP_PLAYS/plays.csv", [steam(1), steam(2, status="won")])
+    lanes = [lane("NCAAB Model — bets (flat $5)"), lane("NCAAB Home-Court Test (flat $5)"),
+             lane("Sharp Plays (line steam)")]
+    bq.update(NOW, lab, root=root, lanes=lanes)
+    got = {r["lane"] for r in bq.load(lab)}
+    assert got == {"NCAAB Model — bets (flat $5)", "NCAAB Home-Court Test (flat $5)", "Sharp Plays (line steam)"}
+    assert len(bq.load(lab)) == 3                                   # PASS tier and settled plays skipped
+
+
+def test_ncaab_lanes_get_same_gates(tmp_path):
+    root, lab = setup(tmp_path, [prop(1, tier="NO_EDGE")])
+    write(root / "ncaab_grader/data/picks.csv", [hoops(1)])
+    assert bq.update(NOW, lab, root=root, lanes=[lane("NCAAB Model — bets (flat $5)", n=9)])["queued"] == 0
+    assert bq.update(NOW, lab, root=root,
+                     lanes=[lane("NCAAB Model — bets (flat $5)", clv=-0.3)])["queued"] == 0
+
+
+def test_ncaab_and_sharp_plays_settle_from_source(tmp_path):
+    root, lab = setup(tmp_path, [prop(1, tier="NO_EDGE")])
+    write(root / "ncaab_grader/data/picks.csv", [hoops(1)])
+    write(lab / "SHARP_PLAYS/plays.csv", [steam(1)])
+    lanes = [lane("NCAAB Model — bets (flat $5)"), lane("Sharp Plays (line steam)")]
+    bq.update(NOW, lab, root=root, lanes=lanes)
+    write(root / "ncaab_grader/data/picks.csv", [hoops(1, result="W")])
+    write(lab / "SHARP_PLAYS/plays.csv", [steam(1, status="lost")])
+    assert bq.update(NOW + timedelta(hours=6), lab, root=root, lanes=lanes)["settled"] == 2
+    by = {r["lane"]: r["status"] for r in bq.load(lab)}
+    assert by == {"NCAAB Model — bets (flat $5)": "won", "Sharp Plays (line steam)": "lost"}
+
+
+def test_pinnacle_college_hoops_renamed_never_football():
+    from research_lab import pinnacle
+    raw = {"events": [{"league_name": "NCAA"}, {"league_name": "NCAA Extra Games"}, {"league_name": "NCAA Women"},
+                      {"league_name": "NBA"}]}
+    out = pinnacle.normalize(3, raw)
+    assert [e["league_name"] for e in out["events"]] == ["NCAAB", "NCAAB Extra Games", "NCAAW", "NBA"]
+    assert raw["events"][0]["league_name"] == "NCAA"                 # original untouched
+    assert pinnacle.normalize(5, raw) is raw                         # football left alone
+    from research_lab import prop_board, sharp_plays
+    assert prop_board.league_of("NCAAB") == "NCAAB" and sharp_plays.league_of("NCAAB Extra Games") == "NCAAB"
+    assert prop_board.league_of("NCAAW") is None

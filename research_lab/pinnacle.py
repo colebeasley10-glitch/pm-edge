@@ -42,7 +42,7 @@ SOCCER_SERIES = ["KXEPLGAME", "KXUCLGAME", "KXUELGAME", "KXLALIGAGAME", "KXSERIE
 SPORTS = {
     5: ("football", ["KXNCAAFGAME", "KXNCAAFSPREAD", "KXNCAAFTOTAL", "KXNFLGAME", "KXNFLSPREAD", "KXNFLTOTAL"],
         {"NCAA", "NFL"}, 45),
-    3: ("basketball", ["KXNBAGAME", "KXNBASPREAD", "KXNBATOTAL"], {"NBA"}, 60),
+    3: ("basketball", ["KXNBAGAME", "KXNBASPREAD", "KXNBATOTAL"], {"NBA", "NCAAB"}, 60),   # Nov 10, 2026: + college
     4: ("hockey", ["KXNHLGAME", "KXNHLSPREAD", "KXNHLTOTAL"], {"NHL"}, 120),
     6: ("baseball", ["KXMLBGAME", "KXMLBSPREAD", "KXMLBTOTAL"], {"MLB"}, 120),
     1: ("soccer", SOCCER_SERIES, set(), 180),
@@ -54,6 +54,23 @@ LAB_ALIASES = Path(__file__).parent / "pinnacle_aliases.csv"
 
 
 PROP_SPORTS = {3, 4, 5}   # basketball, hockey, football: fetch Pinnacle player props too
+
+
+def normalize(sid: int, payload: dict) -> dict:
+    """Nov 10, 2026: Pinnacle names men's college basketball "NCAA", the same as college football.
+    Rename it "NCAAB" (and women's "NCAAW", which stays out) so every lane grades it against the
+    basketball scoreboard, never football's."""
+    if sid != 3 or not isinstance(payload, dict):
+        return payload
+    events = []
+    for e in payload.get("events") or []:
+        name = str(e.get("league_name") or "")
+        if name.upper().startswith("NCAA") and not name.upper().startswith(("NCAAB", "NCAAW")):
+            women = "women" in name.lower() or name.upper().startswith("NCAA W")
+            rest = name[4:].lstrip()
+            e = {**e, "league_name": ("NCAAW" if women else "NCAAB") + (f" {rest}" if rest and not women else "")}
+        events.append(e)
+    return {**payload, "events": events}     # a copy: never touch the payload another sport may share
 
 
 class PinnacleError(RuntimeError):
@@ -158,7 +175,7 @@ def fetch_due(client, now: datetime, base: Path | None = None) -> tuple[dict[int
             continue
         u["requests"] += 1
         try:
-            out[sid] = client.fixtures(sid)
+            out[sid] = normalize(sid, client.fixtures(sid))
             u["last_fetch"][str(sid)] = iso(now)
             info["fetched"].append(name)
         except (PinnacleError, requests.RequestException) as exc:

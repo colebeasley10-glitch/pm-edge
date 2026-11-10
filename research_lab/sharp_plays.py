@@ -37,7 +37,7 @@ PROB_MOVE = 0.04             # fair win-probability shift of the original line's
 # line moves (points) that count as steam on their own, by league
 POINT_MOVE = {"NFL": {"total": 1.5, "spread": 1.0}, "NCAA": {"total": 2.0, "spread": 1.5},
               "NBA": {"total": 2.5, "spread": 1.5}, "NHL": {"total": 0.5, "spread": 99}}
-ESPN_CODE = {"NFL": "nfl", "NCAA": "cfb", "NBA": "nba", "NHL": "nhl"}
+ESPN_CODE = {"NFL": "nfl", "NCAA": "cfb", "NBA": "nba", "NHL": "nhl", "NCAAB": "cbb"}   # Nov 10: + NCAAB
 SPORT_IDS = {5, 3, 4}        # football, basketball, hockey
 FIELDS = ["play_id", "alert_time", "league", "game", "home", "away", "game_start", "market", "pick", "side",
           "line", "open_line", "move", "fair_prob", "fair_odds", "target_odds", "target_decimal", "pushed",
