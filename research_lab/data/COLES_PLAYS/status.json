@@ -1,39 +1,58 @@
 {
- "at": "2026-11-10T18:48:00.373306Z",
+ "at": "2026-11-10T19:03:07.960833Z",
  "board_props": 625,
- "app_props": 2179,
- "matched": 592,
- "edges": 0,
- "new_plays": 0,
+ "app_props": 12157,
+ "matched": 1523,
+ "edges": 30,
+ "new_plays": 30,
  "settled": 0,
+ "closest": [
+  "Underdog Jalen Brunson Under 25.5 Points -102 vs fair -118 (+7.1%)",
+  "Underdog Emmitt Finnie Over 1.5 Shots On Goal -123 vs fair -141 (+5.9%)",
+  "Underdog Darryn Peterson Over 30.5 Pts & Rebs & Asts -118 vs fair -133 (+5.5%)",
+  "Underdog Franz Wagner Under 24.5 Points -111 vs fair -124 (+5.2%)",
+  "Underdog Dawson Mercer Under 1.5 Shots On Goal +109 vs fair -101 (+5.0%)",
+  "Underdog Joel Eriksson Ek Over 0.5 Assists +135 vs fair +124 (+4.9%)",
+  "Underdog Anthony Black Under 26.5 Pts & Rebs & Asts -101 vs fair -111 (+4.6%)",
+  "Underdog Michael Brandsegg-Nyg\u00e5rd Over 1.5 Shots On Goal -118 vs fair -129 (+4.3%)"
+ ],
  "apps": {
   "Sleeper": {
-   "props": 2179,
-   "error": null
+   "props": 2182,
+   "error": null,
+   "url": null,
+   "tried": null
   },
   "Underdog": {
-   "props": null,
-   "error": "HTTPError: 426 Client Error: Upgrade Required for url: https://api.underdogfantasy.com/beta/v5/over_under_lines"
+   "props": 6841,
+   "error": null,
+   "url": "https://api.underdogfantasy.com/v1/over_under_lines",
+   "tried": [
+    "api.underdogfantasy.com/beta/v7/over_under_lines: 404",
+    "api.underdogfantasy.com/beta/v6/over_under_lines: 426"
+   ]
   },
   "PrizePicks": {
-   "props": null,
-   "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.prizepicks.com/projections?per_page=2000&single_stat=true&game_mode=pickem"
+   "props": 3134,
+   "error": null,
+   "url": "https://partner-api.prizepicks.com/projections",
+   "tried": null
   }
  },
- "clv_tracked": 0,
+ "clv_tracked": 30,
  "best_of": {
   "top_lanes": [
    "NBA Model \u2014 Strong + Lean"
   ],
-  "added": 3
+  "added": 0
  },
  "detail": {
   "Sleeper": {
-   "at": "2026-11-10T18:48:00.373306Z",
-   "raw": 2378,
-   "sample": "[{\"status\": \"active\", \"options\": [{\"status\": \"active\", \"metadata\": {}, \"subject_id\": \"1131\", \"outcome\": \"over\", \"season\": \"2026\", \"season_type\": \"regular\", \"sport\": \"nba\", \"market_type\": \"points_over_under_player_1131\", \"game_id\": \"1393723849891119104\", \"subject_type\": \"player\", \"wager_type\": \"points\", \"outcome_type\": \"over_under\", \"line_type\": \"normal\", \"game_status\": \"pre_game\", \"line_id\": \"1425949532121751564\", \"outcome_value\": 4.5, \"payout_multiplier\": \"1.80\", \"subject_pos_rank\": null, \"subject_position\": \"C\", \"subject_team\": \"NYK\"}, {\"status\": \"active\", \"metadata\": {}, \"subject_id\": \"1131\", \"outcome\": \"under\", \"season\": \"2026\", \"season_type\": \"regular\", \"sport\": \"nba\", \"market_type\": \"points_over_under_player_1131\", \"game_id\": \"1393723849891119104\", \"subject_type\": \"player\", \"wager_type\": \"points\", \"outcome_type\": \"over_under\", \"line_type\": \"normal\", \"game_status\": \"pre_game\", \"line_id\": \"1425949532121751565\", \"outcome_value\": 4.5, \"payout_multiplier\": \"1.76\", \"subject_pos_rank\": null, \"subject_position\": \"C\", \"subject_team\": \"NYK\"}], \"subject_id\": \"1131\", \"season\": \"2026\", \"season_type\": \"regular\", \"sport\": \"nba\", \"market_type\": \"points_over_under_player_1131\", \"game_id\": \"1393723849891119104\", \"updated_at\": 1794335371798, \"subject_type\": \"player\", \"wager_type\": \"points\", \"outcome_type\": \"over_under\", \"line_type\": \"normal\", \"game_status\": \"pre_game\", \"recent_performance\": {\"values\": [{\"date\": \"2026-10-20\", \"opponent\": \"PHI\", \"value\": 12.0}, {\"date\": \"2026-10-23\", \"opponent\": \"BOS\", \"value\": 2.0}, {\"date\": \"2026-10-25\", \"opponent\": \"ORL\", \"value\": 4.0}, {\"date\": \"2026-10-27\", \"opponent\": \"DET\", \"value\": 10.0}, {\"date\": \"2026-10-28\", \"opponent\": \"CHI\", \"value\": 4.0}, {\"date\": \"2026-10-30\", \"opponent\": \"PHI\", \"value\": 3.0}, {\"date\": \"2026-11-02\", \"opponent\": \"BKN\", \"value\": 4.0}, {\"date\": \"2026-11-04\", \"opponent\": \"CHI\", \"value\": 6.0}, {\"date\": \"2026-11-07\", \"opponent\": \"CLE\", \"value\": 0.0}]}, \"pick_stats\": {\"counts\": {\"over\": 20, \"total\": 24, \"under\": 4}, \"popularity\": 0.5581617999042604, \"subject_id\": \"1131\", \"subject_type\": \"player\"}}, {\"status\": \"active\", \"options\": [{\"status\": \"active\", \"metadata\": {}, \"subject_id\": \"1131\", \"outcome\": \"over\", \"season\": \"2026\", \"season_type\": \"regular\", \"sport\": \"nba\", \"market_type\": \"points_and_rebounds_over_under_player_1131\", \"game_id\": \"1393723849891119104\", \"subject_type\": \"player\", \"wager_type\": \"points_and_rebounds\", \"outcome_type\": \"over_under\", \"line_type\": \"normal\", \"game_status\": \"pre_game\", \"line_id\": \"1425931663984050176\", \"outcome_value\": 11.5, \"payout_multiplier\": \"1.78\", \"subject_pos_rank\": null, \"subject_position\": \"C\", \"subject_team\": \"NYK\"}, {\"status\": \"active\", \"metadata\": {}, \"subject_id\": \"1131\", \"outcome\": \"under\", \"season\": \"2026\", \"season_type\": \"regular\", \"sport\": \"nba\", \"market_type\": \"points_and_rebounds_over_under_player_1131\", \"game_id\": \"1393723849891119104\", \"subject_type\": \"player\", \"wager_type\": \"points_and_rebounds\", \"outcome_type\": \"over_under\", \"line_type\": \"normal\", \"game_status\": \"pre_game\", \"line_id\": \"1425931663984050177\", \"outcome_value\": 11.5, \"payout_multiplier\": \"1.78\", \"subject_pos_rank\": null, \"subject_position\": \"C\", \"subject_team\": \"NYK\"}], \"subject_id\": \"1131\", \"season\": \"2026\", \"season_type\": \"regular\", \"sport\": \"nba\", \"market_type\": \"points_and_rebounds_over_under_player_1131\", \"game_id\": \"1393723849891119104\", \"updated_at\": 1794331111640, \"subject_type\": \"player\", \"wager_type\": \"points_and_rebounds\", \"outcome_type\": \"over_under\", \"line_type\": \"normal\", \"game_status\": \"pre_game\", \"recent_performance\": {\"values\": [{\"date\": \"2026-10-20\", \"opponent\": \"PHI\", \"value\": 26.0}, {\"date\": \"2026-10-23\", \"opponent\": \"BOS\", \"value\": 4.0}, {\"date\": \"2026-10-25\", \"opponent\": \"ORL\", \"value\": 7.0}, {\"date\": \"2026-10-27\", \"opponent\": \"DET\", \"value\": 18.0}, {\"date\": \"2026-10-28\", \"opponent\": \"CHI\", \"value\": 15.0}, {\"date\": \"2026-10-30\", \"opponent\": \"PHI\", \"value\": 9.0}, {\"date\": \"2026-11-02\", \"opponent\": \"BKN\", \"value\": 13.0}, {\"date\": \"2026-11-04\", \"opp",
-   "props": 2179,
-   "matched": 592,
+   "at": "2026-11-10T19:03:07.960833Z",
+   "raw": 2391,
+   "sample": "[{\"status\": \"active\", \"options\": [{\"status\": \"active\", \"metadata\": {}, \"subject_id\": \"1131\", \"outcome\": \"over\", \"sport\": \"nba\", \"season_type\": \"regular\", \"season\": \"2026\", \"game_id\": \"1393723849891119104\", \"market_type\": \"points_over_under_player_1131\", \"subject_type\": \"player\", \"wager_type\": \"points\", \"outcome_type\": \"over_under\", \"line_type\": \"normal\", \"game_status\": \"pre_game\", \"line_id\": \"1425955697761218567\", \"outcome_value\": 4.5, \"payout_multiplier\": \"1.78\", \"subject_pos_rank\": null, \"subject_position\": \"C\", \"subject_team\": \"NYK\"}, {\"status\": \"active\", \"metadata\": {}, \"subject_id\": \"1131\", \"outcome\": \"under\", \"sport\": \"nba\", \"season_type\": \"regular\", \"season\": \"2026\", \"game_id\": \"1393723849891119104\", \"market_type\": \"points_over_under_player_1131\", \"subject_type\": \"player\", \"wager_type\": \"points\", \"outcome_type\": \"over_under\", \"line_type\": \"normal\", \"game_status\": \"pre_game\", \"line_id\": \"1425955697761218569\", \"outcome_value\": 4.5, \"payout_multiplier\": \"1.78\", \"subject_pos_rank\": null, \"subject_position\": \"C\", \"subject_team\": \"NYK\"}], \"subject_id\": \"1131\", \"sport\": \"nba\", \"season_type\": \"regular\", \"season\": \"2026\", \"game_id\": \"1393723849891119104\", \"market_type\": \"points_over_under_player_1131\", \"updated_at\": 1794336841640, \"subject_type\": \"player\", \"wager_type\": \"points\", \"outcome_type\": \"over_under\", \"line_type\": \"normal\", \"game_status\": \"pre_game\", \"recent_performance\": {\"values\": [{\"date\": \"2026-10-20\", \"opponent\": \"PHI\", \"value\": 12.0}, {\"date\": \"2026-10-23\", \"opponent\": \"BOS\", \"value\": 2.0}, {\"date\": \"2026-10-25\", \"opponent\": \"ORL\", \"value\": 4.0}, {\"date\": \"2026-10-27\", \"opponent\": \"DET\", \"value\": 10.0}, {\"date\": \"2026-10-28\", \"opponent\": \"CHI\", \"value\": 4.0}, {\"date\": \"2026-10-30\", \"opponent\": \"PHI\", \"value\": 3.0}, {\"date\": \"2026-11-02\", \"opponent\": \"BKN\", \"value\": 4.0}, {\"date\": \"2026-11-04\", \"opponent\": \"CHI\", \"value\": 6.0}, {\"date\": \"2026-11-07\", \"opponent\": \"CLE\", \"value\": 0.0}]}, \"pick_stats\": {\"counts\": {\"over\": 21, \"total\": 25, \"under\": 4}, \"popularity\": 0.5620265151515151, \"subject_id\": \"1131\", \"subject_type\": \"player\"}}, {\"status\": \"active\", \"options\": [{\"status\": \"active\", \"metadata\": {}, \"subject_id\": \"1131\", \"outcome\": \"over\", \"sport\": \"nba\", \"season_type\": \"regular\", \"season\": \"2026\", \"game_id\": \"1393723849891119104\", \"market_type\": \"points_and_rebounds_over_under_player_1131\", \"subject_type\": \"player\", \"wager_type\": \"points_and_rebounds\", \"outcome_type\": \"over_under\", \"line_type\": \"normal\", \"game_status\": \"pre_game\", \"line_id\": \"1425931663984050176\", \"outcome_value\": 11.5, \"payout_multiplier\": \"1.78\", \"subject_pos_rank\": null, \"subject_position\": \"C\", \"subject_team\": \"NYK\"}, {\"status\": \"active\", \"metadata\": {}, \"subject_id\": \"1131\", \"outcome\": \"under\", \"sport\": \"nba\", \"season_type\": \"regular\", \"season\": \"2026\", \"game_id\": \"1393723849891119104\", \"market_type\": \"points_and_rebounds_over_under_player_1131\", \"subject_type\": \"player\", \"wager_type\": \"points_and_rebounds\", \"outcome_type\": \"over_under\", \"line_type\": \"normal\", \"game_status\": \"pre_game\", \"line_id\": \"1425931663984050177\", \"outcome_value\": 11.5, \"payout_multiplier\": \"1.78\", \"subject_pos_rank\": null, \"subject_position\": \"C\", \"subject_team\": \"NYK\"}], \"subject_id\": \"1131\", \"sport\": \"nba\", \"season_type\": \"regular\", \"season\": \"2026\", \"game_id\": \"1393723849891119104\", \"market_type\": \"points_and_rebounds_over_under_player_1131\", \"updated_at\": 1794331111640, \"subject_type\": \"player\", \"wager_type\": \"points_and_rebounds\", \"outcome_type\": \"over_under\", \"line_type\": \"normal\", \"game_status\": \"pre_game\", \"recent_performance\": {\"values\": [{\"date\": \"2026-10-20\", \"opponent\": \"PHI\", \"value\": 26.0}, {\"date\": \"2026-10-23\", \"opponent\": \"BOS\", \"value\": 4.0}, {\"date\": \"2026-10-25\", \"opponent\": \"ORL\", \"value\": 7.0}, {\"date\": \"2026-10-27\", \"opponent\": \"DET\", \"value\": 18.0}, {\"date\": \"2026-10-28\", \"opponent\": \"CHI\", \"value\": 15.0}, {\"date\": \"2026-10-30\", \"opponent\": \"PHI\", \"value\": 9.0}, {\"date\": \"2026-11-02\", \"opponent\": \"BKN\", \"value\": 13.0}, {\"date\": \"2026-11-04\", \"opp",
+   "props": 2182,
+   "matched": 591,
    "unmatched_stats": [
     "anytime_touchdowns",
     "blocked_shots",
@@ -68,12 +87,243 @@
    ]
   },
   "Underdog": {
-   "at": "2026-11-10T18:48:00.373306Z",
-   "error": "HTTPError: 426 Client Error: Upgrade Required for url: https://api.underdogfantasy.com/beta/v5/over_under_lines"
+   "at": "2026-11-10T19:03:07.960833Z",
+   "url": "https://api.underdogfantasy.com/v1/over_under_lines",
+   "tried": [
+    "api.underdogfantasy.com/beta/v7/over_under_lines: 404",
+    "api.underdogfantasy.com/beta/v6/over_under_lines: 426"
+   ],
+   "raw": 6841,
+   "sample": "[{\"id\": \"d83b3ed1-42e5-4c01-a89e-7479eb75bb99\", \"contract_terms_url\": null, \"contract_url\": null, \"entry_stable_id\": \"08590943-6ed6-40a9-8a83-bb6eb10a8496|0.5\", \"expires_at\": null, \"line_type\": \"balanced\", \"live_event\": false, \"live_event_stat\": null, \"non_discounted_stat_value\": null, \"options\": [{\"id\": \"2390426f-eff6-421e-827c-6a75f0796c9a\", \"american_price\": \"+139\", \"appearance_id\": null, \"choice\": \"higher\", \"choice_display\": \"Higher\", \"choice_display_name_shorter\": \"1+\", \"choice_display_short\": \"Higher\", \"choice_id\": \"over__\", \"decimal_price\": \"2.39\", \"grouping_id\": null, \"lookup_id\": \"e539d90a-94a0-5804-bdbd-8d823cf11c0f\", \"odds\": {\"fantasy\": {\"american\": \"+154\", \"decimal\": \"2.54\", \"probability\": \"39\", \"type\": \"precision\"}, \"prediction\": null, \"sportsbook\": null}, \"over_under_line_id\": \"d83b3ed1-42e5-4c01-a89e-7479eb75bb99\", \"payout_multiplier\": \"1.27\", \"raw_probability\": null, \"rfq_combinable\": true, \"selection_header\": \"Malik Nabers\", \"selection_subheader\": \"Higher 0.5 Anytime TD\", \"status\": \"active\", \"type\": \"OverUnderOption\", \"updated_at\": \"2026-11-09T14:00:04.112Z\"}], \"over_under\": {\"id\": \"08590943-6ed6-40a9-8a83-bb6eb10a8496\", \"appearance_stat\": {\"id\": \"e72412d6-77af-4cf1-83b7-29dd987efc8e-7b5ec002-905d-4ae7-bf44-d18d2fe1c322\", \"appearance_id\": \"e72412d6-77af-4cf1-83b7-29dd987efc8e\", \"display_stat\": \"Anytime TD\", \"graded_by\": \"high_score\", \"hide_current_stat_value\": false, \"match_id\": 178872, \"match_type\": \"Game\", \"pickem_stat_id\": \"7b5ec002-905d-4ae7-bf44-d18d2fe1c322\", \"rank\": 6, \"show_current_stat_value_on_track\": false, \"stat\": \"rush_rec_tds\"}, \"boost\": null, \"category\": \"player_prop\", \"display_mode\": \"default\", \"grid_display_title\": null, \"has_alternates\": true, \"multi_provider\": false, \"option_priority\": \"none\", \"prediction_market\": false, \"scoring_type_id\": null, \"supercharge_type\": null, \"team_divider\": null, \"title\": \"Malik Nabers Anytime TD O/U\"}, \"over_under_id\": \"08590943-6ed6-40a9-8a83-bb6eb10a8496\", \"provider_id\": \"manual\", \"provider_type\": \"probability\", \"rank\": 100105110006004, \"sort_by\": -472, \"stable_id\": \"08590943-6ed6-40a9-8a83-bb6eb10a8496|balanced\", \"stat_value\": \"0.5\", \"status\": \"active\", \"updated_at\": \"2026-11-10T05:00:20.491Z\"}, {\"id\": \"95478354-d87f-4fe0-bbd3-2b078a160989\", \"contract_terms_url\": null, \"contract_url\": null, \"entry_stable_id\": \"713c18be-a727-4163-9714-88bb61cbf755|66.5\", \"expires_at\": null, \"line_type\": \"balanced\", \"live_event\": false, \"live_event_stat\": null, \"non_discounted_stat_value\": null, \"options\": [{\"id\": \"e2140a96-e2c3-41b2-abdb-2088e946f2dd\", \"american_price\": \"-112\", \"appearance_id\": null, \"choice\": \"higher\", \"choice_display\": \"Higher\", \"choice_display_name_shorter\": \"67+\", \"choice_display_short\": \"Higher\", \"choice_id\": \"over__\", \"decimal_price\": \"1.9\", \"grouping_id\": null, \"lookup_id\": \"5a9fef78-6c7b-51ad-9122-904523ba0bf0\", \"odds\": {\"fantasy\": {\"american\": \"-115\", \"decimal\": \"1.87\", \"probability\": \"50\", \"type\": \"precision\"}, \"prediction\": null, \"sportsbook\": null}, \"over_under_line_id\": \"95478354-d87f-4fe0-bbd3-2b078a160989\", \"payout_multiplier\": \"1.0\", \"raw_probability\": null, \"rfq_combinable\": true, \"selection_header\": \"Malik Nabers\", \"selection_subheader\": \"Higher 66.5 Receiving Yards\", \"status\": \"active\", \"type\": \"OverUnderOption\", \"updated_at\": \"2026-11-09T18:52:05.900Z\"}, {\"id\": \"b237916d-8b3e-413a-ab89-90bd790031b2\", \"american_price\": \"-112\", \"appearance_id\": null, \"choice\": \"lower\", \"choice_display\": \"Lower\", \"choice_display_name_shorter\": \"66-\", \"choice_display_short\": \"Lower\", \"choice_id\": \"under__\", \"decimal_price\": \"1.9\", \"grouping_id\": null, \"lookup_id\": \"0e61ea9e-65e8-5e16-ac90-e18158584de1\", \"odds\": {\"fantasy\": {\"american\": \"-115\", \"decimal\": \"1.87\", \"probability\": \"50\", \"type\": \"precision\"}, \"prediction\": null, \"sportsbook\": null}, \"over_under_line_id\": \"95478354-d87f-4fe0-bbd3-2b078a160989\", \"payout_multiplier\": \"1.0\", \"raw_probability\": null, \"rfq_combinable\": true, \"selection_header\": \"Malik Nabers\", \"selection_subheader\": \"Lower 66.5 Receiving",
+   "props": 6841,
+   "matched": 527,
+   "unmatched_stats": [
+    "1H Pass TDs",
+    "1H Pass Yards",
+    "1H Rec Yards",
+    "1H Receiving TDs",
+    "1H Receiving Yards",
+    "1H Receptions",
+    "1H Rush + Rec TDs",
+    "1H Rush TDs",
+    "1H Rush Yards",
+    "1Q Pass TDs",
+    "1Q Pass Yards",
+    "1Q Points",
+    "1Q Rec Yards",
+    "1Q Receiving Yards",
+    "1Q Receptions",
+    "1Q Rush + Rec TDs",
+    "1Q Rush Yards",
+    "1st Period Goals Against",
+    "1st Period Saves",
+    "1st Period Shots on Goal",
+    "1st Round Finish",
+    "1st Set Aces",
+    "1st Set Games Played",
+    "1st Set Games Won",
+    "2nd Round Finish",
+    "3rd Round Finish",
+    "4th Round Finish",
+    "5th Round Finish",
+    "Aces",
+    "Anytime Goalscorer"
+   ]
   },
   "PrizePicks": {
-   "at": "2026-11-10T18:48:00.373306Z",
-   "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.prizepicks.com/projections?per_page=2000&single_stat=true&game_mode=pickem"
+   "at": "2026-11-10T19:03:07.960833Z",
+   "url": "https://partner-api.prizepicks.com/projections",
+   "raw": 24575,
+   "sample": [
+    {
+     "type": "projection",
+     "id": "16862547",
+     "attributes": {
+      "adjusted_odds": true,
+      "allowed_wager_types": "under_or_over",
+      "board_time": "2026-11-10T11:00:00.000-05:00",
+      "custom_image": null,
+      "description": "BOS",
+      "discount_name": "taco",
+      "discount_percentage": 25,
+      "end_time": "2026-11-10T20:00:00.000-05:00",
+      "event_type": "team",
+      "flash_sale_line_score": 17.5,
+      "game_id": "NBA_game_Qy3sSiSgzgPV9JhAeUobhYRP",
+      "group_key": "188005-19-NBA_game_Qy3sSiSgzgPV9JhAeUobhYRP-11-true",
+      "hr_20": true,
+      "in_game": false,
+      "is_live": false,
+      "is_live_scored": true,
+      "is_promo": true,
+      "line_score": 23.5,
+      "odds_type": "standard",
+      "projection_type": "Single Stat",
+      "rank": 1,
+      "refundable": true,
+      "start_time": "2026-11-10T20:00:00.000-05:00",
+      "stat_display_name": "Points",
+      "stat_type": "Points",
+      "status": "pre_game",
+      "today": true,
+      "trending_count": 70134,
+      "tv_channel": null,
+      "updated_at": "2026-11-10T10:50:52.389-05:00"
+     },
+     "relationships": {
+      "duration": {
+       "data": {
+        "type": "duration",
+        "id": "11"
+       }
+      },
+      "game": {
+       "data": {
+        "type": "game",
+        "id": "194691"
+       }
+      },
+      "league": {
+       "data": {
+        "type": "league",
+        "id": "7"
+       }
+      },
+      "new_player": {
+       "data": {
+        "type": "new_player",
+        "id": "188005"
+       }
+      },
+      "projection_type": {
+       "data": {
+        "type": "projection_type",
+        "id": "2"
+       }
+      },
+      "score": {
+       "data": null
+      },
+      "stat_type": {
+       "data": {
+        "type": "stat_type",
+        "id": "19"
+       }
+      }
+     }
+    },
+    {
+     "type": "projection",
+     "id": "16863782",
+     "attributes": {
+      "adjusted_odds": true,
+      "allowed_wager_types": "under_or_over",
+      "board_time": "2026-11-10T12:00:00.000-05:00",
+      "custom_image": null,
+      "description": "POR",
+      "discount_name": "taco",
+      "discount_percentage": 24,
+      "end_time": "2026-11-10T23:00:00.000-05:00",
+      "event_type": "team",
+      "flash_sale_line_score": 24.5,
+      "game_id": "NBA_game_ig7R4RaWEYmgdu3DmNhvmfzE",
+      "group_key": "188011-19-NBA_game_ig7R4RaWEYmgdu3DmNhvmfzE-11-true",
+      "hr_20": true,
+      "in_game": false,
+      "is_live": false,
+      "is_live_scored": true,
+      "is_promo": true,
+      "line_score": 32.5,
+      "odds_type": "standard",
+      "projection_type": "Single Stat",
+      "rank": 2,
+      "refundable": true,
+      "start_time": "2026-11-10T23:00:00.000-05:00",
+      "stat_display_name": "Points",
+      "stat_type": "Points",
+      "status": "pre_game",
+      "today": true,
+      "trending_count": 34981,
+      "tv_channel": null,
+      "updated_at": "2026-11-10T11:57:59.713-05:00"
+     },
+     "relationships": {
+      "duration": {
+       "data": {
+        "type": "duration",
+        "id": "11"
+       }
+      },
+      "game": {
+       "data": {
+        "type": "game",
+        "id": "194695"
+       }
+      },
+      "league": {
+       "data": {
+        "type": "league",
+        "id": "7"
+       }
+      },
+      "new_player": {
+       "data": {
+        "type": "new_player",
+        "id": "188011"
+       }
+      },
+      "projection_type": {
+       "data": {
+        "type": "projection_type",
+        "id": "2"
+       }
+      },
+      "score": {
+       "data": null
+      },
+      "stat_type": {
+       "data": {
+        "type": "stat_type",
+        "id": "19"
+       }
+      }
+     }
+    }
+   ],
+   "props": 3134,
+   "matched": 405,
+   "unmatched_stats": [
+    "180's Thrown",
+    "1st Inning Runs",
+    "3-PT Attempted",
+    "Anytime TDs",
+    "Birdies Or Better",
+    "Blocked Shots",
+    "Break Points Won",
+    "Completion Percentage",
+    "Completions in First 10 Pass Attempts",
+    "Consecutive Pass Completions",
+    "Defensive Rebounds",
+    "Dunks",
+    "FG Attempted",
+    "FG Made",
+    "Faceoffs Won",
+    "Fantasy Score",
+    "Fours",
+    "Free Throws Attempted",
+    "Free Throws Made",
+    "Goalie Fantasy Score",
+    "Goalie Saves",
+    "Goals Allowed",
+    "Hits",
+    "INT",
+    "Kicking Points",
+    "Longest Completion",
+    "Longest Reception",
+    "Longest Rush",
+    "MAP 3 Headshots",
+    "MAP 3 Kills"
+   ]
   }
  }
 }
