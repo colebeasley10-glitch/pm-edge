@@ -77,3 +77,6 @@ with tab_feeds:
         st.dataframe([{"App": k, "Lines": v.get("props", "—"), "Matched to Pinnacle": v.get("matched", "—"),
                        "Problem": v.get("error") or ""} for k, v in (stat.get("detail") or {}).items()],
                      hide_index=True, width="stretch")
+        if stat.get("closest"):
+            st.markdown("**Closest lines last scan** (a play needs +2%)")
+            st.markdown("\n".join(f"- {t}" for t in stat["closest"]))

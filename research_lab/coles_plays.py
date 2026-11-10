@@ -62,8 +62,32 @@ SLEEPER_SPORTS = ("nfl", "nba", "nhl", "cbb", "cfb")
 TOP_LANES = 3            # best-of: only the top lanes on the scorecard
 BEST_MIN_EV = 0.03       # ...and only their plays with 3%+ edge
 MAX_BEST_PER_DAY = 8
-UNDERDOG_URL = "https://api.underdogfantasy.com/beta/v5/over_under_lines"
-PRIZEPICKS_URL = "https://api.prizepicks.com/projections"
+# Nov 10, 2026: Underdog answered v5 with 426 "Upgrade Required" from GitHub; try newer versions first and
+# PrizePicks' partner host when the app host refuses datacenter IPs (403). status.json records which worked.
+UNDERDOG_URLS = ("https://api.underdogfantasy.com/beta/v7/over_under_lines",
+                 "https://api.underdogfantasy.com/beta/v6/over_under_lines",
+                 "https://api.underdogfantasy.com/v1/over_under_lines",
+                 "https://api.underdogfantasy.com/beta/v5/over_under_lines")
+PRIZEPICKS_URLS = ("https://partner-api.prizepicks.com/projections", "https://api.prizepicks.com/projections")
+
+
+def _first_ok(session, urls, info, **kw):
+    """GET the first URL that answers 200; remembers every failure in info['tried']."""
+    tried, last = [], None
+    for u in urls:
+        try:
+            r = session.get(u, **kw)
+            r.raise_for_status()
+            info["url"] = u
+            if tried:
+                info["tried"] = tried
+            return r
+        except Exception as exc:
+            last = exc
+            code = getattr(getattr(exc, "response", None), "status_code", None)
+            tried.append(f"{u.split('//')[1].split('?')[0]}: {code or type(exc).__name__}")
+    info["tried"] = tried
+    raise last
 
 FIELDS = ["play_id", "alert_time", "app", "league", "game", "player", "stat", "pick", "side", "line", "pin_line",
           "target_odds", "target_decimal", "fair_prob", "fair_odds", "ev", "also_at", "limit", "game_start",
@@ -177,8 +201,7 @@ def sleeper_lines(session, now: datetime, base: Path | None, info: dict) -> list
 
 
 def underdog_lines(session, now: datetime, base: Path | None, info: dict) -> list[dict]:
-    r = session.get(UNDERDOG_URL, headers=UA, timeout=40)
-    r.raise_for_status()
+    r = _first_ok(session, UNDERDOG_URLS, info, headers=UA, timeout=40)
     data = r.json() or {}
     players = {p.get("id"): p for p in data.get("players") or []}
     apps = {a.get("id"): a for a in data.get("appearances") or []}
@@ -218,10 +241,10 @@ def underdog_lines(session, now: datetime, base: Path | None, info: dict) -> lis
 
 
 def prizepicks_lines(session, now: datetime, base: Path | None, info: dict) -> list[dict]:
-    r = session.get(PRIZEPICKS_URL, params={"per_page": 2000, "single_stat": "true", "game_mode": "pickem"},
-                    headers={**UA, "Referer": "https://app.prizepicks.com/", "Origin": "https://app.prizepicks.com"},
-                    timeout=40)
-    r.raise_for_status()
+    r = _first_ok(session, PRIZEPICKS_URLS, info,
+                  params={"per_page": 2000, "single_stat": "true", "game_mode": "pickem"},
+                  headers={**UA, "Referer": "https://app.prizepicks.com/", "Origin": "https://app.prizepicks.com"},
+                  timeout=40)
     data = r.json() or {}
     inc = {(i.get("type"), i.get("id")): i.get("attributes") or {} for i in data.get("included") or []}
     rows = data.get("data") or []
@@ -275,8 +298,9 @@ def edges(app_props: list[dict], board_rows: list[dict], now: datetime, min_ev: 
         if not start or not st or not (now + MIN_LEAD <= start <= now + MAX_AHEAD):
             continue
         pin[(norm_name(r["player"]), st)] = r
-    match = {"matched": 0, "by_app": {}}
+    match = {"matched": 0, "by_app": {}, "closest": []}
     best: dict = {}
+    near: list = []
     for a in app_props:
         st = canon_stat(a["stat"])
         r = pin.get((norm_name(a["player"]), st)) if st else None
@@ -297,6 +321,8 @@ def edges(app_props: list[dict], board_rows: list[dict], now: datetime, min_ev: 
                 continue                       # worse number than Pinnacle's: no safe floor
             p = float(r["p_over"]) if side == "over" else 1 - float(r["p_over"])
             ev = p * dec - 1
+            near.append((ev, f"{a['app']} {r['player']} {side.title()} {al:g} {r['stat']} {american(dec)} "
+                             f"vs fair {american(1 / p)} ({ev * 100:+.1f}%)"))
             if ev < min_ev:
                 continue
             k = (str(r["key"]), side)
@@ -310,6 +336,7 @@ def edges(app_props: list[dict], board_rows: list[dict], now: datetime, min_ev: 
                 cur["others"].append(cand)
     for m in match["by_app"].values():
         m["unmatched_stats"] = sorted(m["unmatched_stats"])[:30]
+    match["closest"] = [t for _, t in sorted(near, key=lambda x: -x[0])[:8]]   # how close the apps come
     out = []
     for (key, side), b in best.items():
         r = b["row"]
@@ -461,7 +488,8 @@ def update(board_rows: list[dict], now: datetime, base: Path | None = None, *, b
     props, status = fetch_all(now, base, session, apps)
     found, match = edges(props, board_rows, now)
     info = {"app_props": len(props), "matched": match["matched"], "edges": len(found), "new_plays": 0, "settled": 0,
-            "apps": {k: {x: v.get(x) for x in ("props", "error")} for k, v in status.items()}}
+            "closest": match["closest"],
+            "apps": {k: {x: v.get(x) for x in ("props", "error", "url", "tried")} for k, v in status.items()}}
     for e in found:
         pid = f"{e['key']}:{e['side']}"
         if pid in have or e["key"] in taken:
