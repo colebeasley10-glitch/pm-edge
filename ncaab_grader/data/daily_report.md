@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-10
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-11T00:15:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-11T00:30:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -52,7 +52,7 @@ Bankroll $498.50 · 55-53-0 · logged this run 0 · open 24
 
 ## Data gaps
 
-- no line posted yet (30): Millsaps Majors @ Northwestern State Demons, Ecclesia Royals @ Central Arkansas Bears, York (NE) Panthers @ Omaha Mavericks, UT Dallas Comets @ Tarleton State Texans, Newman Jets @ Missouri State Bears, Northern New Mexico Eagles @ Northern Colorado Bears, Dallas Christian Crusaders @ Texas A&M-Corpus Christi Islanders, Livingstone Blue Bears @ Austin Peay Governors, Fairleigh Dickinson Knights @ East Texas A&M Lions, Kansas City Roos @ Florida A&M Rattlers, Dartmouth Big Green @ UAlbany Great Danes, Incarnate Word Cardinals @ UC Davis Aggies, Bethune-Cookman Wildcats @ San Diego State Aztecs, Pennsylvania Quakers @ Navy Midshipmen, Voorhees Tigers @ Wofford Terriers …
+- no line posted yet (30): York (NE) Panthers @ Omaha Mavericks, UT Dallas Comets @ Tarleton State Texans, Newman Jets @ Missouri State Bears, Northern New Mexico Eagles @ Northern Colorado Bears, Dallas Christian Crusaders @ Texas A&M-Corpus Christi Islanders, Livingstone Blue Bears @ Austin Peay Governors, Fairleigh Dickinson Knights @ East Texas A&M Lions, Kansas City Roos @ Florida A&M Rattlers, Dartmouth Big Green @ UAlbany Great Danes, Incarnate Word Cardinals @ UC Davis Aggies, Bethune-Cookman Wildcats @ San Diego State Aztecs, Pennsylvania Quakers @ Navy Midshipmen, Voorhees Tigers @ Wofford Terriers, Virginia Lynchburg Dragons @ Western Carolina Catamounts, North Carolina Central Eagles @ VMI Keydets …
 - possession data coverage: 1.0
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
