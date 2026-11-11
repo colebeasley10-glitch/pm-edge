@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-10
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-11T03:15:29+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-11T03:30:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -11,7 +11,7 @@ Markets with a tested rule: SPREAD · others are WATCH only until the backtest s
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (21) — positive EV but not a qualified bet
+## Watch list (22) — positive EV but not a qualified bet
 
 - UNC Wilmington Seahawks ML -245 (-245) · Kent State Golden Flashes at UNC Wilmington Seahawks · Wed 7:00 PM ET · EV +5.5% · min -267
 - Sam Houston Bearkats ML -115 (-115) · Pepperdine Waves at Sam Houston Bearkats · Wed 7:30 PM ET · EV +4.6% · min -119
@@ -28,11 +28,11 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $506.66 · 62-58-0 · logged this run 0 · open 13
+Bankroll $496.66 · 62-60-0 · logged this run 1 · open 12
 
 ## Data gaps
 
-- no line posted yet (30): Fairleigh Dickinson Knights @ East Texas A&M Lions, Kansas City Roos @ Florida A&M Rattlers, Incarnate Word Cardinals @ UC Davis Aggies, Voorhees Tigers @ Wofford Terriers, Virginia Lynchburg Dragons @ Western Carolina Catamounts, Oklahoma Panhandle PANHANDLE ST @ Alabama State Hornets, Thomas College Terriers @ New Hampshire Wildcats, Bob Jones Bruins @ South Carolina Upstate Spartans, Great Lakes Christian Crusaders @ Eastern Michigan Eagles, Colgate Raiders @ St. John's Red Storm, Lees McRae Bobcats @ UNC Greensboro Spartans, Bryant & Stratton-Albany Bobcats @ Wagner Seahawks, Old Dominion Monarchs @ Norfolk State Spartans, South Carolina State Bulldogs @ Notre Dame Fighting Irish, Centenary (LA) Ladies @ Lamar Cardinals …
-- possession data coverage: 0.924
+- no line posted yet (30): Fairleigh Dickinson Knights @ East Texas A&M Lions, Incarnate Word Cardinals @ UC Davis Aggies, Voorhees Tigers @ Wofford Terriers, Virginia Lynchburg Dragons @ Western Carolina Catamounts, Oklahoma Panhandle PANHANDLE ST @ Alabama State Hornets, Thomas College Terriers @ New Hampshire Wildcats, Bob Jones Bruins @ South Carolina Upstate Spartans, Great Lakes Christian Crusaders @ Eastern Michigan Eagles, Colgate Raiders @ St. John's Red Storm, Lees McRae Bobcats @ UNC Greensboro Spartans, Bryant & Stratton-Albany Bobcats @ Wagner Seahawks, Old Dominion Monarchs @ Norfolk State Spartans, South Carolina State Bulldogs @ Notre Dame Fighting Irish, Centenary (LA) Ladies @ Lamar Cardinals, William Paterson Pioneers @ Rider Broncs …
+- possession data coverage: 0.904
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
