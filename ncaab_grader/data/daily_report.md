@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-10
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-11T03:45:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-11T04:00:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -33,6 +33,6 @@ Bankroll $496.66 · 62-60-0 · logged this run 0 · open 12
 ## Data gaps
 
 - no line posted yet (30): Fairleigh Dickinson Knights @ East Texas A&M Lions, Incarnate Word Cardinals @ UC Davis Aggies, Voorhees Tigers @ Wofford Terriers, Virginia Lynchburg Dragons @ Western Carolina Catamounts, Oklahoma Panhandle PANHANDLE ST @ Alabama State Hornets, Thomas College Terriers @ New Hampshire Wildcats, Bob Jones Bruins @ South Carolina Upstate Spartans, Great Lakes Christian Crusaders @ Eastern Michigan Eagles, Colgate Raiders @ St. John's Red Storm, Lees McRae Bobcats @ UNC Greensboro Spartans, Bryant & Stratton-Albany Bobcats @ Wagner Seahawks, Old Dominion Monarchs @ Norfolk State Spartans, South Carolina State Bulldogs @ Notre Dame Fighting Irish, Centenary (LA) Ladies @ Lamar Cardinals, William Paterson Pioneers @ Rider Broncs …
-- possession data coverage: 0.904
+- possession data coverage: 0.963
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
