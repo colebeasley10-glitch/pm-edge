@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-10
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-11T04:00:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-11T04:15:23+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -11,7 +11,7 @@ Markets with a tested rule: SPREAD · others are WATCH only until the backtest s
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (22) — positive EV but not a qualified bet
+## Watch list (26) — positive EV but not a qualified bet
 
 - UNC Wilmington Seahawks ML -245 (-245) · Kent State Golden Flashes at UNC Wilmington Seahawks · Wed 7:00 PM ET · EV +5.5% · min -267
 - Sam Houston Bearkats ML -115 (-115) · Pepperdine Waves at Sam Houston Bearkats · Wed 7:30 PM ET · EV +4.6% · min -119
@@ -23,16 +23,16 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 - Sam Houston Bearkats -1.5 (+102) · Pepperdine Waves at Sam Houston Bearkats · Wed 7:30 PM ET · EV +2.2% · min +102
 - Temple Owls -1.5 (+105) · Charleston Cougars at Temple Owls · Wed 6:30 PM ET · EV +2.0% · min +105
 - OVER 145.5 (-105) · Nevada Wolf Pack at UC Santa Barbara Gauchos · Wed 9:00 PM ET · EV +1.8% · min -102
+- OVER 141.5 (-105) · American University Eagles at Drexel Dragons · Wed 7:00 PM ET · EV +1.7% · min -102
 - OVER 128.5 (-105) · Saint Peter's Peacocks at South Carolina Gamecocks · Wed 7:00 PM ET · EV +1.7% · min -102
-- OVER 151.5 (-105) · Kansas City Roos at Florida A&M Rattlers · Wed 12:00 PM ET · EV +1.7% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $496.66 · 62-60-0 · logged this run 0 · open 12
+Bankroll $496.29 · 63-61-0 · logged this run 3 · open 13
 
 ## Data gaps
 
-- no line posted yet (30): Fairleigh Dickinson Knights @ East Texas A&M Lions, Incarnate Word Cardinals @ UC Davis Aggies, Voorhees Tigers @ Wofford Terriers, Virginia Lynchburg Dragons @ Western Carolina Catamounts, Oklahoma Panhandle PANHANDLE ST @ Alabama State Hornets, Thomas College Terriers @ New Hampshire Wildcats, Bob Jones Bruins @ South Carolina Upstate Spartans, Great Lakes Christian Crusaders @ Eastern Michigan Eagles, Colgate Raiders @ St. John's Red Storm, Lees McRae Bobcats @ UNC Greensboro Spartans, Bryant & Stratton-Albany Bobcats @ Wagner Seahawks, Old Dominion Monarchs @ Norfolk State Spartans, South Carolina State Bulldogs @ Notre Dame Fighting Irish, Centenary (LA) Ladies @ Lamar Cardinals, William Paterson Pioneers @ Rider Broncs …
-- possession data coverage: 0.963
+- no line posted yet (19): Voorhees Tigers @ Wofford Terriers, Virginia Lynchburg Dragons @ Western Carolina Catamounts, Oklahoma Panhandle PANHANDLE ST @ Alabama State Hornets, Thomas College Terriers @ New Hampshire Wildcats, Bob Jones Bruins @ South Carolina Upstate Spartans, Great Lakes Christian Crusaders @ Eastern Michigan Eagles, Lees McRae Bobcats @ UNC Greensboro Spartans, Bryant & Stratton-Albany Bobcats @ Wagner Seahawks, Centenary (LA) Ladies @ Lamar Cardinals, William Paterson Pioneers @ Rider Broncs, Franklin Grizzlies @ Bellarmine Knights, Clarke Pride @ Northern Illinois Huskies, Campbellsville Tigers @ Western Kentucky Hilltoppers, Friends Falcons @ Wichita State Shockers, Binghamton Bearcats @ Misericordia Cougars …
+- possession data coverage: 0.947
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
