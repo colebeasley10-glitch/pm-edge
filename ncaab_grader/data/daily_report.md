@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-10
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-11T00:45:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-11T01:00:32+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,7 +31,7 @@ WHY: Model line Kentucky Wildcats +1.5 vs market +5.5 (+4.2 pts) from opponent-a
 LOGGED: 2026-11-09T20:30:24+00:00 · model ncaab_v1
 ```
 
-## Watch list (18) — positive EV but not a qualified bet
+## Watch list (16) — positive EV but not a qualified bet
 
 - Kentucky Wildcats ML +225 (+225) · Kansas Jayhawks at Kentucky Wildcats · Tue 9:30 PM ET · EV +15.2% · min +190
 - Sam Houston Bearkats ML -115 (-115) · Pepperdine Waves at Sam Houston Bearkats · Wed 7:30 PM ET · EV +4.6% · min -119
@@ -52,7 +52,7 @@ Bankroll $498.50 · 55-53-0 · logged this run 0 · open 24
 
 ## Data gaps
 
-- no line posted yet (30): York (NE) Panthers @ Omaha Mavericks, UT Dallas Comets @ Tarleton State Texans, Newman Jets @ Missouri State Bears, Northern New Mexico Eagles @ Northern Colorado Bears, Dallas Christian Crusaders @ Texas A&M-Corpus Christi Islanders, Livingstone Blue Bears @ Austin Peay Governors, Fairleigh Dickinson Knights @ East Texas A&M Lions, Kansas City Roos @ Florida A&M Rattlers, Dartmouth Big Green @ UAlbany Great Danes, Incarnate Word Cardinals @ UC Davis Aggies, Bethune-Cookman Wildcats @ San Diego State Aztecs, Pennsylvania Quakers @ Navy Midshipmen, Voorhees Tigers @ Wofford Terriers, Virginia Lynchburg Dragons @ Western Carolina Catamounts, North Carolina Central Eagles @ VMI Keydets …
+- no line posted yet (30): Fairleigh Dickinson Knights @ East Texas A&M Lions, Kansas City Roos @ Florida A&M Rattlers, Dartmouth Big Green @ UAlbany Great Danes, Incarnate Word Cardinals @ UC Davis Aggies, Bethune-Cookman Wildcats @ San Diego State Aztecs, Pennsylvania Quakers @ Navy Midshipmen, Voorhees Tigers @ Wofford Terriers, Virginia Lynchburg Dragons @ Western Carolina Catamounts, North Carolina Central Eagles @ VMI Keydets, Oklahoma Panhandle PANHANDLE ST @ Alabama State Hornets, Thomas College Terriers @ New Hampshire Wildcats, Bob Jones Bruins @ South Carolina Upstate Spartans, Great Lakes Christian Crusaders @ Eastern Michigan Eagles, Colgate Raiders @ St. John's Red Storm, Lees McRae Bobcats @ UNC Greensboro Spartans …
 - possession data coverage: 1.0
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
