@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-10
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-11T03:30:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-11T03:45:23+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -24,11 +24,11 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 - Temple Owls -1.5 (+105) · Charleston Cougars at Temple Owls · Wed 6:30 PM ET · EV +2.0% · min +105
 - OVER 145.5 (-105) · Nevada Wolf Pack at UC Santa Barbara Gauchos · Wed 9:00 PM ET · EV +1.8% · min -102
 - OVER 128.5 (-105) · Saint Peter's Peacocks at South Carolina Gamecocks · Wed 7:00 PM ET · EV +1.7% · min -102
-- South Florida Bulls ML -265 (-265) · Saint Joseph's Hawks at South Florida Bulls · Wed 3:00 PM ET · EV +1.7% · min -253
+- OVER 151.5 (-105) · Kansas City Roos at Florida A&M Rattlers · Wed 12:00 PM ET · EV +1.7% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $496.66 · 62-60-0 · logged this run 1 · open 12
+Bankroll $496.66 · 62-60-0 · logged this run 0 · open 12
 
 ## Data gaps
 
