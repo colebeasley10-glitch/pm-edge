@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-11
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-11T19:45:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-11T20:00:33+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -11,7 +11,7 @@ Markets with a tested rule: SPREAD · others are WATCH only until the backtest s
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (26) — positive EV but not a qualified bet
+## Watch list (24) — positive EV but not a qualified bet
 
 - UNC Wilmington Seahawks ML -245 (-245) · Kent State Golden Flashes at UNC Wilmington Seahawks · Wed 7:00 PM ET · EV +5.5% · min -267
 - Sam Houston Bearkats ML -115 (-115) · Pepperdine Waves at Sam Houston Bearkats · Wed 7:30 PM ET · EV +4.6% · min -119
