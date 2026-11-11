@@ -1,6 +1,6 @@
-# NCAA Basketball Model — daily report 2026-11-10
+# NCAA Basketball Model — daily report 2026-11-11
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-11T04:45:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-11T05:00:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -11,7 +11,7 @@ Markets with a tested rule: SPREAD · others are WATCH only until the backtest s
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (26) — positive EV but not a qualified bet
+## Watch list (27) — positive EV but not a qualified bet
 
 - UNC Wilmington Seahawks ML -245 (-245) · Kent State Golden Flashes at UNC Wilmington Seahawks · Wed 7:00 PM ET · EV +5.5% · min -267
 - Sam Houston Bearkats ML -115 (-115) · Pepperdine Waves at Sam Houston Bearkats · Wed 7:30 PM ET · EV +4.6% · min -119
@@ -28,11 +28,11 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $496.29 · 63-61-0 · logged this run 0 · open 13
+Bankroll $500.92 · 64-61-0 · logged this run 1 · open 13
 
 ## Data gaps
 
-- no line posted yet (19): Voorhees Tigers @ Wofford Terriers, Virginia Lynchburg Dragons @ Western Carolina Catamounts, Oklahoma Panhandle PANHANDLE ST @ Alabama State Hornets, Thomas College Terriers @ New Hampshire Wildcats, Bob Jones Bruins @ South Carolina Upstate Spartans, Great Lakes Christian Crusaders @ Eastern Michigan Eagles, Lees McRae Bobcats @ UNC Greensboro Spartans, Bryant & Stratton-Albany Bobcats @ Wagner Seahawks, Centenary (LA) Ladies @ Lamar Cardinals, William Paterson Pioneers @ Rider Broncs, Franklin Grizzlies @ Bellarmine Knights, Clarke Pride @ Northern Illinois Huskies, Campbellsville Tigers @ Western Kentucky Hilltoppers, Friends Falcons @ Wichita State Shockers, Binghamton Bearcats @ Misericordia Cougars …
-- possession data coverage: 0.954
+- no line posted yet (19): Voorhees Tigers @ Wofford Terriers, Virginia Lynchburg Dragons @ Western Carolina Catamounts, Thomas College Terriers @ New Hampshire Wildcats, Bob Jones Bruins @ South Carolina Upstate Spartans, Great Lakes Christian Crusaders @ Eastern Michigan Eagles, Lees McRae Bobcats @ UNC Greensboro Spartans, Bryant & Stratton-Albany Bobcats @ Wagner Seahawks, Oklahoma Panhandle PANHANDLE ST @ Alabama State Hornets, Centenary (LA) Ladies @ Lamar Cardinals, William Paterson Pioneers @ Rider Broncs, Franklin Grizzlies @ Bellarmine Knights, Clarke Pride @ Northern Illinois Huskies, Campbellsville Tigers @ Western Kentucky Hilltoppers, Friends Falcons @ Wichita State Shockers, Binghamton Bearcats @ Misericordia Cougars …
+- possession data coverage: 0.969
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
