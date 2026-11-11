@@ -1,17 +1,17 @@
 # NCAA Basketball Model — daily report 2026-11-11
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-11T05:30:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-11T05:45:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $503.61 (start $500, at risk $5.00) · ¼-Kelly comparison $501.85
-**Season to date (BET tier):** 5-4-0 · flat P/L $+3.61 (+8.0% on risk) · ¼-Kelly P/L $+1.85 · beat close 11%
+**Paper bankroll:** $498.61 (start $500, at risk $0.00) · ¼-Kelly comparison $497.00
+**Season to date (BET tier):** 5-5-0 · flat P/L $-1.39 (-2.8% on risk) · ¼-Kelly P/L $-3.00 · beat close 20%
 
 ## Qualified bets (0)
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (27) — positive EV but not a qualified bet
+## Watch list (28) — positive EV but not a qualified bet
 
 - UNC Wilmington Seahawks ML -245 (-245) · Kent State Golden Flashes at UNC Wilmington Seahawks · Wed 7:00 PM ET · EV +5.5% · min -267
 - Sam Houston Bearkats ML -115 (-115) · Pepperdine Waves at Sam Houston Bearkats · Wed 7:30 PM ET · EV +4.6% · min -119
@@ -28,11 +28,11 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $500.92 · 64-61-0 · logged this run 0 · open 13
+Bankroll $505.82 · 65-61-0 · logged this run 1 · open 13
 
 ## Data gaps
 
 - no line posted yet (19): Voorhees Tigers @ Wofford Terriers, Virginia Lynchburg Dragons @ Western Carolina Catamounts, Thomas College Terriers @ New Hampshire Wildcats, Bob Jones Bruins @ South Carolina Upstate Spartans, Great Lakes Christian Crusaders @ Eastern Michigan Eagles, Lees McRae Bobcats @ UNC Greensboro Spartans, Bryant & Stratton-Albany Bobcats @ Wagner Seahawks, Oklahoma Panhandle PANHANDLE ST @ Alabama State Hornets, Centenary (LA) Ladies @ Lamar Cardinals, William Paterson Pioneers @ Rider Broncs, Franklin Grizzlies @ Bellarmine Knights, Clarke Pride @ Northern Illinois Huskies, Campbellsville Tigers @ Western Kentucky Hilltoppers, Friends Falcons @ Wichita State Shockers, Binghamton Bearcats @ Misericordia Cougars …
-- possession data coverage: 0.974
+- possession data coverage: 0.969
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
