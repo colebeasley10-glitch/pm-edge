@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-12
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-12T22:53:54+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-12T23:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,28 +31,28 @@ WHY: Model line Loyola Marymount Lions -5 vs market -1.5 (+3.7 pts) from opponen
 LOGGED: 2026-11-12T00:00:30+00:00 · model ncaab_v1
 ```
 
-## Watch list (13) — positive EV but not a qualified bet
+## Watch list (15) — positive EV but not a qualified bet
 
 - Loyola Marymount Lions ML -110 (-110) · Loyola Marymount Lions at South Alabama Jaguars · Thu 8:00 PM ET · EV +12.5% · min -134
+- UNLV Rebels ML -105 (-105) · Stanford Cardinal at UNLV Rebels · Fri 9:00 PM ET · EV +7.8% · min -116
+- Arizona Wildcats ML -122 (-122) · Arizona Wildcats at Auburn Tigers · Fri 9:00 PM ET · EV +5.9% · min -130
+- Virginia Cavaliers ML -225 (-225) · Virginia Cavaliers at Maryland Terrapins · Fri 8:00 PM ET · EV +4.1% · min -233
 - San José State Spartans ML -305 (-305) · UC Riverside Highlanders at San José State Spartans · Thu 10:00 PM ET · EV +2.9% · min -304
 - UTEP Miners ML -155 (-155) · New Mexico State Aggies at UTEP Miners · Thu 9:00 PM ET · EV +2.1% · min -152
 - OVER 143.5 (-105) · New Mexico State Aggies at UTEP Miners · Thu 9:00 PM ET · EV +1.7% · min -102
 - Quinnipiac Bobcats -1.5 (+105) · Monmouth Hawks at Quinnipiac Bobcats · Thu 7:00 PM ET · EV +1.7% · min +106
 - OVER 156.5 (-105) · Richmond Spiders at Southern Illinois Salukis · Thu 8:00 PM ET · EV +1.6% · min -102
-- OVER 135.5 (-105) · Bradley Braves at Coppin State Eagles · Thu 6:00 PM ET · EV +1.6% · min -102
 - OVER 151.5 (-105) · Southern Utah Thunderbirds at High Point Panthers · Thu 7:00 PM ET · EV +1.6% · min -102
+- OVER 158.5 (-105) · Pittsburgh Panthers at Butler Bulldogs · Fri 6:30 PM ET · EV +1.6% · min -102
 - OVER 153.5 (-105) · UC Riverside Highlanders at San José State Spartans · Thu 10:00 PM ET · EV +1.6% · min -102
-- OVER 151.5 (-105) · Western Michigan Broncos at Purdue Fort Wayne Mastodons · Thu 7:00 PM ET · EV +1.5% · min -102
-- Bradley Braves -8.5 (-105) · Bradley Braves at Coppin State Eagles · Thu 6:00 PM ET · EV +1.4% · min -104
-- Bradley Braves ML -355 (-355) · Bradley Braves at Coppin State Eagles · Thu 6:00 PM ET · EV +0.6% · min -320
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $498.85 · 73-70-0 · logged this run 0 · open 7
+Bankroll $498.85 · 73-70-0 · logged this run 1 · open 8
 
 ## Data gaps
 
-- no line posted yet (30): Virginia Lynchburg Dragons @ Coastal Carolina Chanticleers, LaGrange Panthers @ Kennesaw State Owls, Lincoln (CA) Oaklanders @ Cal State Fullerton Titans, Grace (CA) Talons @ Cal State Northridge Matadors, Viterbo V-Hawks @ Green Bay Phoenix, West Florida Argonauts @ Cleveland State Vikings, North Alabama Lions @ Miami Hurricanes, Texas A&M-Corpus Christi Islanders @ Florida State Seminoles, Bryant Bulldogs @ Rutgers Scarlet Knights, Georgetown Hoyas @ Clemson Tigers, Pittsburgh Panthers @ Butler Bulldogs, Merrimack Warriors @ Florida Gators, Sam Houston Bearkats @ Illinois Fighting Illini, Northern Iowa Panthers @ Michigan State Spartans, Tennessee State Tigers @ Tennessee Volunteers …
+- no line posted yet (30): Virginia Lynchburg Dragons @ Coastal Carolina Chanticleers, LaGrange Panthers @ Kennesaw State Owls, Lincoln (CA) Oaklanders @ Cal State Fullerton Titans, Grace (CA) Talons @ Cal State Northridge Matadors, Viterbo V-Hawks @ Green Bay Phoenix, West Florida Argonauts @ Cleveland State Vikings, North Alabama Lions @ Miami Hurricanes, Texas A&M-Corpus Christi Islanders @ Florida State Seminoles, Bryant Bulldogs @ Rutgers Scarlet Knights, Merrimack Warriors @ Florida Gators, Sam Houston Bearkats @ Illinois Fighting Illini, Northern Iowa Panthers @ Michigan State Spartans, Tennessee State Tigers @ Tennessee Volunteers, Prairie View A&M Panthers @ Vanderbilt Commodores, Northern Arizona Lumberjacks @ Kentucky Wildcats …
 - possession data coverage: 0.994
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
