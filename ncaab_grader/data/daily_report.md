@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-11
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-12T00:30:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-12T00:45:27+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -74,7 +74,7 @@ Bankroll $500.82 · 65-62-0 · logged this run 0 · open 20
 
 ## Data gaps
 
-- no line posted yet (18): Blackburn Beavers @ Eastern Illinois Panthers, Macalester Scots @ St. Thomas Tommies, Erskine Flying Fleet @ Gardner-Webb Runnin' Bulldogs, Lincoln (CA) Oaklanders @ UC Irvine Anteaters, Johnson & Wales Griffins @ Boston University Terriers, Mercyhurst Lakers @ Penn State Nittany Lions, Virginia Lynchburg Dragons @ Coastal Carolina Chanticleers, LaGrange Panthers @ Kennesaw State Owls, Central Connecticut Blue Devils @ Sacred Heart Pioneers, Stetson Hatters @ Howard Bison, Loyola Maryland Greyhounds @ Towson Tigers, Southern Utah Thunderbirds @ High Point Panthers, Maryland Eastern Shore Hawks @ Rhode Island Rams, Niagara Purple Eagles @ Bowling Green Falcons, West Florida Argonauts @ Alabama A&M Bulldogs …
-- possession data coverage: 0.995
+- no line posted yet (17): Blackburn Beavers @ Eastern Illinois Panthers, Macalester Scots @ St. Thomas Tommies, Erskine Flying Fleet @ Gardner-Webb Runnin' Bulldogs, Lincoln (CA) Oaklanders @ UC Irvine Anteaters, Johnson & Wales Griffins @ Boston University Terriers, Mercyhurst Lakers @ Penn State Nittany Lions, Virginia Lynchburg Dragons @ Coastal Carolina Chanticleers, LaGrange Panthers @ Kennesaw State Owls, Central Connecticut Blue Devils @ Sacred Heart Pioneers, Stetson Hatters @ Howard Bison, Loyola Maryland Greyhounds @ Towson Tigers, Southern Utah Thunderbirds @ High Point Panthers, Maryland Eastern Shore Hawks @ Rhode Island Rams, West Florida Argonauts @ Alabama A&M Bulldogs, Southern Jaguars @ Minnesota Golden Gophers …
+- possession data coverage: 0.993
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
