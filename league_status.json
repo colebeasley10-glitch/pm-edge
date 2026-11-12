@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-12T14:30:45.435746Z",
+ "ran_at": "2026-11-12T14:45:47.012147Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -33,8 +33,8 @@
      "ticker": "KXEFLL1GAME-26NOV14WYWHUD-HUD",
      "side": "NO",
      "ask": 0.56,
-     "fair": 0.992,
-     "edge": 0.4144
+     "fair": 0.9925,
+     "edge": 0.4149
     },
     {
      "ticker": "KXEFLL1GAME-26NOV14DRLEY-DR",
@@ -58,13 +58,6 @@
      "edge": 0.2735
     },
     {
-     "ticker": "KXEFLL2GAME-26NOV14WALBAR-BAR",
-     "side": "NO",
-     "ask": 0.73,
-     "fair": 0.994,
-     "edge": 0.2502
-    },
-    {
      "ticker": "KXEFLL1GAME-26NOV14DRLEY-LEY",
      "side": "NO",
      "ask": 0.74,
@@ -79,11 +72,18 @@
      "edge": 0.2219
     },
     {
+     "ticker": "KXEFLL2GAME-26NOV14WALBAR-BAR",
+     "side": "NO",
+     "ask": 0.8,
+     "fair": 0.994,
+     "edge": 0.1823
+    },
+    {
      "ticker": "KXEFLL2GAME-26NOV14WALBAR-WAL",
      "side": "NO",
-     "ask": 0.77,
+     "ask": 0.81,
      "fair": 0.993,
-     "edge": 0.2105
+     "edge": 0.1722
     },
     {
      "ticker": "KXAHLGAME-26NOV141705LAVROC-ROC",
@@ -96,7 +96,7 @@
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 242,
+    "poly_games": 241,
     "kalshi_events": 1557,
     "matched": 121,
     "priced": 228,
@@ -106,8 +106,8 @@
       "KXNCAAFGAME-26NOV14ILSTYSU-ILST"
      ],
      [
-      0.025,
-      "KXCS2GAME-26NOV121100ISGEXY-EXY"
+      0.13,
+      "KXNCAAWVMATCH-26NOV121800PURMSU-MSU"
      ],
      [
       0.015,
@@ -115,23 +115,23 @@
      ],
      [
       0.015,
+      "KXUFCFIGHT-26NOV14BORBEL-BEL"
+     ],
+     [
+      0.015,
       "KXNCAAMBGAME-26NOV12MONMQUIN-MONM"
+     ],
+     [
+      0.015,
+      "KXDOTA2GAME-26NOV121400NEMIGAXE-XE"
+     ],
+     [
+      0.015,
+      "KXAFCONGAME-26NOV12CMRNAM-CMR"
      ],
      [
       0.01,
       "KXUFCFIGHT-26NOV14HASGUR-HAS"
-     ],
-     [
-      0.01,
-      "KXLIGAMXGAME-26NOV14QUEMON-QUE"
-     ],
-     [
-      0.005,
-      "KXUFCFIGHT-26NOV14THORAD-RAD"
-     ],
-     [
-      0.005,
-      "KXUFCFIGHT-26NOV14MEDHOL-HOL"
      ]
     ]
    }
@@ -145,11 +145,11 @@
    "picks_found": 4,
    "opened": 1,
    "skipped": {
-    "already_holding": 1,
-    "same_game": 2
+    "same_game": 1,
+    "already_holding": 2
    },
    "diag": {
-    "skipped_settles_late": 0
+    "skipped_settles_late": 2
    }
   },
   "crypto": {
@@ -162,33 +162,33 @@
    "diag": {
     "markets_priced": 120,
     "vol": {
-     "BTC-USD": 0.004074194792919641,
-     "ETH-USD": 0.005617880037201318
+     "BTC-USD": 0.0041666517941169965,
+     "ETH-USD": 0.005565720672652578
     },
     "best": [
      [
-      -0.065,
-      "KXBTCD-26NOV1217-T73249.99"
-     ],
-     [
-      -0.058,
+      -0.059,
       "KXBTCD-26NOV1217-T72499.99"
      ],
      [
-      -0.058,
-      "KXBTCD-26NOV1217-T72749.99"
-     ],
-     [
-      -0.054,
-      "KXBTCD-26NOV1217-T73499.99"
-     ],
-     [
-      -0.053,
+      -0.052,
       "KXBTCD-26NOV1217-T72999.99"
      ],
      [
-      0.051,
-      "KXBTCD-26NOV1217-T70249.99"
+      -0.05,
+      "KXBTCD-26NOV1217-T72249.99"
+     ],
+     [
+      -0.048,
+      "KXBTCD-26NOV1217-T73249.99"
+     ],
+     [
+      0.047,
+      "KXBTCD-26NOV1217-T70749.99"
+     ],
+     [
+      0.046,
+      "KXBTCD-26NOV1217-T69999.99"
      ]
     ]
    }
@@ -202,11 +202,11 @@
  },
  "update": {
   "marked": 17,
-  "settled": 0
+  "settled": 1
  },
  "shadow_update": {
   "marked": 10,
-  "settled": 1
+  "settled": 0
  },
  "live_sharp": {
   "enabled": false,
@@ -232,16 +232,16 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 3328,
+   "picks": 3329,
    "open": 19,
    "won": 1854,
-   "lost": 1455,
-   "pl": -1168.8599999999985,
-   "risked": 33180.55000000006,
-   "clv_sum": -1400.56,
-   "clv_n": 3262,
-   "roi": -0.03522726416530155,
-   "clv": -0.42935622317596567
+   "lost": 1456,
+   "pl": -1179.2099999999984,
+   "risked": 33190.90000000006,
+   "clv_sum": -1420.06,
+   "clv_n": 3263,
+   "roi": -0.03552811162095624,
+   "clv": -0.4352007355194606
   },
   {
    "strategy": "weather",
