@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-12
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-12T22:45:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-12T22:53:54+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -52,7 +52,7 @@ Bankroll $498.85 · 73-70-0 · logged this run 0 · open 7
 
 ## Data gaps
 
-- no line posted yet (30): Johnson & Wales Griffins @ Boston University Terriers, Virginia Lynchburg Dragons @ Coastal Carolina Chanticleers, LaGrange Panthers @ Kennesaw State Owls, Lincoln (CA) Oaklanders @ Cal State Fullerton Titans, Grace (CA) Talons @ Cal State Northridge Matadors, Viterbo V-Hawks @ Green Bay Phoenix, West Florida Argonauts @ Cleveland State Vikings, North Alabama Lions @ Miami Hurricanes, Texas A&M-Corpus Christi Islanders @ Florida State Seminoles, Bryant Bulldogs @ Rutgers Scarlet Knights, Georgetown Hoyas @ Clemson Tigers, Pittsburgh Panthers @ Butler Bulldogs, Merrimack Warriors @ Florida Gators, Sam Houston Bearkats @ Illinois Fighting Illini, Northern Iowa Panthers @ Michigan State Spartans …
+- no line posted yet (30): Virginia Lynchburg Dragons @ Coastal Carolina Chanticleers, LaGrange Panthers @ Kennesaw State Owls, Lincoln (CA) Oaklanders @ Cal State Fullerton Titans, Grace (CA) Talons @ Cal State Northridge Matadors, Viterbo V-Hawks @ Green Bay Phoenix, West Florida Argonauts @ Cleveland State Vikings, North Alabama Lions @ Miami Hurricanes, Texas A&M-Corpus Christi Islanders @ Florida State Seminoles, Bryant Bulldogs @ Rutgers Scarlet Knights, Georgetown Hoyas @ Clemson Tigers, Pittsburgh Panthers @ Butler Bulldogs, Merrimack Warriors @ Florida Gators, Sam Houston Bearkats @ Illinois Fighting Illini, Northern Iowa Panthers @ Michigan State Spartans, Tennessee State Tigers @ Tennessee Volunteers …
 - possession data coverage: 0.994
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
