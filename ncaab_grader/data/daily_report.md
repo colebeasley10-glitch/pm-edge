@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-11
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-12T02:45:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-12T03:00:32+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,7 +53,7 @@ WHY: Model line Kansas City Roos +11.5 vs market +14.5 (+3.2 pts) from opponent-
 LOGGED: 2026-11-12T00:00:30+00:00 · model ncaab_v1
 ```
 
-## Watch list (15) — positive EV but not a qualified bet
+## Watch list (14) — positive EV but not a qualified bet
 
 - Loyola Marymount Lions ML -110 (-110) · Loyola Marymount Lions at South Alabama Jaguars · Thu 8:00 PM ET · EV +12.5% · min -134
 - San José State Spartans ML -305 (-305) · UC Riverside Highlanders at San José State Spartans · Thu 10:00 PM ET · EV +2.9% · min -304
@@ -63,18 +63,18 @@ LOGGED: 2026-11-12T00:00:30+00:00 · model ncaab_v1
 - OVER 156.5 (-105) · Richmond Spiders at Southern Illinois Salukis · Thu 8:00 PM ET · EV +1.6% · min -102
 - OVER 135.5 (-105) · Bradley Braves at Coppin State Eagles · Thu 6:00 PM ET · EV +1.6% · min -102
 - OVER 151.5 (-105) · Southern Utah Thunderbirds at High Point Panthers · Thu 7:00 PM ET · EV +1.6% · min -102
-- OVER 148.5 (-105) · Mississippi Valley State Delta Devils at Oregon Ducks · Wed 10:00 PM ET · EV +1.6% · min -102
 - OVER 153.5 (-105) · UC Riverside Highlanders at San José State Spartans · Thu 10:00 PM ET · EV +1.6% · min -102
 - OVER 151.5 (-105) · Western Michigan Broncos at Purdue Fort Wayne Mastodons · Thu 7:00 PM ET · EV +1.5% · min -102
 - Bradley Braves -8.5 (-105) · Bradley Braves at Coppin State Eagles · Thu 6:00 PM ET · EV +1.4% · min -104
+- Kansas City Roos ML +750 (+750) · Kansas City Roos at George Mason Patriots · Thu 3:00 PM ET · EV +0.9% · min +768
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $484.83 · 67-67-0 · logged this run 0 · open 14
+Bankroll $494.48 · 69-67-0 · logged this run 0 · open 12
 
 ## Data gaps
 
-- no line posted yet (6): Lincoln (CA) Oaklanders @ UC Irvine Anteaters, Johnson & Wales Griffins @ Boston University Terriers, Virginia Lynchburg Dragons @ Coastal Carolina Chanticleers, LaGrange Panthers @ Kennesaw State Owls, Lincoln (CA) Oaklanders @ Cal State Fullerton Titans, Grace (CA) Talons @ Cal State Northridge Matadors
-- possession data coverage: 0.955
+- no line posted yet (5): Johnson & Wales Griffins @ Boston University Terriers, Virginia Lynchburg Dragons @ Coastal Carolina Chanticleers, LaGrange Panthers @ Kennesaw State Owls, Lincoln (CA) Oaklanders @ Cal State Fullerton Titans, Grace (CA) Talons @ Cal State Northridge Matadors
+- possession data coverage: 0.951
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
