@@ -1,6 +1,6 @@
-# NCAA Basketball Model — daily report 2026-11-11
+# NCAA Basketball Model — daily report 2026-11-12
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-12T04:45:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-12T05:00:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -75,6 +75,6 @@ Bankroll $489.73 · 70-69-0 · logged this run 0 · open 10
 ## Data gaps
 
 - no line posted yet (5): Johnson & Wales Griffins @ Boston University Terriers, Virginia Lynchburg Dragons @ Coastal Carolina Chanticleers, LaGrange Panthers @ Kennesaw State Owls, Lincoln (CA) Oaklanders @ Cal State Fullerton Titans, Grace (CA) Talons @ Cal State Northridge Matadors
-- possession data coverage: 0.97
+- possession data coverage: 0.983
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
