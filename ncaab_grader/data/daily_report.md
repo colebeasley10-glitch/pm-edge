@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-12
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-12T23:00:31+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-12T23:15:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -48,11 +48,11 @@ LOGGED: 2026-11-12T00:00:30+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $498.85 · 73-70-0 · logged this run 1 · open 8
+Bankroll $498.85 · 73-70-0 · logged this run 0 · open 8
 
 ## Data gaps
 
-- no line posted yet (30): Virginia Lynchburg Dragons @ Coastal Carolina Chanticleers, LaGrange Panthers @ Kennesaw State Owls, Lincoln (CA) Oaklanders @ Cal State Fullerton Titans, Grace (CA) Talons @ Cal State Northridge Matadors, Viterbo V-Hawks @ Green Bay Phoenix, West Florida Argonauts @ Cleveland State Vikings, North Alabama Lions @ Miami Hurricanes, Texas A&M-Corpus Christi Islanders @ Florida State Seminoles, Bryant Bulldogs @ Rutgers Scarlet Knights, Merrimack Warriors @ Florida Gators, Sam Houston Bearkats @ Illinois Fighting Illini, Northern Iowa Panthers @ Michigan State Spartans, Tennessee State Tigers @ Tennessee Volunteers, Prairie View A&M Panthers @ Vanderbilt Commodores, Northern Arizona Lumberjacks @ Kentucky Wildcats …
+- no line posted yet (30): Virginia Lynchburg Dragons @ Coastal Carolina Chanticleers, LaGrange Panthers @ Kennesaw State Owls, Loyola Marymount Lions @ South Alabama Jaguars, Lincoln (CA) Oaklanders @ Cal State Fullerton Titans, Grace (CA) Talons @ Cal State Northridge Matadors, Viterbo V-Hawks @ Green Bay Phoenix, West Florida Argonauts @ Cleveland State Vikings, North Alabama Lions @ Miami Hurricanes, Texas A&M-Corpus Christi Islanders @ Florida State Seminoles, Bryant Bulldogs @ Rutgers Scarlet Knights, Merrimack Warriors @ Florida Gators, Sam Houston Bearkats @ Illinois Fighting Illini, Northern Iowa Panthers @ Michigan State Spartans, Tennessee State Tigers @ Tennessee Volunteers, Prairie View A&M Panthers @ Vanderbilt Commodores …
 - possession data coverage: 0.994
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
