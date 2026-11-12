@@ -344,6 +344,11 @@ def lanes() -> list[dict]:
     out.append(grade("Bet Queue — ¼ Kelly on $1k", bq, pl="pl_kelly", risk="stake_kelly", clv="clv"))
     for lane in sorted({r.get("lane") for r in bq if r.get("lane")}):
         out.append(grade(f"Bet Queue — {lane}", [r for r in bq if r.get("lane") == lane], risk=10.0, clv="clv"))
+    try:   # Nov 12, 2026: v2 lanes -- a fix for each losing lane, scored on new bets only (lane_v2.py)
+        import lane_v2
+        out.extend(lane_v2.graded(ROOT))
+    except Exception as exc:
+        print("v2 lanes skipped:", exc)
     qb = _rows("research_lab/data/quick_bets.csv")
     for src in sorted({r.get("source") for r in qb if r.get("source")}):
         out.append(grade(f"My bets — {src}", [r for r in qb if r.get("source") == src], risk="stake",

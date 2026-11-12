@@ -192,6 +192,11 @@ def candidates(root: Path = ROOT, base: Path | None = None) -> list[dict]:
             out.append(_cand(f"Follow {r['trader']} — {r.get('sport') or '?'}", "trader_follow", r["signal_id"],
                              r.get("sport"), r.get("event"), f"{r['outcome']} — {r['question']}", r.get("game_start"),
                              (1 / cp) if cp else None, fair, "Pinnacle" if _f(r.get("fair_prob")) else "Copy price"))
+    try:   # Nov 12, 2026: v2 lanes' open plays; used only once a v2 lane clears the bar (lane_v2.py)
+        import lane_v2
+        out.extend(lane_v2.candidates(root, base))
+    except Exception as exc:
+        print("v2 candidates skipped:", exc)
     return [c for c in out if c]
 
 
