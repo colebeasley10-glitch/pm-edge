@@ -49,18 +49,10 @@ def _save(state: dict) -> None:
 
 
 def push(title: str, message: str) -> bool:
-    token, user = os.getenv("PUSHOVER_APP_TOKEN", "").strip(), os.getenv("PUSHOVER_USER_KEY", "").strip()
-    if not token or not user:
-        print(f"[no Pushover keys] {title}: {message}")
-        return False
-    import requests
-    try:
-        r = requests.post("https://api.pushover.net/1/messages.json", timeout=15,
-                          data={"token": token, "user": user, "title": title[:250], "message": message[:1024]})
-        return r.status_code == 200
-    except requests.RequestException as exc:
-        print(f"Pushover failed: {exc}")
-        return False
+    """Nov 12, 2026: routed through alert_gate (source "ncaa_pool"), which mutes it -- Cole only wants
+    Cole's Plays on his phone. Add ncaa_pool to alert_gate.ALLOWED to turn pool alerts back on."""
+    import alert_gate
+    return alert_gate.send("ncaa_pool", title, message, priority=0)
 
 
 def _kick(r: dict) -> datetime | None:

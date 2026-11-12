@@ -182,3 +182,31 @@ def test_low_limit_pinnacle_props_skipped():
     thin = {**board(), "limit": 50}
     assert cp.edges(props, [thin], NOW)[0] == []
     assert len(cp.edges(props, [board()], NOW)[0]) == 1
+
+
+def test_new_plays_push_once_each(tmp_path, monkeypatch):
+    """Nov 12, 2026: Cole's Plays is the only lane that buzzes; each new play alerts once."""
+    from datetime import datetime, timedelta, timezone
+    from research_lab import coles_plays as cp
+    now = datetime(2026, 11, 12, 18, 0, tzinfo=timezone.utc)
+    e = {"key": "nba|g|p|pts|20.5", "side": "over", "player": "Joe Star", "line": 20.5, "stat": "Points",
+         "app": "sleeper", "league": "NBA", "game": "A @ B", "pin_line": 20.5, "dec": 1.95, "p": 0.55,
+         "ev": 0.0725, "also_at": "", "limit": 500, "starts": (now + timedelta(hours=3)).isoformat()}
+    monkeypatch.setattr(cp, "fetch_all", lambda *a, **k: ([], {}))
+    monkeypatch.setattr(cp, "edges", lambda *a, **k: ([e], {"matched": 1, "closest": [], "by_app": {}}))
+    monkeypatch.setattr(cp, "best_of", lambda *a, **k: {"added": 0})
+    monkeypatch.setattr(cp, "grade", lambda *a, **k: 0)
+    sent = []
+    push = lambda t, m: sent.append((t, m)) or True
+    info = cp.update([], now, tmp_path, push=push)
+    assert info["pushed"] == 1 and len(sent) == 1
+    assert "Cole's Plays" in sent[0][0] and "Joe Star Over 20.5 Points" in sent[0][1]
+    assert "Sleeper" in sent[0][1]
+    info = cp.update([], now, tmp_path, push=push)       # same play next round: no second buzz
+    assert info["pushed"] == 0 and len(sent) == 1
+
+
+def test_alert_gate_allows_only_coles_plays(monkeypatch):
+    import alert_gate
+    monkeypatch.delenv("SHARPIQ_ALERTS", raising=False)
+    assert alert_gate.allowed() == frozenset({"coles_plays"})

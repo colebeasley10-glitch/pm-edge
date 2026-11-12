@@ -73,8 +73,8 @@ jobs:
       - name: Pool card alerts
         continue-on-error: true
         env:
-          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
-          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
+          SHARPIQ_PUSH_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
+          SHARPIQ_PUSH_USER: ${{ secrets.PUSHOVER_USER_KEY }}
         run: python -m ncaa_pool.recheck
 
       - name: Save picks

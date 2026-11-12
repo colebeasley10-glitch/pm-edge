@@ -19,8 +19,9 @@ the same thing for free:
 Every sport Pinnacle posts props for (NBA, NHL, NFL, college football, college basketball). One play
 per Pinnacle prop and side, priced at the best app; the other apps that also cleared are listed.
 Flat $10 paper per pick, graded from ESPN box scores; CLV = Pinnacle's last pre-game fair price for the
-same line minus the fair price when the play was logged. Paper only, no orders, no phone alerts of its
-own (Bet Queue alerts its plays once this lane earns a place there).
+same line minus the fair price when the play was logged. Paper only, no orders. Since Nov 12, 2026 this is
+the ONLY lane that sends phone alerts: every new play (pick'em or best-of) goes through alert_gate as
+source "coles_plays", one push each, at most once (the play is only alerted in the round it's logged).
 
 Pick'em apps don't take single bets: in real life these get paired into 2+ pick entries. The paper
 record grades each pick on its own at its per-pick price, which is how the entry's value adds up.
@@ -395,6 +396,33 @@ def make_play(e: dict, now: datetime) -> dict:
             "origin": "pickem", "via": e["app"], "source": "", "source_id": ""}
 
 
+def alert_text(r: dict) -> tuple[str, str]:
+    """Phone alert for one new Cole's Plays pick."""
+    from research_lab.bet_queue import ET
+    start = parse_dt(r.get("game_start"))
+    when = start.astimezone(ET).strftime("%a %-I:%M %p ET") if start else "?"
+    ev = float(r.get("ev") or 0)
+    where = r.get("app") or r.get("via") or ""
+    title = f"⭐ Cole's Plays {ev * 100:+.1f}% EV: {r['pick']}"[:250]
+    lines = [r["pick"], f"{r.get('league') or ''} · {r.get('game') or ''}".strip(" ·")]
+    if is_pickem(r):
+        lines.append(f"Take it on {where.title()} at {r['target_odds']} per pick (fair {r['fair_odds']})")
+        if r.get("also_at"):
+            lines.append(f"Also clears on: {r['also_at']}")
+    else:
+        lines.append(f"Bet at {r['target_odds']} or better (fair {r['fair_odds']})")
+        lines.append(f"From: {where}")
+    lines.append(f"Starts {when}")
+    return title, "\n".join(lines)
+
+
+def _default_push(title: str, message: str) -> bool:
+    import os
+    import alert_gate
+    return alert_gate.send("coles_plays", title, message, os.getenv("STREAMLIT_APP_URL") or None,
+                           url_title="Open SharpIQ")
+
+
 def is_pickem(r: dict) -> bool:
     return (r.get("origin") or "pickem") == "pickem"
 
@@ -491,8 +519,10 @@ def best_of(rows: list[dict], now: datetime, base: Path | None = None, root: Pat
 
 # ------------------------------------------------------------------ one round
 def update(board_rows: list[dict], now: datetime, base: Path | None = None, *, box=None, session=requests,
-           apps: dict | None = None, root: Path | None = None, lanes: list[dict] | None = None) -> dict:
+           apps: dict | None = None, root: Path | None = None, lanes: list[dict] | None = None,
+           push=None) -> dict:
     rows = load(base)
+    before = len(rows)
     have = {r["play_id"] for r in rows}
     taken = {r["play_id"].rsplit(":", 1)[0] for r in rows}          # never both sides of one prop
     props, status = fetch_all(now, base, session, apps)
@@ -513,6 +543,13 @@ def update(board_rows: list[dict], now: datetime, base: Path | None = None, *, b
         info["best_of"] = best_of(rows, now, base, root, lanes)
     except Exception as exc:              # the borrowed half never breaks the pick'em half
         info["best_of"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
+    info["pushed"] = 0
+    if push:                              # Nov 12, 2026: the only lane that buzzes Cole's phone
+        for r in rows[before:]:
+            try:
+                info["pushed"] += bool(push(*alert_text(r)))
+            except Exception as exc:
+                print("Cole's Plays alert failed:", exc)
     info["settled"] = grade(rows, now, box, base, root)
     _save(rows, base)
     for k, m in match["by_app"].items():

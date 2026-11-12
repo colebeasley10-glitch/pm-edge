@@ -1,13 +1,13 @@
 """One gate for every phone alert SharpIQ sends (Nov 1, 2026).
 
-Cole only wants his phone to buzz for the bets he'd actually put real money on. Since Nov 4, 2026
-that's the two lanes he's taking every play from ($1 each):
+Cole only wants his phone to buzz for the bets he'd actually put real money on. Since Nov 12, 2026
+that's ONE lane:
 
-  * prop_board -- every new Prop Board steam play (research_lab/prop_board.py)
-  * bet_queue  -- every new Bet Queue play (research_lab/bet_queue.py), except ones that came
-                  from Prop Board, which already buzzed
+  * coles_plays -- every new Cole's Plays pick (research_lab/coles_plays.py), both the pick'em
+                   app plays and the best-of-SharpIQ plays it borrows from the top lanes
 
-(Nov 1 - Nov 4 it was huge-EV Bet Queue plays + BreakTheBank NFL; BreakTheBank is now quiet.)
+Muted (still tracked on paper): prop_board, bet_queue, btb_nfl, ncaa_pool.
+(Nov 1 - Nov 4: huge-EV Bet Queue + BreakTheBank NFL. Nov 4 - Nov 12: Prop Board + Bet Queue.)
 
 Everything else keeps logging and tracking on paper exactly as before; it just doesn't push.
 
@@ -24,7 +24,7 @@ import os
 import requests
 
 PUSH_URL = "https://api.pushover.net/1/messages.json"
-ALLOWED = frozenset({"prop_board", "bet_queue"})
+ALLOWED = frozenset({"coles_plays"})
 
 
 def allowed() -> frozenset:
