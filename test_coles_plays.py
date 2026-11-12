@@ -210,3 +210,50 @@ def test_alert_gate_allows_only_coles_plays(monkeypatch):
     import alert_gate
     monkeypatch.delenv("SHARPIQ_ALERTS", raising=False)
     assert alert_gate.allowed() == frozenset({"coles_plays"})
+
+
+def test_prizepicks_skips_quarter_half_and_discount_lines():
+    """Nov 12, 2026: PrizePicks' NBA1Q / NBA1H boards reuse "Points"; a 3.5 first-half line looked like
+    a giant edge against Pinnacle's full-game 7.5."""
+    from research_lab import coles_plays as cp
+
+    def proj(pid, line, league, **attrs):
+        return {"type": "projection", "id": pid,
+                "attributes": {"line_score": line, "stat_type": "Points", "odds_type": "standard",
+                               "status": "pre_game", "event_type": "player", **attrs},
+                "relationships": {"new_player": {"data": {"type": "new_player", "id": "p1"}},
+                                  "league": {"data": {"type": "league", "id": league}},
+                                  "duration": {"data": {"type": "duration", "id": "d"}}}}
+
+    payload = {"data": [proj("full", 7.5, "7"), proj("half", 3.5, "84"), proj("promo", 6.5, "7", adjusted_odds=True),
+                        proj("team", 110.5, "7", event_type="team")],
+               "included": [{"type": "new_player", "id": "p1", "attributes": {"display_name": "Daniel Gafford"}},
+                            {"type": "league", "id": "7", "attributes": {"name": "NBA"}},
+                            {"type": "league", "id": "84", "attributes": {"name": "NBA1H"}},
+                            {"type": "duration", "id": "d", "attributes": {"name": "Game"}}]}
+
+    class R:
+        status_code = 200
+        def raise_for_status(self):
+            pass
+        def json(self):
+            return payload
+
+    class S:
+        def get(self, *a, **k):
+            return R()
+
+    from datetime import datetime, timezone
+    out = cp.prizepicks_lines(S(), datetime.now(timezone.utc), None, {})
+    assert [o["line"] for o in out] == [7.5]
+
+
+def test_far_off_app_lines_are_not_edges_and_get_voided():
+    from research_lab import coles_plays as cp
+    assert cp.line_gap_ok(24.5, 25.5) and cp.line_gap_ok(3.5, 4.5)
+    assert not cp.line_gap_ok(3.5, 7.5) and not cp.line_gap_ok(12.5, 25.5) and not cp.line_gap_ok(1.5, 4.5)
+    rows = [{"play_id": "a", "origin": "pickem", "line": "3.5", "pin_line": "7.5", "status": "open", "pl": ""},
+            {"play_id": "b", "origin": "pickem", "line": "2.5", "pin_line": "9.5", "status": "won", "pl": "7.32"},
+            {"play_id": "c", "origin": "pickem", "line": "33.5", "pin_line": "33.5", "status": "won", "pl": "7.32"}]
+    assert cp.void_mismatched(rows) == 2
+    assert [r["status"] for r in rows] == ["void", "void", "won"] and rows[1]["pl"] == ""

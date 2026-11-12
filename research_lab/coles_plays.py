@@ -262,8 +262,15 @@ def prizepicks_lines(session, now: datetime, base: Path | None, info: dict) -> l
     out = []
     for d in rows:
         a = d.get("attributes") or {}
-        if str(a.get("odds_type") or "standard") != "standard" or a.get("is_promo"):
-            continue
+        if str(a.get("odds_type") or "standard") != "standard" or a.get("is_promo") or a.get("adjusted_odds"):
+            continue                          # goblins/demons/discounts don't pay the standard 3x
+        if str(a.get("event_type") or "player") != "player":
+            continue                          # team totals and head-to-head matchups
+        rels = d.get("relationships") or {}
+        lg = inc.get(("league", ((rels.get("league") or {}).get("data") or {}).get("id"))) or {}
+        du = inc.get(("duration", ((rels.get("duration") or {}).get("data") or {}).get("id"))) or {}
+        if _partial_game(lg.get("name"), du.get("name"), a.get("stat_type"), a.get("description")):
+            continue                          # Nov 12, 2026: NBA1Q / NBA1H etc. reuse "Points" -- full game only
         if str(a.get("status") or "pre_game") not in ("pre_game", ""):
             continue
         rel = ((d.get("relationships") or {}).get("new_player") or {}).get("data") or {}
@@ -275,6 +282,24 @@ def prizepicks_lines(session, now: datetime, base: Path | None, info: dict) -> l
         out.append({"app": "PrizePicks", "player": name, "stat": a.get("stat_type") or a.get("stat_display_name") or "",
                     "line": line, "over": round(PRIZEPICKS_PICK, 4), "under": round(PRIZEPICKS_PICK, 4)})
     return out
+
+
+_PERIOD = re.compile(r"(?<![A-Z])(1Q|2Q|3Q|4Q|1H|2H|1P|2P|3P|Q[1-4]|H[12])(?![A-Z])|QUARTER|HALF|PERIOD|INNING|LIVE|SZN|SEASON|FUTURE")
+
+
+def _partial_game(*labels) -> bool:
+    """True for a PrizePicks league/duration/stat label that isn't the full game (e.g. league "NBA1Q")."""
+    for x in labels:
+        t = str(x or "").upper().replace(" ", "")
+        if t and (_PERIOD.search(t) or re.search(r"(NBA|NFL|NHL|CFB|CBB|WNBA|MLB)(1Q|2Q|1H|2H|1P)", t)):
+            return True
+    return False
+
+
+def line_gap_ok(app_line: float, pin_line: float) -> bool:
+    """Nov 12, 2026: an app line far from Pinnacle's is a different market (a quarter or half line, a
+    discounted line), not a mispriced one. Real app-vs-Pinnacle gaps are a point or so."""
+    return abs(app_line - pin_line) <= max(1.5, 0.15 * abs(pin_line))
 
 
 APPS = {"Sleeper": sleeper_lines, "Underdog": underdog_lines, "PrizePicks": prizepicks_lines}
@@ -321,9 +346,12 @@ def edges(app_props: list[dict], board_rows: list[dict], now: datetime, min_ev: 
             if not st or not any(k[1] == st for k in pin):
                 m["unmatched_stats"].add(str(a["stat"]))
             continue
+        pl, al = float(r["line"]), float(a["line"])
+        if not line_gap_ok(al, pl):
+            m["line_mismatch"] = m.get("line_mismatch", 0) + 1
+            continue
         m["matched"] += 1
         match["matched"] += 1
-        pl, al = float(r["line"]), float(a["line"])
         for side in ("over", "under"):
             dec = _f(a.get(side))
             if not dec or dec <= 1 or dec > MAX_DECIMAL:
@@ -427,6 +455,21 @@ def is_pickem(r: dict) -> bool:
     return (r.get("origin") or "pickem") == "pickem"
 
 
+def void_mismatched(rows: list[dict]) -> int:
+    """Nov 12, 2026: pick'em plays logged on a different market than Pinnacle's (quarter/half or discounted
+    PrizePicks lines graded as full-game) were never real plays: mark them void so they don't count."""
+    n = 0
+    for r in rows:
+        if not is_pickem(r) or r.get("status") == "void":
+            continue
+        al, pl = _f(r.get("line")), _f(r.get("pin_line"))
+        if al is None or pl is None or line_gap_ok(al, pl):
+            continue
+        r.update(status="void", pl="", actual=r.get("actual", ""), settled_time=r.get("settled_time") or "")
+        n += 1
+    return n
+
+
 def track_close(rows: list[dict], board_rows: list[dict], now: datetime) -> int:
     """Keep CLV at Pinnacle's latest pre-game fair for the same line (its last read before tip = the close)."""
     by_key = {str(r["key"]): r for r in board_rows}
@@ -522,6 +565,7 @@ def update(board_rows: list[dict], now: datetime, base: Path | None = None, *, b
            apps: dict | None = None, root: Path | None = None, lanes: list[dict] | None = None,
            push=None) -> dict:
     rows = load(base)
+    info_void = void_mismatched(rows)
     before = len(rows)
     have = {r["play_id"] for r in rows}
     taken = {r["play_id"].rsplit(":", 1)[0] for r in rows}          # never both sides of one prop
@@ -543,6 +587,7 @@ def update(board_rows: list[dict], now: datetime, base: Path | None = None, *, b
         info["best_of"] = best_of(rows, now, base, root, lanes)
     except Exception as exc:              # the borrowed half never breaks the pick'em half
         info["best_of"] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
+    info["voided_mismatched"] = info_void
     info["pushed"] = 0
     if push:                              # Nov 12, 2026: the only lane that buzzes Cole's phone
         for r in rows[before:]:
@@ -553,7 +598,8 @@ def update(board_rows: list[dict], now: datetime, base: Path | None = None, *, b
     info["settled"] = grade(rows, now, box, base, root)
     _save(rows, base)
     for k, m in match["by_app"].items():
-        status.setdefault(k, {}).update(matched=m["matched"], unmatched_stats=m["unmatched_stats"])
+        status.setdefault(k, {}).update(matched=m["matched"], unmatched_stats=m["unmatched_stats"],
+                                        line_mismatch=m.get("line_mismatch", 0))
     _atomic_write_text(_dir(base) / "status.json",
                        json.dumps({"at": iso(now), "board_props": len(board_rows), **info, "detail": status},
                                   indent=1, default=str))
