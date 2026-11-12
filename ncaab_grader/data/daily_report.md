@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-12
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-12T22:15:38+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-12T22:30:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $498.61 (start $500, at risk $10.00) · ¼-Kelly comparison $497.00
-**Season to date (BET tier):** 5-5-0 · flat P/L $-1.39 (-2.8% on risk) · ¼-Kelly P/L $-3.00 · beat close 20%
+**Paper bankroll:** $503.51 (start $500, at risk $5.00) · ¼-Kelly comparison $503.82
+**Season to date (BET tier):** 6-5-0 · flat P/L $+3.51 (+6.4% on risk) · ¼-Kelly P/L $+3.82 · beat close 18%
 
 ## Qualified bets (1)
 
@@ -53,6 +53,6 @@ Bankroll $498.85 · 73-70-0 · logged this run 0 · open 7
 ## Data gaps
 
 - no line posted yet (30): Johnson & Wales Griffins @ Boston University Terriers, Virginia Lynchburg Dragons @ Coastal Carolina Chanticleers, LaGrange Panthers @ Kennesaw State Owls, Lincoln (CA) Oaklanders @ Cal State Fullerton Titans, Grace (CA) Talons @ Cal State Northridge Matadors, Viterbo V-Hawks @ Green Bay Phoenix, West Florida Argonauts @ Cleveland State Vikings, North Alabama Lions @ Miami Hurricanes, Texas A&M-Corpus Christi Islanders @ Florida State Seminoles, Bryant Bulldogs @ Rutgers Scarlet Knights, Georgetown Hoyas @ Clemson Tigers, Pittsburgh Panthers @ Butler Bulldogs, Merrimack Warriors @ Florida Gators, Sam Houston Bearkats @ Illinois Fighting Illini, Northern Iowa Panthers @ Michigan State Spartans …
-- possession data coverage: 0.996
+- possession data coverage: 0.994
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
