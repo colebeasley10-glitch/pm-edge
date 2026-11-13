@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-13
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-13T11:37:58+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-13T11:45:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,7 +31,7 @@ WHY: Model line West Florida Argonauts -0.5 vs market +3.5 (+4.2 pts) from oppon
 LOGGED: 2026-11-13T04:15:25+00:00 · model ncaab_v1
 ```
 
-## Watch list (22) — positive EV but not a qualified bet
+## Watch list (23) — positive EV but not a qualified bet
 
 - Alcorn State Braves ML +1000 (+1000) · Alcorn State Braves at Tarleton State Texans · Fri 8:00 PM ET · EV +21.7% · min +831
 - UNLV Rebels ML -105 (-105) · Stanford Cardinal at UNLV Rebels · Fri 9:00 PM ET · EV +7.8% · min -116
@@ -52,7 +52,7 @@ Bankroll $497.41 · 77-74-0 · logged this run 0 · open 15
 
 ## Data gaps
 
-- no line posted yet (9): Viterbo V-Hawks @ Green Bay Phoenix, Kentucky State Thorobreds @ Eastern Kentucky Colonels, Champion Christian Tigers @ UT Martin Skyhawks, Mary Baldwin Fighting Squirrels @ VMI Keydets, College of Biblical Studies Ambassadors @ Houston Christian Huskies, Corban Warriors @ Eastern Washington Eagles, East Texas A&M Lions @ Portland Pilots, UNC Greensboro Spartans @ Cornell Big Red, Tulane Green Wave @ Akron Zips
+- no line posted yet (8): Viterbo V-Hawks @ Green Bay Phoenix, Kentucky State Thorobreds @ Eastern Kentucky Colonels, Champion Christian Tigers @ UT Martin Skyhawks, Mary Baldwin Fighting Squirrels @ VMI Keydets, College of Biblical Studies Ambassadors @ Houston Christian Huskies, Corban Warriors @ Eastern Washington Eagles, UNC Greensboro Spartans @ Cornell Big Red, Tulane Green Wave @ Akron Zips
 - possession data coverage: 0.996
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
