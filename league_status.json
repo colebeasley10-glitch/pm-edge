@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-13T12:15:42.467023Z",
+ "ran_at": "2026-11-13T12:30:43.566018Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -60,16 +60,16 @@
     {
      "ticker": "KXEFLL2GAME-26NOV14WALBAR-WAL",
      "side": "NO",
-     "ask": 0.69,
-     "fair": 0.9945,
-     "edge": 0.2895
+     "ask": 0.67,
+     "fair": 0.995,
+     "edge": 0.3093
     },
     {
      "ticker": "KXEFLL2GAME-26NOV14WALBAR-BAR",
      "side": "NO",
-     "ask": 0.73,
-     "fair": 0.995,
-     "edge": 0.2512
+     "ask": 0.72,
+     "fair": 0.9955,
+     "edge": 0.2609
     },
     {
      "ticker": "KXEFLL1GAME-26NOV14WYWHUD-WYW",
@@ -97,9 +97,9 @@
    "diag": {
     "poly_events": 600,
     "poly_games": 258,
-    "kalshi_events": 1533,
-    "matched": 126,
-    "priced": 236,
+    "kalshi_events": 1527,
+    "matched": 127,
+    "priced": 238,
     "best_gaps": [
      [
       0.645,
@@ -122,16 +122,16 @@
       "KXUFCFIGHT-26NOV14JOHALM-ALM"
      ],
      [
+      0.015,
+      "KXUEFANLGAME-26NOV13BULISL-ISL"
+     ],
+     [
+      0.015,
+      "KXAFCONGAME-26NOV13MOZETH-MOZ"
+     ],
+     [
       0.01,
       "KXBRASILEIROBGAME-26NOV14AMGAVA-AMG"
-     ],
-     [
-      0.005,
-      "KXUFCFIGHT-26NOV14HARNUN-HAR"
-     ],
-     [
-      0.005,
-      "KXUFCFIGHT-26NOV14GANHOK-GAN"
      ]
     ]
    }
@@ -143,10 +143,12 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 4,
-   "skipped": {},
+   "opened": 2,
+   "skipped": {
+    "already_holding": 2
+   },
    "diag": {
-    "skipped_settles_late": 0
+    "skipped_settles_late": 3
    }
   },
   "crypto": {
@@ -159,24 +161,24 @@
    "diag": {
     "markets_priced": 100,
     "vol": {
-     "BTC-USD": 0.005061898193880712,
-     "ETH-USD": 0.006709850427712322
+     "BTC-USD": 0.00504843757850601,
+     "ETH-USD": 0.0067140867996080995
     },
     "best": [
      [
-      -0.058,
+      -0.052,
+      "KXBTCD-26NOV1317-T69999.99"
+     ],
+     [
+      -0.052,
       "KXETHD-26NOV1317-T1919.99"
      ],
      [
-      -0.051,
+      -0.046,
       "KXBTCD-26NOV1317-T68999.99"
      ],
      [
-      -0.048,
-      "KXBTCD-26NOV1317-T68499.99"
-     ],
-     [
-      -0.046,
+      -0.043,
       "KXBTCD-26NOV1317-T69499.99"
      ],
      [
@@ -184,8 +186,8 @@
       "KXETHD-26NOV1317-T1999.99"
      ],
      [
-      -0.034,
-      "KXBTCD-26NOV1317-T69999.99"
+      0.03,
+      "KXBTCD-26NOV1317-T66999.99"
      ]
     ]
    }
@@ -198,8 +200,8 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 19,
-  "settled": 1
+  "marked": 23,
+  "settled": 0
  },
  "shadow_update": {
   "marked": 10,
@@ -229,8 +231,8 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 3460,
-   "open": 23,
+   "picks": 3462,
+   "open": 25,
    "won": 1927,
    "lost": 1510,
    "pl": -1280.5099999999968,
