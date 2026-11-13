@@ -164,3 +164,36 @@ def test_ledger_roundtrip(tmp_path):
     p = tmp_path / "picks.csv"
     core.save_ledger([{"pick_id": "a", "source": "live", "market": "ML", "units": 1.5}], p)
     assert core.load_ledger(p)[0]["units"] == "1.5"
+
+
+def gameday(games, lines, now, rows):
+    return core.run_gameday(games=games, lines=flat(lines), models=MODELS, now=now, rows=rows, workbook={})
+
+
+def test_gameday_logs_only_inside_window_at_the_fresh_line_and_settles():
+    """Nov 13, 2026: game-day re-price -- nothing a week out, then frozen at the line ~6h before kickoff."""
+    ko = NOW + timedelta(days=3)
+    lines = {9: [{"id": 1, "lines": [line_row(-20.5, 50.5, -2000, 1100)]}]}
+    out = gameday([game(1, 9, ko)], lines, NOW, [])
+    assert out["logged"] == 0 and out["rows"] == []             # weekly picks would log here; game-day waits
+    lines[9][0]["lines"] = [line_row(-24.5, 47.5, -3000, 1400)]  # the line moved during the week
+    near = ko - timedelta(hours=core.GAMEDAY_HOURS) + timedelta(minutes=5)
+    out = gameday([game(1, 9, ko)], lines, near, [])
+    by = {r["market"]: r for r in out["rows"]}
+    assert out["logged"] == 3 and {r["source"] for r in out["rows"]} == {"gameday"}
+    assert all(r["pick_id"].startswith("gameday:") for r in out["rows"])
+    assert by["SPREAD"]["line"] in (-24.5, 24.5) and by["TOTAL"]["line"] == 47.5
+    lines[9][0]["lines"] = [line_row(-26.5, 46.5, -3500, 1600)]  # frozen: a later read doesn't overwrite
+    out = gameday([game(1, 9, ko)], lines, ko - timedelta(hours=1), out["rows"])
+    assert out["logged"] == 0 and {r["market"]: r for r in out["rows"]}["TOTAL"]["line"] == 47.5
+    out = gameday([game(1, 9, ko, True, 35, 10)], {}, ko + timedelta(hours=5), out["rows"])
+    assert out["settled"] == 3 and all(r["result"] for r in out["rows"])
+
+
+def test_gameday_does_not_touch_weekly_live_picks():
+    ko = NOW + timedelta(hours=3)
+    lines = {9: [{"id": 1, "lines": [line_row(-20.5, 50.5, -2000, 1100)]}]}
+    weekly = live([game(1, 9, ko)], lines, NOW, [])["rows"]
+    out = gameday([game(1, 9, ko)], lines, NOW, [dict(r) for r in weekly])
+    assert sum(r["source"] == "gameday" for r in out["rows"]) == 3
+    assert sum(r["source"] == "live" for r in out["rows"]) == 3    # passed-in rows untouched, not settled/closed

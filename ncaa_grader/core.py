@@ -15,6 +15,12 @@ Every run (see .github/workflows/ncaa-grader.yml):
 3. SETTLE. After the final score, grade W/L/P at 1 unit flat, and record the
    closing line so we can measure closing-line value (CLV).
 
+GAME DAY (Nov 13, 2026). The weekly picks above are priced up to a week before kickoff, when the
+line is soft and still moving. A second, separate ledger (data/gameday.csv, source "gameday") logs
+the same models' picks again once each game is within GAMEDAY_HOURS of kickoff, at that moment's
+line, then settles and tracks CLV the same way. picks.csv and the original lane are untouched; the
+NCAA Grader v2 paper lane (lane_v2.py) bets only from the game-day ledger.
+
 A BACKTEST mode replays weeks already played. Each model is rebuilt from games
 before that week only (no look-ahead) and graded at the opening line.
 
@@ -35,6 +41,7 @@ from typing import Iterable
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 LEDGER_PATH = DATA_DIR / "picks.csv"
+GAMEDAY_PATH = DATA_DIR / "gameday.csv"   # Nov 13, 2026: game-day re-price, its own ledger (see run_gameday)
 STATUS_PATH = DATA_DIR / "status.json"
 WORKBOOK_PATH = DATA_DIR / "my_model.csv"
 ALIASES_PATH = Path(__file__).resolve().parent.parent / "data" / "team_aliases.csv"
@@ -60,6 +67,7 @@ MARGIN_SD = _env_float("NCAA_BETA_MARGIN_SD", 16.0)
 TOTAL_SD = _env_float("NCAA_BETA_TOTAL_SD", 14.0)
 SPREAD_TOTAL_ODDS = -110          # CFBD has no spread/total juice; assume standard -110
 LOOKAHEAD_DAYS = _env_float("NCAA_GRADER_LOOKAHEAD_DAYS", 7)
+GAMEDAY_HOURS = _env_float("NCAA_GRADER_GAMEDAY_HOURS", 6)   # game-day picks: logged within 6h of kickoff
 MIN_LEAD = timedelta(minutes=10)  # don't log a game that's about to kick off
 SETTLE_AFTER = timedelta(hours=4)  # final scores have settled in the feed
 
@@ -326,7 +334,8 @@ def _is_fbs_game(g: dict) -> bool:
 
 # ---------------------------------------------------------------- live round
 def run_live(*, games: list[dict], lines: dict, models: list, now: datetime | None = None,
-             rows: list[dict] | None = None, workbook: dict | None = None) -> dict:
+             rows: list[dict] | None = None, workbook: dict | None = None, source: str = "live",
+             lookahead: timedelta | None = None) -> dict:
     """Log new picks and settle finished ones.
 
     games:  every game of the season so far (ESPN/CFBD shape)
@@ -336,6 +345,7 @@ def run_live(*, games: list[dict], lines: dict, models: list, now: datetime | No
     now = now or datetime.now(timezone.utc)
     rows = load_ledger() if rows is None else rows
     workbook = load_workbook_model() if workbook is None else workbook
+    lookahead = timedelta(days=LOOKAHEAD_DAYS) if lookahead is None else lookahead
     aliases = _aliases()
     by_id = {r["pick_id"]: r for r in rows}
     games_by_id = {str(g.get("id")): g for g in games}
@@ -346,7 +356,7 @@ def run_live(*, games: list[dict], lines: dict, models: list, now: datetime | No
         if g.get("completed") or not _is_fbs_game(g):
             continue
         ko = _parse_dt(g.get("startDate") or "")
-        if ko and now + MIN_LEAD <= ko <= now + timedelta(days=LOOKAHEAD_DAYS):
+        if ko and now + MIN_LEAD <= ko <= now + lookahead:
             upcoming.append(g)
 
     logged = 0
@@ -369,7 +379,7 @@ def run_live(*, games: list[dict], lines: dict, models: list, now: datetime | No
             projs.append(("workbook", wb["home_margin"], wb["total"], wb["home_win_prob"]))
         for name, hmgn, tot, wp in projs:
             for pick in make_picks(game=g, market=mkt, home_margin=hmgn, total=tot, home_win_prob=wp,
-                                   model=name, source="live", logged_at=stamp):
+                                   model=name, source=source, logged_at=stamp):
                 if pick["pick_id"] not in by_id:      # frozen: never overwrite a logged pick
                     by_id[pick["pick_id"]] = pick
                     logged += 1
@@ -378,7 +388,7 @@ def run_live(*, games: list[dict], lines: dict, models: list, now: datetime | No
     # the close (feeds drop odds once a game starts, and in-game lines aren't the close).
     closed = 0
     for r in by_id.values():
-        if r.get("source") != "live" or r.get("result"):
+        if r.get("source") != source or r.get("result"):
             continue
         g = games_by_id.get(str(r.get("game_id")))
         ko = _parse_dt(r.get("kickoff") or "")
@@ -391,7 +401,7 @@ def run_live(*, games: list[dict], lines: dict, models: list, now: datetime | No
 
     settled = 0
     for r in list(by_id.values()):
-        if r.get("source") != "live" or r.get("result"):
+        if r.get("source") != source or r.get("result"):
             continue
         g = games_by_id.get(str(r.get("game_id")))
         ko = _parse_dt(r.get("kickoff") or "")
@@ -407,6 +417,15 @@ def run_live(*, games: list[dict], lines: dict, models: list, now: datetime | No
             "upcoming_games": len(upcoming),
             "games_with_lines": sum(1 for g in upcoming if str(g.get("id")) in lines),
             "not_projected": sorted(unmatched)[:40], "workbook_games": len(workbook)}
+
+
+def run_gameday(*, games: list[dict], lines: dict, models: list, now: datetime | None = None,
+                rows: list[dict] | None = None, workbook: dict | None = None) -> dict:
+    """Game-day re-price: log each pick once its game is within GAMEDAY_HOURS of kickoff, frozen at
+    that line, into its own ledger (GAMEDAY_PATH). Same models, grading and CLV as run_live."""
+    rows = load_ledger(GAMEDAY_PATH) if rows is None else rows
+    return run_live(games=games, lines=lines, models=models, now=now, rows=rows, workbook=workbook,
+                    source="gameday", lookahead=timedelta(hours=GAMEDAY_HOURS))
 
 
 def run_backtest(*, season: int, games: list[dict], lines: dict, model_builders: dict,

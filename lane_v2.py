@@ -14,6 +14,9 @@ same few leaks over and over, so each v2 lane is its original lane with those le
      much its disagreements have actually held up) beats the logged price by 2-8% EV, at -200 to +150.
      A bigger "edge" than 8% from a shrunk model is almost always something the model is missing
      (NCAA: calibrated EV 6%+ went -37% on 36).
+     NCAA football also logs its weekly picks up to a week before kickoff, so (Nov 13, 2026) its v2
+     lane bets only from the grader's game-day ledger (ncaa_grader/data/gameday.csv): the same
+     models re-priced within 6h of kickoff.
   4. Kalshi Sharp: spread markets (-14% ROI, -6.8c CLV on 290) and sub-25c long shots (long-shot bias).
 
 How it's scored, so nothing here is curve-fit to the past: a v2 lane only counts bets its original
@@ -131,8 +134,8 @@ def model_ok(source: str, r: dict) -> bool:
     odds = _f(r.get("odds"))
     if odds is None or not (MODEL_MIN_ODDS <= odds <= MODEL_MAX_ODDS):
         return False
-    if "source" in r:                        # NCAA / NBA graders: live picks only, never backtests
-        if (r.get("source") or "live") != "live":
+    if "source" in r:                        # NCAA / NBA graders: live (or game-day) picks only, never backtests
+        if (r.get("source") or "live") not in ("live", "gameday"):
             return False
     elif not str(r.get("pick_id", "")).startswith("live:"):     # NCAAB model: live picks are "live:..."
         return False
@@ -152,9 +155,10 @@ LANES = [
      {"risk": "committed", "clv": "clv_cents"}, "Today's Plays EV v3 fix: only bets opened within 24h of the game"),
     ("Paper Sharp v2", "league_trades.csv", "opened_at", sharp_ok,
      {"clv": "clv_cents"}, "Sharp fix: sports only, no spread markets, nothing under 25¢"),
-    ("NCAA Grader v2", "ncaa_grader/data/picks.csv", "logged_at", lambda r: model_ok("ncaa_grader", r),
+    ("NCAA Grader v2", "ncaa_grader/data/gameday.csv", "logged_at", lambda r: model_ok("ncaa_grader", r),
      {"pl": "units", "risk": 1.0, "clv": "clv", "clv_unit": "mixed"},
-     "NCAA football fix: calibrated fair beats the price by 2-8%, odds -200 to +150 (any tier)"),
+     "NCAA football fix: re-priced within 6h of kickoff (not a week early); calibrated fair beats that "
+     "price by 2-8%, odds -200 to +150 (any tier)"),
     ("NBA Model v2", "nba_grader/data/picks.csv", "logged_at", lambda r: model_ok("nba_grader", r),
      {"pl": "units", "risk": 1.0, "clv": "clv", "clv_unit": "mixed"},
      "NBA game model fix: calibrated fair beats the price by 2-8%, odds -200 to +150 (any tier)"),
@@ -209,7 +213,7 @@ def candidates(root: Path | None = None, base: Path | None = None) -> list[dict]
             out.append(bq._cand("Hunter's Plays v2", "odds_fam", r["of_id"], r.get("league"), r.get("game"),
                                 r["pick"], r.get("game_start"), dec, _f(r.get("fair_prob")), key=key))
     for lane, rel, src, league, start_col in (
-            ("NCAA Grader v2", "ncaa_grader/data/picks.csv", "ncaa_grader", "NCAAF", "kickoff"),
+            ("NCAA Grader v2", "ncaa_grader/data/gameday.csv", "ncaa_grader", "NCAAF", "kickoff"),
             ("NBA Model v2", "nba_grader/data/picks.csv", "nba_grader", "NBA", "kickoff"),
             ("NCAAB Model v2", "ncaab_grader/data/picks.csv", "ncaab_model", "NCAAB", "tipoff")):
         for r in bq._csv(root / rel):

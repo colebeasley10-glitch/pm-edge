@@ -144,6 +144,11 @@ def main() -> None:
                       upcoming_games=out["upcoming_games"], games_with_lines=out["games_with_lines"],
                       close_updates=out["close_updates"], not_projected=out["not_projected"],
                       workbook_games=out["workbook_games"])
+        # Nov 13, 2026: game-day re-price into its own ledger (NCAA Grader v2 bets from it)
+        gd = core.run_gameday(games=games, lines=lines, models=models, now=now)
+        core.save_ledger(gd["rows"], core.GAMEDAY_PATH)
+        status["gameday"] = {"logged": gd["logged"], "settled": gd["settled"], "close_updates": gd["close_updates"],
+                             "games_in_window": gd["upcoming_games"], "open": sum(1 for r in gd["rows"] if not r.get("result"))}
         if str(prev.get("backtest_done_season")) != str(season):
             bt = _backtest(season, out["rows"], core_rows, status)   # runs once, when CFBD answers
             if bt is not None:

@@ -249,7 +249,10 @@ def _source_result(q: dict, root: Path, lab: Path) -> tuple[str, float | None] |
         f = {"ncaa_grader": "ncaa_grader/data/picks.csv", "nba_grader": "nba_grader/data/picks.csv",
              "nba_props": "nba_grader/data/props.csv", "ncaab_model": "ncaab_grader/data/picks.csv",
              "ncaab_home": "ncaab_grader/data/home_test.csv"}[src]
-        r = next((x for x in _csv(root / f) if x.get("pick_id") == sid), None)
+        rows = _csv(root / f)
+        if src == "ncaa_grader":                 # Nov 13, 2026: NCAA Grader v2 bets from the game-day ledger
+            rows = rows + _csv(root / "ncaa_grader/data/gameday.csv")
+        r = next((x for x in rows if x.get("pick_id") == sid), None)
         if not r or r.get("result") not in ("W", "L", "P", "V"):
             return None
         res = {"W": "won", "L": "lost"}.get(r["result"], "void")
