@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-13
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-13T23:45:30+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-13T23:57:07+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -28,11 +28,11 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $497.41 · 77-74-0 · logged this run 1 · open 25
+Bankroll $497.41 · 77-74-0 · logged this run 0 · open 25
 
 ## Data gaps
 
-- no line posted yet (30): Kentucky State Thorobreds @ Eastern Kentucky Colonels, Champion Christian Tigers @ UT Martin Skyhawks, Mary Baldwin Fighting Squirrels @ VMI Keydets, College of Biblical Studies Ambassadors @ Houston Christian Huskies, Corban Warriors @ Eastern Washington Eagles, UNC Greensboro Spartans @ Cornell Big Red, Stonehill Skyhawks @ Texas Tech Red Raiders, Northwest University Eagles @ Washington State Cougars, Drexel Dragons @ Maine Black Bears, Plattsburgh Cardinals @ Vermont Catamounts, St. Thomas Tommies @ Army Black Knights, Coastal Georgia Mariner @ Florida Atlantic Owls, Wofford Terriers @ Queens University Royals, The Citadel Bulldogs @ North Florida Ospreys, Cheyney (PA) Wolves @ North Carolina A&T Aggies …
+- no line posted yet (30): College of Biblical Studies Ambassadors @ Houston Christian Huskies, Corban Warriors @ Eastern Washington Eagles, UNC Greensboro Spartans @ Cornell Big Red, Stonehill Skyhawks @ Texas Tech Red Raiders, Northwest University Eagles @ Washington State Cougars, Drexel Dragons @ Maine Black Bears, Plattsburgh Cardinals @ Vermont Catamounts, St. Thomas Tommies @ Army Black Knights, Coastal Georgia Mariner @ Florida Atlantic Owls, Wofford Terriers @ Queens University Royals, The Citadel Bulldogs @ North Florida Ospreys, Cheyney (PA) Wolves @ North Carolina A&T Aggies, Rice Owls @ Stephen F. Austin Lumberjacks, Northern Illinois Huskies @ Bellarmine Knights, Coppin State Eagles @ South Florida Bulls …
 - possession data coverage: 0.994
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
