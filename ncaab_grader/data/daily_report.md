@@ -1,37 +1,17 @@
 # NCAA Basketball Model — daily report 2026-11-13
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-13T19:45:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-13T20:00:32+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $498.51 (start $500, at risk $5.00) · ¼-Kelly comparison $493.82
 **Season to date (BET tier):** 6-6-0 · flat P/L $-1.49 (-2.5% on risk) · ¼-Kelly P/L $-6.18 · beat close 17%
 
-## Qualified bets (1)
+## Qualified bets (0)
 
-```
-GAME: West Florida Argonauts at Cleveland State Vikings (neutral)
-TIPOFF: Fri 3:00 PM ET
+None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-SPORTSBOOK LINE: West Florida Argonauts +3.5 (-110)
-MODEL LINE: West Florida Argonauts -0.5
-PROJECTED SCORE: West Florida Argonauts 82 - Cleveland State Vikings 81
-
-MODEL COVER PROBABILITY: 54.3%
-BREAK-EVEN PROBABILITY: 52.38%
-EXPECTED ROI: +3.6%
-
-RECOMMENDATION: West Florida Argonauts +3.5
-MINIMUM ACCEPTABLE PRICE: -114
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $4.94
-CONFIDENCE/UNCERTAINTY: LOW — ratings are still mostly the preseason prior; calibrated win prob 54.3% (backtest-shrunk toward the market)
-FLAGS: early season (<4 games): mostly preseason prior; neutral site; team new to D1 / thin history; injuries/lineups not modeled — check before betting
-
-WHY: Model line West Florida Argonauts -0.5 vs market +3.5 (+4.2 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-13T04:15:25+00:00 · model ncaab_v1
-```
-
-## Watch list (23) — positive EV but not a qualified bet
+## Watch list (21) — positive EV but not a qualified bet
 
 - Alcorn State Braves ML +1000 (+1000) · Alcorn State Braves at Tarleton State Texans · Fri 8:00 PM ET · EV +21.7% · min +831
 - UNLV Rebels ML -105 (-105) · Stanford Cardinal at UNLV Rebels · Fri 9:00 PM ET · EV +7.8% · min -116
@@ -39,12 +19,12 @@ LOGGED: 2026-11-13T04:15:25+00:00 · model ncaab_v1
 - Elon Phoenix ML -166 (-166) · Chattanooga Mocs at Elon Phoenix · Fri 7:00 PM ET · EV +5.8% · min -178
 - UIC Flames ML +210 (+210) · UIC Flames at Saint Mary's Gaels · Fri 10:00 PM ET · EV +5.7% · min +202
 - Virginia Cavaliers ML -225 (-225) · Virginia Cavaliers at Maryland Terrapins · Fri 8:00 PM ET · EV +4.1% · min -233
-- West Florida Argonauts ML +145 (+145) · West Florida Argonauts at Cleveland State Vikings · Fri 3:00 PM ET · EV +3.3% · min +144
 - SIU Edwardsville Cougars +43.5 (-102) · SIU Edwardsville Cougars at Duke Blue Devils · Fri 8:00 PM ET · EV +2.7% · min -103
-- OVER 154.5 (-105) · West Florida Argonauts at Cleveland State Vikings · Fri 3:00 PM ET · EV +1.8% · min -103
 - OVER 134.5 (-105) · Harvard Crimson at George Washington Revolutionaries · Fri 7:00 PM ET · EV +1.7% · min -102
 - OVER 138.5 (-105) · Iona Gaels at Hofstra Pride · Fri 7:00 PM ET · EV +1.7% · min -102
 - OVER 150.5 (-105) · Chattanooga Mocs at Elon Phoenix · Fri 7:00 PM ET · EV +1.7% · min -102
+- OVER 149.5 (-105) · Fairleigh Dickinson Knights at Oklahoma Sooners · Fri 8:00 PM ET · EV +1.6% · min -102
+- OVER 156.5 (-105) · Wright State Raiders at Samford Bulldogs · Fri 8:00 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
