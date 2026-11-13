@@ -1,39 +1,18 @@
 # NCAA Basketball Model — daily report 2026-11-12
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-13T00:45:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-13T01:00:34+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $503.51 (start $500, at risk $5.00) · ¼-Kelly comparison $503.82
 **Season to date (BET tier):** 6-5-0 · flat P/L $+3.51 (+6.4% on risk) · ¼-Kelly P/L $+3.82 · beat close 18%
 
-## Qualified bets (1)
+## Qualified bets (0)
 
-```
-GAME: Loyola Marymount Lions at South Alabama Jaguars (neutral)
-TIPOFF: Thu 8:00 PM ET
+None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-SPORTSBOOK LINE: Loyola Marymount Lions -1.5 (+110)
-MODEL LINE: Loyola Marymount Lions -5
-PROJECTED SCORE: Loyola Marymount Lions 78 - South Alabama Jaguars 72
+## Watch list (20) — positive EV but not a qualified bet
 
-MODEL COVER PROBABILITY: 53.8%
-BREAK-EVEN PROBABILITY: 47.62%
-EXPECTED ROI: +12.9%
-
-RECOMMENDATION: Loyola Marymount Lions -1.5
-MINIMUM ACCEPTABLE PRICE: -111
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $10.00
-CONFIDENCE/UNCERTAINTY: LOW — ratings are still mostly the preseason prior; calibrated win prob 53.8% (backtest-shrunk toward the market)
-FLAGS: early season (<4 games): mostly preseason prior; neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Loyola Marymount Lions -5 vs market -1.5 (+3.7 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-12T00:00:30+00:00 · model ncaab_v1
-```
-
-## Watch list (23) — positive EV but not a qualified bet
-
-- Loyola Marymount Lions ML -110 (-110) · Loyola Marymount Lions at South Alabama Jaguars · Thu 8:00 PM ET · EV +12.5% · min -134
 - UNLV Rebels ML -105 (-105) · Stanford Cardinal at UNLV Rebels · Fri 9:00 PM ET · EV +7.8% · min -116
 - Arizona Wildcats ML -122 (-122) · Arizona Wildcats at Auburn Tigers · Fri 9:00 PM ET · EV +5.9% · min -130
 - Elon Phoenix ML -166 (-166) · Chattanooga Mocs at Elon Phoenix · Fri 7:00 PM ET · EV +5.8% · min -178
@@ -45,6 +24,7 @@ LOGGED: 2026-11-12T00:00:30+00:00 · model ncaab_v1
 - OVER 143.5 (-105) · New Mexico State Aggies at UTEP Miners · Thu 9:00 PM ET · EV +1.7% · min -102
 - OVER 134.5 (-105) · Harvard Crimson at George Washington Revolutionaries · Fri 7:00 PM ET · EV +1.7% · min -102
 - OVER 138.5 (-105) · Iona Gaels at Hofstra Pride · Fri 7:00 PM ET · EV +1.7% · min -102
+- OVER 150.5 (-105) · Chattanooga Mocs at Elon Phoenix · Fri 7:00 PM ET · EV +1.7% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
