@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-13
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-13T23:15:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-13T23:30:40+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -11,7 +11,7 @@ Markets with a tested rule: SPREAD · others are WATCH only until the backtest s
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (27) — positive EV but not a qualified bet
+## Watch list (26) — positive EV but not a qualified bet
 
 - Alcorn State Braves ML +1000 (+1000) · Alcorn State Braves at Tarleton State Texans · Fri 8:00 PM ET · EV +21.7% · min +831
 - UNLV Rebels ML -105 (-105) · Stanford Cardinal at UNLV Rebels · Fri 9:00 PM ET · EV +7.8% · min -116
