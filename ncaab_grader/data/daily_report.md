@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-12
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-13T02:00:29+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-13T02:15:36+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -28,11 +28,11 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $498.85 · 73-70-0 · logged this run 0 · open 15
+Bankroll $493.75 · 74-72-0 · logged this run 0 · open 12
 
 ## Data gaps
 
 - no line posted yet (24): Grace (CA) Talons @ Cal State Northridge Matadors, Viterbo V-Hawks @ Green Bay Phoenix, West Florida Argonauts @ Cleveland State Vikings, Texas A&M-Corpus Christi Islanders @ Florida State Seminoles, Bryant Bulldogs @ Rutgers Scarlet Knights, Prairie View A&M Panthers @ Vanderbilt Commodores, Kentucky State Thorobreds @ Eastern Kentucky Colonels, Champion Christian Tigers @ UT Martin Skyhawks, Mary Baldwin Fighting Squirrels @ VMI Keydets, Marist Red Foxes @ Lehigh Mountain Hawks, Columbia Lions @ Bucknell Bison, Florida International Panthers @ Florida Gulf Coast Eagles, Mount St. Mary's Mountaineers @ Virginia Tech Hokies, Long Island University Sharks @ Fordham Rams, North Carolina Central Eagles @ Liberty Flames …
-- possession data coverage: 0.989
+- possession data coverage: 0.965
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
