@@ -206,10 +206,10 @@ def test_new_plays_push_once_each(tmp_path, monkeypatch):
     assert info["pushed"] == 0 and len(sent) == 1
 
 
-def test_alert_gate_allows_only_coles_plays(monkeypatch):
+def test_alert_gate_allows_coles_plays_and_pool(monkeypatch):
     import alert_gate
     monkeypatch.delenv("SHARPIQ_ALERTS", raising=False)
-    assert alert_gate.allowed() == frozenset({"coles_plays"})
+    assert alert_gate.allowed() == frozenset({"coles_plays", "ncaa_pool"})
 
 
 def test_prizepicks_skips_quarter_half_and_discount_lines():

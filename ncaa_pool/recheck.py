@@ -49,8 +49,8 @@ def _save(state: dict) -> None:
 
 
 def push(title: str, message: str) -> bool:
-    """Nov 12, 2026: routed through alert_gate (source "ncaa_pool"), which mutes it -- Cole only wants
-    Cole's Plays on his phone. Add ncaa_pool to alert_gate.ALLOWED to turn pool alerts back on."""
+    """Routed through alert_gate (source "ncaa_pool"). Muted Nov 12, 2026 with the Cole's-Plays-only
+    rule; turned back on Nov 13, 2026 -- Cole still wants his pool card changes on his phone."""
     import alert_gate
     return alert_gate.send("ncaa_pool", title, message, priority=0)
 
