@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-13
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-13T14:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-13T14:30:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -52,7 +52,7 @@ Bankroll $497.41 · 77-74-0 · logged this run 0 · open 17
 
 ## Data gaps
 
-- no line posted yet (28): Viterbo V-Hawks @ Green Bay Phoenix, Kentucky State Thorobreds @ Eastern Kentucky Colonels, Champion Christian Tigers @ UT Martin Skyhawks, Mary Baldwin Fighting Squirrels @ VMI Keydets, College of Biblical Studies Ambassadors @ Houston Christian Huskies, Corban Warriors @ Eastern Washington Eagles, UNC Greensboro Spartans @ Cornell Big Red, Tulane Green Wave @ Akron Zips, Stonehill Skyhawks @ Texas Tech Red Raiders, Northwest University Eagles @ Washington State Cougars, Drexel Dragons @ Maine Black Bears, Montana Grizzlies @ North Dakota Fighting Hawks, Plattsburgh Cardinals @ Vermont Catamounts, Bradley Braves @ George Mason Patriots, St. Thomas Tommies @ Army Black Knights …
+- no line posted yet (30): Viterbo V-Hawks @ Green Bay Phoenix, Kentucky State Thorobreds @ Eastern Kentucky Colonels, Champion Christian Tigers @ UT Martin Skyhawks, Mary Baldwin Fighting Squirrels @ VMI Keydets, College of Biblical Studies Ambassadors @ Houston Christian Huskies, Corban Warriors @ Eastern Washington Eagles, UNC Greensboro Spartans @ Cornell Big Red, Tulane Green Wave @ Akron Zips, Stonehill Skyhawks @ Texas Tech Red Raiders, Northwest University Eagles @ Washington State Cougars, Drexel Dragons @ Maine Black Bears, Montana Grizzlies @ North Dakota Fighting Hawks, Plattsburgh Cardinals @ Vermont Catamounts, Bradley Braves @ George Mason Patriots, St. Thomas Tommies @ Army Black Knights …
 - possession data coverage: 0.996
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
