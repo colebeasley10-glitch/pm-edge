@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-13
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-13T05:00:32+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-13T05:15:34+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,6 +53,6 @@ Bankroll $497.41 · 77-74-0 · logged this run 0 · open 14
 ## Data gaps
 
 - no line posted yet (7): Viterbo V-Hawks @ Green Bay Phoenix, Kentucky State Thorobreds @ Eastern Kentucky Colonels, Champion Christian Tigers @ UT Martin Skyhawks, Mary Baldwin Fighting Squirrels @ VMI Keydets, College of Biblical Studies Ambassadors @ Houston Christian Huskies, Corban Warriors @ Eastern Washington Eagles, East Texas A&M Lions @ Portland Pilots
-- possession data coverage: 0.992
+- possession data coverage: 0.99
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
