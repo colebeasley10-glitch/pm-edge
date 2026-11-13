@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-13
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-13T23:30:40+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-13T23:45:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -11,7 +11,7 @@ Markets with a tested rule: SPREAD · others are WATCH only until the backtest s
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (26) — positive EV but not a qualified bet
+## Watch list (27) — positive EV but not a qualified bet
 
 - Alcorn State Braves ML +1000 (+1000) · Alcorn State Braves at Tarleton State Texans · Fri 8:00 PM ET · EV +21.7% · min +831
 - UNLV Rebels ML -105 (-105) · Stanford Cardinal at UNLV Rebels · Fri 9:00 PM ET · EV +7.8% · min -116
@@ -23,16 +23,16 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 - OVER 134.5 (-105) · Harvard Crimson at George Washington Revolutionaries · Fri 7:00 PM ET · EV +1.7% · min -102
 - OVER 138.5 (-105) · Iona Gaels at Hofstra Pride · Fri 7:00 PM ET · EV +1.7% · min -102
 - OVER 150.5 (-105) · Chattanooga Mocs at Elon Phoenix · Fri 7:00 PM ET · EV +1.7% · min -102
+- OVER 147.5 (-105) · Cincinnati Bearcats at Dayton Flyers · Sat 7:30 PM ET · EV +1.7% · min -102
 - OVER 149.5 (-105) · Fairleigh Dickinson Knights at Oklahoma Sooners · Fri 8:00 PM ET · EV +1.6% · min -102
-- OVER 156.5 (-105) · Wright State Raiders at Samford Bulldogs · Fri 8:00 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $497.41 · 77-74-0 · logged this run 0 · open 24
+Bankroll $497.41 · 77-74-0 · logged this run 1 · open 25
 
 ## Data gaps
 
-- no line posted yet (30): Kentucky State Thorobreds @ Eastern Kentucky Colonels, Champion Christian Tigers @ UT Martin Skyhawks, Mary Baldwin Fighting Squirrels @ VMI Keydets, College of Biblical Studies Ambassadors @ Houston Christian Huskies, Corban Warriors @ Eastern Washington Eagles, Stonehill Skyhawks @ Texas Tech Red Raiders, Northwest University Eagles @ Washington State Cougars, Drexel Dragons @ Maine Black Bears, Plattsburgh Cardinals @ Vermont Catamounts, St. Thomas Tommies @ Army Black Knights, Coastal Georgia Mariner @ Florida Atlantic Owls, Wofford Terriers @ Queens University Royals, The Citadel Bulldogs @ North Florida Ospreys, Cheyney (PA) Wolves @ North Carolina A&T Aggies, Rice Owls @ Stephen F. Austin Lumberjacks …
+- no line posted yet (30): Kentucky State Thorobreds @ Eastern Kentucky Colonels, Champion Christian Tigers @ UT Martin Skyhawks, Mary Baldwin Fighting Squirrels @ VMI Keydets, College of Biblical Studies Ambassadors @ Houston Christian Huskies, Corban Warriors @ Eastern Washington Eagles, UNC Greensboro Spartans @ Cornell Big Red, Stonehill Skyhawks @ Texas Tech Red Raiders, Northwest University Eagles @ Washington State Cougars, Drexel Dragons @ Maine Black Bears, Plattsburgh Cardinals @ Vermont Catamounts, St. Thomas Tommies @ Army Black Knights, Coastal Georgia Mariner @ Florida Atlantic Owls, Wofford Terriers @ Queens University Royals, The Citadel Bulldogs @ North Florida Ospreys, Cheyney (PA) Wolves @ North Carolina A&T Aggies …
 - possession data coverage: 0.994
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
