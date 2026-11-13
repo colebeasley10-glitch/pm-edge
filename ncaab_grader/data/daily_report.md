@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-12
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-12T23:46:44+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-13T00:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,7 +31,7 @@ WHY: Model line Loyola Marymount Lions -5 vs market -1.5 (+3.7 pts) from opponen
 LOGGED: 2026-11-12T00:00:30+00:00 · model ncaab_v1
 ```
 
-## Watch list (26) — positive EV but not a qualified bet
+## Watch list (23) — positive EV but not a qualified bet
 
 - Loyola Marymount Lions ML -110 (-110) · Loyola Marymount Lions at South Alabama Jaguars · Thu 8:00 PM ET · EV +12.5% · min -134
 - UNLV Rebels ML -105 (-105) · Stanford Cardinal at UNLV Rebels · Fri 9:00 PM ET · EV +7.8% · min -116
@@ -44,15 +44,15 @@ LOGGED: 2026-11-12T00:00:30+00:00 · model ncaab_v1
 - UTEP Miners ML -155 (-155) · New Mexico State Aggies at UTEP Miners · Thu 9:00 PM ET · EV +2.1% · min -152
 - OVER 143.5 (-105) · New Mexico State Aggies at UTEP Miners · Thu 9:00 PM ET · EV +1.7% · min -102
 - OVER 134.5 (-105) · Harvard Crimson at George Washington Revolutionaries · Fri 7:00 PM ET · EV +1.7% · min -102
-- Quinnipiac Bobcats -1.5 (+105) · Monmouth Hawks at Quinnipiac Bobcats · Thu 7:00 PM ET · EV +1.7% · min +106
+- OVER 138.5 (-105) · Iona Gaels at Hofstra Pride · Fri 7:00 PM ET · EV +1.7% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $498.85 · 73-70-0 · logged this run 6 · open 14
+Bankroll $498.85 · 73-70-0 · logged this run 1 · open 15
 
 ## Data gaps
 
-- no line posted yet (28): Virginia Lynchburg Dragons @ Coastal Carolina Chanticleers, LaGrange Panthers @ Kennesaw State Owls, Loyola Marymount Lions @ South Alabama Jaguars, Lincoln (CA) Oaklanders @ Cal State Fullerton Titans, Grace (CA) Talons @ Cal State Northridge Matadors, Viterbo V-Hawks @ Green Bay Phoenix, West Florida Argonauts @ Cleveland State Vikings, Texas A&M-Corpus Christi Islanders @ Florida State Seminoles, Bryant Bulldogs @ Rutgers Scarlet Knights, Prairie View A&M Panthers @ Vanderbilt Commodores, Kentucky State Thorobreds @ Eastern Kentucky Colonels, Champion Christian Tigers @ UT Martin Skyhawks, Mary Baldwin Fighting Squirrels @ VMI Keydets, Marist Red Foxes @ Lehigh Mountain Hawks, Columbia Lions @ Bucknell Bison …
-- possession data coverage: 0.994
+- no line posted yet (25): Lincoln (CA) Oaklanders @ Cal State Fullerton Titans, Grace (CA) Talons @ Cal State Northridge Matadors, Viterbo V-Hawks @ Green Bay Phoenix, West Florida Argonauts @ Cleveland State Vikings, Texas A&M-Corpus Christi Islanders @ Florida State Seminoles, Bryant Bulldogs @ Rutgers Scarlet Knights, Prairie View A&M Panthers @ Vanderbilt Commodores, Kentucky State Thorobreds @ Eastern Kentucky Colonels, Champion Christian Tigers @ UT Martin Skyhawks, Mary Baldwin Fighting Squirrels @ VMI Keydets, Marist Red Foxes @ Lehigh Mountain Hawks, Columbia Lions @ Bucknell Bison, Florida International Panthers @ Florida Gulf Coast Eagles, Mount St. Mary's Mountaineers @ Virginia Tech Hokies, Long Island University Sharks @ Fordham Rams …
+- possession data coverage: 0.996
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
