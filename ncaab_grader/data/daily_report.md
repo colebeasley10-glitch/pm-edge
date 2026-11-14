@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-13
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-14T04:30:32+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-14T04:45:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -23,12 +23,12 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 - OVER 149.5 (-105) · Manhattan Jaspers at Le Moyne Dolphins · Sat 6:00 PM ET · EV +1.6% · min -102
 - OVER 148.5 (-105) · St. Thomas Tommies at Army Black Knights · Sat 1:00 PM ET · EV +1.6% · min -102
 - OVER 153.5 (-105) · Austin Peay Governors at Wichita State Shockers · Sat 7:00 PM ET · EV +1.5% · min -102
-- OVER 152.5 (-105) · South Dakota State Jackrabbits at Northern Colorado Bears · Sat 4:00 PM ET · EV +1.5% · min -102
 - North Florida Ospreys ML -185 (-185) · The Citadel Bulldogs at North Florida Ospreys · Sat 2:00 PM ET · EV +1.5% · min -178
+- OVER 152.5 (-105) · South Dakota State Jackrabbits at Northern Colorado Bears · Sat 4:00 PM ET · EV +1.5% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $498.11 · 88-84-0 · logged this run 1 · open 13
+Bankroll $498.11 · 88-84-0 · logged this run 0 · open 13
 
 ## Data gaps
 
