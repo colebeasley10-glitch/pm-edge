@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-14T08:15:41.992797Z",
+ "ran_at": "2026-11-14T08:30:45.349589Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -58,25 +58,11 @@
      "edge": 0.5524
     },
     {
-     "ticker": "KXODIMATCH-26NOV142100INDNZ-IND",
-     "side": "NO",
-     "ask": 0.46,
-     "fair": 0.925,
-     "edge": 0.4474
-    },
-    {
      "ticker": "KXEFLL1GAME-26NOV14WYWHUD-HUD",
      "side": "NO",
      "ask": 0.58,
-     "fair": 0.995,
-     "edge": 0.3979
-    },
-    {
-     "ticker": "KXODIMATCH-26NOV142100INDNZ-NZ",
-     "side": "NO",
-     "ask": 0.53,
-     "fair": 0.925,
-     "edge": 0.3772
+     "fair": 0.9945,
+     "edge": 0.3974
     },
     {
      "ticker": "KXEFLL2GAME-26NOV14WALBAR-BAR",
@@ -91,15 +77,29 @@
      "ask": 0.64,
      "fair": 0.9965,
      "edge": 0.3398
+    },
+    {
+     "ticker": "KXEFLL1GAME-26NOV14STEMAT-STE",
+     "side": "NO",
+     "ask": 0.66,
+     "fair": 0.9945,
+     "edge": 0.3185
+    },
+    {
+     "ticker": "KXEFLL1GAME-26NOV14WYWHUD-WYW",
+     "side": "NO",
+     "ask": 0.71,
+     "fair": 0.9985,
+     "edge": 0.2735
     }
    ],
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 254,
-    "kalshi_events": 1547,
-    "matched": 132,
-    "priced": 244,
+    "poly_games": 252,
+    "kalshi_events": 1555,
+    "matched": 134,
+    "priced": 240,
     "best_gaps": [
      [
       0.675,
@@ -143,9 +143,10 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 3,
+   "opened": 1,
    "skipped": {
-    "already_holding": 1
+    "already_holding": 2,
+    "same_game": 1
    },
    "diag": {
     "skipped_settles_late": 1
@@ -161,8 +162,8 @@
    "diag": {
     "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.00484063007721996,
-     "ETH-USD": 0.005906959836022721
+     "BTC-USD": 0.004839063281622263,
+     "ETH-USD": 0.005928239923590019
     },
     "best": []
    }
@@ -175,12 +176,12 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 20,
+  "marked": 23,
   "settled": 0
  },
  "shadow_update": {
   "marked": 8,
-  "settled": 4
+  "settled": 0
  },
  "live_sharp": {
   "enabled": false,
@@ -206,8 +207,8 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 3595,
-   "open": 24,
+   "picks": 3596,
+   "open": 25,
    "won": 2000,
    "lost": 1571,
    "pl": -1407.1799999999955,
