@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-14T09:15:41.431078Z",
+ "ran_at": "2026-11-14T09:30:41.042852Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -25,9 +25,9 @@
     {
      "ticker": "KXNCAAWBGAME-26NOV14YSUCOLO-YSU",
      "side": "YES",
-     "ask": 0.06,
+     "ask": 0.05,
      "fair": 0.745,
-     "edge": 0.681
+     "edge": 0.6916
     },
     {
      "ticker": "KXNCAAWBGAME-26NOV14YSUCOLO-COLO",
@@ -35,13 +35,6 @@
      "ask": 0.08,
      "fair": 0.745,
      "edge": 0.6598
-    },
-    {
-     "ticker": "KXNCAAFGAME-26NOV14ILSTYSU-ILST",
-     "side": "YES",
-     "ask": 0.19,
-     "fair": 0.855,
-     "edge": 0.654
     },
     {
      "ticker": "KXNCAAWVMATCH-26NOV142000MSUMINN-MSU",
@@ -65,18 +58,18 @@
      "edge": 0.3979
     },
     {
-     "ticker": "KXEFLL1GAME-26NOV14STEMAT-STE",
-     "side": "NO",
-     "ask": 0.66,
-     "fair": 0.9935,
-     "edge": 0.3175
-    },
-    {
      "ticker": "KXEFLL1GAME-26NOV14DRLEY-DR",
      "side": "NO",
      "ask": 0.68,
      "fair": 0.9965,
      "edge": 0.3008
+    },
+    {
+     "ticker": "KXEFLL1GAME-26NOV14STEMAT-STE",
+     "side": "NO",
+     "ask": 0.7,
+     "fair": 0.9935,
+     "edge": 0.2785
     },
     {
      "ticker": "KXEFLL1GAME-26NOV14WYWHUD-WYW",
@@ -86,28 +79,31 @@
      "edge": 0.2735
     },
     {
+     "ticker": "KXEFLL1GAME-26NOV14DRLEY-LEY",
+     "side": "NO",
+     "ask": 0.75,
+     "fair": 0.9955,
+     "edge": 0.2317
+    },
+    {
      "ticker": "KXEFLL2GAME-26NOV14WALBAR-BAR",
      "side": "NO",
-     "ask": 0.74,
+     "ask": 0.76,
      "fair": 0.9945,
-     "edge": 0.2407
+     "edge": 0.2214
     }
    ],
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 269,
+    "poly_games": 268,
     "kalshi_events": 1551,
-    "matched": 148,
-    "priced": 271,
+    "matched": 144,
+    "priced": 270,
     "best_gaps": [
      [
-      0.685,
+      0.695,
       "KXNCAAWBGAME-26NOV14YSUCOLO-YSU"
-     ],
-     [
-      0.665,
-      "KXNCAAFGAME-26NOV14ILSTYSU-ILST"
      ],
      [
       0.575,
@@ -132,6 +128,10 @@
      [
       0.02,
       "KXCS2GAME-26NOV140500CUTRECRENT-RECRENT"
+     ],
+     [
+      0.015,
+      "KXUFCFIGHT-26NOV14HARNUN-HAR"
      ]
     ]
    }
@@ -143,12 +143,13 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 3,
+   "opened": 0,
    "skipped": {
-    "already_holding": 1
+    "already_holding": 2,
+    "same_game": 2
    },
    "diag": {
-    "skipped_settles_late": 2
+    "skipped_settles_late": 0
    }
   },
   "crypto": {
@@ -161,8 +162,8 @@
    "diag": {
     "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.004853929951829215,
-     "ETH-USD": 0.005942656285403323
+     "BTC-USD": 0.004834054216324673,
+     "ETH-USD": 0.005925601956011295
     },
     "best": []
    }
@@ -175,7 +176,7 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 27,
+  "marked": 30,
   "settled": 0
  },
  "shadow_update": {
