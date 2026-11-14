@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-14
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-14T05:15:21+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-14T05:30:27+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -21,14 +21,14 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 - OVER 130.5 (-105) · Bradley Braves at George Mason Patriots · Sat 1:00 PM ET · EV +1.6% · min -102
 - OVER 154.5 (-105) · Toledo Rockets at Detroit Mercy Titans · Sat 4:00 PM ET · EV +1.6% · min -102
 - OVER 143.5 (-105) · Portland State Vikings at San Francisco Dons · Sat 7:00 PM ET · EV +1.6% · min -102
-- OVER 149.5 (-105) · Manhattan Jaspers at Le Moyne Dolphins · Sat 6:00 PM ET · EV +1.6% · min -102
 - OVER 165.5 (-105) · Jackson State Tigers at Winthrop Eagles · Sat 2:30 PM ET · EV +1.6% · min -102
 - Campbell Fighting Camels ML -325 (-325) · South Carolina Upstate Spartans at Campbell Fighting Camels · Sat 4:30 PM ET · EV +1.6% · min -307
+- OVER 149.5 (-105) · Manhattan Jaspers at Le Moyne Dolphins · Sat 6:00 PM ET · EV +1.6% · min -102
 - OVER 148.5 (-105) · St. Thomas Tommies at Army Black Knights · Sat 1:00 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $498.11 · 88-84-0 · logged this run 1 · open 14
+Bankroll $498.11 · 88-84-0 · logged this run 0 · open 14
 
 ## Data gaps
 
