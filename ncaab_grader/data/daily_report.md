@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-14
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-14T06:30:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-14T06:45:20+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -11,8 +11,9 @@ Markets with a tested rule: SPREAD · others are WATCH only until the backtest s
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (20) — positive EV but not a qualified bet
+## Watch list (21) — positive EV but not a qualified bet
 
+- Bradley Braves ML +625 (+625) · Bradley Braves at George Mason Patriots · Sat 1:00 PM ET · EV +7.7% · min +593
 - Marshall Thundering Herd ML -110 (-110) · Marshall Thundering Herd at Youngstown State Penguins · Sat 6:00 PM ET · EV +5.5% · min -116
 - Marshall Thundering Herd -1.5 (+105) · Marshall Thundering Herd at Youngstown State Penguins · Sat 6:00 PM ET · EV +2.3% · min +104
 - IU Indianapolis Jaguars ML -135 (-135) · IU Indianapolis Jaguars at Morehead State Eagles · Sat 7:30 PM ET · EV +2.1% · min -132
@@ -24,7 +25,6 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 - OVER 165.5 (-105) · Jackson State Tigers at Winthrop Eagles · Sat 2:30 PM ET · EV +1.6% · min -102
 - Campbell Fighting Camels ML -325 (-325) · South Carolina Upstate Spartans at Campbell Fighting Camels · Sat 4:30 PM ET · EV +1.6% · min -307
 - OVER 149.5 (-105) · Manhattan Jaspers at Le Moyne Dolphins · Sat 6:00 PM ET · EV +1.6% · min -102
-- OVER 148.5 (-105) · St. Thomas Tommies at Army Black Knights · Sat 1:00 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
