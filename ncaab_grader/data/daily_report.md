@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-14
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-14T15:45:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-14T16:00:40+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -11,7 +11,7 @@ Markets with a tested rule: SPREAD · others are WATCH only until the backtest s
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (21) — positive EV but not a qualified bet
+## Watch list (20) — positive EV but not a qualified bet
 
 - Bradley Braves ML +625 (+625) · Bradley Braves at George Mason Patriots · Sat 1:00 PM ET · EV +7.7% · min +593
 - Marshall Thundering Herd ML -110 (-110) · Marshall Thundering Herd at Youngstown State Penguins · Sat 6:00 PM ET · EV +5.5% · min -116
