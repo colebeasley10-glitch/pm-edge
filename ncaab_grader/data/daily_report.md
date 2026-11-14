@@ -1,6 +1,8 @@
 # NCAA Basketball Model — daily report 2026-11-13
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-14T03:15:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-14T03:30:38+00:00
+
+**⚠️ BETS SUSPENDED:** ESPN feed errors — using cached data. Everything below is research only.
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 

@@ -1,5 +1,5 @@
 {
-  "at": "2026-11-14T03:15:22+00:00",
+  "at": "2026-11-14T03:30:38+00:00",
   "bankroll": {
     "at_risk": 0,
     "balance": 503.06,
@@ -10,19 +10,24 @@
   },
   "bets_pushed": 0,
   "box_calls": 0,
-  "box_errors": [],
+  "box_errors": [
+    "box 401902278: HTTPError: 403 Client Error: Forbidden for url: https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/su"
+  ],
   "calibration": {
     "brier": 0.2507,
     "brier_coin": 0.25,
     "n": 1030,
     "suspend": false
   },
-  "close_updates": 93,
+  "close_updates": 90,
   "espn_calls": 0,
-  "espn_errors": [],
+  "espn_errors": [
+    "20261113: HTTPError: 403 Client Error: Forbidden for url: https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=20261113&groups=50&limit=",
+    "20261114: HTTPError: 403 Client Error: Forbidden for url: https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=20261114&groups=50&limit="
+  ],
   "finals_d1": 520,
   "games_this_season": 819,
-  "games_with_lines": 34,
+  "games_with_lines": 33,
   "home_court_pts": 3.1,
   "home_test": {
     "bankroll": {
@@ -3404,6 +3409,6 @@
   ],
   "season": 2027,
   "settled": 0,
-  "suspended": "",
-  "upcoming_games": 71
+  "suspended": "ESPN feed errors \u2014 using cached data",
+  "upcoming_games": 70
 }
