@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-14
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-14T23:00:31+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-14T23:15:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -25,11 +25,11 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $492.12 · 91-88-0 · logged this run 0 · open 18
+Bankroll $491.68 · 93-90-0 · logged this run 0 · open 14
 
 ## Data gaps
 
 - no line posted yet (30): Earlham Quakers @ Indiana State Sycamores, Dillard Blue Devils @ Arkansas State Red Wolves, Oklahoma City Okies @ Oral Roberts Golden Eagles, Abraham Baldwin Agricultural Stallions @ Florida Gulf Coast Eagles, Norfolk State Spartans @ Georgia State Panthers, Quinnipiac Bobcats @ Central Connecticut Blue Devils, Colgate Raiders @ Delaware Blue Hens, Dartmouth Big Green @ Boston University Terriers, Harvard Crimson @ American University Eagles, Niagara Purple Eagles @ Iowa State Cyclones, New Hampshire Wildcats @ Boston College Eagles, William & Mary Tribe @ Michigan Wolverines, Capital Crusaders @ Robert Morris Colonials, South Carolina State Bulldogs @ Charleston Cougars, Temple Owls @ La Salle Explorers …
-- possession data coverage: 0.991
+- possession data coverage: 0.977
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
