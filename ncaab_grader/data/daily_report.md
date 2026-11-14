@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-14
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-14T16:15:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-14T16:30:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -11,10 +11,12 @@ Markets with a tested rule: SPREAD · others are WATCH only until the backtest s
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (20) — positive EV but not a qualified bet
+## Watch list (22) — positive EV but not a qualified bet
 
 - Bradley Braves ML +625 (+625) · Bradley Braves at George Mason Patriots · Sat 1:00 PM ET · EV +7.7% · min +593
 - Marshall Thundering Herd ML -110 (-110) · Marshall Thundering Herd at Youngstown State Penguins · Sat 6:00 PM ET · EV +5.5% · min -116
+- Louisiana Tech Bulldogs ML -110 (-110) · Louisiana Tech Bulldogs at Nicholls Colonels · Sat 8:00 PM ET · EV +4.5% · min -113
+- Le Moyne Dolphins ML -135 (-135) · Manhattan Jaspers at Le Moyne Dolphins · Sat 6:00 PM ET · EV +2.4% · min -133
 - Marshall Thundering Herd -1.5 (+105) · Marshall Thundering Herd at Youngstown State Penguins · Sat 6:00 PM ET · EV +2.3% · min +104
 - IU Indianapolis Jaguars ML -135 (-135) · IU Indianapolis Jaguars at Morehead State Eagles · Sat 7:30 PM ET · EV +2.1% · min -132
 - OVER 151.5 (-105) · Northern Illinois Huskies at Bellarmine Knights · Sat 2:00 PM ET · EV +1.8% · min -102
@@ -23,12 +25,10 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 - OVER 154.5 (-105) · Toledo Rockets at Detroit Mercy Titans · Sat 4:00 PM ET · EV +1.6% · min -102
 - OVER 143.5 (-105) · Portland State Vikings at San Francisco Dons · Sat 7:00 PM ET · EV +1.6% · min -102
 - OVER 165.5 (-105) · Jackson State Tigers at Winthrop Eagles · Sat 2:30 PM ET · EV +1.6% · min -102
-- Campbell Fighting Camels ML -325 (-325) · South Carolina Upstate Spartans at Campbell Fighting Camels · Sat 4:30 PM ET · EV +1.6% · min -307
-- OVER 149.5 (-105) · Manhattan Jaspers at Le Moyne Dolphins · Sat 6:00 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $503.01 · 89-84-0 · logged this run 0 · open 20
+Bankroll $503.01 · 89-84-0 · logged this run 1 · open 21
 
 ## Data gaps
 
