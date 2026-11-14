@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-13
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-14T02:30:37+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-14T02:45:32+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -28,11 +28,11 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $510.48 · 82-76-0 · logged this run 0 · open 21
+Bankroll $500.11 · 83-79-0 · logged this run 3 · open 20
 
 ## Data gaps
 
 - no line posted yet (30): Stonehill Skyhawks @ Texas Tech Red Raiders, Northwest University Eagles @ Washington State Cougars, Drexel Dragons @ Maine Black Bears, Plattsburgh Cardinals @ Vermont Catamounts, St. Thomas Tommies @ Army Black Knights, Coastal Georgia Mariner @ Florida Atlantic Owls, Wofford Terriers @ Queens University Royals, The Citadel Bulldogs @ North Florida Ospreys, Cheyney (PA) Wolves @ North Carolina A&T Aggies, Rice Owls @ Stephen F. Austin Lumberjacks, Northern Illinois Huskies @ Bellarmine Knights, Coppin State Eagles @ South Florida Bulls, Gardner-Webb Runnin' Bulldogs @ South Carolina Gamecocks, Shenandoah Hornets @ Radford Highlanders, Jackson State Tigers @ Winthrop Eagles …
-- possession data coverage: 0.976
+- possession data coverage: 0.946
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
