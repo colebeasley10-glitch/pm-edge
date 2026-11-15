@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-14
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-15T04:15:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-15T04:30:36+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,6 +53,6 @@ Bankroll $480.76 · 97-96-0 · logged this run 0 · open 14
 ## Data gaps
 
 - no line posted yet (12): Abraham Baldwin Agricultural Stallions @ Florida Gulf Coast Eagles, Harvard Crimson @ American University Eagles, Capital Crusaders @ Robert Morris Colonials, Emmanuel (MA) Lions @ Yale Bulldogs, Wright State-Lake Lakers @ Tennessee Tech Golden Eagles, Cleveland State Vikings @ Alabama A&M Bulldogs, Air Force Falcons @ Pacific Tigers, UC Merced Bobcats @ UC Santa Barbara Gauchos, Mercyhurst Lakers @ James Madison Dukes, Doane Tigers @ South Dakota Coyotes, Ecclesia Royals @ UT Martin Skyhawks, Paine Lions @ Bethune-Cookman Wildcats
-- possession data coverage: 0.982
+- possession data coverage: 0.985
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
