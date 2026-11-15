@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-14
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-15T03:15:31+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-15T03:30:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,7 +31,7 @@ WHY: Model line New Mexico State Aggies +9 vs market +11.5 (+2.7 pts) from oppon
 LOGGED: 2026-11-14T23:45:21+00:00 · model ncaab_v1
 ```
 
-## Watch list (10) — positive EV but not a qualified bet
+## Watch list (13) — positive EV but not a qualified bet
 
 - Delaware Blue Hens ML -110 (-110) · Colgate Raiders at Delaware Blue Hens · Sun 1:00 PM ET · EV +6.1% · min -117
 - Missouri Tigers ML -118 (-118) · Missouri Tigers at Marquette Golden Eagles · Sun 2:30 PM ET · EV +3.4% · min -119
@@ -42,15 +42,17 @@ LOGGED: 2026-11-14T23:45:21+00:00 · model ncaab_v1
 - La Salle Explorers ML -120 (-120) · Temple Owls at La Salle Explorers · Sun 2:00 PM ET · EV +1.9% · min -117
 - OVER 143.5 (-105) · Niagara Purple Eagles at Iowa State Cyclones · Sun 1:00 PM ET · EV +1.7% · min -102
 - OVER 133.5 (-105) · New Hampshire Wildcats at Boston College Eagles · Sun 1:30 PM ET · EV +1.7% · min -102
+- OVER 147.5 (-105) · UAlbany Great Danes at Holy Cross Crusaders · Sun 2:00 PM ET · EV +1.7% · min -102
 - OVER 158.5 (-105) · Boise State Broncos at Nebraska Cornhuskers · Sun 1:00 PM ET · EV +1.6% · min -102
+- Montana State Bobcats ML -290 (-290) · Cal Poly Mustangs at Montana State Bobcats · Sun 6:00 PM ET · EV +0.5% · min -265
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $476.21 · 96-96-0 · logged this run 0 · open 14
+Bankroll $476.21 · 96-96-0 · logged this run 1 · open 15
 
 ## Data gaps
 
-- no line posted yet (17): Abraham Baldwin Agricultural Stallions @ Florida Gulf Coast Eagles, Harvard Crimson @ American University Eagles, Capital Crusaders @ Robert Morris Colonials, Emmanuel (MA) Lions @ Yale Bulldogs, UAlbany Great Danes @ Holy Cross Crusaders, Cal State Bakersfield Roadrunners @ North Dakota State Bison, Wright State-Lake Lakers @ Tennessee Tech Golden Eagles, Cleveland State Vikings @ Alabama A&M Bulldogs, Air Force Falcons @ Pacific Tigers, UC Merced Bobcats @ UC Santa Barbara Gauchos, Mercyhurst Lakers @ James Madison Dukes, Doane Tigers @ South Dakota Coyotes, Canisius Golden Griffins @ Buffalo Bulls, Ecclesia Royals @ UT Martin Skyhawks, Cal Poly Mustangs @ Montana State Bobcats …
-- possession data coverage: 0.97
+- no line posted yet (12): Abraham Baldwin Agricultural Stallions @ Florida Gulf Coast Eagles, Harvard Crimson @ American University Eagles, Capital Crusaders @ Robert Morris Colonials, Emmanuel (MA) Lions @ Yale Bulldogs, Wright State-Lake Lakers @ Tennessee Tech Golden Eagles, Cleveland State Vikings @ Alabama A&M Bulldogs, Air Force Falcons @ Pacific Tigers, UC Merced Bobcats @ UC Santa Barbara Gauchos, Mercyhurst Lakers @ James Madison Dukes, Doane Tigers @ South Dakota Coyotes, Ecclesia Royals @ UT Martin Skyhawks, Paine Lions @ Bethune-Cookman Wildcats
+- possession data coverage: 0.971
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
