@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-15
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-15T08:30:27+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-15T08:45:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
