@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-14
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-15T04:00:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-15T04:15:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,9 +31,10 @@ WHY: Model line New Mexico State Aggies +9 vs market +11.5 (+2.7 pts) from oppon
 LOGGED: 2026-11-14T23:45:21+00:00 · model ncaab_v1
 ```
 
-## Watch list (13) — positive EV but not a qualified bet
+## Watch list (14) — positive EV but not a qualified bet
 
 - Delaware Blue Hens ML -110 (-110) · Colgate Raiders at Delaware Blue Hens · Sun 1:00 PM ET · EV +6.1% · min -117
+- New Mexico State Aggies ML +625 (+625) · New Mexico State Aggies at San Diego State Aztecs · Sun 4:00 PM ET · EV +5.1% · min +611
 - Missouri Tigers ML -118 (-118) · Missouri Tigers at Marquette Golden Eagles · Sun 2:30 PM ET · EV +3.4% · min -119
 - Louisville Cardinals ML -355 (-355) · Louisville Cardinals at Memphis Tigers · Sun 1:00 PM ET · EV +3.1% · min -357
 - Boston University Terriers ML -155 (-155) · Dartmouth Big Green at Boston University Terriers · Sun 1:00 PM ET · EV +2.6% · min -154
@@ -44,7 +45,6 @@ LOGGED: 2026-11-14T23:45:21+00:00 · model ncaab_v1
 - OVER 133.5 (-105) · New Hampshire Wildcats at Boston College Eagles · Sun 1:30 PM ET · EV +1.7% · min -102
 - OVER 147.5 (-105) · UAlbany Great Danes at Holy Cross Crusaders · Sun 2:00 PM ET · EV +1.7% · min -102
 - OVER 158.5 (-105) · Boise State Broncos at Nebraska Cornhuskers · Sun 1:00 PM ET · EV +1.6% · min -102
-- Montana State Bobcats ML -290 (-290) · Cal Poly Mustangs at Montana State Bobcats · Sun 6:00 PM ET · EV +0.5% · min -265
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
