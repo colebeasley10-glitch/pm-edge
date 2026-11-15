@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-15T09:45:43.215630Z",
+ "ran_at": "2026-11-15T09:55:23.524073Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -17,11 +17,25 @@
    }
   },
   "polymarket": {
-   "picks_found": 1,
+   "picks_found": 3,
    "opened": 0,
    "skipped": {},
    "benched": true,
    "shadow": [
+    {
+     "ticker": "KXNCAAMBGAME-26NOV15PEPPORE-PEPP",
+     "side": "YES",
+     "ask": 0.12,
+     "fair": 0.432,
+     "edge": 0.3045
+    },
+    {
+     "ticker": "KXNCAAMBGAME-26NOV15PEPPORE-ORE",
+     "side": "NO",
+     "ask": 0.12,
+     "fair": 0.432,
+     "edge": 0.3045
+    },
     {
      "ticker": "KXAHLGAME-26NOV151800TEXTUC-TUC",
      "side": "NO",
@@ -33,11 +47,23 @@
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 154,
-    "kalshi_events": 1373,
-    "matched": 94,
-    "priced": 178,
+    "poly_games": 158,
+    "kalshi_events": 1375,
+    "matched": 97,
+    "priced": 183,
     "best_gaps": [
+     [
+      0.312,
+      "KXNCAAMBGAME-26NOV15PEPPORE-PEPP"
+     ],
+     [
+      0.015,
+      "KXLIGAPORTUGAL2GAME-26NOV15AMAFEL-AMA"
+     ],
+     [
+      0.015,
+      "KXCS2GAME-26NOV150700INOXBRUTE-BRUTE"
+     ],
      [
       0.01,
       "KXUEFANLGAME-26NOV17UKRGEO-GEO"
@@ -57,18 +83,6 @@
      [
       0.005,
       "KXUEFANLGAME-26NOV15LATARM-ARM"
-     ],
-     [
-      0.005,
-      "KXUEFANLGAME-26NOV15BELITA-BEL"
-     ],
-     [
-      0.005,
-      "KXSERIECGAME-26NOV15RAVFOR-RAV"
-     ],
-     [
-      0.005,
-      "KXSERIECGAME-26NOV15NOVLEC-NOV"
      ]
     ]
    }
@@ -80,12 +94,13 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 2,
+   "opened": 0,
    "skipped": {
-    "same_game": 2
+    "same_game": 2,
+    "already_holding": 2
    },
    "diag": {
-    "skipped_settles_late": 0
+    "skipped_settles_late": 4
    }
   },
   "crypto": {
@@ -98,8 +113,8 @@
    "diag": {
     "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.007882193113296498,
-     "ETH-USD": 0.010110012824356637
+     "BTC-USD": 0.007867171649443299,
+     "ETH-USD": 0.010058130743337746
     },
     "best": []
    }
@@ -144,15 +159,15 @@
   {
    "strategy": "sharp",
    "picks": 3750,
-   "open": 21,
+   "open": 19,
    "won": 2076,
-   "lost": 1653,
-   "pl": -1670.0799999999954,
-   "risked": 37396.51000000007,
-   "clv_sum": -2770.2299999999996,
-   "clv_n": 3680,
-   "roi": -0.04465871280501823,
-   "clv": -0.7527798913043477
+   "lost": 1655,
+   "pl": -1690.6499999999953,
+   "risked": 37417.08000000007,
+   "clv_sum": -2828.2299999999996,
+   "clv_n": 3682,
+   "roi": -0.04518391066325839,
+   "clv": -0.7681233025529602
   },
   {
    "strategy": "weather",
