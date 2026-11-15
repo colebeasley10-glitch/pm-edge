@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-14
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-15T01:00:32+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-15T01:15:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,21 +31,24 @@ WHY: Model line New Mexico State Aggies +9 vs market +11.5 (+2.7 pts) from oppon
 LOGGED: 2026-11-14T23:45:21+00:00 · model ncaab_v1
 ```
 
-## Watch list (5) — positive EV but not a qualified bet
+## Watch list (8) — positive EV but not a qualified bet
 
+- Delaware Blue Hens ML -110 (-110) · Colgate Raiders at Delaware Blue Hens · Sun 1:00 PM ET · EV +6.1% · min -117
 - Missouri Tigers ML -118 (-118) · Missouri Tigers at Marquette Golden Eagles · Sun 2:30 PM ET · EV +3.4% · min -119
 - Louisville Cardinals ML -355 (-355) · Louisville Cardinals at Memphis Tigers · Sun 1:00 PM ET · EV +3.1% · min -357
+- Boston University Terriers ML -155 (-155) · Dartmouth Big Green at Boston University Terriers · Sun 1:00 PM ET · EV +2.6% · min -154
 - Nebraska Cornhuskers ML -325 (-325) · Boise State Broncos at Nebraska Cornhuskers · Sun 1:00 PM ET · EV +2.0% · min -312
 - La Salle Explorers ML -120 (-120) · Temple Owls at La Salle Explorers · Sun 2:00 PM ET · EV +1.9% · min -117
+- OVER 143.5 (-105) · Niagara Purple Eagles at Iowa State Cyclones · Sun 1:00 PM ET · EV +1.7% · min -102
 - OVER 158.5 (-105) · Boise State Broncos at Nebraska Cornhuskers · Sun 1:00 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $486.68 · 93-91-0 · logged this run 0 · open 14
+Bankroll $486.68 · 93-91-0 · logged this run 2 · open 16
 
 ## Data gaps
 
-- no line posted yet (30): Abraham Baldwin Agricultural Stallions @ Florida Gulf Coast Eagles, Norfolk State Spartans @ Georgia State Panthers, Quinnipiac Bobcats @ Central Connecticut Blue Devils, Colgate Raiders @ Delaware Blue Hens, Dartmouth Big Green @ Boston University Terriers, Harvard Crimson @ American University Eagles, Niagara Purple Eagles @ Iowa State Cyclones, New Hampshire Wildcats @ Boston College Eagles, William & Mary Tribe @ Michigan Wolverines, Capital Crusaders @ Robert Morris Colonials, South Carolina State Bulldogs @ Charleston Cougars, Emmanuel (MA) Lions @ Yale Bulldogs, UAlbany Great Danes @ Holy Cross Crusaders, Cal State Bakersfield Roadrunners @ North Dakota State Bison, Princeton Tigers @ Rhode Island Rams …
+- no line posted yet (29): Abraham Baldwin Agricultural Stallions @ Florida Gulf Coast Eagles, Norfolk State Spartans @ Georgia State Panthers, Harvard Crimson @ American University Eagles, New Hampshire Wildcats @ Boston College Eagles, Capital Crusaders @ Robert Morris Colonials, South Carolina State Bulldogs @ Charleston Cougars, Emmanuel (MA) Lions @ Yale Bulldogs, UAlbany Great Danes @ Holy Cross Crusaders, Cal State Bakersfield Roadrunners @ North Dakota State Bison, Wright State-Lake Lakers @ Tennessee Tech Golden Eagles, Purdue Fort Wayne Mastodons @ Eastern Illinois Panthers, Cleveland State Vikings @ Alabama A&M Bulldogs, Air Force Falcons @ Pacific Tigers, UC Merced Bobcats @ UC Santa Barbara Gauchos, Mercyhurst Lakers @ James Madison Dukes …
 - possession data coverage: 0.99
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
