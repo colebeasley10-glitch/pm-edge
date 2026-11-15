@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-15T08:45:36.604335Z",
+ "ran_at": "2026-11-15T09:00:55.524875Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -9,7 +9,7 @@
    "shadow": [],
    "shadow_opened": 0,
    "diag": {
-    "events": 61,
+    "events": 51,
     "priced": 0,
     "skipped_far_from_market": 0,
     "skipped_same_day": 44,
@@ -33,10 +33,10 @@
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 154,
+    "poly_games": 153,
     "kalshi_events": 1378,
-    "matched": 94,
-    "priced": 176,
+    "matched": 95,
+    "priced": 175,
     "best_gaps": [
      [
       0.01,
@@ -60,15 +60,15 @@
      ],
      [
       0.005,
+      "KXUEFANLGAME-26NOV15LATARM-ARM"
+     ],
+     [
+      0.005,
       "KXSERIECGAME-26NOV15NOVLEC-NOV"
      ],
      [
       0.005,
-      "KXNCAAMBGAME-26NOV15WMUUSI-WMU"
-     ],
-     [
-      0.005,
-      "KXNCAAMBGAME-26NOV15LOUMEM-LOU"
+      "KXPERLIGA1GAME-26NOV15COMSBA-COM"
      ]
     ]
    }
@@ -80,29 +80,62 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 2,
+   "opened": 1,
    "skipped": {
-    "already_holding": 1,
+    "already_holding": 2,
     "same_game": 1
    },
    "diag": {
-    "skipped_settles_late": 0
+    "skipped_settles_late": 1
    }
   },
   "crypto": {
-   "picks_found": 0,
+   "picks_found": 1,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [],
+   "shadow": [
+    {
+     "ticker": "KXETHD-26NOV1505-T1824.99",
+     "side": "YES",
+     "ask": 0.34,
+     "fair": 0.4202,
+     "edge": 0.0643
+    }
+   ],
    "shadow_opened": 0,
    "diag": {
-    "markets_priced": 0,
+    "markets_priced": 488,
     "vol": {
-     "BTC-USD": 0.007640498555548562,
-     "ETH-USD": 0.009917919322445044
+     "BTC-USD": 0.007650268227358419,
+     "ETH-USD": 0.010036162472757253
     },
-    "best": []
+    "best": [
+     [
+      -0.42,
+      "KXETHD-26NOV1505-T1984.99"
+     ],
+     [
+      -0.33,
+      "KXETHD-26NOV1505-T1969.99"
+     ],
+     [
+      -0.3,
+      "KXETHD-26NOV1505-T1929.99"
+     ],
+     [
+      -0.25,
+      "KXETHD-26NOV1505-T1924.99"
+     ],
+     [
+      -0.21,
+      "KXETHD-26NOV1505-T1919.99"
+     ],
+     [
+      -0.195,
+      "KXETHD-26NOV1505-T1814.99"
+     ]
+    ]
    }
   }
  },
@@ -113,7 +146,7 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 15,
+  "marked": 17,
   "settled": 0
  },
  "shadow_update": {
@@ -144,8 +177,8 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 3745,
-   "open": 17,
+   "picks": 3746,
+   "open": 18,
    "won": 2076,
    "lost": 1652,
    "pl": -1660.3799999999953,
