@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-15
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-15T23:30:30+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-15T23:45:23+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $503.06 (start $500, at risk $5.00) · ¼-Kelly comparison $498.31
-**Season to date (BET tier):** 7-6-0 · flat P/L $+3.06 (+4.7% on risk) · ¼-Kelly P/L $-1.69 · beat close 23%
+**Paper bankroll:** $498.06 (start $500, at risk $0.00) · ¼-Kelly comparison $492.75
+**Season to date (BET tier):** 7-7-0 · flat P/L $-1.94 (-2.8% on risk) · ¼-Kelly P/L $-7.25 · beat close 21%
 
 ## Qualified bets (0)
 
@@ -18,11 +18,11 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $493.90 · 103-99-0 · logged this run 0 · open 15
+Bankroll $493.80 · 104-100-0 · logged this run 1 · open 14
 
 ## Data gaps
 
 - no line posted yet (12): Paine Lions @ Bethune-Cookman Wildcats, Miami (OH) Hamilton Harriers @ Morehead State Eagles, Fisk Bulldogs @ North Alabama Lions, Ferrum Panthers @ George Washington Revolutionaries, Virginia Lynchburg Dragons @ North Carolina Central Eagles, Florida Memorial Lions @ Stetson Hatters, DeSales Bulldogs @ Pennsylvania Quakers, Midway Eagles @ Southeast Missouri State Redhawks, Mayville State Comets @ South Dakota State Jackrabbits, Calumet St. Joseph Crimson Wave @ Valparaiso Beacons, Dallas Christian Crusaders @ UL Monroe Warhawks, Colorado Colorado Springs Mountain Lions @ Denver Pioneers
-- possession data coverage: 0.982
+- possession data coverage: 0.975
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
