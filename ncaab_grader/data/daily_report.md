@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-15
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-15T19:15:33+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-15T19:30:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,17 +31,16 @@ WHY: Model line New Mexico State Aggies +9 vs market +11.5 (+2.7 pts) from oppon
 LOGGED: 2026-11-14T23:45:21+00:00 · model ncaab_v1
 ```
 
-## Watch list (5) — positive EV but not a qualified bet
+## Watch list (4) — positive EV but not a qualified bet
 
 - New Mexico State Aggies ML +625 (+625) · New Mexico State Aggies at San Diego State Aztecs · Sun 4:00 PM ET · EV +5.1% · min +611
-- Missouri Tigers ML -118 (-118) · Missouri Tigers at Marquette Golden Eagles · Sun 2:30 PM ET · EV +3.4% · min -119
 - Purdue Fort Wayne Mastodons ML -155 (-155) · Purdue Fort Wayne Mastodons at Eastern Illinois Panthers · Sun 3:00 PM ET · EV +2.1% · min -152
 - Montana State Bobcats ML -290 (-290) · Cal Poly Mustangs at Montana State Bobcats · Sun 6:00 PM ET · EV +0.5% · min -265
 - Buffalo Bulls ML -1100 (-1100) · Canisius Golden Griffins at Buffalo Bulls · Sun 5:30 PM ET · EV +0.1% · min -818
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $485.66 · 98-96-0 · logged this run 0 · open 15
+Bankroll $490.29 · 99-96-0 · logged this run 0 · open 14
 
 ## Data gaps
 
