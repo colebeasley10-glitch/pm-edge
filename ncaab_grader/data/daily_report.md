@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-15
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-15T22:45:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-15T23:00:40+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -13,16 +13,16 @@ None. No game cleared a tested threshold — that's a normal day, not a failure.
 
 ## Watch list (2) — positive EV but not a qualified bet
 
-- Montana State Bobcats ML -290 (-290) · Cal Poly Mustangs at Montana State Bobcats · Sun 6:00 PM ET · EV +0.5% · min -265
+- OVER 149.5 (-105) · St. Thomas Tommies at Long Island University Sharks · Mon 7:00 PM ET · EV +1.5% · min -102
 - Abilene Christian Wildcats ML +260 (+260) · Abilene Christian Wildcats at Missouri State Bears · Mon 8:00 PM ET · EV +0.2% · min +270
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $494.44 · 102-98-0 · logged this run 0 · open 13
+Bankroll $493.90 · 103-99-0 · logged this run 4 · open 15
 
 ## Data gaps
 
-- no line posted yet (23): Ecclesia Royals @ UT Martin Skyhawks, Paine Lions @ Bethune-Cookman Wildcats, Miami (OH) Hamilton Harriers @ Morehead State Eagles, Fisk Bulldogs @ North Alabama Lions, Ferrum Panthers @ George Washington Revolutionaries, Florida A&M Rattlers @ UTEP Miners, Iona Gaels @ UMBC Retrievers, Alcorn State Braves @ Maryland Terrapins, Prairie View A&M Panthers @ Ohio State Buckeyes, Grambling Tigers @ Kentucky Wildcats, Virginia Lynchburg Dragons @ North Carolina Central Eagles, Florida Memorial Lions @ Stetson Hatters, DeSales Bulldogs @ Pennsylvania Quakers, St. Thomas Tommies @ Long Island University Sharks, Jacksonville Dolphins @ Georgia Bulldogs …
-- possession data coverage: 0.979
+- no line posted yet (12): Paine Lions @ Bethune-Cookman Wildcats, Miami (OH) Hamilton Harriers @ Morehead State Eagles, Fisk Bulldogs @ North Alabama Lions, Ferrum Panthers @ George Washington Revolutionaries, Virginia Lynchburg Dragons @ North Carolina Central Eagles, Florida Memorial Lions @ Stetson Hatters, DeSales Bulldogs @ Pennsylvania Quakers, Midway Eagles @ Southeast Missouri State Redhawks, Mayville State Comets @ South Dakota State Jackrabbits, Calumet St. Joseph Crimson Wave @ Valparaiso Beacons, Dallas Christian Crusaders @ UL Monroe Warhawks, Colorado Colorado Springs Mountain Lions @ Denver Pioneers
+- possession data coverage: 0.981
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
