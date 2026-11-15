@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-14
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-15T00:45:27+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-15T01:00:32+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,9 +31,8 @@ WHY: Model line New Mexico State Aggies +9 vs market +11.5 (+2.7 pts) from oppon
 LOGGED: 2026-11-14T23:45:21+00:00 · model ncaab_v1
 ```
 
-## Watch list (6) — positive EV but not a qualified bet
+## Watch list (5) — positive EV but not a qualified bet
 
-- Louisiana Tech Bulldogs ML -110 (-110) · Louisiana Tech Bulldogs at Nicholls Colonels · Sat 8:00 PM ET · EV +4.5% · min -113
 - Missouri Tigers ML -118 (-118) · Missouri Tigers at Marquette Golden Eagles · Sun 2:30 PM ET · EV +3.4% · min -119
 - Louisville Cardinals ML -355 (-355) · Louisville Cardinals at Memphis Tigers · Sun 1:00 PM ET · EV +3.1% · min -357
 - Nebraska Cornhuskers ML -325 (-325) · Boise State Broncos at Nebraska Cornhuskers · Sun 1:00 PM ET · EV +2.0% · min -312
@@ -46,7 +45,7 @@ Bankroll $486.68 · 93-91-0 · logged this run 0 · open 14
 
 ## Data gaps
 
-- no line posted yet (30): Dillard Blue Devils @ Arkansas State Red Wolves, Oklahoma City Okies @ Oral Roberts Golden Eagles, Abraham Baldwin Agricultural Stallions @ Florida Gulf Coast Eagles, Norfolk State Spartans @ Georgia State Panthers, Quinnipiac Bobcats @ Central Connecticut Blue Devils, Colgate Raiders @ Delaware Blue Hens, Dartmouth Big Green @ Boston University Terriers, Harvard Crimson @ American University Eagles, Niagara Purple Eagles @ Iowa State Cyclones, New Hampshire Wildcats @ Boston College Eagles, William & Mary Tribe @ Michigan Wolverines, Capital Crusaders @ Robert Morris Colonials, South Carolina State Bulldogs @ Charleston Cougars, Emmanuel (MA) Lions @ Yale Bulldogs, UAlbany Great Danes @ Holy Cross Crusaders …
-- possession data coverage: 0.976
+- no line posted yet (30): Abraham Baldwin Agricultural Stallions @ Florida Gulf Coast Eagles, Norfolk State Spartans @ Georgia State Panthers, Quinnipiac Bobcats @ Central Connecticut Blue Devils, Colgate Raiders @ Delaware Blue Hens, Dartmouth Big Green @ Boston University Terriers, Harvard Crimson @ American University Eagles, Niagara Purple Eagles @ Iowa State Cyclones, New Hampshire Wildcats @ Boston College Eagles, William & Mary Tribe @ Michigan Wolverines, Capital Crusaders @ Robert Morris Colonials, South Carolina State Bulldogs @ Charleston Cougars, Emmanuel (MA) Lions @ Yale Bulldogs, UAlbany Great Danes @ Holy Cross Crusaders, Cal State Bakersfield Roadrunners @ North Dakota State Bison, Princeton Tigers @ Rhode Island Rams …
+- possession data coverage: 0.99
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
