@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-15
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-15T16:45:20+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-15T17:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -52,7 +52,7 @@ Bankroll $485.66 · 98-96-0 · logged this run 0 · open 15
 
 ## Data gaps
 
-- no line posted yet (13): Abraham Baldwin Agricultural Stallions @ Florida Gulf Coast Eagles, Capital Crusaders @ Robert Morris Colonials, Emmanuel (MA) Lions @ Yale Bulldogs, Wright State-Lake Lakers @ Tennessee Tech Golden Eagles, Air Force Falcons @ Pacific Tigers, UC Merced Bobcats @ UC Santa Barbara Gauchos, Doane Tigers @ South Dakota Coyotes, Ecclesia Royals @ UT Martin Skyhawks, Paine Lions @ Bethune-Cookman Wildcats, Miami (OH) Hamilton Harriers @ Morehead State Eagles, Fisk Bulldogs @ North Alabama Lions, Ferrum Panthers @ George Washington Revolutionaries, Florida A&M Rattlers @ UTEP Miners
+- no line posted yet (14): Capital Crusaders @ Robert Morris Colonials, Emmanuel (MA) Lions @ Yale Bulldogs, Wright State-Lake Lakers @ Tennessee Tech Golden Eagles, Air Force Falcons @ Pacific Tigers, UC Merced Bobcats @ UC Santa Barbara Gauchos, Doane Tigers @ South Dakota Coyotes, Ecclesia Royals @ UT Martin Skyhawks, Paine Lions @ Bethune-Cookman Wildcats, Miami (OH) Hamilton Harriers @ Morehead State Eagles, Fisk Bulldogs @ North Alabama Lions, Ferrum Panthers @ George Washington Revolutionaries, Florida A&M Rattlers @ UTEP Miners, Iona Gaels @ UMBC Retrievers, Alcorn State Braves @ Maryland Terrapins
 - possession data coverage: 0.995
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
