@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-15
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-15T19:45:31+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-15T20:00:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,10 +31,9 @@ WHY: Model line New Mexico State Aggies +9 vs market +11.5 (+2.7 pts) from oppon
 LOGGED: 2026-11-14T23:45:21+00:00 · model ncaab_v1
 ```
 
-## Watch list (4) — positive EV but not a qualified bet
+## Watch list (3) — positive EV but not a qualified bet
 
 - New Mexico State Aggies ML +625 (+625) · New Mexico State Aggies at San Diego State Aztecs · Sun 4:00 PM ET · EV +5.1% · min +611
-- Purdue Fort Wayne Mastodons ML -155 (-155) · Purdue Fort Wayne Mastodons at Eastern Illinois Panthers · Sun 3:00 PM ET · EV +2.1% · min -152
 - Montana State Bobcats ML -290 (-290) · Cal Poly Mustangs at Montana State Bobcats · Sun 6:00 PM ET · EV +0.5% · min -265
 - Buffalo Bulls ML -1100 (-1100) · Canisius Golden Griffins at Buffalo Bulls · Sun 5:30 PM ET · EV +0.1% · min -818
 
@@ -44,7 +43,7 @@ Bankroll $490.29 · 99-96-0 · logged this run 0 · open 14
 
 ## Data gaps
 
-- no line posted yet (30): Wright State-Lake Lakers @ Tennessee Tech Golden Eagles, Air Force Falcons @ Pacific Tigers, UC Merced Bobcats @ UC Santa Barbara Gauchos, Mercyhurst Lakers @ James Madison Dukes, Doane Tigers @ South Dakota Coyotes, Ecclesia Royals @ UT Martin Skyhawks, Paine Lions @ Bethune-Cookman Wildcats, Miami (OH) Hamilton Harriers @ Morehead State Eagles, Fisk Bulldogs @ North Alabama Lions, Ferrum Panthers @ George Washington Revolutionaries, Florida A&M Rattlers @ UTEP Miners, Iona Gaels @ UMBC Retrievers, Alcorn State Braves @ Maryland Terrapins, Prairie View A&M Panthers @ Ohio State Buckeyes, Grambling Tigers @ Kentucky Wildcats …
-- possession data coverage: 0.993
+- no line posted yet (30): Air Force Falcons @ Pacific Tigers, UC Merced Bobcats @ UC Santa Barbara Gauchos, Mercyhurst Lakers @ James Madison Dukes, Doane Tigers @ South Dakota Coyotes, Ecclesia Royals @ UT Martin Skyhawks, Paine Lions @ Bethune-Cookman Wildcats, Miami (OH) Hamilton Harriers @ Morehead State Eagles, Fisk Bulldogs @ North Alabama Lions, Ferrum Panthers @ George Washington Revolutionaries, Florida A&M Rattlers @ UTEP Miners, Iona Gaels @ UMBC Retrievers, Alcorn State Braves @ Maryland Terrapins, Prairie View A&M Panthers @ Ohio State Buckeyes, Grambling Tigers @ Kentucky Wildcats, Eastern Kentucky Colonels @ Kent State Golden Flashes …
+- possession data coverage: 0.99
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
