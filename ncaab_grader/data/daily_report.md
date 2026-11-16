@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-16
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-16T19:45:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-16T20:00:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,13 +53,14 @@ WHY: Model line Rutgers Scarlet Knights +11 vs market +15.5 (+4.6 pts) from oppo
 LOGGED: 2026-11-16T18:30:28+00:00 · model ncaab_v1
 ```
 
-## Watch list (7) — positive EV but not a qualified bet
+## Watch list (8) — positive EV but not a qualified bet
 
 - Illinois Fighting Illini ML +285 (+285) · Illinois Fighting Illini at Duke Blue Devils · Tue 7:00 PM ET · EV +20.3% · min +230
 - Rutgers Scarlet Knights ML +1000 (+1000) · Rutgers Scarlet Knights at Houston Cougars · Tue 2:00 PM ET · EV +19.8% · min +846
 - Notre Dame Fighting Irish ML +850 (+850) · Notre Dame Fighting Irish at Florida Gators · Tue 4:30 PM ET · EV +18.1% · min +729
 - Indiana Hoosiers ML +124 (+124) · Arkansas Razorbacks at Indiana Hoosiers · Tue 7:30 PM ET · EV +8.3% · min +113
 - OVER 144.5 (-105) · Rutgers Scarlet Knights at Houston Cougars · Tue 2:00 PM ET · EV +1.7% · min -102
+- OVER 151.5 (-105) · Michigan State Spartans at Tennessee Volunteers · Tue 9:00 PM ET · EV +1.6% · min -102
 - OVER 149.5 (-105) · St. Thomas Tommies at Long Island University Sharks · Mon 7:00 PM ET · EV +1.5% · min -102
 - Abilene Christian Wildcats ML +260 (+260) · Abilene Christian Wildcats at Missouri State Bears · Mon 8:00 PM ET · EV +0.2% · min +270
 
