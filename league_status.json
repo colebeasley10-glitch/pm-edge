@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-16T08:00:46.021203Z",
+ "ran_at": "2026-11-16T08:15:41.156424Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -25,15 +25,11 @@
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 141,
+    "poly_games": 144,
     "kalshi_events": 1296,
-    "matched": 73,
-    "priced": 132,
+    "matched": 76,
+    "priced": 138,
     "best_gaps": [
-     [
-      0.02,
-      "KXCS2GAME-26NOV160400BTFEXR-EXR"
-     ],
      [
       0.015,
       "KXDOTA2GAME-26NOV160400LYNXANG-LYNX"
@@ -41,10 +37,6 @@
      [
       0.013,
       "KXNCAAMBGAME-26NOV16TXSOUCSD-UCSD"
-     ],
-     [
-      0.01,
-      "KXCS2GAME-26NOV161000PRVHERO-HERO"
      ],
      [
       0.005,
@@ -56,7 +48,15 @@
      ],
      [
       0.005,
+      "KXUEFANLGAME-26NOV17HUNNIR-HUN"
+     ],
+     [
+      0.005,
       "KXUEFANLGAME-26NOV17DENNOR-NOR"
+     ],
+     [
+      0.005,
+      "KXUEFANLGAME-26NOV16SUISCO-SCO"
      ],
      [
       0.005,
@@ -72,83 +72,29 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 1,
+   "opened": 2,
    "skipped": {
-    "already_holding": 2,
+    "already_holding": 1,
     "same_game": 1
    },
    "diag": {
-    "skipped_settles_late": 1
+    "skipped_settles_late": 0
    }
   },
   "crypto": {
-   "picks_found": 4,
+   "picks_found": 0,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [
-    {
-     "ticker": "KXBTCD-26NOV1604-T64399.99",
-     "side": "NO",
-     "ask": 0.11,
-     "fair": 0.2718,
-     "edge": 0.1549
-    },
-    {
-     "ticker": "KXETHD-26NOV1604-T1799.99",
-     "side": "NO",
-     "ask": 0.09,
-     "fair": 0.2485,
-     "edge": 0.1528
-    },
-    {
-     "ticker": "KXBTCD-26NOV1604-T64499.99",
-     "side": "NO",
-     "ask": 0.17,
-     "fair": 0.33,
-     "edge": 0.15
-    },
-    {
-     "ticker": "KXETHD-26NOV1604-T1824.99",
-     "side": "YES",
-     "ask": 0.16,
-     "fair": 0.3182,
-     "edge": 0.1487
-    }
-   ],
-   "shadow_opened": 2,
+   "shadow": [],
+   "shadow_opened": 0,
    "diag": {
-    "markets_priced": 488,
+    "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.007451516093558702,
-     "ETH-USD": 0.009642520878182816
+     "BTC-USD": 0.00745117759779128,
+     "ETH-USD": 0.009657826383351054
     },
-    "best": [
-     [
-      -0.172,
-      "KXBTCD-26NOV1604-T64399.99"
-     ],
-     [
-      -0.17,
-      "KXBTCD-26NOV1604-T64499.99"
-     ],
-     [
-      -0.169,
-      "KXETHD-26NOV1604-T1799.99"
-     ],
-     [
-      -0.167,
-      "KXETHD-26NOV1604-T1804.99"
-     ],
-     [
-      -0.159,
-      "KXBTCD-26NOV1604-T64299.99"
-     ],
-     [
-      0.158,
-      "KXETHD-26NOV1604-T1824.99"
-     ]
-    ]
+    "best": []
    }
   }
  },
@@ -159,12 +105,12 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 13,
+  "marked": 11,
   "settled": 0
  },
  "shadow_update": {
-  "marked": 4,
-  "settled": 0
+  "marked": 6,
+  "settled": 3
  },
  "live_sharp": {
   "enabled": false,
@@ -190,16 +136,16 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 3885,
-   "open": 14,
-   "won": 2163,
+   "picks": 3887,
+   "open": 13,
+   "won": 2166,
    "lost": 1708,
-   "pl": -1545.0799999999933,
-   "risked": 38815.5100000001,
-   "clv_sum": -2620.47,
-   "clv_n": 3820,
-   "roi": -0.03980573744876699,
-   "clv": -0.6859869109947644
+   "pl": -1508.0499999999934,
+   "risked": 38845.48000000009,
+   "clv_sum": -2490.47,
+   "clv_n": 3823,
+   "roi": -0.0388217625319597,
+   "clv": -0.651443892231232
   },
   {
    "strategy": "weather",
@@ -245,15 +191,15 @@
   {
    "strategy": "crypto",
    "picks": 348,
-   "open": 5,
+   "open": 2,
    "won": 48,
-   "lost": 295,
-   "pl": -729.6499999999995,
-   "risked": 3600.649999999995,
-   "clv_sum": -274.5,
-   "clv_n": 343,
-   "roi": -0.20264396706150292,
-   "clv": -0.8002915451895044
+   "lost": 298,
+   "pl": -761.2499999999994,
+   "risked": 3632.2499999999955,
+   "clv_sum": -294.5,
+   "clv_n": 346,
+   "roi": -0.2095808383233534,
+   "clv": -0.8511560693641619
   },
   {
    "strategy": "polymarket",
