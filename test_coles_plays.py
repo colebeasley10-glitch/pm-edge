@@ -257,3 +257,47 @@ def test_far_off_app_lines_are_not_edges_and_get_voided():
             {"play_id": "c", "origin": "pickem", "line": "33.5", "pin_line": "33.5", "status": "won", "pl": "7.32"}]
     assert cp.void_mismatched(rows) == 2
     assert [r["status"] for r in rows] == ["void", "void", "won"] and rows[1]["pl"] == ""
+
+
+def test_relay_fallback_only_after_direct_fails(monkeypatch):
+    """Nov 16, 2026: PICKEM_RELAY is tried only after every direct URL fails, with the target URL + key."""
+    import requests as rq
+    from research_lab import coles_plays as cp
+
+    calls = []
+
+    class Resp:
+        def __init__(self, code):
+            self.status_code = code
+
+        def raise_for_status(self):
+            if self.status_code != 200:
+                err = rq.HTTPError(f"{self.status_code}")
+                err.response = self
+                raise err
+
+    class S:
+        def get(self, url, **k):
+            calls.append((url, k))
+            return Resp(200 if url.startswith("https://relay.example") else 403)
+
+    monkeypatch.delenv("PICKEM_RELAY", raising=False)
+    info = {}
+    try:
+        cp._first_ok(S(), ("https://api.prizepicks.com/projections",), info, params={"a": 1}, timeout=5)
+        raise AssertionError("should fail with no relay")
+    except rq.HTTPError:
+        pass
+    assert len(calls) == 1
+
+    calls.clear()
+    monkeypatch.setenv("PICKEM_RELAY", "https://relay.example/")
+    monkeypatch.setenv("PICKEM_RELAY_KEY", "k")
+    info = {}
+    cp._first_ok(S(), ("https://api.prizepicks.com/projections",), info, params={"a": 1}, headers={"x": "y"}, timeout=5)
+    assert len(calls) == 2
+    url, k = calls[1]
+    assert url == "https://relay.example"
+    assert k["params"] == {"url": "https://api.prizepicks.com/projections?a=1"}
+    assert k["headers"] == {"X-Relay-Key": "k"} and k["timeout"] == 5
+    assert info["relay"] is True and info["tried"] == ["api.prizepicks.com/projections: 403"]

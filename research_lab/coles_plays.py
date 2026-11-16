@@ -74,21 +74,38 @@ UNDERDOG_URLS = ("https://api.underdogfantasy.com/beta/v7/over_under_lines",
 PRIZEPICKS_URLS = ("https://partner-api.prizepicks.com/projections", "https://api.prizepicks.com/projections")
 
 
+def _relay():
+    """Nov 16, 2026: PrizePicks refuses GitHub's datacenter IPs (403 every run since Nov 12; Underdog now and
+    then). PICKEM_RELAY is the URL of Cole's free Cloudflare Worker (tools/pickem_relay_worker.js), which
+    fetches the same URL from Cloudflare's network. Only used after every direct URL has failed; unset = off."""
+    import os
+    return (os.environ.get("PICKEM_RELAY") or "").strip().rstrip("/"), (os.environ.get("PICKEM_RELAY_KEY") or "").strip()
+
+
 def _first_ok(session, urls, info, **kw):
-    """GET the first URL that answers 200; remembers every failure in info['tried']."""
+    """GET the first URL that answers 200; remembers every failure in info['tried']. If they all fail and
+    PICKEM_RELAY is set, tries each one again through the relay."""
     tried, last = [], None
-    for u in urls:
+    relay, key = _relay()
+    attempts = [(u, False) for u in urls] + ([(u, True) for u in urls] if relay else [])
+    for u, via_relay in attempts:
         try:
-            r = session.get(u, **kw)
+            if via_relay:
+                target = requests.Request("GET", u, params=kw.get("params")).prepare().url
+                rkw = {k: v for k, v in kw.items() if k not in ("params", "headers")}
+                r = session.get(relay, params={"url": target}, headers={"X-Relay-Key": key}, **rkw)
+            else:
+                r = session.get(u, **kw)
             r.raise_for_status()
             info["url"] = u
+            info["relay"] = via_relay
             if tried:
                 info["tried"] = tried
             return r
         except Exception as exc:
             last = exc
             code = getattr(getattr(exc, "response", None), "status_code", None)
-            tried.append(f"{u.split('//')[1].split('?')[0]}: {code or type(exc).__name__}")
+            tried.append(f"{'relay→' if via_relay else ''}{u.split('//')[1].split('?')[0]}: {code or type(exc).__name__}")
     info["tried"] = tried
     raise last
 
