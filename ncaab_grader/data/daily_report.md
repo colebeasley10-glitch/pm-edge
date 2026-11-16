@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-16
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-16T15:45:32+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-16T16:00:33+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -22,7 +22,7 @@ Bankroll $488.70 · 105-102-0 · logged this run 0 · open 12
 
 ## Data gaps
 
-- no line posted yet (16): Miami (OH) Hamilton Harriers @ Morehead State Eagles, Fisk Bulldogs @ North Alabama Lions, Ferrum Panthers @ George Washington Revolutionaries, Virginia Lynchburg Dragons @ North Carolina Central Eagles, Florida Memorial Lions @ Stetson Hatters, DeSales Bulldogs @ Pennsylvania Quakers, Midway Eagles @ Southeast Missouri State Redhawks, Mayville State Comets @ South Dakota State Jackrabbits, Calumet St. Joseph Crimson Wave @ Valparaiso Beacons, Dallas Christian Crusaders @ UL Monroe Warhawks, Colorado Colorado Springs Mountain Lions @ Denver Pioneers, Wilson WILSON @ Delaware Blue Hens, Louisiana Christian Wildcats @ Southern Jaguars, Hofstra Pride @ Murray State Racers, Rutgers Scarlet Knights @ Houston Cougars …
+- no line posted yet (15): Fisk Bulldogs @ North Alabama Lions, Ferrum Panthers @ George Washington Revolutionaries, Virginia Lynchburg Dragons @ North Carolina Central Eagles, Florida Memorial Lions @ Stetson Hatters, DeSales Bulldogs @ Pennsylvania Quakers, Midway Eagles @ Southeast Missouri State Redhawks, Mayville State Comets @ South Dakota State Jackrabbits, Calumet St. Joseph Crimson Wave @ Valparaiso Beacons, Dallas Christian Crusaders @ UL Monroe Warhawks, Colorado Colorado Springs Mountain Lions @ Denver Pioneers, Wilson WILSON @ Delaware Blue Hens, Louisiana Christian Wildcats @ Southern Jaguars, Hofstra Pride @ Murray State Racers, Rutgers Scarlet Knights @ Houston Cougars, Notre Dame Fighting Irish @ Florida Gators
 - possession data coverage: 0.994
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
