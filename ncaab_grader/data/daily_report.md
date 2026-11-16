@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-16
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-16T17:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-16T17:30:27+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -22,7 +22,7 @@ Bankroll $488.70 · 105-102-0 · logged this run 0 · open 14
 
 ## Data gaps
 
-- no line posted yet (16): Virginia Lynchburg Dragons @ North Carolina Central Eagles, Florida Memorial Lions @ Stetson Hatters, DeSales Bulldogs @ Pennsylvania Quakers, Midway Eagles @ Southeast Missouri State Redhawks, Mayville State Comets @ South Dakota State Jackrabbits, Calumet St. Joseph Crimson Wave @ Valparaiso Beacons, Dallas Christian Crusaders @ UL Monroe Warhawks, Colorado Colorado Springs Mountain Lions @ Denver Pioneers, Wilson WILSON @ Delaware Blue Hens, Louisiana Christian Wildcats @ Southern Jaguars, Hofstra Pride @ Murray State Racers, Rutgers Scarlet Knights @ Houston Cougars, Notre Dame Fighting Irish @ Florida Gators, Saint Peter's Peacocks @ UMass Lowell River Hawks, Liberty Flames @ Southern Illinois Salukis …
+- no line posted yet (19): Virginia Lynchburg Dragons @ North Carolina Central Eagles, Florida Memorial Lions @ Stetson Hatters, DeSales Bulldogs @ Pennsylvania Quakers, Midway Eagles @ Southeast Missouri State Redhawks, Mayville State Comets @ South Dakota State Jackrabbits, Calumet St. Joseph Crimson Wave @ Valparaiso Beacons, Dallas Christian Crusaders @ UL Monroe Warhawks, Colorado Colorado Springs Mountain Lions @ Denver Pioneers, Wilson WILSON @ Delaware Blue Hens, Louisiana Christian Wildcats @ Southern Jaguars, Hofstra Pride @ Murray State Racers, Rutgers Scarlet Knights @ Houston Cougars, Notre Dame Fighting Irish @ Florida Gators, Saint Peter's Peacocks @ UMass Lowell River Hawks, Liberty Flames @ Southern Illinois Salukis …
 - possession data coverage: 0.994
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
