@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-17
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-17T18:45:36+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-17T19:00:44+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $498.06 (start $500, at risk $10.00) · ¼-Kelly comparison $492.75
 **Season to date (BET tier):** 7-7-0 · flat P/L $-1.94 (-2.8% on risk) · ¼-Kelly P/L $-7.25 · beat close 21%
 
-## Qualified bets (2)
+## Qualified bets (1)
 
 ```
 GAME: Arkansas Razorbacks at Indiana Hoosiers (neutral)
@@ -31,32 +31,9 @@ WHY: Model line Indiana Hoosiers -4.5 vs market +2.5 (+6.9 pts) from opponent-ad
 LOGGED: 2026-11-16T18:30:28+00:00 · model ncaab_v1
 ```
 
-```
-GAME: Rutgers Scarlet Knights at Houston Cougars (neutral)
-TIPOFF: Tue 2:00 PM ET
-
-SPORTSBOOK LINE: Rutgers Scarlet Knights +15.5 (-110)
-MODEL LINE: Rutgers Scarlet Knights +11
-PROJECTED SCORE: Rutgers Scarlet Knights 68 - Houston Cougars 79
-
-MODEL COVER PROBABILITY: 54.7%
-BREAK-EVEN PROBABILITY: 52.38%
-EXPECTED ROI: +4.4%
-
-RECOMMENDATION: Rutgers Scarlet Knights +15.5
-MINIMUM ACCEPTABLE PRICE: -116
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $6.05
-CONFIDENCE/UNCERTAINTY: LOW — ratings are still mostly the preseason prior; calibrated win prob 54.7% (backtest-shrunk toward the market)
-FLAGS: early season (<4 games): mostly preseason prior; neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Rutgers Scarlet Knights +11 vs market +15.5 (+4.6 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-16T18:30:28+00:00 · model ncaab_v1
-```
-
-## Watch list (23) — positive EV but not a qualified bet
+## Watch list (21) — positive EV but not a qualified bet
 
 - Illinois Fighting Illini ML +285 (+285) · Illinois Fighting Illini at Duke Blue Devils · Tue 7:00 PM ET · EV +20.3% · min +230
-- Rutgers Scarlet Knights ML +1000 (+1000) · Rutgers Scarlet Knights at Houston Cougars · Tue 2:00 PM ET · EV +19.8% · min +846
 - Notre Dame Fighting Irish ML +850 (+850) · Notre Dame Fighting Irish at Florida Gators · Tue 4:30 PM ET · EV +18.1% · min +729
 - UNLV Rebels ML +1200 (+1200) · UNLV Rebels at Kansas Jayhawks · Tue 9:30 PM ET · EV +11.5% · min +1101
 - Indiana Hoosiers ML +124 (+124) · Arkansas Razorbacks at Indiana Hoosiers · Tue 7:30 PM ET · EV +8.3% · min +113
@@ -67,6 +44,7 @@ LOGGED: 2026-11-16T18:30:28+00:00 · model ncaab_v1
 - UAB Blazers ML -175 (-175) · Florida International Panthers at UAB Blazers · Tue 7:30 PM ET · EV +2.7% · min -174
 - OVER 133.5 (-105) · Jacksonville State Gamecocks at Louisiana Tech Bulldogs · Tue 7:30 PM ET · EV +1.8% · min -103
 - OVER 148.5 (-105) · Central Michigan Chippewas at Dayton Flyers · Tue 7:00 PM ET · EV +1.7% · min -102
+- Mount St. Mary's Mountaineers ML -120 (-120) · Lehigh Mountain Hawks at Mount St. Mary's Mountaineers · Tue 7:00 PM ET · EV +1.7% · min -117
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
