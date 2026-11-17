@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-17T14:15:48.161889Z",
+ "ran_at": "2026-11-17T14:30:38.239635Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -17,34 +17,22 @@
    }
   },
   "polymarket": {
-   "picks_found": 1,
+   "picks_found": 0,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [
-    {
-     "ticker": "KXEUROLEAGUEGAME-26NOV171430CZVOLM-CZV",
-     "side": "YES",
-     "ask": 0.5,
-     "fair": 0.535,
-     "edge": 0.0175
-    }
-   ],
+   "shadow": [],
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 175,
+    "poly_games": 189,
     "kalshi_events": 1542,
-    "matched": 109,
-    "priced": 207,
+    "matched": 121,
+    "priced": 225,
     "best_gaps": [
      [
-      0.035,
-      "KXEUROLEAGUEGAME-26NOV171430CZVOLM-CZV"
-     ],
-     [
-      0.02,
-      "KXEUROLEAGUEGAME-26NOV171300ASVFEN-FEN"
+      0.015,
+      "KXNCAAMBGAME-26NOV17AMCCRICE-RICE"
      ],
      [
       0.015,
@@ -52,15 +40,11 @@
      ],
      [
       0.01,
-      "KXNCAAMBGAME-26NOV17LEHMSM-MSM"
-     ],
-     [
-      0.01,
-      "KXNCAAMBGAME-26NOV17AMCCRICE-RICE"
-     ],
-     [
-      0.01,
       "KXNCAAFGAME-26NOV20UNMWYO-WYO"
+     ],
+     [
+      0.01,
+      "KXCONCACAFNLGAME-26NOV17KNABON-KNA"
      ],
      [
       0.005,
@@ -69,6 +53,14 @@
      [
       0.005,
       "KXUEFANLGAME-26NOV17POLSWE-POL"
+     ],
+     [
+      0.005,
+      "KXUEFANLGAME-26NOV17IRLKOS-KOS"
+     ],
+     [
+      0.005,
+      "KXUEFANLGAME-26NOV17IRLKOS-IRL"
      ]
     ]
    }
@@ -80,13 +72,12 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 2,
+   "opened": 1,
    "skipped": {
-    "same_game": 1,
-    "already_holding": 1
+    "already_holding": 3
    },
    "diag": {
-    "skipped_settles_late": 1
+    "skipped_settles_late": 0
    }
   },
   "crypto": {
@@ -96,65 +87,65 @@
    "benched": true,
    "shadow": [
     {
+     "ticker": "KXBTCD-26NOV1717-T65999.99",
+     "side": "YES",
+     "ask": 0.12,
+     "fair": 0.2391,
+     "edge": 0.1116
+    },
+    {
      "ticker": "KXBTCD-26NOV1717-T63749.99",
      "side": "NO",
-     "ask": 0.12,
-     "fair": 0.2473,
-     "edge": 0.1198
+     "ask": 0.15,
+     "fair": 0.2679,
+     "edge": 0.1089
     },
     {
-     "ticker": "KXBTCD-26NOV1717-T63999.99",
+     "ticker": "KXBTCD-26NOV1717-T63499.99",
      "side": "NO",
-     "ask": 0.17,
-     "fair": 0.2961,
-     "edge": 0.1161
-    },
-    {
-     "ticker": "KXBTCD-26NOV1717-T66249.99",
-     "side": "YES",
-     "ask": 0.1,
-     "fair": 0.2214,
-     "edge": 0.1151
+     "ask": 0.11,
+     "fair": 0.2207,
+     "edge": 0.1038
     },
     {
      "ticker": "KXETHD-26NOV1717-T1789.99",
      "side": "NO",
-     "ask": 0.18,
-     "fair": 0.3043,
-     "edge": 0.114
+     "ask": 0.22,
+     "fair": 0.3353,
+     "edge": 0.1031
     }
    ],
    "shadow_opened": 0,
    "diag": {
     "markets_priced": 120,
     "vol": {
-     "BTC-USD": 0.007627090156894188,
-     "ETH-USD": 0.009903845541437889
+     "BTC-USD": 0.007631831045827006,
+     "ETH-USD": 0.00991414542965766
     },
     "best": [
      [
-      -0.137,
+      -0.128,
       "KXBTCD-26NOV1717-T63749.99"
      ],
      [
-      -0.136,
-      "KXBTCD-26NOV1717-T63999.99"
-     ],
-     [
-      -0.134,
+      -0.125,
       "KXETHD-26NOV1717-T1789.99"
      ],
      [
-      -0.123,
+      -0.121,
       "KXBTCD-26NOV1717-T63499.99"
      ],
      [
-      0.121,
-      "KXBTCD-26NOV1717-T66249.99"
+      -0.119,
+      "KXBTCD-26NOV1717-T63999.99"
      ],
      [
-      -0.119,
-      "KXBTCD-26NOV1717-T64249.99"
+      0.119,
+      "KXBTCD-26NOV1717-T65999.99"
+     ],
+     [
+      -0.109,
+      "KXBTCD-26NOV1717-T63249.99"
      ]
     ]
    }
@@ -167,12 +158,12 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 19,
+  "marked": 21,
   "settled": 0
  },
  "shadow_update": {
   "marked": 3,
-  "settled": 2
+  "settled": 0
  },
  "live_sharp": {
   "enabled": false,
@@ -198,8 +189,8 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 4065,
-   "open": 23,
+   "picks": 4066,
+   "open": 24,
    "won": 2261,
    "lost": 1781,
    "pl": -1392.3799999999922,
