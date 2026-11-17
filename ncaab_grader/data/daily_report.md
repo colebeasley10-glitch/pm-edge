@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-16
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-17T00:15:38+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-17T00:30:35+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -74,7 +74,7 @@ Bankroll $483.70 · 105-103-0 · logged this run 0 · open 20
 
 ## Data gaps
 
-- no line posted yet (30): Midway Eagles @ Southeast Missouri State Redhawks, Mayville State Comets @ South Dakota State Jackrabbits, Calumet St. Joseph Crimson Wave @ Valparaiso Beacons, Dallas Christian Crusaders @ UL Monroe Warhawks, Colorado Colorado Springs Mountain Lions @ Denver Pioneers, Wilson WILSON @ Delaware Blue Hens, Louisiana Christian Wildcats @ Southern Jaguars, Saint Peter's Peacocks @ UMass Lowell River Hawks, Liberty Flames @ Southern Illinois Salukis, Marist Red Foxes @ Army Black Knights, SUNY Potsdam SUNY-POTSDAM @ Stony Brook Seawolves, Lipscomb Bisons @ Purdue Boilermakers, Maine Augusta Moose @ Dartmouth Big Green, Cheyney (PA) Wolves @ Delaware State Hornets, Vermont State Lyndon Hornets @ Central Connecticut Blue Devils …
+- no line posted yet (30): Mayville State Comets @ South Dakota State Jackrabbits, Calumet St. Joseph Crimson Wave @ Valparaiso Beacons, Dallas Christian Crusaders @ UL Monroe Warhawks, Colorado Colorado Springs Mountain Lions @ Denver Pioneers, Wilson WILSON @ Delaware Blue Hens, Louisiana Christian Wildcats @ Southern Jaguars, Saint Peter's Peacocks @ UMass Lowell River Hawks, Liberty Flames @ Southern Illinois Salukis, Marist Red Foxes @ Army Black Knights, SUNY Potsdam SUNY-POTSDAM @ Stony Brook Seawolves, Lipscomb Bisons @ Purdue Boilermakers, Maine Augusta Moose @ Dartmouth Big Green, Cheyney (PA) Wolves @ Delaware State Hornets, Vermont State Lyndon Hornets @ Central Connecticut Blue Devils, Akron Zips @ Bucknell Bison …
 - possession data coverage: 0.994
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
