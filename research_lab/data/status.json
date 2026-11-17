@@ -8,7 +8,7 @@
  "last_report_preview": {
   "lines": [
    "PM EDGE STRATEGY RESEARCH LAB \u2014 2026-11-16 (PAPER)",
-   "Existing Sharp (paper): 2243-1770, \u2212$1456.29, ROI -3.6%",
+   "Existing Sharp (paper): 2244-1770, \u2212$1452.03, ROI -3.6%",
    "Today's Plays: 103-49, +$78.22, ROI +5.1%",
    "Today's Plays (-200 to +150): 77-66, \u2212$4.40, ROI -0.3%",
    "Structural: 0 quote-level opportunities, 0 fully executable today",
@@ -20,7 +20,7 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 11/16"
  },
  "last_run": {
-  "at": "2026-11-17T09:33:01.903095Z",
+  "at": "2026-11-17T09:47:58.779547Z",
   "best_price": {
    "compared": 0,
    "new_picks": 0,
@@ -35,14 +35,14 @@
   },
   "book_errors": 0,
   "coles_plays": {
-   "app_props": 8706,
+   "app_props": 8717,
    "apps": {
     "PrizePicks": {
      "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.prizepicks.com/projections?per_page=2000&single_stat=true&game_mode=pickem",
      "props": null,
      "skipped": {
-      "event_type": 956,
-      "not_standard": 18109
+      "event_type": 968,
+      "not_standard": 18338
      },
      "tried": [
       "partner-api.prizepicks.com/projections: 200 but 0 usable",
@@ -52,13 +52,13 @@
     },
     "Sleeper": {
      "error": null,
-     "props": 1944,
+     "props": 1957,
      "tried": null,
      "url": null
     },
     "Underdog": {
      "error": null,
-     "props": 6762,
+     "props": 6760,
      "tried": [
       "api.underdogfantasy.com/beta/v7/over_under_lines: 404",
       "api.underdogfantasy.com/beta/v6/over_under_lines: 426"
@@ -81,6 +81,7 @@
   },
   "data_failures": [],
   "ev": {
+   "book_offers": 0,
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
@@ -91,11 +92,13 @@
     "taken_at": "2026-11-01T08:32:40.763365Z"
    },
    "errors": [],
-   "games": 0,
-   "picks": 0
+   "games": 102,
+   "kalshi_offers": 142,
+   "picks": 758,
+   "polymarket_offers": 54
   },
   "maker_candidates": {
-   "candidates": 0,
+   "candidates": 50,
    "sharp_agrees": 0
   },
   "my_bets": {
@@ -106,36 +109,49 @@
   "odds_fam": {
    "bets_settled": 0,
    "pushed": 0,
-   "sent": 0,
+   "sent": 1,
    "settled": 0
   },
   "odds_fam_board": {
-   "arbs_possible": 0,
+   "arbs_possible": 726,
    "bets_graded": 0,
    "clv_scored": 0,
    "props": 0,
-   "rows": 0
+   "rows": 758
   },
   "paper_only": true,
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [],
-   "kalshi_markets": 0,
-   "matched": 0,
-   "note": "no Pinnacle fetch due this round",
-   "pinnacle_games": 0,
-   "requests_today": 18,
-   "samples": [],
-   "skipped": [
-    "football: next in 0 min",
-    "basketball: next in 0 min",
-    "hockey: next in 91 min",
-    "baseball: next in 105 min",
-    "soccer: next in 105 min",
-    "tennis: next in 105 min"
+   "fetched": [
+    "football",
+    "basketball"
    ],
-   "unmatched": {}
+   "kalshi_markets": 4583,
+   "matched": 419,
+   "ncaaf_lines_saved": 66,
+   "pinnacle_games": 111,
+   "requests_today": 20,
+   "samples": [
+    "no_pinnacle_match: Akron vs UMass: UMass wins",
+    "no_pinnacle_match: Akron vs UMass: Akron wins",
+    "no_pinnacle_match: Northwestern St. vs Stephen F. Austin: Stephen F. Austin wins",
+    "no_pinnacle_match: Northwestern St. vs Stephen F. Austin: Northwestern St. wins",
+    "no_pinnacle_match: Southeastern Louisiana vs Nicholls St.: Nicholls St. wins",
+    "no_pinnacle_match: Southeastern Louisiana vs Nicholls St.: Southeastern Louisiana wins",
+    "no_pinnacle_match: Iowa St. vs UCF: UCF wins",
+    "no_pinnacle_match: Iowa St. vs UCF: Iowa St. wins"
+   ],
+   "skipped": [
+    "hockey: next in 76 min",
+    "baseball: next in 90 min",
+    "soccer: next in 90 min",
+    "tennis: next in 90 min"
+   ],
+   "unmatched": {
+    "no_pinnacle_match": 2453,
+    "pinnacle_line_not_offered": 1711
+   }
   },
   "prop_board": {
    "new_plays": 0,
@@ -145,20 +161,21 @@
   },
   "reconciled": true,
   "sharp_plays": {
-   "games": 0,
-   "new_plays": 0,
+   "games": 37,
+   "new_plays": 1,
    "pushed": 0,
    "settled": 0
   },
   "sleeper": {
    "edges": 0,
    "errors": [],
-   "lines": 874,
+   "lines": 890,
    "matched_props": 0,
    "unmatched_stats": [
     "anytime_touchdowns",
     "assists",
     "blocks",
+    "blocks_and_steals",
     "double_double",
     "extra_point_made",
     "fantasy_points",
@@ -206,10 +223,10 @@
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 8,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 8,
+    "scanned": 758,
     "settle": {
      "marked": 12,
      "pending": 12,
@@ -221,10 +238,10 @@
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 4,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 4,
+    "scanned": 758,
     "settle": {
      "marked": 9,
      "pending": 9,
@@ -233,6 +250,6 @@
    }
   }
  },
- "last_success": "2026-11-17T09:33:01.903095Z",
+ "last_success": "2026-11-17T09:47:58.779547Z",
  "report_sent": "20261031"
 }
