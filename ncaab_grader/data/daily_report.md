@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-17
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-17T21:15:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-17T21:30:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $498.06 (start $500, at risk $10.00) · ¼-Kelly comparison $492.75
-**Season to date (BET tier):** 7-7-0 · flat P/L $-1.94 (-2.8% on risk) · ¼-Kelly P/L $-7.25 · beat close 21%
+**Paper bankroll:** $502.61 (start $500, at risk $5.00) · ¼-Kelly comparison $498.25
+**Season to date (BET tier):** 8-7-0 · flat P/L $+2.61 (+3.5% on risk) · ¼-Kelly P/L $-1.75 · beat close 20%
 
 ## Qualified bets (1)
 
@@ -31,10 +31,9 @@ WHY: Model line Indiana Hoosiers -4.5 vs market +2.5 (+6.9 pts) from opponent-ad
 LOGGED: 2026-11-16T18:30:28+00:00 · model ncaab_v1
 ```
 
-## Watch list (21) — positive EV but not a qualified bet
+## Watch list (20) — positive EV but not a qualified bet
 
 - Illinois Fighting Illini ML +285 (+285) · Illinois Fighting Illini at Duke Blue Devils · Tue 7:00 PM ET · EV +20.3% · min +230
-- Notre Dame Fighting Irish ML +850 (+850) · Notre Dame Fighting Irish at Florida Gators · Tue 4:30 PM ET · EV +18.1% · min +729
 - UNLV Rebels ML +1200 (+1200) · UNLV Rebels at Kansas Jayhawks · Tue 9:30 PM ET · EV +11.5% · min +1101
 - Indiana Hoosiers ML +124 (+124) · Arkansas Razorbacks at Indiana Hoosiers · Tue 7:30 PM ET · EV +8.3% · min +113
 - Louisiana Tech Bulldogs ML -125 (-125) · Jacksonville State Gamecocks at Louisiana Tech Bulldogs · Tue 7:30 PM ET · EV +5.9% · min -133
@@ -45,6 +44,7 @@ LOGGED: 2026-11-16T18:30:28+00:00 · model ncaab_v1
 - OVER 133.5 (-105) · Jacksonville State Gamecocks at Louisiana Tech Bulldogs · Tue 7:30 PM ET · EV +1.8% · min -103
 - OVER 148.5 (-105) · Central Michigan Chippewas at Dayton Flyers · Tue 7:00 PM ET · EV +1.7% · min -102
 - Mount St. Mary's Mountaineers ML -120 (-120) · Lehigh Mountain Hawks at Mount St. Mary's Mountaineers · Tue 7:00 PM ET · EV +1.7% · min -117
+- OVER 142.5 (-105) · Fordham Rams at Manhattan Jaspers · Tue 7:00 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -53,6 +53,6 @@ Bankroll $487.08 · 111-108-0 · logged this run 0 · open 21
 ## Data gaps
 
 - no line posted yet (30): SUNY Potsdam SUNY-POTSDAM @ Stony Brook Seawolves, Maine Augusta Moose @ Dartmouth Big Green, Spring Hill Badgers @ South Alabama Jaguars, Cheyney (PA) Wolves @ Delaware State Hornets, Vermont State Lyndon Hornets @ Central Connecticut Blue Devils, Fort Lauderdale Eagles @ North Florida Ospreys, Embry Riddle (AZ) Eagles @ Northern Arizona Lumberjacks, Newman Jets @ Kansas City Roos, Life University Running Eagles @ Austin Peay Governors, Simon Fraser Red Leafs @ Washington Huskies, Pacific Union PACIFIC UNION @ Pacific Tigers, Jackson State Tigers @ Baylor Bears, TBD @ TBD, TBD @ TBD, Tennessee Tech Golden Eagles @ UNC Asheville Bulldogs …
-- possession data coverage: 0.994
+- possession data coverage: 0.992
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
