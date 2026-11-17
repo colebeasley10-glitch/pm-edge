@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-17T13:15:39.467756Z",
+ "ran_at": "2026-11-17T13:30:44.966193Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -25,10 +25,10 @@
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 172,
-    "kalshi_events": 1547,
-    "matched": 108,
-    "priced": 198,
+    "poly_games": 177,
+    "kalshi_events": 1545,
+    "matched": 109,
+    "priced": 201,
     "best_gaps": [
      [
       0.015,
@@ -40,6 +40,10 @@
      ],
      [
       0.015,
+      "KXEUROLEAGUEGAME-26NOV171430PARFCB-PAR"
+     ],
+     [
+      0.015,
       "KXCS2GAME-26NOV171100PHABBL-BBL"
      ],
      [
@@ -48,19 +52,15 @@
      ],
      [
       0.01,
-      "KXNCAAMBGAME-26NOV17MURRHOF-HOF"
-     ],
-     [
-      0.01,
       "KXNCAAFGAME-26NOV20UNMWYO-WYO"
      ],
      [
-      0.005,
-      "KXUEFANLGAME-26NOV17IRLKOS-KOS"
+      0.01,
+      "KXEUROLEAGUEGAME-26NOV181200RMABJK-BJK"
      ],
      [
       0.005,
-      "KXUEFANLGAME-26NOV17IRLKOS-IRL"
+      "KXUEFANLGAME-26NOV17POLSWE-POL"
      ]
     ]
    }
@@ -72,10 +72,10 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 1,
+   "opened": 2,
    "skipped": {
-    "price_out_of_range": 1,
-    "wide_spread": 2
+    "same_game": 1,
+    "already_holding": 1
    },
    "diag": {
     "skipped_settles_late": 1
@@ -88,65 +88,65 @@
    "benched": true,
    "shadow": [
     {
-     "ticker": "KXBTCD-26NOV1717-T66249.99",
-     "side": "YES",
-     "ask": 0.12,
-     "fair": 0.2501,
-     "edge": 0.1226
-    },
-    {
      "ticker": "KXBTCD-26NOV1717-T63749.99",
      "side": "NO",
-     "ask": 0.13,
-     "fair": 0.254,
-     "edge": 0.1159
+     "ask": 0.15,
+     "fair": 0.2761,
+     "edge": 0.1172
     },
     {
-     "ticker": "KXBTCD-26NOV1717-T66499.99",
-     "side": "YES",
-     "ask": 0.09,
-     "fair": 0.2104,
-     "edge": 0.1147
+     "ticker": "KXBTCD-26NOV1717-T63499.99",
+     "side": "NO",
+     "ask": 0.11,
+     "fair": 0.2318,
+     "edge": 0.1149
     },
     {
-     "ticker": "KXBTCD-26NOV1717-T65999.99",
-     "side": "YES",
-     "ask": 0.17,
-     "fair": 0.2936,
-     "edge": 0.1136
+     "ticker": "KXBTCD-26NOV1717-T63999.99",
+     "side": "NO",
+     "ask": 0.2,
+     "fair": 0.324,
+     "edge": 0.1128
+    },
+    {
+     "ticker": "KXETHD-26NOV1717-T1789.99",
+     "side": "NO",
+     "ask": 0.22,
+     "fair": 0.345,
+     "edge": 0.1128
     }
    ],
    "shadow_opened": 0,
    "diag": {
     "markets_priced": 120,
     "vol": {
-     "BTC-USD": 0.007790519379018736,
-     "ETH-USD": 0.010195775279496265
+     "BTC-USD": 0.007791217948045237,
+     "ETH-USD": 0.010195788894214118
     },
     "best": [
      [
-      -0.134,
+      -0.136,
       "KXBTCD-26NOV1717-T63749.99"
      ],
      [
-      0.13,
-      "KXBTCD-26NOV1717-T66249.99"
+      -0.135,
+      "KXETHD-26NOV1717-T1789.99"
      ],
      [
-      -0.129,
+      -0.134,
       "KXBTCD-26NOV1717-T63999.99"
      ],
      [
-      0.124,
-      "KXBTCD-26NOV1717-T65999.99"
-     ],
-     [
-      -0.122,
+      -0.132,
       "KXBTCD-26NOV1717-T63499.99"
      ],
      [
-      -0.121,
-      "KXETHD-26NOV1717-T1789.99"
+      -0.122,
+      "KXBTCD-26NOV1717-T63249.99"
+     ],
+     [
+      -0.117,
+      "KXETHD-26NOV1717-T1749.99"
      ]
     ]
    }
@@ -159,12 +159,12 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 18,
-  "settled": 1
+  "marked": 17,
+  "settled": 0
  },
  "shadow_update": {
   "marked": 3,
-  "settled": 7
+  "settled": 0
  },
  "live_sharp": {
   "enabled": false,
@@ -190,16 +190,16 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 4056,
-   "open": 20,
-   "won": 2256,
+   "picks": 4058,
+   "open": 21,
+   "won": 2257,
    "lost": 1780,
-   "pl": -1413.8199999999924,
-   "risked": 40468.2500000001,
-   "clv_sum": -2379.35,
-   "clv_n": 3983,
-   "roi": -0.03493652431226922,
-   "clv": -0.5973763494853126
+   "pl": -1409.4199999999923,
+   "risked": 40477.8500000001,
+   "clv_sum": -2356.85,
+   "clv_n": 3984,
+   "roi": -0.03481953710486078,
+   "clv": -0.5915788152610442
   },
   {
    "strategy": "weather",
