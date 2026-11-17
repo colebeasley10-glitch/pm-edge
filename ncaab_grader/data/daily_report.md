@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-16
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-17T02:30:29+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-17T02:45:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -70,11 +70,11 @@ LOGGED: 2026-11-16T18:30:28+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $493.36 · 108-104-0 · logged this run 0 · open 18
+Bankroll $492.99 · 109-105-0 · logged this run 0 · open 16
 
 ## Data gaps
 
 - no line posted yet (29): Colorado Colorado Springs Mountain Lions @ Denver Pioneers, Wilson WILSON @ Delaware Blue Hens, Louisiana Christian Wildcats @ Southern Jaguars, Saint Peter's Peacocks @ UMass Lowell River Hawks, Liberty Flames @ Southern Illinois Salukis, Marist Red Foxes @ Army Black Knights, SUNY Potsdam SUNY-POTSDAM @ Stony Brook Seawolves, Lipscomb Bisons @ Purdue Boilermakers, Maine Augusta Moose @ Dartmouth Big Green, Cheyney (PA) Wolves @ Delaware State Hornets, Vermont State Lyndon Hornets @ Central Connecticut Blue Devils, Akron Zips @ Bucknell Bison, Green Bay Phoenix @ West Florida Argonauts, Lehigh Mountain Hawks @ Mount St. Mary's Mountaineers, Wagner Seahawks @ Saint Joseph's Hawks …
-- possession data coverage: 0.984
+- possession data coverage: 0.978
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
