@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-16
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-17T03:45:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-17T04:00:42+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -75,6 +75,6 @@ Bankroll $502.08 · 111-105-0 · logged this run 0 · open 19
 ## Data gaps
 
 - no line posted yet (28): Wilson WILSON @ Delaware Blue Hens, Louisiana Christian Wildcats @ Southern Jaguars, Saint Peter's Peacocks @ UMass Lowell River Hawks, Liberty Flames @ Southern Illinois Salukis, Marist Red Foxes @ Army Black Knights, SUNY Potsdam SUNY-POTSDAM @ Stony Brook Seawolves, Lipscomb Bisons @ Purdue Boilermakers, Maine Augusta Moose @ Dartmouth Big Green, Cheyney (PA) Wolves @ Delaware State Hornets, Vermont State Lyndon Hornets @ Central Connecticut Blue Devils, Akron Zips @ Bucknell Bison, Green Bay Phoenix @ West Florida Argonauts, Lehigh Mountain Hawks @ Mount St. Mary's Mountaineers, Wagner Seahawks @ Saint Joseph's Hawks, Jacksonville State Gamecocks @ Louisiana Tech Bulldogs …
-- possession data coverage: 0.973
+- possession data coverage: 0.983
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
