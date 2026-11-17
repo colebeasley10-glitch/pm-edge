@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-17T14:30:38.239635Z",
+ "ran_at": "2026-11-17T14:45:47.550990Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -25,26 +25,22 @@
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 189,
-    "kalshi_events": 1542,
+    "poly_games": 191,
+    "kalshi_events": 1543,
     "matched": 121,
     "priced": 225,
     "best_gaps": [
      [
       0.015,
-      "KXNCAAMBGAME-26NOV17AMCCRICE-RICE"
+      "KXCS2GAME-26NOV171100PHABBL-BBL"
      ],
      [
       0.015,
-      "KXCS2GAME-26NOV171100PHABBL-BBL"
+      "KXAFCONGAME-26NOV17LBATUN-LBA"
      ],
      [
       0.01,
       "KXNCAAFGAME-26NOV20UNMWYO-WYO"
-     ],
-     [
-      0.01,
-      "KXCONCACAFNLGAME-26NOV17KNABON-KNA"
      ],
      [
       0.005,
@@ -56,11 +52,15 @@
      ],
      [
       0.005,
-      "KXUEFANLGAME-26NOV17IRLKOS-KOS"
+      "KXUEFANLGAME-26NOV17IRLKOS-IRL"
      ],
      [
       0.005,
-      "KXUEFANLGAME-26NOV17IRLKOS-IRL"
+      "KXUEFANLGAME-26NOV17HUNNIR-NIR"
+     ],
+     [
+      0.005,
+      "KXUEFANLGAME-26NOV17HUNNIR-HUN"
      ]
     ]
    }
@@ -72,12 +72,13 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 1,
+   "opened": 2,
    "skipped": {
-    "already_holding": 3
+    "already_holding": 1,
+    "wide_spread": 1
    },
    "diag": {
-    "skipped_settles_late": 0
+    "skipped_settles_late": 3
    }
   },
   "crypto": {
@@ -87,65 +88,65 @@
    "benched": true,
    "shadow": [
     {
-     "ticker": "KXBTCD-26NOV1717-T65999.99",
-     "side": "YES",
-     "ask": 0.12,
-     "fair": 0.2391,
-     "edge": 0.1116
-    },
-    {
      "ticker": "KXBTCD-26NOV1717-T63749.99",
      "side": "NO",
-     "ask": 0.15,
-     "fair": 0.2679,
-     "edge": 0.1089
+     "ask": 0.12,
+     "fair": 0.2386,
+     "edge": 0.1112
     },
     {
-     "ticker": "KXBTCD-26NOV1717-T63499.99",
+     "ticker": "KXBTCD-26NOV1717-T66249.99",
+     "side": "YES",
+     "ask": 0.1,
+     "fair": 0.215,
+     "edge": 0.1086
+    },
+    {
+     "ticker": "KXBTCD-26NOV1717-T63999.99",
      "side": "NO",
-     "ask": 0.11,
-     "fair": 0.2207,
-     "edge": 0.1038
+     "ask": 0.17,
+     "fair": 0.2884,
+     "edge": 0.1084
     },
     {
      "ticker": "KXETHD-26NOV1717-T1789.99",
      "side": "NO",
-     "ask": 0.22,
-     "fair": 0.3353,
-     "edge": 0.1031
+     "ask": 0.23,
+     "fair": 0.3474,
+     "edge": 0.1049
     }
    ],
    "shadow_opened": 0,
    "diag": {
     "markets_priced": 120,
     "vol": {
-     "BTC-USD": 0.007631831045827006,
-     "ETH-USD": 0.00991414542965766
+     "BTC-USD": 0.007626375276035669,
+     "ETH-USD": 0.009915261247977572
     },
     "best": [
      [
-      -0.128,
+      -0.129,
       "KXBTCD-26NOV1717-T63749.99"
      ],
      [
-      -0.125,
-      "KXETHD-26NOV1717-T1789.99"
-     ],
-     [
-      -0.121,
-      "KXBTCD-26NOV1717-T63499.99"
-     ],
-     [
-      -0.119,
+      -0.128,
       "KXBTCD-26NOV1717-T63999.99"
      ],
      [
-      0.119,
-      "KXBTCD-26NOV1717-T65999.99"
+      -0.127,
+      "KXETHD-26NOV1717-T1789.99"
      ],
      [
-      -0.109,
-      "KXBTCD-26NOV1717-T63249.99"
+      0.115,
+      "KXBTCD-26NOV1717-T66249.99"
+     ],
+     [
+      -0.114,
+      "KXBTCD-26NOV1717-T63499.99"
+     ],
+     [
+      -0.112,
+      "KXBTCD-26NOV1717-T64249.99"
      ]
     ]
    }
@@ -158,8 +159,8 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 21,
-  "settled": 0
+  "marked": 19,
+  "settled": 2
  },
  "shadow_update": {
   "marked": 3,
@@ -189,16 +190,16 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 4066,
-   "open": 24,
-   "won": 2261,
+   "picks": 4068,
+   "open": 22,
+   "won": 2265,
    "lost": 1781,
-   "pl": -1392.3799999999922,
-   "risked": 40527.81000000011,
-   "clv_sum": -2234.35,
-   "clv_n": 3989,
-   "roi": -0.034356161855278844,
-   "clv": -0.5601278515918776
+   "pl": -1373.219999999992,
+   "risked": 40567.65000000011,
+   "clv_sum": -2118.85,
+   "clv_n": 3993,
+   "roi": -0.033850124421798855,
+   "clv": -0.5306411219634359
   },
   {
    "strategy": "weather",
