@@ -301,3 +301,33 @@ def test_relay_fallback_only_after_direct_fails(monkeypatch):
     assert k["params"] == {"url": "https://api.prizepicks.com/projections?a=1"}
     assert k["headers"] == {"X-Relay-Key": "k"} and k["timeout"] == 5
     assert info["relay"] is True and info["tried"] == ["api.prizepicks.com/projections: 403"]
+
+
+def test_prizepicks_falls_through_when_a_host_answers_200_with_nothing_usable():
+    """Nov 16, 2026: partner-api answered 200 with 13k rows but 0 usable (no player names), so PrizePicks
+    went silent. A 200 with nothing usable now moves on to the next host and records why."""
+    from research_lab import coles_plays as cp
+    good = {"data": [{"attributes": {"line_score": 25.5, "stat_type": "Points", "odds_type": "standard",
+                                     "status": "pre_game", "event_type": "player"},
+                      "relationships": {"new_player": {"data": {"id": "9", "type": "new_player"}}}}],
+            "included": [{"type": "new_player", "id": "9", "attributes": {"display_name": "Jalen Brunson"}}]}
+    nameless = {"data": good["data"] * 3}
+
+    class R:
+        status_code = 200
+        def __init__(self, d):
+            self.d = d
+        def raise_for_status(self):
+            pass
+        def json(self):
+            return self.d
+
+    class S:
+        def get(self, url, **k):
+            return R(nameless if "partner" in url else good)
+
+    info = {}
+    out = cp.prizepicks_lines(S(), NOW, None, info)
+    assert [o["player"] for o in out] == ["Jalen Brunson"]
+    assert info["url"] == "https://api.prizepicks.com/projections"
+    assert info["tried"] == ["partner-api.prizepicks.com/projections: 200 but 0 usable"]

@@ -82,9 +82,13 @@ def _relay():
     return (os.environ.get("PICKEM_RELAY") or "").strip().rstrip("/"), (os.environ.get("PICKEM_RELAY_KEY") or "").strip()
 
 
-def _first_ok(session, urls, info, **kw):
+def _first_ok(session, urls, info, accept=None, **kw):
     """GET the first URL that answers 200; remembers every failure in info['tried']. If they all fail and
-    PICKEM_RELAY is set, tries each one again through the relay."""
+    PICKEM_RELAY is set, tries each one again through the relay.
+
+    Nov 16, 2026: with `accept`, a 200 only counts if accept(response) returns something non-empty (the
+    partner host started answering 200 with rows the parser couldn't use, so PrizePicks went silent with no
+    error). Returns accept's result in that case, else the response."""
     tried, last = [], None
     relay, key = _relay()
     attempts = [(u, False) for u in urls] + ([(u, True) for u in urls] if relay else [])
@@ -97,11 +101,16 @@ def _first_ok(session, urls, info, **kw):
             else:
                 r = session.get(u, **kw)
             r.raise_for_status()
+            got = accept(r) if accept else r
+            if accept and not got:
+                tried.append(f"{'relay→' if via_relay else ''}{u.split('//')[1].split('?')[0]}: 200 but 0 usable")
+                last = RuntimeError("200 but 0 usable rows")
+                continue
             info["url"] = u
             info["relay"] = via_relay
             if tried:
                 info["tried"] = tried
-            return r
+            return got
         except Exception as exc:
             last = exc
             code = getattr(getattr(exc, "response", None), "status_code", None)
@@ -267,35 +276,54 @@ def underdog_lines(session, now: datetime, base: Path | None, info: dict) -> lis
 
 
 def prizepicks_lines(session, now: datetime, base: Path | None, info: dict) -> list[dict]:
-    r = _first_ok(session, PRIZEPICKS_URLS, info,
-                  params={"per_page": 2000, "single_stat": "true", "game_mode": "pickem"},
-                  headers={**UA, "Referer": "https://app.prizepicks.com/", "Origin": "https://app.prizepicks.com"},
-                  timeout=40)
-    data = r.json() or {}
-    inc = {(i.get("type"), i.get("id")): i.get("attributes") or {} for i in data.get("included") or []}
+    reasons: dict = {}
+    def accept(r):
+        reasons.clear()
+        return _pp_parse(r.json() or {}, info, reasons)
+    try:
+        return _first_ok(session, PRIZEPICKS_URLS, info, accept=accept,
+                         params={"per_page": 2000, "single_stat": "true", "game_mode": "pickem"},
+                         headers={**UA, "Referer": "https://app.prizepicks.com/", "Origin": "https://app.prizepicks.com"},
+                         timeout=40)
+    finally:
+        info["skipped"] = dict(reasons)      # why rows were dropped, so a changed feed shows up in status.json
+
+
+def _pp_parse(data: dict, info: dict, reasons: dict) -> list[dict]:
+    included = data.get("included") or []
+    inc = {(i.get("type"), str(i.get("id"))): i.get("attributes") or {} for i in included}
     rows = data.get("data") or []
     info["raw"] = len(rows)
-    info["sample"] = rows[:2]
+    info["included_types"] = sorted({str(i.get("type")) for i in included})
+    info["event_types"] = sorted({str((d.get("attributes") or {}).get("event_type")) for d in rows})[:12]
+    info["sample"] = ([d for d in rows if str((d.get("attributes") or {}).get("event_type") or "player")
+                       .startswith("player")] or rows)[:2]
     out = []
+
+    def skip(why):
+        reasons[why] = reasons.get(why, 0) + 1
+
     for d in rows:
         a = d.get("attributes") or {}
         if str(a.get("odds_type") or "standard") != "standard" or a.get("is_promo") or a.get("adjusted_odds"):
-            continue                          # goblins/demons/discounts don't pay the standard 3x
+            skip("not_standard"); continue        # goblins/demons/discounts don't pay the standard 3x
         if str(a.get("event_type") or "player") != "player":
-            continue                          # team totals and head-to-head matchups
+            skip("event_type"); continue          # team totals, matchups, *_with_duration (halves/quarters)
         rels = d.get("relationships") or {}
-        lg = inc.get(("league", ((rels.get("league") or {}).get("data") or {}).get("id"))) or {}
-        du = inc.get(("duration", ((rels.get("duration") or {}).get("data") or {}).get("id"))) or {}
+        lg = inc.get(("league", str(((rels.get("league") or {}).get("data") or {}).get("id")))) or {}
+        du = inc.get(("duration", str(((rels.get("duration") or {}).get("data") or {}).get("id")))) or {}
         if _partial_game(lg.get("name"), du.get("name"), a.get("stat_type"), a.get("description")):
-            continue                          # Nov 12, 2026: NBA1Q / NBA1H etc. reuse "Points" -- full game only
+            skip("partial_game"); continue        # Nov 12, 2026: NBA1Q / NBA1H etc. reuse "Points" -- full game only
         if str(a.get("status") or "pre_game") not in ("pre_game", ""):
-            continue
-        rel = ((d.get("relationships") or {}).get("new_player") or {}).get("data") or {}
-        pl = inc.get(("new_player", rel.get("id"))) or {}
+            skip("status"); continue
+        rel = (rels.get("new_player") or {}).get("data") or {}
+        pl = inc.get(("new_player", str(rel.get("id")))) or {}
         name = pl.get("display_name") or pl.get("name")
         line = _f(a.get("line_score"))
-        if not name or pl.get("combo") or line is None:
-            continue
+        if not name:
+            skip("no_player_name"); continue      # player not in `included`
+        if pl.get("combo") or line is None:
+            skip("combo_or_no_line"); continue
         out.append({"app": "PrizePicks", "player": name, "stat": a.get("stat_type") or a.get("stat_display_name") or "",
                     "line": line, "over": round(PRIZEPICKS_PICK, 4), "under": round(PRIZEPICKS_PICK, 4)})
     return out
@@ -590,7 +618,8 @@ def update(board_rows: list[dict], now: datetime, base: Path | None = None, *, b
     found, match = edges(props, board_rows, now)
     info = {"app_props": len(props), "matched": match["matched"], "edges": len(found), "new_plays": 0, "settled": 0,
             "closest": match["closest"],
-            "apps": {k: {x: v.get(x) for x in ("props", "error", "url", "tried")} for k, v in status.items()}}
+            "apps": {k: {x: v.get(x) for x in ("props", "error", "url", "tried", "skipped") if x in v or x != "skipped"}
+                     for k, v in status.items()}}
     for e in found:
         pid = f"{e['key']}:{e['side']}"
         if pid in have or e["key"] in taken:
