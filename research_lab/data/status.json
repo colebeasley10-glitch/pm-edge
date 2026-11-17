@@ -8,7 +8,7 @@
  "last_report_preview": {
   "lines": [
    "PM EDGE STRATEGY RESEARCH LAB \u2014 2026-11-16 (PAPER)",
-   "Existing Sharp (paper): 2232-1768, \u2212$1593.03, ROI -4.0%",
+   "Existing Sharp (paper): 2234-1769, \u2212$1572.71, ROI -3.9%",
    "Today's Plays: 103-49, +$78.22, ROI +5.1%",
    "Today's Plays (-200 to +150): 77-66, \u2212$4.40, ROI -0.3%",
    "Structural: 0 quote-level opportunities, 0 fully executable today",
@@ -20,7 +20,7 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 11/16"
  },
  "last_run": {
-  "at": "2026-11-17T07:18:08.789061Z",
+  "at": "2026-11-17T07:32:56.940451Z",
   "best_price": {
    "compared": 0,
    "new_picks": 0,
@@ -35,35 +35,34 @@
   },
   "book_errors": 0,
   "coles_plays": {
-   "app_props": 8106,
+   "app_props": 1631,
    "apps": {
     "PrizePicks": {
      "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.prizepicks.com/projections?per_page=2000&single_stat=true&game_mode=pickem",
      "props": null,
-     "skipped": {
-      "event_type": 958,
-      "not_standard": 17278
-     },
+     "skipped": {},
      "tried": [
-      "partner-api.prizepicks.com/projections: 200 but 0 usable",
+      "partner-api.prizepicks.com/projections: 403",
       "api.prizepicks.com/projections: 403"
      ],
      "url": null
     },
     "Sleeper": {
      "error": null,
-     "props": 1628,
+     "props": 1631,
      "tried": null,
      "url": null
     },
     "Underdog": {
-     "error": null,
-     "props": 6478,
+     "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.underdogfantasy.com/beta/v5/over_under_lines",
+     "props": null,
      "tried": [
-      "api.underdogfantasy.com/beta/v7/over_under_lines: 404",
-      "api.underdogfantasy.com/beta/v6/over_under_lines: 426"
+      "api.underdogfantasy.com/beta/v7/over_under_lines: 403",
+      "api.underdogfantasy.com/beta/v6/over_under_lines: 403",
+      "api.underdogfantasy.com/v1/over_under_lines: 403",
+      "api.underdogfantasy.com/beta/v5/over_under_lines: 403"
      ],
-     "url": "https://api.underdogfantasy.com/v1/over_under_lines"
+     "url": null
     }
    },
    "best_of": {
@@ -81,6 +80,7 @@
   },
   "data_failures": [],
   "ev": {
+   "book_offers": 0,
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
@@ -91,11 +91,13 @@
     "taken_at": "2026-11-01T08:32:40.763365Z"
    },
    "errors": [],
-   "games": 0,
-   "picks": 0
+   "games": 25,
+   "kalshi_offers": 4,
+   "picks": 72,
+   "polymarket_offers": 34
   },
   "maker_candidates": {
-   "candidates": 0,
+   "candidates": 26,
    "sharp_agrees": 0
   },
   "my_bets": {
@@ -110,32 +112,44 @@
    "settled": 0
   },
   "odds_fam_board": {
-   "arbs_possible": 0,
+   "arbs_possible": 56,
    "bets_graded": 0,
    "clv_scored": 0,
    "props": 0,
-   "rows": 0
+   "rows": 72
   },
   "paper_only": true,
   "pinnacle": {
    "budget": 90,
    "errors": [],
    "fetched": [
-    "baseball"
+    "basketball"
    ],
-   "kalshi_markets": 0,
-   "matched": 0,
-   "pinnacle_games": 0,
-   "requests_today": 11,
-   "samples": [],
+   "kalshi_markets": 378,
+   "matched": 15,
+   "pinnacle_games": 34,
+   "requests_today": 12,
+   "samples": [
+    "no_pinnacle_match: Portland vs Minnesota: Portland wins",
+    "no_pinnacle_match: Portland vs Minnesota: Minnesota wins",
+    "no_pinnacle_match: Utah vs Los Angeles C: Utah wins",
+    "no_pinnacle_match: Utah vs Los Angeles C: Los Angeles C wins",
+    "no_pinnacle_match: Charlotte vs Los Angeles L: Charlotte wins",
+    "no_pinnacle_match: Charlotte vs Los Angeles L: Los Angeles L wins",
+    "no_pinnacle_match: Houston vs Indiana: Houston wins",
+    "no_pinnacle_match: Houston vs Indiana: Indiana wins"
+   ],
    "skipped": [
-    "football: next in 15 min",
-    "basketball: next in 0 min",
-    "hockey: next in 105 min",
-    "soccer: next in 59 min",
-    "tennis: next in 239 min"
+    "football: next in 0 min",
+    "hockey: next in 90 min",
+    "baseball: next in 105 min",
+    "soccer: next in 45 min",
+    "tennis: next in 225 min"
    ],
-   "unmatched": {}
+   "unmatched": {
+    "no_pinnacle_match": 308,
+    "pinnacle_line_not_offered": 55
+   }
   },
   "prop_board": {
    "new_plays": 0,
@@ -145,7 +159,7 @@
   },
   "reconciled": true,
   "sharp_plays": {
-   "games": 0,
+   "games": 34,
    "new_plays": 0,
    "pushed": 0,
    "settled": 0
@@ -153,7 +167,7 @@
   "sleeper": {
    "edges": 0,
    "errors": [],
-   "lines": 640,
+   "lines": 646,
    "matched_props": 0,
    "unmatched_stats": [
     "anytime_touchdowns",
@@ -209,7 +223,7 @@
     "qualified": 0,
     "reconcile_problems": [],
     "rejected": 0,
-    "scanned": 0,
+    "scanned": 72,
     "settle": {
      "marked": 12,
      "pending": 12,
@@ -224,7 +238,7 @@
     "qualified": 0,
     "reconcile_problems": [],
     "rejected": 0,
-    "scanned": 0,
+    "scanned": 72,
     "settle": {
      "marked": 8,
      "pending": 8,
@@ -233,6 +247,6 @@
    }
   }
  },
- "last_success": "2026-11-17T07:18:08.789061Z",
+ "last_success": "2026-11-17T07:32:56.940451Z",
  "report_sent": "20261031"
 }
