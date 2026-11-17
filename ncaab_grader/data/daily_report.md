@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-16
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-17T04:00:42+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-17T04:15:23+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,28 +53,28 @@ WHY: Model line Rutgers Scarlet Knights +11 vs market +15.5 (+4.6 pts) from oppo
 LOGGED: 2026-11-16T18:30:28+00:00 · model ncaab_v1
 ```
 
-## Watch list (16) — positive EV but not a qualified bet
+## Watch list (25) — positive EV but not a qualified bet
 
 - Illinois Fighting Illini ML +285 (+285) · Illinois Fighting Illini at Duke Blue Devils · Tue 7:00 PM ET · EV +20.3% · min +230
 - Rutgers Scarlet Knights ML +1000 (+1000) · Rutgers Scarlet Knights at Houston Cougars · Tue 2:00 PM ET · EV +19.8% · min +846
 - Notre Dame Fighting Irish ML +850 (+850) · Notre Dame Fighting Irish at Florida Gators · Tue 4:30 PM ET · EV +18.1% · min +729
+- Hofstra Pride ML +550 (+550) · Hofstra Pride at Murray State Racers · Tue 12:00 PM ET · EV +11.8% · min +499
 - UNLV Rebels ML +1200 (+1200) · UNLV Rebels at Kansas Jayhawks · Tue 9:30 PM ET · EV +11.5% · min +1101
 - Indiana Hoosiers ML +124 (+124) · Arkansas Razorbacks at Indiana Hoosiers · Tue 7:30 PM ET · EV +8.3% · min +113
+- Louisiana Tech Bulldogs ML -125 (-125) · Jacksonville State Gamecocks at Louisiana Tech Bulldogs · Tue 7:30 PM ET · EV +5.9% · min -133
 - UCF Knights -1.5 (+114) · Mississippi State Bulldogs at UCF Knights · Tue 7:00 PM ET · EV +5.3% · min +107
 - William & Mary Tribe ML -130 (-130) · Bowling Green Falcons at William & Mary Tribe · Tue 7:00 PM ET · EV +4.2% · min -133
+- Sam Houston Bearkats ML +575 (+575) · Sam Houston Bearkats at Wyoming Cowboys · Tue 8:30 PM ET · EV +3.1% · min +574
 - UAB Blazers ML -175 (-175) · Florida International Panthers at UAB Blazers · Tue 7:30 PM ET · EV +2.7% · min -174
-- OVER 148.5 (-105) · Central Michigan Chippewas at Dayton Flyers · Tue 7:00 PM ET · EV +1.7% · min -102
-- OVER 144.5 (-105) · Rutgers Scarlet Knights at Houston Cougars · Tue 2:00 PM ET · EV +1.7% · min -102
-- OVER 149.5 (-105) · Hofstra Pride at Murray State Racers · Tue 12:00 PM ET · EV +1.7% · min -102
-- OVER 142.5 (-105) · Fordham Rams at Manhattan Jaspers · Tue 7:00 PM ET · EV +1.6% · min -102
+- OVER 133.5 (-105) · Jacksonville State Gamecocks at Louisiana Tech Bulldogs · Tue 7:30 PM ET · EV +1.8% · min -103
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $502.08 · 111-105-0 · logged this run 0 · open 19
+Bankroll $502.08 · 111-105-0 · logged this run 2 · open 21
 
 ## Data gaps
 
-- no line posted yet (28): Wilson WILSON @ Delaware Blue Hens, Louisiana Christian Wildcats @ Southern Jaguars, Saint Peter's Peacocks @ UMass Lowell River Hawks, Liberty Flames @ Southern Illinois Salukis, Marist Red Foxes @ Army Black Knights, SUNY Potsdam SUNY-POTSDAM @ Stony Brook Seawolves, Lipscomb Bisons @ Purdue Boilermakers, Maine Augusta Moose @ Dartmouth Big Green, Cheyney (PA) Wolves @ Delaware State Hornets, Vermont State Lyndon Hornets @ Central Connecticut Blue Devils, Akron Zips @ Bucknell Bison, Green Bay Phoenix @ West Florida Argonauts, Lehigh Mountain Hawks @ Mount St. Mary's Mountaineers, Wagner Seahawks @ Saint Joseph's Hawks, Jacksonville State Gamecocks @ Louisiana Tech Bulldogs …
+- no line posted yet (16): Wilson WILSON @ Delaware Blue Hens, Louisiana Christian Wildcats @ Southern Jaguars, SUNY Potsdam SUNY-POTSDAM @ Stony Brook Seawolves, Maine Augusta Moose @ Dartmouth Big Green, Cheyney (PA) Wolves @ Delaware State Hornets, Vermont State Lyndon Hornets @ Central Connecticut Blue Devils, Green Bay Phoenix @ West Florida Argonauts, Fort Lauderdale Eagles @ North Florida Ospreys, Wagner Seahawks @ Saint Joseph's Hawks, Spring Hill Badgers @ South Alabama Jaguars, Embry Riddle (AZ) Eagles @ Northern Arizona Lumberjacks, Lamar Cardinals @ Omaha Mavericks, Newman Jets @ Kansas City Roos, Life University Running Eagles @ Austin Peay Governors, Simon Fraser Red Leafs @ Washington Huskies …
 - possession data coverage: 0.983
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
