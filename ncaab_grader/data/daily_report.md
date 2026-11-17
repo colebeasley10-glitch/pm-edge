@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-17
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-17T23:15:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-17T23:30:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -52,7 +52,7 @@ Bankroll $487.08 · 111-108-0 · logged this run 0 · open 22
 
 ## Data gaps
 
-- no line posted yet (30): SUNY Potsdam SUNY-POTSDAM @ Stony Brook Seawolves, Maine Augusta Moose @ Dartmouth Big Green, Spring Hill Badgers @ South Alabama Jaguars, Cheyney (PA) Wolves @ Delaware State Hornets, Vermont State Lyndon Hornets @ Central Connecticut Blue Devils, Fort Lauderdale Eagles @ North Florida Ospreys, Embry Riddle (AZ) Eagles @ Northern Arizona Lumberjacks, Newman Jets @ Kansas City Roos, Life University Running Eagles @ Austin Peay Governors, Simon Fraser Red Leafs @ Washington Huskies, Pacific Union Pioneers @ Pacific Tigers, Jackson State Tigers @ Baylor Bears, Rutgers Scarlet Knights @ TBD, Houston Cougars @ TBD, Tennessee Tech Golden Eagles @ UNC Asheville Bulldogs …
+- no line posted yet (30): Spring Hill Badgers @ South Alabama Jaguars, Cheyney (PA) Wolves @ Delaware State Hornets, Vermont State Lyndon Hornets @ Central Connecticut Blue Devils, Fort Lauderdale Eagles @ North Florida Ospreys, Embry Riddle (AZ) Eagles @ Northern Arizona Lumberjacks, Newman Jets @ Kansas City Roos, Life University Running Eagles @ Austin Peay Governors, Simon Fraser Red Leafs @ Washington Huskies, Pacific Union Pioneers @ Pacific Tigers, Jackson State Tigers @ Baylor Bears, Rutgers Scarlet Knights @ TBD, Houston Cougars @ TBD, Tennessee Tech Golden Eagles @ UNC Asheville Bulldogs, Samford Bulldogs @ South Carolina Upstate Spartans, Chattanooga Mocs @ Winthrop Eagles …
 - possession data coverage: 0.994
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
