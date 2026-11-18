@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-17
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-18T02:15:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-18T02:30:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -11,9 +11,8 @@ Markets with a tested rule: SPREAD · others are WATCH only until the backtest s
 
 None. No game cleared a tested threshold — that's a normal day, not a failure.
 
-## Watch list (5) — positive EV but not a qualified bet
+## Watch list (4) — positive EV but not a qualified bet
 
-- UNLV Rebels ML +1200 (+1200) · UNLV Rebels at Kansas Jayhawks · Tue 9:30 PM ET · EV +11.5% · min +1101
 - Wichita State Shockers ML -115 (-115) · Wichita State Shockers at Loyola Chicago Ramblers · Wed 8:00 PM ET · EV +3.5% · min -116
 - OVER 148.5 (-105) · UC Riverside Highlanders at San Diego Toreros · Wed 9:30 PM ET · EV +1.8% · min -102
 - OVER 128.5 (-105) · Boston College Eagles at Harvard Crimson · Wed 8:00 PM ET · EV +1.7% · min -102
