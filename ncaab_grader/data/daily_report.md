@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-18
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-18T06:45:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-18T07:00:32+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -33,6 +33,6 @@ Bankroll $513.53 · 124-115-0 · logged this run 0 · open 24
 ## Data gaps
 
 - no line posted yet (12): MCLA Mohawks @ New Haven Chargers, Defiance Yellow Jackets @ Miami (OH) RedHawks, St. Joseph's Brooklyn Bears @ Fairfield Stags, Utica Pioneers @ Colgate Raiders, Columbia (SC) Fighting Koalas @ West Georgia Wolves, Kansas Jayhawks @ TBD, Malone Pioneers @ Wright State Raiders, College of Biblical Studies Ambassadors @ UT Rio Grande Valley Vaqueros, Union Commonwealth (KY) Bulldogs @ Belmont Bruins, Lindsey Wilson Blue Raiders @ Southern Indiana Screaming Eagles, McMurry War Hawks @ Abilene Christian Wildcats, UNLV Rebels @ TBD
-- possession data coverage: 0.989
+- possession data coverage: 0.992
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
