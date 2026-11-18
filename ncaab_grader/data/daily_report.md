@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-17
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-17T23:45:35+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-18T00:00:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,20 +31,17 @@ WHY: Model line Indiana Hoosiers -4.5 vs market +2.5 (+6.9 pts) from opponent-ad
 LOGGED: 2026-11-16T18:30:28+00:00 · model ncaab_v1
 ```
 
-## Watch list (20) — positive EV but not a qualified bet
+## Watch list (9) — positive EV but not a qualified bet
 
-- Illinois Fighting Illini ML +285 (+285) · Illinois Fighting Illini at Duke Blue Devils · Tue 7:00 PM ET · EV +20.3% · min +230
 - UNLV Rebels ML +1200 (+1200) · UNLV Rebels at Kansas Jayhawks · Tue 9:30 PM ET · EV +11.5% · min +1101
 - Indiana Hoosiers ML +124 (+124) · Arkansas Razorbacks at Indiana Hoosiers · Tue 7:30 PM ET · EV +8.3% · min +113
 - Louisiana Tech Bulldogs ML -125 (-125) · Jacksonville State Gamecocks at Louisiana Tech Bulldogs · Tue 7:30 PM ET · EV +5.9% · min -133
-- UCF Knights -1.5 (+114) · Mississippi State Bulldogs at UCF Knights · Tue 7:00 PM ET · EV +5.3% · min +107
-- William & Mary Tribe ML -130 (-130) · Bowling Green Falcons at William & Mary Tribe · Tue 7:00 PM ET · EV +4.2% · min -133
 - Sam Houston Bearkats ML +575 (+575) · Sam Houston Bearkats at Wyoming Cowboys · Tue 8:30 PM ET · EV +3.1% · min +574
 - UAB Blazers ML -175 (-175) · Florida International Panthers at UAB Blazers · Tue 7:30 PM ET · EV +2.7% · min -174
 - OVER 133.5 (-105) · Jacksonville State Gamecocks at Louisiana Tech Bulldogs · Tue 7:30 PM ET · EV +1.8% · min -103
-- OVER 148.5 (-105) · Central Michigan Chippewas at Dayton Flyers · Tue 7:00 PM ET · EV +1.7% · min -102
-- Mount St. Mary's Mountaineers ML -120 (-120) · Lehigh Mountain Hawks at Mount St. Mary's Mountaineers · Tue 7:00 PM ET · EV +1.7% · min -117
-- OVER 142.5 (-105) · Fordham Rams at Manhattan Jaspers · Tue 7:00 PM ET · EV +1.6% · min -102
+- OVER 147.5 (-105) · SIU Edwardsville Cougars at North Dakota Fighting Hawks · Tue 8:00 PM ET · EV +1.6% · min -102
+- OVER 151.5 (-105) · Michigan State Spartans at Tennessee Volunteers · Tue 9:00 PM ET · EV +1.6% · min -102
+- SMU Mustangs ML -10000 (-10000) · Oral Roberts Golden Eagles at SMU Mustangs · Tue 8:00 PM ET · EV +0.1% · min -2552
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -52,7 +49,7 @@ Bankroll $487.08 · 111-108-0 · logged this run 0 · open 22
 
 ## Data gaps
 
-- no line posted yet (30): Spring Hill Badgers @ South Alabama Jaguars, Cheyney (PA) Wolves @ Delaware State Hornets, Vermont State Lyndon Hornets @ Central Connecticut Blue Devils, Fort Lauderdale Eagles @ North Florida Ospreys, Embry Riddle (AZ) Eagles @ Northern Arizona Lumberjacks, Newman Jets @ Kansas City Roos, Life University Running Eagles @ Austin Peay Governors, Simon Fraser Red Leafs @ Washington Huskies, Pacific Union Pioneers @ Pacific Tigers, Jackson State Tigers @ Baylor Bears, Rutgers Scarlet Knights @ TBD, Houston Cougars @ TBD, Tennessee Tech Golden Eagles @ UNC Asheville Bulldogs, Samford Bulldogs @ South Carolina Upstate Spartans, Chattanooga Mocs @ Winthrop Eagles …
+- no line posted yet (30): Embry Riddle (AZ) Eagles @ Northern Arizona Lumberjacks, Newman Jets @ Kansas City Roos, Life University Running Eagles @ Austin Peay Governors, Simon Fraser Red Leafs @ Washington Huskies, Pacific Union Pioneers @ Pacific Tigers, Jackson State Tigers @ Baylor Bears, Rutgers Scarlet Knights @ TBD, Houston Cougars @ TBD, Tennessee Tech Golden Eagles @ UNC Asheville Bulldogs, Samford Bulldogs @ South Carolina Upstate Spartans, Chattanooga Mocs @ Winthrop Eagles, Detroit Mercy Titans @ Eastern Michigan Eagles, IU Indianapolis Jaguars @ Penn State Nittany Lions, Navy Midshipmen @ Georgetown Hoyas, Siena Saints @ St. John's Red Storm …
 - possession data coverage: 0.994
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
