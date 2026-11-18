@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-18
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-18T23:15:34+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-18T23:30:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,7 +53,7 @@ WHY: Model line West Virginia Mountaineers +3 vs market +8.5 (+5.7 pts) from opp
 LOGGED: 2026-11-18T08:00:35+00:00 · model ncaab_v1
 ```
 
-## Watch list (19) — positive EV but not a qualified bet
+## Watch list (17) — positive EV but not a qualified bet
 
 - West Virginia Mountaineers ML +330 (+330) · Kansas Jayhawks at West Virginia Mountaineers · Wed 7:30 PM ET · EV +20.0% · min +269
 - NC State Wolfpack ML -185 (-185) · NC State Wolfpack at Murray State Racers · Thu 6:00 PM ET · EV +7.0% · min -207
