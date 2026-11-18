@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-18
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-18T21:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-18T21:30:32+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,7 +31,7 @@ WHY: Model line West Virginia Mountaineers +3 vs market +8.5 (+5.7 pts) from opp
 LOGGED: 2026-11-18T08:00:35+00:00 · model ncaab_v1
 ```
 
-## Watch list (19) — positive EV but not a qualified bet
+## Watch list (18) — positive EV but not a qualified bet
 
 - West Virginia Mountaineers ML +330 (+330) · Kansas Jayhawks at West Virginia Mountaineers · Wed 7:30 PM ET · EV +20.0% · min +269
 - Yale Bulldogs ML -148 (-148) · Vermont Catamounts at Yale Bulldogs · Wed 7:00 PM ET · EV +5.3% · min -156
@@ -53,6 +53,6 @@ Bankroll $508.53 · 124-116-0 · logged this run 0 · open 26
 ## Data gaps
 
 - no line posted yet (30): MCLA Mohawks @ New Haven Chargers, Defiance Yellow Jackets @ Miami (OH) RedHawks, St. Joseph's Brooklyn Bears @ Fairfield Stags, Utica Pioneers @ Colgate Raiders, Columbia (SC) Fighting Koalas @ West Georgia Wolves, Malone Pioneers @ Wright State Raiders, College of Biblical Studies Ambassadors @ UT Rio Grande Valley Vaqueros, Union Commonwealth (KY) Bulldogs @ Belmont Bruins, Lindsey Wilson Blue Raiders @ Southern Indiana Screaming Eagles, McMurry War Hawks @ Abilene Christian Wildcats, TBD @ TBD, TBD @ TBD, NC State Wolfpack @ Murray State Racers, Robert Morris Colonials @ Toledo Rockets, Berea Mountaineers @ Northern Kentucky Norse …
-- possession data coverage: 0.993
+- possession data coverage: 0.992
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
