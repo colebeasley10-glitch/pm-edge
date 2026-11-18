@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-18
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-18T14:30:29+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-18T14:45:23+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,8 +31,9 @@ WHY: Model line West Virginia Mountaineers +3 vs market +8.5 (+5.7 pts) from opp
 LOGGED: 2026-11-18T08:00:35+00:00 · model ncaab_v1
 ```
 
-## Watch list (19) — positive EV but not a qualified bet
+## Watch list (20) — positive EV but not a qualified bet
 
+- West Virginia Mountaineers ML +330 (+330) · Kansas Jayhawks at West Virginia Mountaineers · Wed 7:30 PM ET · EV +20.0% · min +269
 - Yale Bulldogs ML -148 (-148) · Vermont Catamounts at Yale Bulldogs · Wed 7:00 PM ET · EV +5.3% · min -156
 - Brown Bears ML -225 (-225) · Brown Bears at Holy Cross Crusaders · Wed 7:00 PM ET · EV +3.8% · min -230
 - Wichita State Shockers ML -115 (-115) · Wichita State Shockers at Loyola Chicago Ramblers · Wed 8:00 PM ET · EV +3.5% · min -116
@@ -44,7 +45,6 @@ LOGGED: 2026-11-18T08:00:35+00:00 · model ncaab_v1
 - OVER 155.5 (-105) · Texas Southern Tigers at San Diego State Aztecs · Wed 10:00 PM ET · EV +1.7% · min -102
 - OVER 128.5 (-105) · Boston College Eagles at Harvard Crimson · Wed 8:00 PM ET · EV +1.7% · min -102
 - OVER 154.5 (-105) · Mercer Bears at Presbyterian Blue Hose · Wed 7:00 PM ET · EV +1.7% · min -102
-- OVER 150.5 (-105) · Samford Bulldogs at South Carolina Upstate Spartans · Wed 6:30 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
