@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-18
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-18T13:45:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-18T14:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,7 +31,7 @@ WHY: Model line West Virginia Mountaineers +3 vs market +8.5 (+5.7 pts) from opp
 LOGGED: 2026-11-18T08:00:35+00:00 · model ncaab_v1
 ```
 
-## Watch list (18) — positive EV but not a qualified bet
+## Watch list (19) — positive EV but not a qualified bet
 
 - Yale Bulldogs ML -148 (-148) · Vermont Catamounts at Yale Bulldogs · Wed 7:00 PM ET · EV +5.3% · min -156
 - Brown Bears ML -225 (-225) · Brown Bears at Holy Cross Crusaders · Wed 7:00 PM ET · EV +3.8% · min -230
