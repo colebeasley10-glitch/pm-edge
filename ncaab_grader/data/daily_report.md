@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-18
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-18T12:30:32+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-18T12:45:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -48,7 +48,7 @@ LOGGED: 2026-11-18T08:00:35+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $513.53 · 124-115-0 · logged this run 1 · open 25
+Bankroll $513.53 · 124-115-0 · logged this run 0 · open 25
 
 ## Data gaps
 
