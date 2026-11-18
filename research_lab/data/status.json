@@ -1,18 +1,18 @@
 {
  "day_stats": {
   "data_failures": 0,
-  "day": "20261117",
+  "day": "20261118",
   "structural_filled": 0,
   "structural_qualified": 0
  },
  "last_report_preview": {
   "lines": [
    "PM EDGE STRATEGY RESEARCH LAB \u2014 2026-11-17 (PAPER)",
-   "Existing Sharp (paper): 2326-1824, \u2212$1376.97, ROI -3.3%",
+   "Existing Sharp (paper): 2326-1825, \u2212$1386.92, ROI -3.3%",
    "Today's Plays: 103-49, +$78.22, ROI +5.1%",
    "Today's Plays (-200 to +150): 77-68, \u2212$24.40, ROI -1.7%",
    "Structural: 0 quote-level opportunities, 0 fully executable today",
-   "New paper trades today: 10 \u00b7 fees $0.00 \u00b7 open exposure $190.00",
+   "New paper trades today: 10 \u00b7 fees $0.00 \u00b7 open exposure $250.00",
    "Top rejections: daily_exposure_cap 185, already_holding_market 183, already_holding_event 7",
    "Data: 0 failed fetches today; sportsbook snapshot EMPTY (no sportsbook prices; check Odds API credits)",
    "Records reconciled: yes"
@@ -20,7 +20,7 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 11/17"
  },
  "last_run": {
-  "at": "2026-11-18T04:48:27.701301Z",
+  "at": "2026-11-18T05:04:16.983976Z",
   "best_price": {
    "compared": 0,
    "new_picks": 0,
@@ -35,14 +35,14 @@
   },
   "book_errors": 0,
   "coles_plays": {
-   "app_props": 8636,
+   "app_props": 8823,
    "apps": {
     "PrizePicks": {
      "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.prizepicks.com/projections?per_page=2000&single_stat=true&game_mode=pickem",
      "props": null,
      "skipped": {
-      "event_type": 940,
-      "not_standard": 20223
+      "event_type": 925,
+      "not_standard": 20265
      },
      "tried": [
       "partner-api.prizepicks.com/projections: 200 but 0 usable",
@@ -52,13 +52,13 @@
     },
     "Sleeper": {
      "error": null,
-     "props": 1845,
+     "props": 1902,
      "tried": null,
      "url": null
     },
     "Underdog": {
      "error": null,
-     "props": 6791,
+     "props": 6921,
      "tried": [
       "api.underdogfantasy.com/beta/v7/over_under_lines: 404",
       "api.underdogfantasy.com/beta/v6/over_under_lines: 426"
@@ -81,21 +81,27 @@
   },
   "data_failures": [],
   "ev": {
+   "book_offers": 0,
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
-    "errors": [],
+    "errors": [
+     "americanfootball_ncaaf: HTTP 401",
+     "americanfootball_nfl: HTTP 401",
+     "basketball_nba: HTTP 401"
+    ],
     "fresh": false,
     "remaining": "0",
-    "skipped": "lab odds budget used or account nearly empty",
     "taken_at": "2026-11-01T08:32:40.763365Z"
    },
    "errors": [],
-   "games": 0,
-   "picks": 0
+   "games": 102,
+   "kalshi_offers": 152,
+   "picks": 826,
+   "polymarket_offers": 102
   },
   "maker_candidates": {
-   "candidates": 0,
+   "candidates": 118,
    "sharp_agrees": 0
   },
   "my_bets": {
@@ -110,32 +116,45 @@
    "settled": 0
   },
   "odds_fam_board": {
-   "arbs_possible": 0,
+   "arbs_possible": 800,
    "bets_graded": 0,
    "clv_scored": 0,
    "props": 0,
-   "rows": 0
+   "rows": 826
   },
   "paper_only": true,
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [],
-   "kalshi_markets": 0,
-   "matched": 0,
-   "note": "no Pinnacle fetch due this round",
-   "pinnacle_games": 0,
-   "requests_today": 89,
-   "samples": [],
-   "skipped": [
-    "football: saving budget for game windows",
-    "basketball: next in 0 min",
-    "hockey: saving budget for game windows",
-    "baseball: saving budget for game windows",
-    "soccer: saving budget for game windows",
-    "tennis: saving budget for game windows"
+   "fetched": [
+    "football",
+    "basketball",
+    "hockey"
    ],
-   "unmatched": {}
+   "kalshi_markets": 6241,
+   "matched": 463,
+   "ncaaf_lines_saved": 62,
+   "pinnacle_games": 116,
+   "requests_today": 3,
+   "samples": [
+    "no_pinnacle_match: Akron vs UMass: UMass wins",
+    "no_pinnacle_match: Akron vs UMass: Akron wins",
+    "no_pinnacle_match: Northwestern St. vs Stephen F. Austin: Stephen F. Austin wins",
+    "no_pinnacle_match: Northwestern St. vs Stephen F. Austin: Northwestern St. wins",
+    "no_pinnacle_match: Southeastern Louisiana vs Nicholls St.: Nicholls St. wins",
+    "no_pinnacle_match: Southeastern Louisiana vs Nicholls St.: Southeastern Louisiana wins",
+    "no_pinnacle_match: Iowa St. vs UCF: UCF wins",
+    "no_pinnacle_match: Iowa St. vs UCF: Iowa St. wins"
+   ],
+   "skipped": [
+    "baseball: next round",
+    "soccer: next round",
+    "tennis: next round"
+   ],
+   "unmatched": {
+    "no_pinnacle_match": 3999,
+    "pinnacle_line_not_offered": 1779
+   }
   },
   "prop_board": {
    "new_plays": 0,
@@ -145,7 +164,7 @@
   },
   "reconciled": true,
   "sharp_plays": {
-   "games": 0,
+   "games": 40,
    "new_plays": 0,
    "pushed": 0,
    "settled": 0
@@ -153,7 +172,7 @@
   "sleeper": {
    "edges": 0,
    "errors": [],
-   "lines": 1343,
+   "lines": 1364,
    "matched_props": 0,
    "unmatched_stats": [
     "anytime_touchdowns",
@@ -203,14 +222,14 @@
   },
   "strategies": {
    "EV_FINDER_v2": {
-    "filled": 0,
-    "no_fill": 0,
+    "filled": 5,
+    "no_fill": 1,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 11,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 5,
+    "scanned": 826,
     "settle": {
      "marked": 12,
      "pending": 12,
@@ -218,14 +237,14 @@
     }
    },
    "EV_FINDER_v3": {
-    "filled": 0,
+    "filled": 1,
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 4,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 3,
+    "scanned": 826,
     "settle": {
      "marked": 7,
      "pending": 7,
@@ -234,6 +253,6 @@
    }
   }
  },
- "last_success": "2026-11-18T04:48:27.701301Z",
+ "last_success": "2026-11-18T05:04:16.983976Z",
  "report_sent": "20261031"
 }
