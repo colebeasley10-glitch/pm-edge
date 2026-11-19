@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-19
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-19T12:45:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-19T13:00:41+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -52,7 +52,7 @@ Bankroll $490.00 · 135-130-0 · logged this run 0 · open 13
 
 ## Data gaps
 
-- no line posted yet (12): Berea Mountaineers @ Northern Kentucky Norse, North Park Vikings @ SIU Edwardsville Cougars, Mary Baldwin Fighting Squirrels @ American University Eagles, Tusculum Pioneers @ North Alabama Lions, Mayville State Comets @ North Dakota Fighting Hawks, Eureka Red Devils @ Illinois State Redbirds, Northwest Indian RedHawks @ Portland State Vikings, Averett Cougars @ William & Mary Tribe, Bloomfield Deacons @ Maryland Eastern Shore Hawks, Green Bay Phoenix @ Florida State Seminoles, Oklahoma State Cowboys @ Minnesota Golden Gophers, Temple Owls @ Middle Tennessee Blue Raiders
+- no line posted yet (13): Berea Mountaineers @ Northern Kentucky Norse, North Park Vikings @ SIU Edwardsville Cougars, Mary Baldwin Fighting Squirrels @ American University Eagles, Tusculum Pioneers @ North Alabama Lions, Mayville State Comets @ North Dakota Fighting Hawks, Eureka Red Devils @ Illinois State Redbirds, Northwest Indian RedHawks @ Portland State Vikings, Averett Cougars @ William & Mary Tribe, Bloomfield Deacons @ Maryland Eastern Shore Hawks, Green Bay Phoenix @ Florida State Seminoles, Oklahoma State Cowboys @ Minnesota Golden Gophers, Temple Owls @ Middle Tennessee Blue Raiders, George Washington Revolutionaries @ UAB Blazers
 - possession data coverage: 0.992
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
