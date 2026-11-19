@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-19
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-19T13:00:41+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-19T13:15:21+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,8 +31,9 @@ WHY: Model line NC State Wolfpack -9 vs market -4.5 (+4.6 pts) from opponent-adj
 LOGGED: 2026-11-18T23:00:34+00:00 · model ncaab_v1
 ```
 
-## Watch list (14) — positive EV but not a qualified bet
+## Watch list (16) — positive EV but not a qualified bet
 
+- Montana State Bobcats ML +750 (+750) · Montana State Bobcats at High Point Panthers · Thu 7:00 PM ET · EV +13.5% · min +671
 - NC State Wolfpack ML -185 (-185) · NC State Wolfpack at Murray State Racers · Thu 6:00 PM ET · EV +7.0% · min -207
 - Texas A&M Aggies ML -115 (-115) · Texas A&M Aggies at TCU Horned Frogs · Thu 8:00 PM ET · EV +3.6% · min -117
 - Rutgers Scarlet Knights ML -148 (-148) · Rutgers Scarlet Knights at UNLV Rebels · Thu 8:30 PM ET · EV +2.7% · min -147
@@ -44,7 +45,6 @@ LOGGED: 2026-11-18T23:00:34+00:00 · model ncaab_v1
 - Rutgers Scarlet Knights -3.5 (-102) · Rutgers Scarlet Knights at UNLV Rebels · Thu 8:30 PM ET · EV +1.6% · min -101
 - OVER 146.5 (-105) · Buffalo Bulls at St. Bonaventure Bonnies · Thu 7:00 PM ET · EV +1.6% · min -102
 - Houston Cougars ML -125 (-125) · Houston Cougars at Kansas Jayhawks · Thu 11:00 PM ET · EV +1.6% · min -121
-- Southern Miss Golden Eagles ML -118 (-118) · Southern Miss Golden Eagles at Grambling Tigers · Thu 9:00 PM ET · EV +1.5% · min -114
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
