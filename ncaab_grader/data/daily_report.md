@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-19
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-19T14:45:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-19T15:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -48,11 +48,11 @@ LOGGED: 2026-11-18T23:00:34+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $490.00 · 135-130-0 · logged this run 1 · open 15
+Bankroll $490.00 · 135-130-0 · logged this run 0 · open 15
 
 ## Data gaps
 
-- no line posted yet (16): Berea Mountaineers @ Northern Kentucky Norse, North Park Vikings @ SIU Edwardsville Cougars, Mary Baldwin Fighting Squirrels @ American University Eagles, Tusculum Pioneers @ North Alabama Lions, Mayville State Comets @ North Dakota Fighting Hawks, Eureka Red Devils @ Illinois State Redbirds, Northwest Indian RedHawks @ Portland State Vikings, Averett Cougars @ William & Mary Tribe, Bloomfield Deacons @ Maryland Eastern Shore Hawks, Green Bay Phoenix @ Florida State Seminoles, Oklahoma State Cowboys @ Minnesota Golden Gophers, Temple Owls @ Middle Tennessee Blue Raiders, George Washington Revolutionaries @ UAB Blazers, Northwestern Wildcats @ Virginia Tech Hokies, Western Illinois Leathernecks @ UAlbany Great Danes …
+- no line posted yet (17): Berea Mountaineers @ Northern Kentucky Norse, North Park Vikings @ SIU Edwardsville Cougars, Mary Baldwin Fighting Squirrels @ American University Eagles, Tusculum Pioneers @ North Alabama Lions, Mayville State Comets @ North Dakota Fighting Hawks, Eureka Red Devils @ Illinois State Redbirds, Northwest Indian RedHawks @ Portland State Vikings, Averett Cougars @ William & Mary Tribe, Bloomfield Deacons @ Maryland Eastern Shore Hawks, Green Bay Phoenix @ Florida State Seminoles, Oklahoma State Cowboys @ Minnesota Golden Gophers, Temple Owls @ Middle Tennessee Blue Raiders, George Washington Revolutionaries @ UAB Blazers, Northwestern Wildcats @ Virginia Tech Hokies, Western Illinois Leathernecks @ UAlbany Great Danes …
 - possession data coverage: 0.992
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
