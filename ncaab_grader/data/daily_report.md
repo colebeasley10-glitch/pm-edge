@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-18
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-19T02:15:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-19T02:30:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,11 +31,10 @@ WHY: Model line NC State Wolfpack -9 vs market -4.5 (+4.6 pts) from opponent-adj
 LOGGED: 2026-11-18T23:00:34+00:00 · model ncaab_v1
 ```
 
-## Watch list (7) — positive EV but not a qualified bet
+## Watch list (6) — positive EV but not a qualified bet
 
 - NC State Wolfpack ML -185 (-185) · NC State Wolfpack at Murray State Racers · Thu 6:00 PM ET · EV +7.0% · min -207
 - Texas A&M Aggies -1.5 (+105) · Texas A&M Aggies at TCU Horned Frogs · Thu 8:00 PM ET · EV +2.6% · min +104
-- OVER 148.5 (-105) · UC Riverside Highlanders at San Diego Toreros · Wed 9:30 PM ET · EV +1.8% · min -102
 - OVER 144.5 (-105) · Tulane Green Wave at Louisiana Tech Bulldogs · Thu 7:30 PM ET · EV +1.7% · min -102
 - OVER 155.5 (-105) · Texas Southern Tigers at San Diego State Aztecs · Wed 10:00 PM ET · EV +1.7% · min -102
 - OVER 144.5 (-105) · Robert Morris Colonials at Toledo Rockets · Thu 7:00 PM ET · EV +1.6% · min -102
