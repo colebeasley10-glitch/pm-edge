@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-19
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-19T11:30:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-19T11:45:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,7 +31,7 @@ WHY: Model line NC State Wolfpack -9 vs market -4.5 (+4.6 pts) from opponent-adj
 LOGGED: 2026-11-18T23:00:34+00:00 · model ncaab_v1
 ```
 
-## Watch list (12) — positive EV but not a qualified bet
+## Watch list (13) — positive EV but not a qualified bet
 
 - NC State Wolfpack ML -185 (-185) · NC State Wolfpack at Murray State Racers · Thu 6:00 PM ET · EV +7.0% · min -207
 - Texas A&M Aggies ML -115 (-115) · Texas A&M Aggies at TCU Horned Frogs · Thu 8:00 PM ET · EV +3.6% · min -117
@@ -42,9 +42,9 @@ LOGGED: 2026-11-18T23:00:34+00:00 · model ncaab_v1
 - OVER 144.5 (-105) · Robert Morris Colonials at Toledo Rockets · Thu 7:00 PM ET · EV +1.6% · min -102
 - Rutgers Scarlet Knights -3.5 (-102) · Rutgers Scarlet Knights at UNLV Rebels · Thu 8:30 PM ET · EV +1.6% · min -101
 - OVER 146.5 (-105) · Buffalo Bulls at St. Bonaventure Bonnies · Thu 7:00 PM ET · EV +1.6% · min -102
+- Houston Cougars ML -125 (-125) · Houston Cougars at Kansas Jayhawks · Thu 11:00 PM ET · EV +1.6% · min -121
 - Southern Miss Golden Eagles ML -118 (-118) · Southern Miss Golden Eagles at Grambling Tigers · Thu 9:00 PM ET · EV +1.5% · min -114
 - OVER 144.5 (-105) · Montana State Bobcats at High Point Panthers · Thu 7:00 PM ET · EV +1.5% · min -102
-- Washington Huskies ML -1800 (-1800) · Utah Tech Trailblazers at Washington Huskies · Thu 9:00 PM ET · EV +0.5% · min -1229
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
