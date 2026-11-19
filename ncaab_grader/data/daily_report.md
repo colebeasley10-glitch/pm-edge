@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-18
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-19T04:00:35+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-19T04:15:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -44,11 +44,11 @@ LOGGED: 2026-11-18T23:00:34+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $505.78 · 133-125-0 · logged this run 0 · open 16
+Bankroll $495.78 · 133-127-0 · logged this run 2 · open 16
 
 ## Data gaps
 
 - no line posted yet (14): Florida Gators @ TBD, Notre Dame Fighting Irish @ TBD, Berea Mountaineers @ Northern Kentucky Norse, North Park Vikings @ SIU Edwardsville Cougars, Maine Black Bears @ Quinnipiac Bobcats, Montana State Bobcats @ High Point Panthers, Mary Baldwin Fighting Squirrels @ American University Eagles, Tusculum Pioneers @ North Alabama Lions, Mayville State Comets @ North Dakota Fighting Hawks, Eureka Red Devils @ Illinois State Redbirds, Georgia Southern Eagles @ Houston Christian Huskies, Rutgers Scarlet Knights @ TBD, Northwest Indian RedHawks @ Portland State Vikings, Houston Cougars @ TBD
-- possession data coverage: 0.971
+- possession data coverage: 0.962
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
