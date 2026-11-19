@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-18
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-19T01:45:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-19T02:00:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -43,11 +43,11 @@ LOGGED: 2026-11-18T23:00:34+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $508.53 · 124-116-0 · logged this run 0 · open 31
+Bankroll $498.53 · 124-118-0 · logged this run 1 · open 30
 
 ## Data gaps
 
-- no line posted yet (20): McMurry War Hawks @ Abilene Christian Wildcats, Florida Gators @ TBD, Notre Dame Fighting Irish @ TBD, Berea Mountaineers @ Northern Kentucky Norse, Southern Miss Golden Eagles @ Grambling Tigers, North Park Vikings @ SIU Edwardsville Cougars, Maine Black Bears @ Quinnipiac Bobcats, Little Rock Trojans @ Jacksonville Dolphins, Montana State Bobcats @ High Point Panthers, UMBC Retrievers @ Ohio State Buckeyes, Mary Baldwin Fighting Squirrels @ American University Eagles, Tusculum Pioneers @ North Alabama Lions, Stetson Hatters @ Louisville Cardinals, Mayville State Comets @ North Dakota Fighting Hawks, Eureka Red Devils @ Illinois State Redbirds …
-- possession data coverage: 0.992
+- no line posted yet (19): Florida Gators @ TBD, Notre Dame Fighting Irish @ TBD, Berea Mountaineers @ Northern Kentucky Norse, Southern Miss Golden Eagles @ Grambling Tigers, North Park Vikings @ SIU Edwardsville Cougars, Maine Black Bears @ Quinnipiac Bobcats, Little Rock Trojans @ Jacksonville Dolphins, Montana State Bobcats @ High Point Panthers, UMBC Retrievers @ Ohio State Buckeyes, Mary Baldwin Fighting Squirrels @ American University Eagles, Tusculum Pioneers @ North Alabama Lions, Stetson Hatters @ Louisville Cardinals, Mayville State Comets @ North Dakota Fighting Hawks, Eureka Red Devils @ Illinois State Redbirds, Georgia Southern Eagles @ Houston Christian Huskies …
+- possession data coverage: 0.983
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
