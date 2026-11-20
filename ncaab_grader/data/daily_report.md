@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-19
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-20T00:15:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-20T00:30:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,28 +53,28 @@ WHY: Model line Oklahoma State Cowboys -1.5 vs market -1.5 (-0.1 pts) from oppon
 LOGGED: 2026-11-19T23:00:35+00:00 · model ncaab_v1
 ```
 
-## Watch list (22) — positive EV but not a qualified bet
+## Watch list (28) — positive EV but not a qualified bet
 
 - Northwestern Wildcats ML +625 (+625) · Northwestern Wildcats at Virginia Tech Hokies · Fri 3:00 PM ET · EV +19.1% · min +527
+- Cal State Bakersfield Roadrunners ML -105 (-105) · Cal State Bakersfield Roadrunners at Idaho Vandals · Fri 9:00 PM ET · EV +6.8% · min -113
 - Iona Gaels ML -185 (-185) · Kansas City Roos at Iona Gaels · Fri 7:00 PM ET · EV +6.3% · min -203
 - Richmond Spiders ML -115 (-115) · Richmond Spiders at Western Kentucky Hilltoppers · Fri 7:00 PM ET · EV +5.2% · min -120
+- Rhode Island Rams ML -142 (-142) · Rhode Island Rams at Liberty Flames · Fri 4:30 PM ET · EV +5.2% · min -150
 - Georgia Bulldogs ML -325 (-325) · Georgia Bulldogs at Georgia Tech Yellow Jackets · Fri 8:00 PM ET · EV +5.1% · min -355
 - Indiana Hoosiers ML -142 (-142) · Kentucky Wildcats at Indiana Hoosiers · Fri 8:00 PM ET · EV +4.6% · min -147
 - Texas A&M Aggies ML -115 (-115) · Texas A&M Aggies at TCU Horned Frogs · Thu 8:00 PM ET · EV +3.6% · min -117
 - Utah Utes ML -120 (-120) · Dayton Flyers at Utah Utes · Fri 5:30 PM ET · EV +3.4% · min -121
+- Western Illinois Leathernecks ML +200 (+200) · Western Illinois Leathernecks at UAlbany Great Danes · Fri 3:00 PM ET · EV +2.9% · min +200
 - Rutgers Scarlet Knights ML -148 (-148) · Rutgers Scarlet Knights at UNLV Rebels · Thu 8:30 PM ET · EV +2.7% · min -147
 - Texas A&M Aggies -1.5 (+105) · Texas A&M Aggies at TCU Horned Frogs · Thu 8:00 PM ET · EV +2.6% · min +104
-- Utah Valley Wolverines ML -185 (-185) · Utah Valley Wolverines at East Carolina Pirates · Fri 8:00 PM ET · EV +2.5% · min -182
-- Drake Bulldogs ML -115 (-115) · Charleston Cougars at Drake Bulldogs · Thu 7:30 PM ET · EV +2.4% · min -114
-- OVER 141.5 (-105) · Dayton Flyers at Utah Utes · Fri 5:30 PM ET · EV +1.8% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $490.00 · 135-130-0 · logged this run 0 · open 19
+Bankroll $490.00 · 135-130-0 · logged this run 4 · open 23
 
 ## Data gaps
 
-- no line posted yet (30): Tusculum Pioneers @ North Alabama Lions, Mayville State Comets @ North Dakota Fighting Hawks, Eureka Red Devils @ Illinois State Redbirds, Northwest Indian RedHawks @ Portland State Vikings, Averett Cougars @ William & Mary Tribe, Bloomfield Deacons @ Maryland Eastern Shore Hawks, Mercyhurst Lakers @ Canisius Golden Griffins, Worcester State Lancers @ Bryant Bulldogs, Central Baptist Mustangs @ Incarnate Word Cardinals, WVU Tech Golden Bears @ Akron Zips, Loyola Maryland Greyhounds @ Virginia Cavaliers, Coastal Carolina Chanticleers @ Tennessee Volunteers, Georgia State Panthers @ Jacksonville State Gamecocks, Oakland Golden Grizzlies @ Purdue Boilermakers, South Carolina State Bulldogs @ The Citadel Bulldogs …
-- possession data coverage: 0.992
+- no line posted yet (26): Mayville State Comets @ North Dakota Fighting Hawks, Eureka Red Devils @ Illinois State Redbirds, Northwest Indian RedHawks @ Portland State Vikings, Averett Cougars @ William & Mary Tribe, Bloomfield Deacons @ Maryland Eastern Shore Hawks, Mercyhurst Lakers @ Canisius Golden Griffins, Worcester State Lancers @ Bryant Bulldogs, Central Baptist Mustangs @ Incarnate Word Cardinals, WVU Tech Golden Bears @ Akron Zips, Loyola Maryland Greyhounds @ Virginia Cavaliers, South Carolina State Bulldogs @ The Citadel Bulldogs, Niagara Purple Eagles @ Delaware State Hornets, TBD @ TBD, Bellarmine Knights @ Eastern Kentucky Colonels, SE Louisiana Lions @ Kennesaw State Owls …
+- possession data coverage: 0.991
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
