@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-19
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-20T03:45:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-20T04:00:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,7 +53,7 @@ WHY: Model line Oklahoma State Cowboys -1.5 vs market -1.5 (-0.1 pts) from oppon
 LOGGED: 2026-11-19T23:00:35+00:00 · model ncaab_v1
 ```
 
-## Watch list (25) — positive EV but not a qualified bet
+## Watch list (23) — positive EV but not a qualified bet
 
 - Northwestern Wildcats ML +625 (+625) · Northwestern Wildcats at Virginia Tech Hokies · Fri 3:00 PM ET · EV +19.1% · min +527
 - Cal State Bakersfield Roadrunners ML -105 (-105) · Cal State Bakersfield Roadrunners at Idaho Vandals · Fri 9:00 PM ET · EV +6.8% · min -113
@@ -75,6 +75,6 @@ Bankroll $508.02 · 141-132-0 · logged this run 0 · open 20
 ## Data gaps
 
 - no line posted yet (11): Averett Cougars @ William & Mary Tribe, Bloomfield Deacons @ Maryland Eastern Shore Hawks, Worcester State Lancers @ Bryant Bulldogs, Central Baptist Mustangs @ Incarnate Word Cardinals, WVU Tech Golden Bears @ Akron Zips, TBD @ Murray State Racers, Paine Lions @ West Georgia Wolves, West Coast Baptist Eagles @ Pepperdine Waves, Neumann Knights @ Lehigh Mountain Hawks, TBD @ NC State Wolfpack, Alabama State Hornets @ Fresno State Bulldogs
-- possession data coverage: 0.976
+- possession data coverage: 0.985
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
