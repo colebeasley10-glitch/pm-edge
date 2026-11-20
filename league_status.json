@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-20T08:00:44.686518Z",
+ "ran_at": "2026-11-20T08:15:41.283410Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -53,18 +53,18 @@
     {
      "ticker": "KXVALORANTGAME-26NOV201930MSCFQ-MSC",
      "side": "NO",
-     "ask": 0.41,
+     "ask": 0.42,
      "fair": 0.455,
-     "edge": 0.0279
+     "edge": 0.0176
     }
    ],
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 269,
+    "poly_games": 270,
     "kalshi_events": 1924,
     "matched": 178,
-    "priced": 337,
+    "priced": 339,
     "best_gaps": [
      [
       0.41,
@@ -88,15 +88,15 @@
      ],
      [
       0.015,
-      "KXCS2GAME-26NOV201300MZPSIN-MZP"
+      "KXCS2GAME-26NOV200630WBTACADEMYINOX-INOX"
      ],
      [
       0.015,
       "KXCS2GAME-26NOV200400UNKNEM-UNK"
      ],
      [
-      0.015,
-      "KXCS2GAME-26NOV200400FORZERBAL-BAL"
+      0.01,
+      "KXUFCFIGHT-26NOV21HORALM-ALM"
      ]
     ]
    }
@@ -108,83 +108,29 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 2,
+   "opened": 1,
    "skipped": {
-    "same_game": 1,
-    "already_holding": 1
+    "already_holding": 2,
+    "same_game": 1
    },
    "diag": {
-    "skipped_settles_late": 1
+    "skipped_settles_late": 3
    }
   },
   "crypto": {
-   "picks_found": 4,
+   "picks_found": 0,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [
-    {
-     "ticker": "KXETHD-26NOV2004-T1739.99",
-     "side": "NO",
-     "ask": 0.2,
-     "fair": 0.3022,
-     "edge": 0.091
-    },
-    {
-     "ticker": "KXETHD-26NOV2004-T1734.99",
-     "side": "NO",
-     "ask": 0.1,
-     "fair": 0.1914,
-     "edge": 0.0851
-    },
-    {
-     "ticker": "KXBTCD-26NOV2004-T61299.99",
-     "side": "NO",
-     "ask": 0.08,
-     "fair": 0.1682,
-     "edge": 0.083
-    },
-    {
-     "ticker": "KXBTCD-26NOV2004-T61399.99",
-     "side": "NO",
-     "ask": 0.15,
-     "fair": 0.2354,
-     "edge": 0.0764
-    }
-   ],
+   "shadow": [],
    "shadow_opened": 0,
    "diag": {
-    "markets_priced": 488,
+    "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.005466432059476942,
-     "ETH-USD": 0.006534020256579987
+     "BTC-USD": 0.005468088651283699,
+     "ETH-USD": 0.006496282278312421
     },
-    "best": [
-     [
-      -0.17,
-      "KXETHD-26NOV2004-T1839.99"
-     ],
-     [
-      -0.17,
-      "KXETHD-26NOV2004-T1844.99"
-     ],
-     [
-      -0.17,
-      "KXETHD-26NOV2004-T1854.99"
-     ],
-     [
-      -0.17,
-      "KXETHD-26NOV2004-T1859.99"
-     ],
-     [
-      -0.16,
-      "KXETHD-26NOV2004-T1799.99"
-     ],
-     [
-      -0.16,
-      "KXETHD-26NOV2004-T1804.99"
-     ]
-    ]
+    "best": []
    }
   }
  },
@@ -195,12 +141,12 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 10,
+  "marked": 11,
   "settled": 0
  },
  "shadow_update": {
   "marked": 7,
-  "settled": 0
+  "settled": 4
  },
  "live_sharp": {
   "enabled": false,
@@ -226,8 +172,8 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 4481,
-   "open": 12,
+   "picks": 4482,
+   "open": 13,
    "won": 2498,
    "lost": 1971,
    "pl": -1445.1699999999876,
@@ -281,15 +227,15 @@
   {
    "strategy": "crypto",
    "picks": 396,
-   "open": 4,
+   "open": 0,
    "won": 52,
-   "lost": 340,
-   "pl": -911.0999999999995,
-   "risked": 4118.099999999993,
-   "clv_sum": -150.0,
-   "clv_n": 392,
-   "roi": -0.22124280614846675,
-   "clv": -0.3826530612244898
+   "lost": 344,
+   "pl": -953.1799999999995,
+   "risked": 4160.179999999993,
+   "clv_sum": -174.0,
+   "clv_n": 396,
+   "roi": -0.2291198938507471,
+   "clv": -0.4393939393939394
   },
   {
    "strategy": "polymarket",
