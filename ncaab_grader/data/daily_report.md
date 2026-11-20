@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-20
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-20T13:45:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-20T14:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,12 +53,13 @@ WHY: Model line Oklahoma State Cowboys -1.5 vs market -1.5 (-0.1 pts) from oppon
 LOGGED: 2026-11-19T23:00:35+00:00 · model ncaab_v1
 ```
 
-## Watch list (25) — positive EV but not a qualified bet
+## Watch list (27) — positive EV but not a qualified bet
 
 - Northwestern Wildcats ML +625 (+625) · Northwestern Wildcats at Virginia Tech Hokies · Fri 3:00 PM ET · EV +19.1% · min +527
 - Campbell Fighting Camels ML +1300 (+1300) · Campbell Fighting Camels at Kansas State Wildcats · Fri 8:00 PM ET · EV +11.1% · min +1198
 - Cal State Bakersfield Roadrunners ML -105 (-105) · Cal State Bakersfield Roadrunners at Idaho Vandals · Fri 9:00 PM ET · EV +6.8% · min -113
 - Iona Gaels ML -185 (-185) · Kansas City Roos at Iona Gaels · Fri 7:00 PM ET · EV +6.3% · min -203
+- NC State Wolfpack ML -142 (-142) · Seton Hall Pirates at NC State Wolfpack · Fri 9:30 PM ET · EV +5.4% · min -150
 - Rhode Island Rams ML -142 (-142) · Rhode Island Rams at Liberty Flames · Fri 4:30 PM ET · EV +5.2% · min -150
 - Richmond Spiders ML -115 (-115) · Richmond Spiders at Western Kentucky Hilltoppers · Fri 7:00 PM ET · EV +5.2% · min -120
 - Xavier Musketeers ML -142 (-142) · Iowa Hawkeyes at Xavier Musketeers · Fri 7:30 PM ET · EV +5.2% · min -149
@@ -66,15 +67,14 @@ LOGGED: 2026-11-19T23:00:35+00:00 · model ncaab_v1
 - Indiana Hoosiers ML -142 (-142) · Kentucky Wildcats at Indiana Hoosiers · Fri 8:00 PM ET · EV +4.6% · min -147
 - Utah Utes ML -120 (-120) · Dayton Flyers at Utah Utes · Fri 5:30 PM ET · EV +3.4% · min -121
 - Western Illinois Leathernecks ML +200 (+200) · Western Illinois Leathernecks at UAlbany Great Danes · Fri 3:00 PM ET · EV +2.9% · min +200
-- Utah Valley Wolverines ML -185 (-185) · Utah Valley Wolverines at East Carolina Pirates · Fri 8:00 PM ET · EV +2.5% · min -182
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $513.07 · 144-134-0 · logged this run 0 · open 18
+Bankroll $513.07 · 144-134-0 · logged this run 2 · open 20
 
 ## Data gaps
 
-- no line posted yet (30): Averett Cougars @ William & Mary Tribe, Bloomfield Deacons @ Maryland Eastern Shore Hawks, Worcester State Lancers @ Bryant Bulldogs, Central Baptist Mustangs @ Incarnate Word Cardinals, WVU Tech Golden Bears @ Akron Zips, Wisconsin Badgers @ Murray State Racers, Paine Lions @ West Georgia Wolves, West Coast Baptist Eagles @ Pepperdine Waves, Neumann Knights @ Lehigh Mountain Hawks, Seton Hall Pirates @ NC State Wolfpack, Siena Saints @ Bucknell Bison, South Carolina Upstate Spartans @ UNC Greensboro Spartans, Detroit Mercy Titans @ Michigan State Spartans, Columbia Lions @ Boston University Terriers, Queens University Royals @ LSU Tigers …
+- no line posted yet (30): Averett Cougars @ William & Mary Tribe, Bloomfield Deacons @ Maryland Eastern Shore Hawks, Worcester State Lancers @ Bryant Bulldogs, Central Baptist Mustangs @ Incarnate Word Cardinals, WVU Tech Golden Bears @ Akron Zips, Paine Lions @ West Georgia Wolves, West Coast Baptist Eagles @ Pepperdine Waves, Neumann Knights @ Lehigh Mountain Hawks, Siena Saints @ Bucknell Bison, South Carolina Upstate Spartans @ UNC Greensboro Spartans, Detroit Mercy Titans @ Michigan State Spartans, Columbia Lions @ Boston University Terriers, Queens University Royals @ LSU Tigers, New Hampshire Wildcats @ New Haven Chargers, Kent State Golden Flashes @ Cleveland State Vikings …
 - possession data coverage: 0.993
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
