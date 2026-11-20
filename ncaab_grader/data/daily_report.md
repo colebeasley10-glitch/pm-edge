@@ -1,13 +1,35 @@
 # NCAA Basketball Model — daily report 2026-11-20
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-20T21:45:21+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-20T22:00:32+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $501.70 (start $500, at risk $5.00) · ¼-Kelly comparison $503.65
+**Paper bankroll:** $501.70 (start $500, at risk $10.00) · ¼-Kelly comparison $503.65
 **Season to date (BET tier):** 10-9-0 · flat P/L $+1.70 (+1.8% on risk) · ¼-Kelly P/L $+3.65 · beat close 26%
 
-## Qualified bets (1)
+## Qualified bets (2)
+
+```
+GAME: Washington State Cougars at Duke Blue Devils (neutral)
+TIPOFF: Sat 11:00 PM ET
+
+SPORTSBOOK LINE: Washington State Cougars +25.5 (-110)
+MODEL LINE: Washington State Cougars +20
+PROJECTED SCORE: Washington State Cougars 66 - Duke Blue Devils 86
+
+MODEL COVER PROBABILITY: 55.6%
+BREAK-EVEN PROBABILITY: 52.38%
+EXPECTED ROI: +6.2%
+
+RECOMMENDATION: Washington State Cougars +25.5
+MINIMUM ACCEPTABLE PRICE: -120
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $8.50
+CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 55.6% (backtest-shrunk toward the market)
+FLAGS: neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line Washington State Cougars +20 vs market +25.5 (+5.5 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-20T22:00:32+00:00 · model ncaab_v1
+```
 
 ```
 GAME: Richmond Spiders at Western Kentucky Hilltoppers (neutral)
