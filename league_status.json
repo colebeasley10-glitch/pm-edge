@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-20T10:45:45.719232Z",
+ "ran_at": "2026-11-20T11:00:44.895114Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -26,8 +26,8 @@
      "ticker": "KXNCAAFGAME-26NOV21DSUSCST-SCST",
      "side": "NO",
      "ask": 0.14,
-     "fair": 0.785,
-     "edge": 0.6365
+     "fair": 0.78,
+     "edge": 0.6315
     },
     {
      "ticker": "KXNCAAFGAME-26NOV21SDAKILST-ILST",
@@ -54,8 +54,8 @@
      "ticker": "KXNCAAFGAME-26NOV21DSUSCST-DSU",
      "side": "YES",
      "ask": 0.14,
-     "fair": 0.215,
-     "edge": 0.0665
+     "fair": 0.22,
+     "edge": 0.0715
     },
     {
      "ticker": "KXVALORANTGAME-26NOV201930MSCFQ-MSC",
@@ -72,29 +72,25 @@
      "edge": 0.0176
     }
    ],
-   "shadow_opened": 1,
+   "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 259,
-    "kalshi_events": 1912,
+    "poly_games": 264,
+    "kalshi_events": 1911,
     "matched": 164,
-    "priced": 317,
+    "priced": 315,
     "best_gaps": [
      [
       0.41,
       "KXNCAAFGAME-26NOV21SDAKILST-SDAK"
      ],
      [
-      0.075,
+      0.08,
       "KXNCAAFGAME-26NOV21DSUSCST-DSU"
      ],
      [
       0.035,
       "KXVALORANTGAME-26NOV201930MSCFQ-FQ"
-     ],
-     [
-      0.025,
-      "KXCS2GAME-26NOV200630WBTACADEMYINOX-INOX"
      ],
      [
       0.015,
@@ -103,6 +99,10 @@
      [
       0.015,
       "KXDOTA2GAME-26NOV201200KONCALIQUID-LIQUID"
+     ],
+     [
+      0.015,
+      "KXDOTA2GAME-26NOV201000CHIC-CH"
      ],
      [
       0.015,
@@ -124,27 +124,80 @@
    "picks_found": 4,
    "opened": 1,
    "skipped": {
-    "same_game": 2,
-    "already_holding": 1
+    "same_game": 3
    },
    "diag": {
-    "skipped_settles_late": 2
+    "skipped_settles_late": 1
    }
   },
   "crypto": {
-   "picks_found": 0,
+   "picks_found": 4,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [],
+   "shadow": [
+    {
+     "ticker": "KXBTCD-26NOV2007-T62299.99",
+     "side": "YES",
+     "ask": 0.07,
+     "fair": 0.2031,
+     "edge": 0.1285
+    },
+    {
+     "ticker": "KXBTCD-26NOV2007-T62199.99",
+     "side": "YES",
+     "ask": 0.14,
+     "fair": 0.2754,
+     "edge": 0.127
+    },
+    {
+     "ticker": "KXBTCD-26NOV2007-T61699.99",
+     "side": "NO",
+     "ask": 0.16,
+     "fair": 0.2808,
+     "edge": 0.1113
+    },
+    {
+     "ticker": "KXBTCD-26NOV2007-T61599.99",
+     "side": "NO",
+     "ask": 0.09,
+     "fair": 0.207,
+     "edge": 0.1112
+    }
+   ],
    "shadow_opened": 0,
    "diag": {
-    "markets_priced": 0,
+    "markets_priced": 488,
     "vol": {
-     "BTC-USD": 0.005592262554248627,
-     "ETH-USD": 0.006362747883198078
+     "BTC-USD": 0.005521156941125285,
+     "ETH-USD": 0.00593859595677921
     },
-    "best": []
+    "best": [
+     [
+      -0.15,
+      "KXETHD-26NOV2007-T1829.99"
+     ],
+     [
+      -0.15,
+      "KXETHD-26NOV2007-T1839.99"
+     ],
+     [
+      -0.14,
+      "KXETHD-26NOV2007-T1814.99"
+     ],
+     [
+      -0.14,
+      "KXETHD-26NOV2007-T1844.99"
+     ],
+     [
+      -0.14,
+      "KXETHD-26NOV2007-T1849.99"
+     ],
+     [
+      0.135,
+      "KXBTCD-26NOV2007-T62199.99"
+     ]
+    ]
    }
   }
  },
@@ -155,11 +208,11 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 21,
-  "settled": 2
+  "marked": 20,
+  "settled": 0
  },
  "shadow_update": {
-  "marked": 6,
+  "marked": 7,
   "settled": 0
  },
  "live_sharp": {
@@ -186,16 +239,16 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 4502,
-   "open": 22,
+   "picks": 4503,
+   "open": 21,
    "won": 2500,
-   "lost": 1980,
-   "pl": -1529.259999999987,
-   "risked": 44916.59000000019,
-   "clv_sum": -2572.12,
-   "clv_n": 4423,
-   "roi": -0.034046662936789734,
-   "clv": -0.5815328962242822
+   "lost": 1982,
+   "pl": -1550.0599999999872,
+   "risked": 44937.390000000196,
+   "clv_sum": -2634.12,
+   "clv_n": 4425,
+   "roi": -0.03449377010992362,
+   "clv": -0.5952813559322033
   },
   {
    "strategy": "weather",
