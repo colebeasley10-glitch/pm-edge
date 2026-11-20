@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-19
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-20T00:30:30+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-20T00:45:33+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -58,8 +58,8 @@ LOGGED: 2026-11-19T23:00:35+00:00 · model ncaab_v1
 - Northwestern Wildcats ML +625 (+625) · Northwestern Wildcats at Virginia Tech Hokies · Fri 3:00 PM ET · EV +19.1% · min +527
 - Cal State Bakersfield Roadrunners ML -105 (-105) · Cal State Bakersfield Roadrunners at Idaho Vandals · Fri 9:00 PM ET · EV +6.8% · min -113
 - Iona Gaels ML -185 (-185) · Kansas City Roos at Iona Gaels · Fri 7:00 PM ET · EV +6.3% · min -203
-- Richmond Spiders ML -115 (-115) · Richmond Spiders at Western Kentucky Hilltoppers · Fri 7:00 PM ET · EV +5.2% · min -120
 - Rhode Island Rams ML -142 (-142) · Rhode Island Rams at Liberty Flames · Fri 4:30 PM ET · EV +5.2% · min -150
+- Richmond Spiders ML -115 (-115) · Richmond Spiders at Western Kentucky Hilltoppers · Fri 7:00 PM ET · EV +5.2% · min -120
 - Georgia Bulldogs ML -325 (-325) · Georgia Bulldogs at Georgia Tech Yellow Jackets · Fri 8:00 PM ET · EV +5.1% · min -355
 - Indiana Hoosiers ML -142 (-142) · Kentucky Wildcats at Indiana Hoosiers · Fri 8:00 PM ET · EV +4.6% · min -147
 - Texas A&M Aggies ML -115 (-115) · Texas A&M Aggies at TCU Horned Frogs · Thu 8:00 PM ET · EV +3.6% · min -117
@@ -70,7 +70,7 @@ LOGGED: 2026-11-19T23:00:35+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $490.00 · 135-130-0 · logged this run 4 · open 23
+Bankroll $490.00 · 135-130-0 · logged this run 0 · open 23
 
 ## Data gaps
 
