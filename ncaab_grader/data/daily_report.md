@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-20
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-20T17:15:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-20T17:30:27+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $506.70 (start $500, at risk $10.00) · ¼-Kelly comparison $506.36
 **Season to date (BET tier):** 10-8-0 · flat P/L $+6.70 (+7.4% on risk) · ¼-Kelly P/L $+6.36 · beat close 28%
 
-## Qualified bets (2)
+## Qualified bets (1)
 
 ```
 GAME: Richmond Spiders at Western Kentucky Hilltoppers (neutral)
@@ -31,29 +31,7 @@ WHY: Model line Richmond Spiders -2.5 vs market -1.5 (+1.1 pts) from opponent-ad
 LOGGED: 2026-11-19T23:45:23+00:00 · model ncaab_v1
 ```
 
-```
-GAME: Oklahoma State Cowboys at Minnesota Golden Gophers (neutral)
-TIPOFF: Fri 12:30 PM ET
-
-SPORTSBOOK LINE: Oklahoma State Cowboys -1.5 (+105)
-MODEL LINE: Oklahoma State Cowboys -1.5
-PROJECTED SCORE: Oklahoma State Cowboys 76 - Minnesota Golden Gophers 75
-
-MODEL COVER PROBABILITY: 49.9%
-BREAK-EVEN PROBABILITY: 48.78%
-EXPECTED ROI: +2.3%
-
-RECOMMENDATION: Oklahoma State Cowboys -1.5
-MINIMUM ACCEPTABLE PRICE: +104
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $2.71
-CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 49.9% (backtest-shrunk toward the market)
-FLAGS: neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Oklahoma State Cowboys -1.5 vs market -1.5 (-0.1 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-19T23:00:35+00:00 · model ncaab_v1
-```
-
-## Watch list (27) — positive EV but not a qualified bet
+## Watch list (26) — positive EV but not a qualified bet
 
 - Northwestern Wildcats ML +625 (+625) · Northwestern Wildcats at Virginia Tech Hokies · Fri 3:00 PM ET · EV +19.1% · min +527
 - Campbell Fighting Camels ML +1300 (+1300) · Campbell Fighting Camels at Kansas State Wildcats · Fri 8:00 PM ET · EV +11.1% · min +1198
