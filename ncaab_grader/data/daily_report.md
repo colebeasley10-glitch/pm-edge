@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-19
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-20T01:15:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-20T01:30:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,7 +53,7 @@ WHY: Model line Oklahoma State Cowboys -1.5 vs market -1.5 (-0.1 pts) from oppon
 LOGGED: 2026-11-19T23:00:35+00:00 · model ncaab_v1
 ```
 
-## Watch list (26) — positive EV but not a qualified bet
+## Watch list (24) — positive EV but not a qualified bet
 
 - Northwestern Wildcats ML +625 (+625) · Northwestern Wildcats at Virginia Tech Hokies · Fri 3:00 PM ET · EV +19.1% · min +527
 - Cal State Bakersfield Roadrunners ML -105 (-105) · Cal State Bakersfield Roadrunners at Idaho Vandals · Fri 9:00 PM ET · EV +6.8% · min -113
@@ -64,13 +64,13 @@ LOGGED: 2026-11-19T23:00:35+00:00 · model ncaab_v1
 - Indiana Hoosiers ML -142 (-142) · Kentucky Wildcats at Indiana Hoosiers · Fri 8:00 PM ET · EV +4.6% · min -147
 - Utah Utes ML -120 (-120) · Dayton Flyers at Utah Utes · Fri 5:30 PM ET · EV +3.4% · min -121
 - Western Illinois Leathernecks ML +200 (+200) · Western Illinois Leathernecks at UAlbany Great Danes · Fri 3:00 PM ET · EV +2.9% · min +200
-- Rutgers Scarlet Knights ML -148 (-148) · Rutgers Scarlet Knights at UNLV Rebels · Thu 8:30 PM ET · EV +2.7% · min -147
 - Utah Valley Wolverines ML -185 (-185) · Utah Valley Wolverines at East Carolina Pirates · Fri 8:00 PM ET · EV +2.5% · min -182
 - OVER 149.5 (-105) · South Alabama Jaguars at SMU Mustangs · Fri 8:00 PM ET · EV +1.8% · min -102
+- Oklahoma State Cowboys ML -118 (-118) · Oklahoma State Cowboys at Minnesota Golden Gophers · Fri 12:30 PM ET · EV +1.8% · min -115
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $490.00 · 135-130-0 · logged this run 1 · open 24
+Bankroll $490.00 · 135-130-0 · logged this run 0 · open 24
 
 ## Data gaps
 
