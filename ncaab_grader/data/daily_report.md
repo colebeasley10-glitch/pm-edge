@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-19
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-20T04:00:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-20T04:15:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,9 +53,10 @@ WHY: Model line Oklahoma State Cowboys -1.5 vs market -1.5 (-0.1 pts) from oppon
 LOGGED: 2026-11-19T23:00:35+00:00 · model ncaab_v1
 ```
 
-## Watch list (23) — positive EV but not a qualified bet
+## Watch list (24) — positive EV but not a qualified bet
 
 - Northwestern Wildcats ML +625 (+625) · Northwestern Wildcats at Virginia Tech Hokies · Fri 3:00 PM ET · EV +19.1% · min +527
+- Campbell Fighting Camels ML +1300 (+1300) · Campbell Fighting Camels at Kansas State Wildcats · Fri 8:00 PM ET · EV +11.1% · min +1198
 - Cal State Bakersfield Roadrunners ML -105 (-105) · Cal State Bakersfield Roadrunners at Idaho Vandals · Fri 9:00 PM ET · EV +6.8% · min -113
 - Iona Gaels ML -185 (-185) · Kansas City Roos at Iona Gaels · Fri 7:00 PM ET · EV +6.3% · min -203
 - Rhode Island Rams ML -142 (-142) · Rhode Island Rams at Liberty Flames · Fri 4:30 PM ET · EV +5.2% · min -150
@@ -66,15 +67,14 @@ LOGGED: 2026-11-19T23:00:35+00:00 · model ncaab_v1
 - Utah Utes ML -120 (-120) · Dayton Flyers at Utah Utes · Fri 5:30 PM ET · EV +3.4% · min -121
 - Western Illinois Leathernecks ML +200 (+200) · Western Illinois Leathernecks at UAlbany Great Danes · Fri 3:00 PM ET · EV +2.9% · min +200
 - Utah Valley Wolverines ML -185 (-185) · Utah Valley Wolverines at East Carolina Pirates · Fri 8:00 PM ET · EV +2.5% · min -182
-- OVER 149.5 (-105) · South Alabama Jaguars at SMU Mustangs · Fri 8:00 PM ET · EV +1.8% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $508.02 · 141-132-0 · logged this run 0 · open 20
+Bankroll $513.27 · 142-132-0 · logged this run 2 · open 21
 
 ## Data gaps
 
-- no line posted yet (11): Averett Cougars @ William & Mary Tribe, Bloomfield Deacons @ Maryland Eastern Shore Hawks, Worcester State Lancers @ Bryant Bulldogs, Central Baptist Mustangs @ Incarnate Word Cardinals, WVU Tech Golden Bears @ Akron Zips, TBD @ Murray State Racers, Paine Lions @ West Georgia Wolves, West Coast Baptist Eagles @ Pepperdine Waves, Neumann Knights @ Lehigh Mountain Hawks, TBD @ NC State Wolfpack, Alabama State Hornets @ Fresno State Bulldogs
-- possession data coverage: 0.985
+- no line posted yet (10): Averett Cougars @ William & Mary Tribe, Bloomfield Deacons @ Maryland Eastern Shore Hawks, Worcester State Lancers @ Bryant Bulldogs, Central Baptist Mustangs @ Incarnate Word Cardinals, WVU Tech Golden Bears @ Akron Zips, Wisconsin Badgers @ Murray State Racers, Paine Lions @ West Georgia Wolves, West Coast Baptist Eagles @ Pepperdine Waves, Neumann Knights @ Lehigh Mountain Hawks, TBD @ NC State Wolfpack
+- possession data coverage: 0.979
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
