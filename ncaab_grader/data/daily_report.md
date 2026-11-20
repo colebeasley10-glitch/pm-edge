@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-20
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-20T22:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-20T22:30:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,7 +53,7 @@ WHY: Model line Richmond Spiders -2.5 vs market -1.5 (+1.1 pts) from opponent-ad
 LOGGED: 2026-11-19T23:45:23+00:00 · model ncaab_v1
 ```
 
-## Watch list (23) — positive EV but not a qualified bet
+## Watch list (21) — positive EV but not a qualified bet
 
 - Campbell Fighting Camels ML +1300 (+1300) · Campbell Fighting Camels at Kansas State Wildcats · Fri 8:00 PM ET · EV +11.1% · min +1198
 - Cal State Bakersfield Roadrunners ML -105 (-105) · Cal State Bakersfield Roadrunners at Idaho Vandals · Fri 9:00 PM ET · EV +6.8% · min -113
@@ -64,9 +64,9 @@ LOGGED: 2026-11-19T23:45:23+00:00 · model ncaab_v1
 - Georgia Bulldogs ML -325 (-325) · Georgia Bulldogs at Georgia Tech Yellow Jackets · Fri 8:00 PM ET · EV +5.1% · min -355
 - Indiana Hoosiers ML -142 (-142) · Kentucky Wildcats at Indiana Hoosiers · Fri 8:00 PM ET · EV +4.6% · min -147
 - La Salle Explorers -1.5 (+110) · Pennsylvania Quakers at La Salle Explorers · Sat 4:00 PM ET · EV +4.3% · min +105
-- Utah Utes ML -120 (-120) · Dayton Flyers at Utah Utes · Fri 5:30 PM ET · EV +3.4% · min -121
 - Utah Valley Wolverines ML -185 (-185) · Utah Valley Wolverines at East Carolina Pirates · Fri 8:00 PM ET · EV +2.5% · min -182
 - NC State Wolfpack -2.5 (-110) · Seton Hall Pirates at NC State Wolfpack · Fri 9:30 PM ET · EV +1.8% · min -110
+- OVER 149.5 (-105) · South Alabama Jaguars at SMU Mustangs · Fri 8:00 PM ET · EV +1.8% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
