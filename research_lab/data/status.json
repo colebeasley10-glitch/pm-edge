@@ -20,7 +20,7 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 11/19"
  },
  "last_run": {
-  "at": "2026-11-20T20:33:39.848469Z",
+  "at": "2026-11-20T20:48:54.019838Z",
   "best_price": {
    "compared": 0,
    "new_picks": 0,
@@ -35,14 +35,14 @@
   },
   "book_errors": 0,
   "coles_plays": {
-   "app_props": 16923,
+   "app_props": 17231,
    "apps": {
     "PrizePicks": {
      "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.prizepicks.com/projections?per_page=2000&single_stat=true&game_mode=pickem",
      "props": null,
      "skipped": {
-      "event_type": 2127,
-      "not_standard": 41485
+      "event_type": 2113,
+      "not_standard": 41667
      },
      "tried": [
       "partner-api.prizepicks.com/projections: 200 but 0 usable",
@@ -52,13 +52,13 @@
     },
     "Sleeper": {
      "error": null,
-     "props": 3891,
+     "props": 3908,
      "tried": null,
      "url": null
     },
     "Underdog": {
      "error": null,
-     "props": 13032,
+     "props": 13323,
      "tried": [
       "api.underdogfantasy.com/beta/v7/over_under_lines: 404",
       "api.underdogfantasy.com/beta/v6/over_under_lines: 426"
@@ -79,12 +79,12 @@
     "Underdog Trae Young Under 2.5 Threes Made -248 vs fair -188 (-8.5%)",
     "Sleeper Immanuel Quickley Over 5.5 Assists -141 vs fair -112 (-9.7%)",
     "Sleeper Quentin Grimes Under 16.5 Points -118 vs fair +106 (-10.0%)",
-    "Sleeper Darryn Peterson Over 27.5 Pts & Rebs & Asts -116 vs fair +108 (-10.6%)",
+    "Sleeper Darryn Peterson Over 27.5 Pts & Rebs & Asts -115 vs fair +108 (-10.1%)",
     "Sleeper Matisse Thybulle Under 1.5 Threes Made -156 vs fair -119 (-10.9%)"
    ],
    "clv_tracked": 0,
    "edges": 0,
-   "matched": 16,
+   "matched": 22,
    "new_plays": 0,
    "pushed": 0,
    "settled": 0,
@@ -92,6 +92,7 @@
   },
   "data_failures": [],
   "ev": {
+   "book_offers": 0,
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
@@ -102,11 +103,13 @@
     "taken_at": "2026-11-01T08:32:40.763365Z"
    },
    "errors": [],
-   "games": 0,
-   "picks": 0
+   "games": 1138,
+   "kalshi_offers": 360,
+   "picks": 2788,
+   "polymarket_offers": 106
   },
   "maker_candidates": {
-   "candidates": 0,
+   "candidates": 530,
    "sharp_agrees": 0
   },
   "my_bets": {
@@ -122,42 +125,56 @@
    "settled": 0
   },
   "odds_fam_board": {
-   "arbs_possible": 0,
+   "arbs_possible": 874,
    "bets_graded": 0,
    "clv_scored": 0,
-   "props": 16,
-   "rows": 16
+   "props": 22,
+   "rows": 2810
   },
   "paper_only": true,
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [],
-   "kalshi_markets": 0,
-   "matched": 0,
-   "note": "no Pinnacle fetch due this round",
-   "pinnacle_games": 0,
-   "requests_today": 56,
-   "samples": [],
-   "skipped": [
-    "football: next in 0 min",
-    "basketball: next in 30 min",
-    "hockey: next in 75 min",
-    "baseball: next in 75 min",
-    "soccer: next in 0 min",
-    "tennis: next in 165 min"
+   "fetched": [
+    "football",
+    "soccer"
    ],
-   "unmatched": {}
+   "kalshi_markets": 6280,
+   "matched": 616,
+   "ncaaf_lines_saved": 60,
+   "pinnacle_games": 1168,
+   "requests_today": 58,
+   "samples": [
+    "no_pinnacle_match: Iowa St. vs UCF: UCF wins",
+    "no_pinnacle_match: Iowa St. vs UCF: Iowa St. wins",
+    "no_pinnacle_match: New Mexico vs Wyoming: Wyoming wins",
+    "no_pinnacle_match: New Mexico vs Wyoming: New Mexico wins",
+    "no_pinnacle_match: University at Albany vs North Carolina A&T: North Carolina A&T wins",
+    "no_pinnacle_match: University at Albany vs North Carolina A&T: University at Albany wins",
+    "no_pinnacle_match: Cornell vs Columbia: Columbia wins",
+    "no_pinnacle_match: Cornell vs Columbia: Cornell wins"
+   ],
+   "skipped": [
+    "basketball: next in 15 min",
+    "hockey: next in 60 min",
+    "baseball: next in 60 min",
+    "tennis: next in 150 min"
+   ],
+   "unmatched": {
+    "no_pinnacle_match": 4012,
+    "pinnacle_line_not_offered": 1537,
+    "selection_not_matched": 115
+   }
   },
   "prop_board": {
    "new_plays": 0,
-   "props": 0,
+   "props": 3,
    "pushed": 0,
    "settled": 0
   },
   "reconciled": true,
   "sharp_plays": {
-   "games": 0,
+   "games": 60,
    "new_plays": 0,
    "pushed": 0,
    "settled": 0
@@ -165,7 +182,7 @@
   "sleeper": {
    "edges": 0,
    "errors": [],
-   "lines": 2449,
+   "lines": 2455,
    "matched_props": 5,
    "unmatched_stats": [
     "anytime_touchdowns",
@@ -223,10 +240,10 @@
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 6,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 6,
+    "scanned": 2788,
     "settle": {
      "marked": 23,
      "pending": 24,
@@ -238,10 +255,10 @@
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 3,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 3,
+    "scanned": 2788,
     "settle": {
      "marked": 18,
      "pending": 18,
@@ -250,6 +267,6 @@
    }
   }
  },
- "last_success": "2026-11-20T20:33:39.848469Z",
+ "last_success": "2026-11-20T20:48:54.019838Z",
  "report_sent": "20261031"
 }
