@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-20T09:30:43.184772Z",
+ "ran_at": "2026-11-20T09:45:45.807665Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -17,7 +17,7 @@
    }
   },
   "polymarket": {
-   "picks_found": 5,
+   "picks_found": 6,
    "opened": 0,
    "skipped": {},
    "benched": true,
@@ -51,6 +51,13 @@
      "edge": 0.0665
     },
     {
+     "ticker": "KXVALORANTGAME-26NOV201930MSCFQ-MSC",
+     "side": "NO",
+     "ask": 0.41,
+     "fair": 0.455,
+     "edge": 0.0279
+    },
+    {
      "ticker": "KXVALORANTGAME-26NOV201930MSCFQ-FQ",
      "side": "YES",
      "ask": 0.42,
@@ -61,10 +68,10 @@
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 268,
-    "kalshi_events": 1922,
-    "matched": 173,
-    "priced": 330,
+    "poly_games": 266,
+    "kalshi_events": 1918,
+    "matched": 171,
+    "priced": 328,
     "best_gaps": [
      [
       0.41,
@@ -83,20 +90,20 @@
       "KXVALORANTGAME-26NOV201930WUSAD-SAD"
      ],
      [
-      0.015,
-      "KXLIGAMXGAME-26NOV20TIJALA-ALA"
-     ],
-     [
-      0.015,
-      "KXDOTA2GAME-26NOV201200KONCALIQUID-LIQUID"
-     ],
-     [
-      0.015,
-      "KXDOTA2GAME-26NOV200900OGNAVI-NAVI"
+      0.01,
+      "KXUFCFIGHT-26NOV21HORALM-ALM"
      ],
      [
       0.01,
-      "KXUFCFIGHT-26NOV21HORALM-ALM"
+      "KXUFCFIGHT-26NOV21HOOORT-ORT"
+     ],
+     [
+      0.008,
+      "KXNCAAMBGAME-26NOV20CCARTENN-CCAR"
+     ],
+     [
+      0.005,
+      "KXURYPDGAME-26NOV20RCMESP-RCM"
      ]
     ]
    }
@@ -108,10 +115,12 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 4,
-   "skipped": {},
+   "opened": 1,
+   "skipped": {
+    "already_holding": 3
+   },
    "diag": {
-    "skipped_settles_late": 3
+    "skipped_settles_late": 4
    }
   },
   "crypto": {
@@ -124,8 +133,8 @@
    "diag": {
     "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.005471805992636642,
-     "ETH-USD": 0.006482982331787422
+     "BTC-USD": 0.005470162171238936,
+     "ETH-USD": 0.00648395059438656
     },
     "best": []
    }
@@ -138,12 +147,12 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 18,
+  "marked": 22,
   "settled": 0
  },
  "shadow_update": {
-  "marked": 7,
-  "settled": 0
+  "marked": 6,
+  "settled": 1
  },
  "live_sharp": {
   "enabled": false,
@@ -169,8 +178,8 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 4493,
-   "open": 22,
+   "picks": 4494,
+   "open": 23,
    "won": 2499,
    "lost": 1972,
    "pl": -1450.5299999999875,
@@ -237,15 +246,15 @@
   {
    "strategy": "polymarket",
    "picks": 209,
-   "open": 7,
-   "won": 78,
+   "open": 6,
+   "won": 79,
    "lost": 124,
-   "pl": -220.26999999999992,
-   "risked": 2049.3599999999997,
-   "clv_sum": -133.0,
-   "clv_n": 166,
-   "roi": -0.107482335948784,
-   "clv": -0.8012048192771084
+   "pl": -219.70999999999992,
+   "risked": 2058.7999999999997,
+   "clv_sum": -127.5,
+   "clv_n": 167,
+   "roi": -0.10671750534291818,
+   "clv": -0.7634730538922155
   },
   {
    "strategy": "weather",
