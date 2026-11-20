@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-19
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-20T01:45:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-20T02:00:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $511.70 (start $500, at risk $15.00) · ¼-Kelly comparison $516.36
-**Season to date (BET tier):** 10-7-0 · flat P/L $+11.70 (+13.8% on risk) · ¼-Kelly P/L $+16.36 · beat close 29%
+**Paper bankroll:** $506.70 (start $500, at risk $10.00) · ¼-Kelly comparison $506.36
+**Season to date (BET tier):** 10-8-0 · flat P/L $+6.70 (+7.4% on risk) · ¼-Kelly P/L $+6.36 · beat close 28%
 
 ## Qualified bets (2)
 
@@ -53,7 +53,7 @@ WHY: Model line Oklahoma State Cowboys -1.5 vs market -1.5 (-0.1 pts) from oppon
 LOGGED: 2026-11-19T23:00:35+00:00 · model ncaab_v1
 ```
 
-## Watch list (24) — positive EV but not a qualified bet
+## Watch list (22) — positive EV but not a qualified bet
 
 - Northwestern Wildcats ML +625 (+625) · Northwestern Wildcats at Virginia Tech Hokies · Fri 3:00 PM ET · EV +19.1% · min +527
 - Cal State Bakersfield Roadrunners ML -105 (-105) · Cal State Bakersfield Roadrunners at Idaho Vandals · Fri 9:00 PM ET · EV +6.8% · min -113
@@ -70,11 +70,11 @@ LOGGED: 2026-11-19T23:00:35+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $490.00 · 135-130-0 · logged this run 0 · open 24
+Bankroll $485.00 · 135-131-0 · logged this run 0 · open 23
 
 ## Data gaps
 
 - no line posted yet (24): Northwest Indian RedHawks @ Portland State Vikings, Averett Cougars @ William & Mary Tribe, Bloomfield Deacons @ Maryland Eastern Shore Hawks, Mercyhurst Lakers @ Canisius Golden Griffins, Worcester State Lancers @ Bryant Bulldogs, Central Baptist Mustangs @ Incarnate Word Cardinals, WVU Tech Golden Bears @ Akron Zips, Loyola Maryland Greyhounds @ Virginia Cavaliers, South Carolina State Bulldogs @ The Citadel Bulldogs, Niagara Purple Eagles @ Delaware State Hornets, TBD @ TBD, Bellarmine Knights @ Eastern Kentucky Colonels, SE Louisiana Lions @ Kennesaw State Owls, Harvard Crimson @ Holy Cross Crusaders, Paine Lions @ West Georgia Wolves …
-- possession data coverage: 0.991
+- possession data coverage: 0.988
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
