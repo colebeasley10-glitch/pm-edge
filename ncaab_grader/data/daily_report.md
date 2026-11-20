@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-19
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-20T03:15:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-20T03:30:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,28 +53,28 @@ WHY: Model line Oklahoma State Cowboys -1.5 vs market -1.5 (-0.1 pts) from oppon
 LOGGED: 2026-11-19T23:00:35+00:00 · model ncaab_v1
 ```
 
-## Watch list (22) — positive EV but not a qualified bet
+## Watch list (25) — positive EV but not a qualified bet
 
 - Northwestern Wildcats ML +625 (+625) · Northwestern Wildcats at Virginia Tech Hokies · Fri 3:00 PM ET · EV +19.1% · min +527
 - Cal State Bakersfield Roadrunners ML -105 (-105) · Cal State Bakersfield Roadrunners at Idaho Vandals · Fri 9:00 PM ET · EV +6.8% · min -113
 - Iona Gaels ML -185 (-185) · Kansas City Roos at Iona Gaels · Fri 7:00 PM ET · EV +6.3% · min -203
 - Rhode Island Rams ML -142 (-142) · Rhode Island Rams at Liberty Flames · Fri 4:30 PM ET · EV +5.2% · min -150
 - Richmond Spiders ML -115 (-115) · Richmond Spiders at Western Kentucky Hilltoppers · Fri 7:00 PM ET · EV +5.2% · min -120
+- Xavier Musketeers ML -142 (-142) · Iowa Hawkeyes at Xavier Musketeers · Fri 7:30 PM ET · EV +5.2% · min -149
 - Georgia Bulldogs ML -325 (-325) · Georgia Bulldogs at Georgia Tech Yellow Jackets · Fri 8:00 PM ET · EV +5.1% · min -355
 - Indiana Hoosiers ML -142 (-142) · Kentucky Wildcats at Indiana Hoosiers · Fri 8:00 PM ET · EV +4.6% · min -147
 - Utah Utes ML -120 (-120) · Dayton Flyers at Utah Utes · Fri 5:30 PM ET · EV +3.4% · min -121
 - Western Illinois Leathernecks ML +200 (+200) · Western Illinois Leathernecks at UAlbany Great Danes · Fri 3:00 PM ET · EV +2.9% · min +200
 - Utah Valley Wolverines ML -185 (-185) · Utah Valley Wolverines at East Carolina Pirates · Fri 8:00 PM ET · EV +2.5% · min -182
 - OVER 149.5 (-105) · South Alabama Jaguars at SMU Mustangs · Fri 8:00 PM ET · EV +1.8% · min -102
-- Oklahoma State Cowboys ML -118 (-118) · Oklahoma State Cowboys at Minnesota Golden Gophers · Fri 12:30 PM ET · EV +1.8% · min -115
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $498.84 · 139-132-0 · logged this run 0 · open 18
+Bankroll $508.02 · 141-132-0 · logged this run 4 · open 20
 
 ## Data gaps
 
-- no line posted yet (22): Averett Cougars @ William & Mary Tribe, Bloomfield Deacons @ Maryland Eastern Shore Hawks, Worcester State Lancers @ Bryant Bulldogs, Central Baptist Mustangs @ Incarnate Word Cardinals, WVU Tech Golden Bears @ Akron Zips, Loyola Maryland Greyhounds @ Virginia Cavaliers, South Carolina State Bulldogs @ The Citadel Bulldogs, Niagara Purple Eagles @ Delaware State Hornets, TBD @ Murray State Racers, Bellarmine Knights @ Eastern Kentucky Colonels, SE Louisiana Lions @ Kennesaw State Owls, Harvard Crimson @ Holy Cross Crusaders, Paine Lions @ West Georgia Wolves, Wagner Seahawks @ Maryland Terrapins, UT Arlington Mavericks @ Northwestern State Demons …
-- possession data coverage: 0.981
+- no line posted yet (11): Averett Cougars @ William & Mary Tribe, Bloomfield Deacons @ Maryland Eastern Shore Hawks, Worcester State Lancers @ Bryant Bulldogs, Central Baptist Mustangs @ Incarnate Word Cardinals, WVU Tech Golden Bears @ Akron Zips, TBD @ Murray State Racers, Paine Lions @ West Georgia Wolves, West Coast Baptist Eagles @ Pepperdine Waves, Neumann Knights @ Lehigh Mountain Hawks, TBD @ NC State Wolfpack, Alabama State Hornets @ Fresno State Bulldogs
+- possession data coverage: 0.976
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
