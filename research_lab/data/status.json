@@ -20,7 +20,7 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 11/19"
  },
  "last_run": {
-  "at": "2026-11-20T19:34:38.964339Z",
+  "at": "2026-11-20T19:49:13.148343Z",
   "best_price": {
    "compared": 0,
    "new_picks": 0,
@@ -35,14 +35,14 @@
   },
   "book_errors": 0,
   "coles_plays": {
-   "app_props": 16609,
+   "app_props": 16728,
    "apps": {
     "PrizePicks": {
      "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.prizepicks.com/projections?per_page=2000&single_stat=true&game_mode=pickem",
      "props": null,
      "skipped": {
-      "event_type": 2033,
-      "not_standard": 40290
+      "event_type": 2062,
+      "not_standard": 40725
      },
      "tried": [
       "partner-api.prizepicks.com/projections: 200 but 0 usable",
@@ -52,13 +52,13 @@
     },
     "Sleeper": {
      "error": null,
-     "props": 3798,
+     "props": 3823,
      "tried": null,
      "url": null
     },
     "Underdog": {
      "error": null,
-     "props": 12811,
+     "props": 12905,
      "tried": [
       "api.underdogfantasy.com/beta/v7/over_under_lines: 404",
       "api.underdogfantasy.com/beta/v6/over_under_lines: 426"
@@ -73,25 +73,26 @@
     ]
    },
    "closest": [
-    "Underdog Mo Bamba Under 8.5 Rebounds -115 vs fair -124 (+3.6%)",
     "Sleeper Kevin Durant Under 21.5 Points -130 vs fair -125 (-1.8%)",
     "Underdog Jaylin Williams Over 5.5 Points -122 vs fair -113 (-3.4%)",
+    "Underdog Josh Giddey Over 1.5 Threes Made +108 vs fair +115 (-3.5%)",
+    "Sleeper Josh Giddey Over 1.5 Threes Made +107 vs fair +115 (-3.9%)",
     "Underdog Kevin Durant Under 21.5 Points -137 vs fair -125 (-3.9%)",
-    "Sleeper Mo Bamba Under 8.5 Rebounds -137 vs fair -124 (-4.2%)",
+    "Sleeper Shai Gilgeous-Alexander Over 32.5 Points -123 vs fair -112 (-4.3%)",
     "Underdog Ziaire Williams Over 7.5 Points -125 vs fair -113 (-4.3%)",
-    "Sleeper Kevin Huerter Under 12.5 Points -143 vs fair -129 (-4.3%)",
-    "Sleeper Shai Gilgeous-Alexander Over 32.5 Points -125 vs fair -112 (-4.8%)"
+    "Sleeper Kevin Huerter Under 12.5 Points -143 vs fair -129 (-4.3%)"
    ],
    "clv_tracked": 1,
-   "edges": 1,
+   "edges": 0,
    "matched": 726,
-   "new_plays": 1,
-   "pushed": 1,
+   "new_plays": 0,
+   "pushed": 0,
    "settled": 0,
    "voided_mismatched": 0
   },
   "data_failures": [],
   "ev": {
+   "book_offers": 0,
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
@@ -102,11 +103,13 @@
     "taken_at": "2026-11-01T08:32:40.763365Z"
    },
    "errors": [],
-   "games": 0,
-   "picks": 0
+   "games": 75,
+   "kalshi_offers": 136,
+   "picks": 682,
+   "polymarket_offers": 104
   },
   "maker_candidates": {
-   "candidates": 0,
+   "candidates": 502,
    "sharp_agrees": 0
   },
   "my_bets": {
@@ -122,32 +125,45 @@
    "settled": 0
   },
   "odds_fam_board": {
-   "arbs_possible": 0,
+   "arbs_possible": 670,
    "bets_graded": 0,
    "clv_scored": 0,
    "props": 732,
-   "rows": 732
+   "rows": 1414
   },
   "paper_only": true,
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [],
-   "kalshi_markets": 0,
-   "matched": 0,
-   "note": "no Pinnacle fetch due this round",
-   "pinnacle_games": 0,
-   "requests_today": 52,
-   "samples": [],
-   "skipped": [
-    "football: next in 14 min",
-    "basketball: next in 14 min",
-    "hockey: next in 14 min",
-    "baseball: next in 14 min",
-    "soccer: next in 59 min",
-    "tennis: next in 224 min"
+   "fetched": [
+    "football",
+    "hockey",
+    "baseball"
    ],
-   "unmatched": {}
+   "kalshi_markets": 6104,
+   "matched": 402,
+   "ncaaf_lines_saved": 60,
+   "pinnacle_games": 75,
+   "requests_today": 55,
+   "samples": [
+    "no_pinnacle_match: Iowa St. vs UCF: UCF wins",
+    "no_pinnacle_match: Iowa St. vs UCF: Iowa St. wins",
+    "no_pinnacle_match: New Mexico vs Wyoming: Wyoming wins",
+    "no_pinnacle_match: New Mexico vs Wyoming: New Mexico wins",
+    "no_pinnacle_match: University at Albany vs North Carolina A&T: North Carolina A&T wins",
+    "no_pinnacle_match: University at Albany vs North Carolina A&T: University at Albany wins",
+    "no_pinnacle_match: Cornell vs Columbia: Columbia wins",
+    "no_pinnacle_match: Cornell vs Columbia: Cornell wins"
+   ],
+   "skipped": [
+    "basketball: next in 0 min",
+    "soccer: next in 45 min",
+    "tennis: next in 209 min"
+   ],
+   "unmatched": {
+    "no_pinnacle_match": 4163,
+    "pinnacle_line_not_offered": 1539
+   }
   },
   "prop_board": {
    "new_plays": 0,
@@ -157,7 +173,7 @@
   },
   "reconciled": true,
   "sharp_plays": {
-   "games": 0,
+   "games": 63,
    "new_plays": 0,
    "pushed": 0,
    "settled": 0
@@ -165,7 +181,7 @@
   "sleeper": {
    "edges": 0,
    "errors": [],
-   "lines": 2424,
+   "lines": 2439,
    "matched_props": 320,
    "unmatched_stats": [
     "anytime_touchdowns",
@@ -223,10 +239,10 @@
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 3,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 3,
+    "scanned": 682,
     "settle": {
      "marked": 23,
      "pending": 24,
@@ -238,10 +254,10 @@
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 1,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 1,
+    "scanned": 682,
     "settle": {
      "marked": 18,
      "pending": 18,
@@ -250,6 +266,6 @@
    }
   }
  },
- "last_success": "2026-11-20T19:34:38.964339Z",
+ "last_success": "2026-11-20T19:49:13.148343Z",
  "report_sent": "20261031"
 }
