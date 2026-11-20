@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-20
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-20T22:00:32+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-20T22:15:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -74,7 +74,7 @@ Bankroll $508.07 · 144-135-0 · logged this run 0 · open 21
 
 ## Data gaps
 
-- no line posted yet (30): Worcester State Lancers @ Bryant Bulldogs, Central Baptist Mustangs @ Incarnate Word Cardinals, WVU Tech Golden Bears @ Akron Zips, Paine Lions @ West Georgia Wolves, West Coast Baptist Eagles @ Pepperdine Waves, Neumann Knights @ Lehigh Mountain Hawks, Siena Saints @ Bucknell Bison, South Carolina Upstate Spartans @ UNC Greensboro Spartans, Columbia Lions @ Boston University Terriers, Queens University Royals @ LSU Tigers, New Hampshire Wildcats @ New Haven Chargers, Western Illinois Leathernecks @ Mercyhurst Lakers, Virginia Lynchburg Dragons @ James Madison Dukes, Calumet St. Joseph Crimson Wave @ Purdue Fort Wayne Mastodons, Stony Brook Seawolves @ Saint Peter's Peacocks …
-- possession data coverage: 0.991
+- no line posted yet (30): Worcester State Lancers @ Bryant Bulldogs, WVU Tech Golden Bears @ Akron Zips, Central Baptist Mustangs @ Incarnate Word Cardinals, Paine Lions @ West Georgia Wolves, West Coast Baptist Eagles @ Pepperdine Waves, Neumann Knights @ Lehigh Mountain Hawks, South Carolina Upstate Spartans @ UNC Greensboro Spartans, Columbia Lions @ Boston University Terriers, Queens University Royals @ LSU Tigers, New Hampshire Wildcats @ New Haven Chargers, Western Illinois Leathernecks @ Mercyhurst Lakers, Virginia Lynchburg Dragons @ James Madison Dukes, Calumet St. Joseph Crimson Wave @ Purdue Fort Wayne Mastodons, Stony Brook Seawolves @ Saint Peter's Peacocks, Cornell Big Red @ Morgan State Bears …
+- possession data coverage: 0.989
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
