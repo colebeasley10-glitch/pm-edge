@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-19
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-20T02:40:10+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-20T02:45:22+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -70,11 +70,11 @@ LOGGED: 2026-11-19T23:00:35+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $485.00 · 135-131-0 · logged this run 0 · open 23
+Bankroll $498.84 · 139-132-0 · logged this run 0 · open 18
 
 ## Data gaps
 
-- no line posted yet (24): Northwest Indian RedHawks @ Portland State Vikings, Averett Cougars @ William & Mary Tribe, Bloomfield Deacons @ Maryland Eastern Shore Hawks, Mercyhurst Lakers @ Canisius Golden Griffins, Worcester State Lancers @ Bryant Bulldogs, Central Baptist Mustangs @ Incarnate Word Cardinals, WVU Tech Golden Bears @ Akron Zips, Loyola Maryland Greyhounds @ Virginia Cavaliers, South Carolina State Bulldogs @ The Citadel Bulldogs, Niagara Purple Eagles @ Delaware State Hornets, TBD @ TBD, Bellarmine Knights @ Eastern Kentucky Colonels, SE Louisiana Lions @ Kennesaw State Owls, Harvard Crimson @ Holy Cross Crusaders, Paine Lions @ West Georgia Wolves …
-- possession data coverage: 0.988
+- no line posted yet (23): Northwest Indian RedHawks @ Portland State Vikings, Averett Cougars @ William & Mary Tribe, Bloomfield Deacons @ Maryland Eastern Shore Hawks, Worcester State Lancers @ Bryant Bulldogs, Central Baptist Mustangs @ Incarnate Word Cardinals, WVU Tech Golden Bears @ Akron Zips, Loyola Maryland Greyhounds @ Virginia Cavaliers, South Carolina State Bulldogs @ The Citadel Bulldogs, Niagara Purple Eagles @ Delaware State Hornets, TBD @ Murray State Racers, Bellarmine Knights @ Eastern Kentucky Colonels, SE Louisiana Lions @ Kennesaw State Owls, Harvard Crimson @ Holy Cross Crusaders, Paine Lions @ West Georgia Wolves, Wagner Seahawks @ Maryland Terrapins …
+- possession data coverage: 0.98
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
