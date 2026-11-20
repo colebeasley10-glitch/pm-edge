@@ -20,7 +20,7 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 11/19"
  },
  "last_run": {
-  "at": "2026-11-20T14:49:21.254872Z",
+  "at": "2026-11-20T15:04:32.949285Z",
   "best_price": {
    "compared": 0,
    "new_picks": 0,
@@ -35,14 +35,14 @@
   },
   "book_errors": 0,
   "coles_plays": {
-   "app_props": 15327,
+   "app_props": 15401,
    "apps": {
     "PrizePicks": {
      "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.prizepicks.com/projections?per_page=2000&single_stat=true&game_mode=pickem",
      "props": null,
      "skipped": {
-      "event_type": 1557,
-      "not_standard": 35744
+      "event_type": 1582,
+      "not_standard": 35902
      },
      "tried": [
       "partner-api.prizepicks.com/projections: 200 but 0 usable",
@@ -52,13 +52,13 @@
     },
     "Sleeper": {
      "error": null,
-     "props": 3355,
+     "props": 3397,
      "tried": null,
      "url": null
     },
     "Underdog": {
      "error": null,
-     "props": 11972,
+     "props": 12004,
      "tried": [
       "api.underdogfantasy.com/beta/v7/over_under_lines: 404",
       "api.underdogfantasy.com/beta/v6/over_under_lines: 426"
@@ -73,7 +73,7 @@
     ]
    },
    "closest": [
-    "Sleeper Scottie Barnes Over 23.5 Points -120 vs fair -113 (-2.8%)",
+    "Sleeper Kevin Durant Under 21.5 Points -133 vs fair -128 (-1.7%)",
     "Sleeper Tre Jones Under 11.5 Points -132 vs fair -119 (-4.4%)",
     "Underdog Tre Jones Under 11.5 Points -137 vs fair -119 (-5.9%)",
     "Underdog Andrew Nembhard Under 15.5 Points -137 vs fair -118 (-6.1%)",
@@ -92,6 +92,7 @@
   },
   "data_failures": [],
   "ev": {
+   "book_offers": 0,
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
@@ -102,11 +103,13 @@
     "taken_at": "2026-11-01T08:32:40.763365Z"
    },
    "errors": [],
-   "games": 0,
-   "picks": 0
+   "games": 48,
+   "kalshi_offers": 12,
+   "picks": 164,
+   "polymarket_offers": 48
   },
   "maker_candidates": {
-   "candidates": 0,
+   "candidates": 80,
    "sharp_agrees": 0
   },
   "my_bets": {
@@ -118,46 +121,58 @@
    "bets_settled": 0,
    "digest": 0,
    "pushed": 0,
-   "sent": 0,
+   "sent": 4,
    "settled": 0
   },
   "odds_fam_board": {
-   "arbs_possible": 0,
+   "arbs_possible": 118,
    "bets_graded": 0,
    "clv_scored": 0,
    "props": 124,
-   "rows": 124
+   "rows": 288
   },
   "paper_only": true,
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [],
-   "kalshi_markets": 0,
-   "matched": 0,
-   "note": "no Pinnacle fetch due this round",
-   "pinnacle_games": 0,
-   "requests_today": 37,
-   "samples": [],
-   "skipped": [
-    "football: next in 29 min",
-    "basketball: next in 14 min",
-    "hockey: next in 44 min",
-    "baseball: next in 44 min",
-    "soccer: next in 164 min",
-    "tennis: next in 149 min"
+   "fetched": [
+    "basketball"
    ],
-   "unmatched": {}
+   "kalshi_markets": 622,
+   "matched": 46,
+   "pinnacle_games": 60,
+   "requests_today": 38,
+   "samples": [
+    "no_pinnacle_match: Phoenix vs Utah: Phoenix wins",
+    "no_pinnacle_match: Phoenix vs Utah: Utah wins",
+    "no_pinnacle_match: Houston vs Denver: Houston wins",
+    "no_pinnacle_match: Houston vs Denver: Denver wins",
+    "no_pinnacle_match: Sacramento vs Los Angeles L: Sacramento wins",
+    "no_pinnacle_match: Sacramento vs Los Angeles L: Los Angeles L wins",
+    "no_pinnacle_match: Milwaukee vs Philadelphia: Milwaukee wins",
+    "no_pinnacle_match: Milwaukee vs Philadelphia: Philadelphia wins"
+   ],
+   "skipped": [
+    "football: next in 14 min",
+    "hockey: next in 29 min",
+    "baseball: next in 29 min",
+    "soccer: next in 149 min",
+    "tennis: next in 134 min"
+   ],
+   "unmatched": {
+    "no_pinnacle_match": 412,
+    "pinnacle_line_not_offered": 164
+   }
   },
   "prop_board": {
-   "new_plays": 0,
-   "props": 0,
+   "new_plays": 3,
+   "props": 62,
    "pushed": 0,
    "settled": 0
   },
   "reconciled": true,
   "sharp_plays": {
-   "games": 0,
+   "games": 60,
    "new_plays": 0,
    "pushed": 0,
    "settled": 0
@@ -165,7 +180,7 @@
   "sleeper": {
    "edges": 0,
    "errors": [],
-   "lines": 2214,
+   "lines": 2212,
    "matched_props": 62,
    "unmatched_stats": [
     "anytime_touchdowns",
@@ -218,13 +233,13 @@
   "strategies": {
    "EV_FINDER_v2": {
     "filled": 0,
-    "no_fill": 0,
+    "no_fill": 2,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 4,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 2,
+    "scanned": 164,
     "settle": {
      "marked": 24,
      "pending": 24,
@@ -233,13 +248,13 @@
    },
    "EV_FINDER_v3": {
     "filled": 0,
-    "no_fill": 0,
+    "no_fill": 2,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 3,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 1,
+    "scanned": 164,
     "settle": {
      "marked": 18,
      "pending": 18,
@@ -248,6 +263,6 @@
    }
   }
  },
- "last_success": "2026-11-20T14:49:21.254872Z",
+ "last_success": "2026-11-20T15:04:32.949285Z",
  "report_sent": "20261031"
 }
