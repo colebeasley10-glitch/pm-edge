@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-20T13:00:53.385892Z",
+ "ran_at": "2026-11-20T13:15:40.222478Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -33,15 +33,15 @@
      "ticker": "KXNCAAFGAME-26NOV21SDAKILST-ILST",
      "side": "NO",
      "ask": 0.54,
-     "fair": 0.955,
-     "edge": 0.3972
+     "fair": 0.95,
+     "edge": 0.3922
     },
     {
      "ticker": "KXNCAAFGAME-26NOV21SDAKILST-SDAK",
      "side": "YES",
-     "ask": 0.54,
-     "fair": 0.955,
-     "edge": 0.3972
+     "ask": 0.55,
+     "fair": 0.95,
+     "edge": 0.3822
     },
     {
      "ticker": "KXNHLGAME-26NOV21PITNSH-PIT",
@@ -75,13 +75,13 @@
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 267,
-    "kalshi_events": 1886,
-    "matched": 166,
-    "priced": 318,
+    "poly_games": 268,
+    "kalshi_events": 1890,
+    "matched": 169,
+    "priced": 327,
     "best_gaps": [
      [
-      0.415,
+      0.4,
       "KXNCAAFGAME-26NOV21SDAKILST-SDAK"
      ],
      [
@@ -122,67 +122,61 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 2,
+   "opened": 1,
    "skipped": {
-    "already_holding": 1,
-    "wide_spread": 1
+    "wide_spread": 1,
+    "same_game": 1,
+    "already_holding": 1
    },
    "diag": {
     "skipped_settles_late": 0
    }
   },
   "crypto": {
-   "picks_found": 2,
+   "picks_found": 1,
    "opened": 0,
    "skipped": {},
    "benched": true,
    "shadow": [
     {
-     "ticker": "KXBTCD-26NOV2017-T62499.99",
-     "side": "NO",
-     "ask": 0.71,
-     "fair": 0.7873,
-     "edge": 0.0623
-    },
-    {
-     "ticker": "KXBTCD-26NOV2017-T62999.99",
-     "side": "NO",
-     "ask": 0.82,
-     "fair": 0.885,
-     "edge": 0.0542
+     "ticker": "KXBTCD-26NOV2017-T59999.99",
+     "side": "YES",
+     "ask": 0.84,
+     "fair": 0.906,
+     "edge": 0.056
     }
    ],
    "shadow_opened": 0,
    "diag": {
-    "markets_priced": 588,
+    "markets_priced": 100,
     "vol": {
-     "BTC-USD": 0.0052728588286428775,
-     "ETH-USD": 0.005968090655434795
+     "BTC-USD": 0.0052713408681581645,
+     "ETH-USD": 0.005974064991088491
     },
     "best": [
      [
-      -0.087,
+      -0.072,
       "KXBTCD-26NOV2017-T62499.99"
      ],
      [
-      -0.075,
+      0.07,
+      "KXBTCD-26NOV2017-T59499.99"
+     ],
+     [
+      0.066,
+      "KXBTCD-26NOV2017-T59999.99"
+     ],
+     [
+      0.065,
+      "KXBTCD-26NOV2017-T58999.99"
+     ],
+     [
+      -0.063,
       "KXBTCD-26NOV2017-T62999.99"
      ],
      [
-      -0.072,
-      "KXBTCD-26NOV2017-T61999.99"
-     ],
-     [
-      -0.067,
-      "KXETHD-26NOV2009-T1734.99"
-     ],
-     [
-      -0.065,
-      "KXETHD-26NOV2009-T1729.99"
-     ],
-     [
-      -0.061,
-      "KXETHD-26NOV2009-T1739.99"
+      -0.047,
+      "KXBTCD-26NOV2017-T63999.99"
      ]
     ]
    }
@@ -195,12 +189,12 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 21,
+  "marked": 22,
   "settled": 1
  },
  "shadow_update": {
   "marked": 6,
-  "settled": 0
+  "settled": 7
  },
  "live_sharp": {
   "enabled": false,
@@ -226,16 +220,16 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 4522,
+   "picks": 4523,
    "open": 24,
    "won": 2507,
-   "lost": 1991,
-   "pl": -1578.5099999999875,
-   "risked": 45098.84000000019,
-   "clv_sum": -2854.62,
-   "clv_n": 4441,
-   "roi": -0.035001121980077106,
-   "clv": -0.6427876604368385
+   "lost": 1992,
+   "pl": -1588.9599999999875,
+   "risked": 45109.29000000019,
+   "clv_sum": -2871.62,
+   "clv_n": 4442,
+   "roi": -0.035224673232497804,
+   "clv": -0.6464700585321926
   },
   {
    "strategy": "weather",
@@ -307,15 +301,15 @@
   {
    "strategy": "weather",
    "picks": 396,
-   "open": 28,
-   "won": 211,
-   "lost": 157,
-   "pl": -144.5800000000002,
-   "risked": 3678.5799999999945,
-   "clv_sum": -218.0,
-   "clv_n": 142,
-   "roi": -0.03930320939058018,
-   "clv": -1.5352112676056338
+   "open": 21,
+   "won": 216,
+   "lost": 159,
+   "pl": -138.7300000000002,
+   "risked": 3747.729999999993,
+   "clv_sum": -223.0,
+   "clv_n": 146,
+   "roi": -0.03701707433566464,
+   "clv": -1.5273972602739727
   }
  ]
 }
