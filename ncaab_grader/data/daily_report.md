@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-20
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-20T20:45:27+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-20T21:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,7 +31,7 @@ WHY: Model line Richmond Spiders -2.5 vs market -1.5 (+1.1 pts) from opponent-ad
 LOGGED: 2026-11-19T23:45:23+00:00 · model ncaab_v1
 ```
 
-## Watch list (22) — positive EV but not a qualified bet
+## Watch list (21) — positive EV but not a qualified bet
 
 - Campbell Fighting Camels ML +1300 (+1300) · Campbell Fighting Camels at Kansas State Wildcats · Fri 8:00 PM ET · EV +11.1% · min +1198
 - Cal State Bakersfield Roadrunners ML -105 (-105) · Cal State Bakersfield Roadrunners at Idaho Vandals · Fri 9:00 PM ET · EV +6.8% · min -113
@@ -53,6 +53,6 @@ Bankroll $508.07 · 144-135-0 · logged this run 0 · open 19
 ## Data gaps
 
 - no line posted yet (30): Worcester State Lancers @ Bryant Bulldogs, Central Baptist Mustangs @ Incarnate Word Cardinals, WVU Tech Golden Bears @ Akron Zips, Paine Lions @ West Georgia Wolves, West Coast Baptist Eagles @ Pepperdine Waves, Neumann Knights @ Lehigh Mountain Hawks, Siena Saints @ Bucknell Bison, South Carolina Upstate Spartans @ UNC Greensboro Spartans, Detroit Mercy Titans @ Michigan State Spartans, Columbia Lions @ Boston University Terriers, Queens University Royals @ LSU Tigers, New Hampshire Wildcats @ New Haven Chargers, Kent State Golden Flashes @ Cleveland State Vikings, Denver Pioneers @ Eastern Michigan Eagles, Mercyhurst Lakers @ Western Illinois Leathernecks …
-- possession data coverage: 0.989
+- possession data coverage: 0.99
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
