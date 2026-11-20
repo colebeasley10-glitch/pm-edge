@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-20
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-20T23:30:35+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-20T23:45:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,7 +53,7 @@ WHY: Model line Richmond Spiders -2.5 vs market -1.5 (+1.1 pts) from opponent-ad
 LOGGED: 2026-11-19T23:45:23+00:00 · model ncaab_v1
 ```
 
-## Watch list (23) — positive EV but not a qualified bet
+## Watch list (28) — positive EV but not a qualified bet
 
 - Campbell Fighting Camels ML +1300 (+1300) · Campbell Fighting Camels at Kansas State Wildcats · Fri 8:00 PM ET · EV +11.1% · min +1198
 - Cal State Bakersfield Roadrunners ML -105 (-105) · Cal State Bakersfield Roadrunners at Idaho Vandals · Fri 9:00 PM ET · EV +6.8% · min -113
@@ -61,20 +61,20 @@ LOGGED: 2026-11-19T23:45:23+00:00 · model ncaab_v1
 - NC State Wolfpack ML -142 (-142) · Seton Hall Pirates at NC State Wolfpack · Fri 9:30 PM ET · EV +5.4% · min -150
 - Richmond Spiders ML -115 (-115) · Richmond Spiders at Western Kentucky Hilltoppers · Fri 7:00 PM ET · EV +5.2% · min -120
 - Xavier Musketeers ML -142 (-142) · Iowa Hawkeyes at Xavier Musketeers · Fri 7:30 PM ET · EV +5.2% · min -149
+- La Salle Explorers ML -110 (-110) · Pennsylvania Quakers at La Salle Explorers · Sat 4:00 PM ET · EV +5.1% · min -115
 - Georgia Bulldogs ML -325 (-325) · Georgia Bulldogs at Georgia Tech Yellow Jackets · Fri 8:00 PM ET · EV +5.1% · min -355
 - Indiana Hoosiers ML -142 (-142) · Kentucky Wildcats at Indiana Hoosiers · Fri 8:00 PM ET · EV +4.6% · min -147
 - La Salle Explorers -1.5 (+110) · Pennsylvania Quakers at La Salle Explorers · Sat 4:00 PM ET · EV +4.3% · min +105
+- California Baptist Lancers ML +700 (+700) · California Baptist Lancers at Loyola Marymount Lions · Sat 7:00 PM ET · EV +4.1% · min +692
 - Utah Valley Wolverines ML -185 (-185) · Utah Valley Wolverines at East Carolina Pirates · Fri 8:00 PM ET · EV +2.5% · min -182
-- NC State Wolfpack -2.5 (-110) · Seton Hall Pirates at NC State Wolfpack · Fri 9:30 PM ET · EV +1.8% · min -110
-- OVER 149.5 (-105) · South Alabama Jaguars at SMU Mustangs · Fri 8:00 PM ET · EV +1.8% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $508.07 · 144-135-0 · logged this run 0 · open 21
+Bankroll $503.07 · 144-136-0 · logged this run 1 · open 21
 
 ## Data gaps
 
 - no line posted yet (30): Central Baptist Mustangs @ Incarnate Word Cardinals, Paine Lions @ West Georgia Wolves, West Coast Baptist Eagles @ Pepperdine Waves, Neumann Knights @ Lehigh Mountain Hawks, Queens University Royals @ LSU Tigers, Western Illinois Leathernecks @ Mercyhurst Lakers, Virginia Lynchburg Dragons @ James Madison Dukes, Calumet St. Joseph Crimson Wave @ Purdue Fort Wayne Mastodons, Little Rock Trojans @ North Florida Ospreys, Penn State Behrend Lions @ Colgate Raiders, TBD @ TBD, UT Rio Grande Valley Vaqueros @ Austin Peay Governors, Army Black Knights @ Binghamton Bearcats, Clinton Golden Bears @ Furman Paladins, Justice Lions @ Northern Colorado Bears …
-- possession data coverage: 0.989
+- possession data coverage: 0.986
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
