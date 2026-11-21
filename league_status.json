@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-21T10:15:35.172728Z",
+ "ran_at": "2026-11-21T10:30:42.664414Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -44,6 +44,13 @@
      "edge": 0.2474
     },
     {
+     "ticker": "KXITFWMATCH-26NOV21GUTGIA-GIA",
+     "side": "YES",
+     "ask": 0.35,
+     "fair": 0.605,
+     "edge": 0.2389
+    },
+    {
      "ticker": "KXNCAAWBGAME-26NOV21KENTCLEV-KENT",
      "side": "YES",
      "ask": 0.43,
@@ -65,31 +72,28 @@
      "edge": 0.1274
     },
     {
-     "ticker": "KXITFWMATCH-26NOV21GUTGIA-GIA",
-     "side": "YES",
-     "ask": 0.54,
-     "fair": 0.605,
-     "edge": 0.0472
-    },
-    {
      "ticker": "KXNCAAWBGAME-26NOV21LBSUSJSU-LBSU",
      "side": "YES",
-     "ask": 0.23,
+     "ask": 0.22,
      "fair": 0.275,
-     "edge": 0.0324
+     "edge": 0.0428
     }
    ],
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 284,
-    "kalshi_events": 1808,
-    "matched": 178,
-    "priced": 341,
+    "poly_games": 286,
+    "kalshi_events": 1809,
+    "matched": 180,
+    "priced": 345,
     "best_gaps": [
      [
       0.935,
       "KXNCAAWBGAME-26NOV21DSURUTG-DSU"
+     ],
+     [
+      0.255,
+      "KXITFWMATCH-26NOV21GUTGIA-GIA"
      ],
      [
       0.185,
@@ -100,24 +104,20 @@
       "KXNCAAWBGAME-26NOV21TARLNICH-NICH"
      ],
      [
-      0.065,
-      "KXITFWMATCH-26NOV21GUTGIA-GIA"
-     ],
-     [
-      0.045,
+      0.055,
       "KXNCAAWBGAME-26NOV21LBSUSJSU-LBSU"
      ],
      [
-      0.015,
-      "KXLIGAMXGAME-26NOV21TIGAME-TIG"
+      0.02,
+      "KXTACAPORTGAME-26NOV21ATLCAS-CAS"
      ],
      [
       0.015,
-      "KXDOTA2GAME-26NOV210900NAVITY-NAVI"
+      "KXVALORANTGAME-26NOV211930SROAFS-OAFS"
      ],
      [
       0.015,
-      "KXCS2GAME-26NOV210700XISTA-STA"
+      "KXVALORANTGAME-26NOV211700SRGCQOR-SRGC"
      ]
     ]
    }
@@ -129,13 +129,13 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 0,
+   "opened": 1,
    "skipped": {
-    "same_game": 2,
-    "already_holding": 2
+    "already_holding": 1,
+    "same_game": 2
    },
    "diag": {
-    "skipped_settles_late": 0
+    "skipped_settles_late": 1
    }
   },
   "crypto": {
@@ -148,8 +148,8 @@
    "diag": {
     "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.00922044123245474,
-     "ETH-USD": 0.010863381361385944
+     "BTC-USD": 0.009222173690862267,
+     "ETH-USD": 0.010883027096067803
     },
     "best": []
    }
@@ -167,7 +167,7 @@
  },
  "shadow_update": {
   "marked": 13,
-  "settled": 4
+  "settled": 0
  },
  "live_sharp": {
   "enabled": false,
@@ -206,8 +206,8 @@
   },
   {
    "strategy": "sharp",
-   "picks": 4671,
-   "open": 40,
+   "picks": 4672,
+   "open": 41,
    "won": 2568,
    "lost": 2063,
    "pl": -1815.7999999999865,
