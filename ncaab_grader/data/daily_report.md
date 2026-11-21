@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-20
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-21T04:15:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-21T04:30:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -48,11 +48,11 @@ LOGGED: 2026-11-20T22:00:32+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $505.36 · 152-143-0 · logged this run 2 · open 11
+Bankroll $505.36 · 152-143-0 · logged this run 0 · open 11
 
 ## Data gaps
 
 - no line posted yet (8): Virginia Lynchburg Dragons @ James Madison Dukes, Calumet St. Joseph Crimson Wave @ Purdue Fort Wayne Mastodons, Penn State Behrend Lions @ Colgate Raiders, UT Rio Grande Valley Vaqueros @ Austin Peay Governors, Clinton Golden Bears @ Furman Paladins, Justice Lions @ Northern Colorado Bears, Southern Illinois Salukis @ TBD, Southwestern Adventist Knights @ Abilene Christian Wildcats
-- possession data coverage: 0.975
+- possession data coverage: 0.979
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
