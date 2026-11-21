@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-20
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-21T00:45:35+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-21T00:58:07+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -52,7 +52,7 @@ Bankroll $503.07 · 144-136-0 · logged this run 0 · open 22
 
 ## Data gaps
 
-- no line posted yet (30): West Coast Baptist Eagles @ Pepperdine Waves, Neumann Knights @ Lehigh Mountain Hawks, Queens University Royals @ LSU Tigers, Western Illinois Leathernecks @ Mercyhurst Lakers, Virginia Lynchburg Dragons @ James Madison Dukes, Calumet St. Joseph Crimson Wave @ Purdue Fort Wayne Mastodons, Penn State Behrend Lions @ Colgate Raiders, TBD @ TBD, UT Rio Grande Valley Vaqueros @ Austin Peay Governors, Army Black Knights @ Binghamton Bearcats, Clinton Golden Bears @ Furman Paladins, Justice Lions @ Northern Colorado Bears, UAlbany Great Danes @ Canisius Golden Griffins, Longwood Lancers @ East Tennessee State Buccaneers, Central Arkansas Bears @ Jacksonville Dolphins …
+- no line posted yet (28): Queens University Royals @ LSU Tigers, Western Illinois Leathernecks @ Mercyhurst Lakers, Virginia Lynchburg Dragons @ James Madison Dukes, Calumet St. Joseph Crimson Wave @ Purdue Fort Wayne Mastodons, Penn State Behrend Lions @ Colgate Raiders, TBD @ TBD, UT Rio Grande Valley Vaqueros @ Austin Peay Governors, Army Black Knights @ Binghamton Bearcats, Clinton Golden Bears @ Furman Paladins, Justice Lions @ Northern Colorado Bears, UAlbany Great Danes @ Canisius Golden Griffins, Longwood Lancers @ East Tennessee State Buccaneers, Central Arkansas Bears @ Jacksonville Dolphins, Winthrop Eagles @ Wofford Terriers, Southern Miss Golden Eagles @ Nicholls Colonels …
 - possession data coverage: 0.99
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
