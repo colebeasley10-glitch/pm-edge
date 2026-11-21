@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-21
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-21T22:27:49+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-21T22:30:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,6 +53,6 @@ Bankroll $510.22 · 156-146-0 · logged this run 0 · open 7
 ## Data gaps
 
 - no line posted yet (30): Southwestern Adventist Knights @ Abilene Christian Wildcats, Miami (OH) RedHawks @ UIC Flames, Western Illinois Leathernecks @ Canisius Golden Griffins, Lancaster Bible Chargers @ UMBC Retrievers, Fairfield Stags @ Long Island University Sharks, Towson Tigers @ American University Eagles, Chicago State Cougars @ Marquette Golden Eagles, George Washington Revolutionaries @ Western Kentucky Hilltoppers, South Dakota Coyotes @ Utah Tech Trailblazers, UMass Lowell River Hawks @ Cincinnati Bearcats, Wyoming Cowboys @ Duquesne Dukes, Evansville Purple Aces @ Memphis Tigers, William & Mary Tribe @ Youngstown State Penguins, San Diego Toreros @ Fordham Rams, Robert Morris Colonials @ New Mexico State Aggies …
-- possession data coverage: 0.978
+- possession data coverage: 0.979
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
