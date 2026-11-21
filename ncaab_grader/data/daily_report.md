@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-20
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-21T03:30:27+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-21T03:45:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -40,15 +40,15 @@ LOGGED: 2026-11-20T22:00:32+00:00 · model ncaab_v1
 - Kent State Golden Flashes ML -175 (-175) · Kent State Golden Flashes at Cleveland State Vikings · Sat 1:00 PM ET · EV +2.0% · min -170
 - Texas Southern Tigers -1.5 (+105) · LSU New Orleans Privateers at Texas Southern Tigers · Sat 8:30 PM ET · EV +1.9% · min +105
 - OVER 150.5 (-105) · UNC Wilmington Seahawks at Norfolk State Spartans · Sat 6:00 PM ET · EV +1.8% · min -103
-- Vermont Catamounts ML -180 (-180) · Brown Bears at Vermont Catamounts · Sat 7:00 PM ET · EV +1.8% · min -174
 - OVER 144.5 (-105) · Southern Miss Golden Eagles at Nicholls Colonels · Sat 5:00 PM ET · EV +1.8% · min -102
+- Vermont Catamounts ML -180 (-180) · Brown Bears at Vermont Catamounts · Sat 7:00 PM ET · EV +1.8% · min -174
 - OVER 134.5 (-105) · Brown Bears at Vermont Catamounts · Sat 7:00 PM ET · EV +1.7% · min -102
 - UNC Greensboro Spartans ML -325 (-325) · South Carolina Upstate Spartans at UNC Greensboro Spartans · Sat 11:00 AM ET · EV +1.7% · min -308
 - OVER 145.5 (-105) · Columbia Lions at Boston University Terriers · Sat 12:00 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $506.12 · 151-142-0 · logged this run 1 · open 11
+Bankroll $506.12 · 151-142-0 · logged this run 0 · open 11
 
 ## Data gaps
 
