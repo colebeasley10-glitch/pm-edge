@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-21
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-21T22:45:32+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-21T23:00:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $506.95 (start $500, at risk $5.00) · ¼-Kelly comparison $509.57
+**Paper bankroll:** $506.95 (start $500, at risk $10.00) · ¼-Kelly comparison $509.57
 **Season to date (BET tier):** 11-9-0 · flat P/L $+6.95 (+6.9% on risk) · ¼-Kelly P/L $+9.57 · beat close 25%
 
-## Qualified bets (1)
+## Qualified bets (2)
 
 ```
 GAME: Washington State Cougars at Duke Blue Devils (neutral)
@@ -31,28 +31,50 @@ WHY: Model line Washington State Cougars +20 vs market +25.5 (+5.5 pts) from opp
 LOGGED: 2026-11-20T22:00:32+00:00 · model ncaab_v1
 ```
 
-## Watch list (14) — positive EV but not a qualified bet
+```
+GAME: Seattle U Redhawks at UC San Diego Tritons (neutral)
+TIPOFF: Sun 9:30 PM ET
 
+SPORTSBOOK LINE: UC San Diego Tritons -1.5 (+105)
+MODEL LINE: UC San Diego Tritons -2
+PROJECTED SCORE: Seattle U Redhawks 73 - UC San Diego Tritons 75
+
+MODEL COVER PROBABILITY: 50.7%
+BREAK-EVEN PROBABILITY: 48.78%
+EXPECTED ROI: +3.9%
+
+RECOMMENDATION: UC San Diego Tritons -1.5
+MINIMUM ACCEPTABLE PRICE: +101
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $4.64
+CONFIDENCE/UNCERTAINTY: LOW — ratings are still mostly the preseason prior; calibrated win prob 50.7% (backtest-shrunk toward the market)
+FLAGS: early season (<4 games): mostly preseason prior; neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line UC San Diego Tritons -2 vs market -1.5 (+0.7 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-21T23:00:30+00:00 · model ncaab_v1
+```
+
+## Watch list (15) — positive EV but not a qualified bet
+
+- UC San Diego Tritons ML -115 (-115) · Seattle U Redhawks at UC San Diego Tritons · Sun 9:30 PM ET · EV +4.5% · min -119
 - California Baptist Lancers ML +700 (+700) · California Baptist Lancers at Loyola Marymount Lions · Sat 7:00 PM ET · EV +4.1% · min +692
+- UIC Flames ML -110 (-110) · Miami (OH) RedHawks at UIC Flames · Sun 12:00 PM ET · EV +3.8% · min -112
 - Virginia Tech Hokies ML -115 (-115) · Virginia Tech Hokies at Oklahoma State Cowboys · Sun 3:30 PM ET · EV +2.0% · min -113
 - Valparaiso Beacons ML -180 (-180) · Troy Trojans at Valparaiso Beacons · Sat 8:00 PM ET · EV +2.0% · min -175
 - Texas Southern Tigers -1.5 (+105) · LSU New Orleans Privateers at Texas Southern Tigers · Sat 8:30 PM ET · EV +1.9% · min +105
-- OVER 150.5 (-105) · UNC Wilmington Seahawks at Norfolk State Spartans · Sat 6:00 PM ET · EV +1.8% · min -103
 - Vermont Catamounts ML -180 (-180) · Brown Bears at Vermont Catamounts · Sat 7:00 PM ET · EV +1.8% · min -174
 - OVER 158.5 (-105) · Virginia Tech Hokies at Oklahoma State Cowboys · Sun 3:30 PM ET · EV +1.8% · min -102
 - OVER 134.5 (-105) · Brown Bears at Vermont Catamounts · Sat 7:00 PM ET · EV +1.7% · min -102
 - OVER 130.5 (-105) · Utah Utes at Minnesota Golden Gophers · Sun 6:00 PM ET · EV +1.7% · min -102
 - OVER 160.5 (-105) · LSU New Orleans Privateers at Texas Southern Tigers · Sat 8:30 PM ET · EV +1.6% · min -102
 - OVER 153.5 (-105) · Nebraska Cornhuskers at Butler Bulldogs · Sun 12:00 PM ET · EV +1.6% · min -102
-- OVER 164.5 (-105) · Presbyterian Blue Hose at Tennessee Tech Golden Eagles · Sat 7:30 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $510.22 · 156-146-0 · logged this run 0 · open 7
+Bankroll $510.22 · 156-146-0 · logged this run 1 · open 8
 
 ## Data gaps
 
-- no line posted yet (30): Southwestern Adventist Knights @ Abilene Christian Wildcats, Miami (OH) RedHawks @ UIC Flames, Western Illinois Leathernecks @ Canisius Golden Griffins, Lancaster Bible Chargers @ UMBC Retrievers, Fairfield Stags @ Long Island University Sharks, Towson Tigers @ American University Eagles, Chicago State Cougars @ Marquette Golden Eagles, George Washington Revolutionaries @ Western Kentucky Hilltoppers, South Dakota Coyotes @ Utah Tech Trailblazers, UMass Lowell River Hawks @ Cincinnati Bearcats, Wyoming Cowboys @ Duquesne Dukes, Evansville Purple Aces @ Memphis Tigers, William & Mary Tribe @ Youngstown State Penguins, San Diego Toreros @ Fordham Rams, Robert Morris Colonials @ New Mexico State Aggies …
-- possession data coverage: 0.979
+- no line posted yet (30): Southwestern Adventist Knights @ Abilene Christian Wildcats, Western Illinois Leathernecks @ Canisius Golden Griffins, Lancaster Bible Chargers @ UMBC Retrievers, Fairfield Stags @ Long Island University Sharks, Towson Tigers @ American University Eagles, Chicago State Cougars @ Marquette Golden Eagles, George Washington Revolutionaries @ Western Kentucky Hilltoppers, South Dakota Coyotes @ Utah Tech Trailblazers, UMass Lowell River Hawks @ Cincinnati Bearcats, Evansville Purple Aces @ Memphis Tigers, William & Mary Tribe @ Youngstown State Penguins, San Diego Toreros @ Fordham Rams, Robert Morris Colonials @ New Mexico State Aggies, Southern Indiana Screaming Eagles @ Texas Longhorns, Troy Trojans @ Nicholls Colonels …
+- possession data coverage: 0.986
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
