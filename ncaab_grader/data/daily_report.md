@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-21
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-21T15:45:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-21T16:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,7 +31,7 @@ WHY: Model line Washington State Cougars +20 vs market +25.5 (+5.5 pts) from opp
 LOGGED: 2026-11-20T22:00:32+00:00 · model ncaab_v1
 ```
 
-## Watch list (25) — positive EV but not a qualified bet
+## Watch list (24) — positive EV but not a qualified bet
 
 - La Salle Explorers ML -110 (-110) · Pennsylvania Quakers at La Salle Explorers · Sat 4:00 PM ET · EV +5.1% · min -115
 - La Salle Explorers -1.5 (+110) · Pennsylvania Quakers at La Salle Explorers · Sat 4:00 PM ET · EV +4.3% · min +105
