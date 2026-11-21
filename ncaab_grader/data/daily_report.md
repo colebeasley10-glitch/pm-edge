@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-21
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-21T18:15:30+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-21T18:30:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,7 +31,7 @@ WHY: Model line Washington State Cougars +20 vs market +25.5 (+5.5 pts) from opp
 LOGGED: 2026-11-20T22:00:32+00:00 · model ncaab_v1
 ```
 
-## Watch list (21) — positive EV but not a qualified bet
+## Watch list (20) — positive EV but not a qualified bet
 
 - La Salle Explorers ML -110 (-110) · Pennsylvania Quakers at La Salle Explorers · Sat 4:00 PM ET · EV +5.1% · min -115
 - La Salle Explorers -1.5 (+110) · Pennsylvania Quakers at La Salle Explorers · Sat 4:00 PM ET · EV +4.3% · min +105
@@ -53,6 +53,6 @@ Bankroll $500.36 · 152-144-0 · logged this run 0 · open 13
 ## Data gaps
 
 - no line posted yet (30): Virginia Lynchburg Dragons @ James Madison Dukes, Calumet St. Joseph Crimson Wave @ Purdue Fort Wayne Mastodons, Penn State Behrend Lions @ Colgate Raiders, Clinton Golden Bears @ Furman Paladins, Justice Lions @ Northern Colorado Bears, Southwestern Adventist Knights @ Abilene Christian Wildcats, Nebraska Cornhuskers @ Butler Bulldogs, Miami (OH) RedHawks @ UIC Flames, Western Illinois Leathernecks @ Canisius Golden Griffins, Lancaster Bible Chargers @ UMBC Retrievers, Dayton Flyers @ Northwestern Wildcats, Fairfield Stags @ Long Island University Sharks, Towson Tigers @ American University Eagles, Chicago State Cougars @ Marquette Golden Eagles, George Washington Revolutionaries @ Western Kentucky Hilltoppers …
-- possession data coverage: 0.993
+- possession data coverage: 0.991
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
