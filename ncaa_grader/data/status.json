@@ -27,24 +27,24 @@
     ]
   },
   "live": {
-    "at": "2026-11-21T17:00:26+00:00",
+    "at": "2026-11-21T17:15:32+00:00",
     "backtest_waiting": "CFBD history unavailable: RuntimeError: CFBD unavailable and nothing cached: games:2026: HTTPError: 429 Client Error: Too Many Requests for url: https://api.collegefootballdata.com/games?year=2026&cla",
-    "cfbd_unavailable": "RuntimeError: CFBD unavailable and nothing cached: core:2026: ReadTimeout: HTTPSConnectionPool(host='api.collegefootballdata.com', port=443): Read timed out. (read timeout=20)",
+    "cfbd_unavailable": "RuntimeError: CFBD unavailable and nothing cached: core:2026: HTTPError: 429 Client Error: Too Many Requests for url: https://api.collegefootballdata.com/ratings/core?year=2026",
     "close_updates": 219,
     "current_week": 12,
     "espn_calls": 0,
     "espn_errors": [],
     "gameday": {
-      "close_updates": 78,
-      "games_in_window": 29,
+      "close_updates": 81,
+      "games_in_window": 30,
       "logged": 3,
-      "open": 111,
+      "open": 114,
       "settled": 0
     },
     "games": 891,
     "games_with_lines": 54,
     "lines": 68,
-    "logged": 7,
+    "logged": 0,
     "mode": "live",
     "models": [
       "scores_v1"
