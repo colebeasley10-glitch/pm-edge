@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-20
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-21T01:45:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-21T02:00:39+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $501.70 (start $500, at risk $10.00) · ¼-Kelly comparison $503.65
-**Season to date (BET tier):** 10-9-0 · flat P/L $+1.70 (+1.8% on risk) · ¼-Kelly P/L $+3.65 · beat close 26%
+**Paper bankroll:** $506.95 (start $500, at risk $5.00) · ¼-Kelly comparison $509.57
+**Season to date (BET tier):** 11-9-0 · flat P/L $+6.95 (+6.9% on risk) · ¼-Kelly P/L $+9.57 · beat close 25%
 
 ## Qualified bets (1)
 
@@ -31,9 +31,8 @@ WHY: Model line Washington State Cougars +20 vs market +25.5 (+5.5 pts) from opp
 LOGGED: 2026-11-20T22:00:32+00:00 · model ncaab_v1
 ```
 
-## Watch list (14) — positive EV but not a qualified bet
+## Watch list (13) — positive EV but not a qualified bet
 
-- Cal State Bakersfield Roadrunners ML -105 (-105) · Cal State Bakersfield Roadrunners at Idaho Vandals · Fri 9:00 PM ET · EV +6.8% · min -113
 - NC State Wolfpack ML -142 (-142) · Seton Hall Pirates at NC State Wolfpack · Fri 9:30 PM ET · EV +5.4% · min -150
 - La Salle Explorers ML -110 (-110) · Pennsylvania Quakers at La Salle Explorers · Sat 4:00 PM ET · EV +5.1% · min -115
 - La Salle Explorers -1.5 (+110) · Pennsylvania Quakers at La Salle Explorers · Sat 4:00 PM ET · EV +4.3% · min +105
@@ -45,14 +44,15 @@ LOGGED: 2026-11-20T22:00:32+00:00 · model ncaab_v1
 - OVER 145.5 (-105) · Columbia Lions at Boston University Terriers · Sat 12:00 PM ET · EV +1.6% · min -102
 - OVER 139.5 (-105) · Navy Midshipmen at Rider Broncs · Sat 2:00 PM ET · EV +1.6% · min -102
 - OVER 149.5 (-105) · Western Carolina Catamounts at Wake Forest Demon Deacons · Sat 2:00 PM ET · EV +1.6% · min -102
+- OVER 161.5 (-105) · Pennsylvania Quakers at La Salle Explorers · Sat 4:00 PM ET · EV +1.5% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $498.07 · 144-137-0 · logged this run 0 · open 21
+Bankroll $502.52 · 146-138-0 · logged this run 0 · open 18
 
 ## Data gaps
 
-- no line posted yet (28): Queens University Royals @ LSU Tigers, Western Illinois Leathernecks @ Mercyhurst Lakers, Virginia Lynchburg Dragons @ James Madison Dukes, Calumet St. Joseph Crimson Wave @ Purdue Fort Wayne Mastodons, Penn State Behrend Lions @ Colgate Raiders, Indiana State Sycamores @ Middle Tennessee Blue Raiders, UT Rio Grande Valley Vaqueros @ Austin Peay Governors, Army Black Knights @ Binghamton Bearcats, Clinton Golden Bears @ Furman Paladins, Justice Lions @ Northern Colorado Bears, UAlbany Great Danes @ Canisius Golden Griffins, Longwood Lancers @ East Tennessee State Buccaneers, Central Arkansas Bears @ Jacksonville Dolphins, Winthrop Eagles @ Wofford Terriers, Southern Miss Golden Eagles @ Nicholls Colonels …
-- possession data coverage: 0.988
+- no line posted yet (28): Queens University Royals @ LSU Tigers, Western Illinois Leathernecks @ Mercyhurst Lakers, Virginia Lynchburg Dragons @ James Madison Dukes, Calumet St. Joseph Crimson Wave @ Purdue Fort Wayne Mastodons, Penn State Behrend Lions @ Colgate Raiders, Middle Tennessee Blue Raiders @ Indiana State Sycamores, UT Rio Grande Valley Vaqueros @ Austin Peay Governors, Army Black Knights @ Binghamton Bearcats, Clinton Golden Bears @ Furman Paladins, Justice Lions @ Northern Colorado Bears, UAlbany Great Danes @ Canisius Golden Griffins, Longwood Lancers @ East Tennessee State Buccaneers, Central Arkansas Bears @ Jacksonville Dolphins, Winthrop Eagles @ Wofford Terriers, Southern Miss Golden Eagles @ Nicholls Colonels …
+- possession data coverage: 0.979
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
