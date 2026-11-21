@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-21
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-21T14:30:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-21T14:45:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -48,11 +48,11 @@ LOGGED: 2026-11-20T22:00:32+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $500.36 · 152-144-0 · logged this run 0 · open 11
+Bankroll $500.36 · 152-144-0 · logged this run 1 · open 12
 
 ## Data gaps
 
-- no line posted yet (28): Virginia Lynchburg Dragons @ James Madison Dukes, Calumet St. Joseph Crimson Wave @ Purdue Fort Wayne Mastodons, Penn State Behrend Lions @ Colgate Raiders, Clinton Golden Bears @ Furman Paladins, Justice Lions @ Northern Colorado Bears, Southwestern Adventist Knights @ Abilene Christian Wildcats, Nebraska Cornhuskers @ Butler Bulldogs, Miami (OH) RedHawks @ UIC Flames, Western Illinois Leathernecks @ Canisius Golden Griffins, Lancaster Bible Chargers @ UMBC Retrievers, Dayton Flyers @ Northwestern Wildcats, Fairfield Stags @ Long Island University Sharks, Towson Tigers @ American University Eagles, Chicago State Cougars @ Marquette Golden Eagles, George Washington Revolutionaries @ Western Kentucky Hilltoppers …
+- no line posted yet (29): Virginia Lynchburg Dragons @ James Madison Dukes, Calumet St. Joseph Crimson Wave @ Purdue Fort Wayne Mastodons, Penn State Behrend Lions @ Colgate Raiders, Fordham Rams @ Portland Pilots, Clinton Golden Bears @ Furman Paladins, Justice Lions @ Northern Colorado Bears, Southwestern Adventist Knights @ Abilene Christian Wildcats, Nebraska Cornhuskers @ Butler Bulldogs, Miami (OH) RedHawks @ UIC Flames, Western Illinois Leathernecks @ Canisius Golden Griffins, Lancaster Bible Chargers @ UMBC Retrievers, Dayton Flyers @ Northwestern Wildcats, Fairfield Stags @ Long Island University Sharks, Towson Tigers @ American University Eagles, Chicago State Cougars @ Marquette Golden Eagles …
 - possession data coverage: 0.993
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
