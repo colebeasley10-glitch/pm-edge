@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-20
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-21T00:58:07+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-21T01:00:33+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,20 +31,20 @@ WHY: Model line Washington State Cougars +20 vs market +25.5 (+5.5 pts) from opp
 LOGGED: 2026-11-20T22:00:32+00:00 · model ncaab_v1
 ```
 
-## Watch list (22) — positive EV but not a qualified bet
+## Watch list (14) — positive EV but not a qualified bet
 
-- Campbell Fighting Camels ML +1300 (+1300) · Campbell Fighting Camels at Kansas State Wildcats · Fri 8:00 PM ET · EV +11.1% · min +1198
 - Cal State Bakersfield Roadrunners ML -105 (-105) · Cal State Bakersfield Roadrunners at Idaho Vandals · Fri 9:00 PM ET · EV +6.8% · min -113
 - NC State Wolfpack ML -142 (-142) · Seton Hall Pirates at NC State Wolfpack · Fri 9:30 PM ET · EV +5.4% · min -150
 - La Salle Explorers ML -110 (-110) · Pennsylvania Quakers at La Salle Explorers · Sat 4:00 PM ET · EV +5.1% · min -115
-- Georgia Bulldogs ML -325 (-325) · Georgia Bulldogs at Georgia Tech Yellow Jackets · Fri 8:00 PM ET · EV +5.1% · min -355
-- Indiana Hoosiers ML -142 (-142) · Kentucky Wildcats at Indiana Hoosiers · Fri 8:00 PM ET · EV +4.6% · min -147
 - La Salle Explorers -1.5 (+110) · Pennsylvania Quakers at La Salle Explorers · Sat 4:00 PM ET · EV +4.3% · min +105
 - California Baptist Lancers ML +700 (+700) · California Baptist Lancers at Loyola Marymount Lions · Sat 7:00 PM ET · EV +4.1% · min +692
-- Utah Valley Wolverines ML -185 (-185) · Utah Valley Wolverines at East Carolina Pirates · Fri 8:00 PM ET · EV +2.5% · min -182
 - Boston University Terriers ML +130 (+130) · Columbia Lions at Boston University Terriers · Sat 12:00 PM ET · EV +2.3% · min +132
 - Kent State Golden Flashes ML -175 (-175) · Kent State Golden Flashes at Cleveland State Vikings · Sat 1:00 PM ET · EV +2.0% · min -170
 - NC State Wolfpack -2.5 (-110) · Seton Hall Pirates at NC State Wolfpack · Fri 9:30 PM ET · EV +1.8% · min -110
+- UNC Greensboro Spartans ML -325 (-325) · South Carolina Upstate Spartans at UNC Greensboro Spartans · Sat 11:00 AM ET · EV +1.7% · min -308
+- OVER 145.5 (-105) · Columbia Lions at Boston University Terriers · Sat 12:00 PM ET · EV +1.6% · min -102
+- OVER 139.5 (-105) · Navy Midshipmen at Rider Broncs · Sat 2:00 PM ET · EV +1.6% · min -102
+- OVER 149.5 (-105) · Western Carolina Catamounts at Wake Forest Demon Deacons · Sat 2:00 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -53,6 +53,6 @@ Bankroll $503.07 · 144-136-0 · logged this run 0 · open 22
 ## Data gaps
 
 - no line posted yet (28): Queens University Royals @ LSU Tigers, Western Illinois Leathernecks @ Mercyhurst Lakers, Virginia Lynchburg Dragons @ James Madison Dukes, Calumet St. Joseph Crimson Wave @ Purdue Fort Wayne Mastodons, Penn State Behrend Lions @ Colgate Raiders, TBD @ TBD, UT Rio Grande Valley Vaqueros @ Austin Peay Governors, Army Black Knights @ Binghamton Bearcats, Clinton Golden Bears @ Furman Paladins, Justice Lions @ Northern Colorado Bears, UAlbany Great Danes @ Canisius Golden Griffins, Longwood Lancers @ East Tennessee State Buccaneers, Central Arkansas Bears @ Jacksonville Dolphins, Winthrop Eagles @ Wofford Terriers, Southern Miss Golden Eagles @ Nicholls Colonels …
-- possession data coverage: 0.99
+- possession data coverage: 0.991
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
