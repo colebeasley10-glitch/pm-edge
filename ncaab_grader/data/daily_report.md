@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-22
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-22T23:45:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-22T23:53:47+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -62,15 +62,15 @@ LOGGED: 2026-11-22T22:15:22+00:00 · model ncaab_v1
 - Southern Illinois Salukis ML -115 (-115) · Middle Tennessee Blue Raiders at Southern Illinois Salukis · Mon 3:00 PM ET · EV +3.6% · min -116
 - OVER 142.5 (-105) · Yale Bulldogs at Belmont Bruins · Mon 4:00 PM ET · EV +1.8% · min -102
 - OVER 149.5 (-105) · Tulane Green Wave at Georgia State Panthers · Mon 4:00 PM ET · EV +1.7% · min -102
+- Southern Utah Thunderbirds ML +245 (+245) · Arkansas State Red Wolves at Southern Utah Thunderbirds · Mon 3:30 PM ET · EV +1.6% · min +250
 - Washington Huskies +10.5 (-108) · Washington Huskies at BYU Cougars · Mon 5:00 PM ET · EV +1.6% · min -107
 - OVER 153.5 (-105) · Monmouth Hawks at North Carolina Tar Heels · Mon 8:00 PM ET · EV +1.6% · min -102
-- Southern Utah Thunderbirds ML +245 (+245) · Arkansas State Red Wolves at Southern Utah Thunderbirds · Mon 3:30 PM ET · EV +1.6% · min +250
 - Colorado State Rams +16.5 (-105) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +1.4% · min -104
 - Washington Huskies ML +410 (+410) · Washington Huskies at BYU Cougars · Mon 5:00 PM ET · EV +1.4% · min +418
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $523.81 · 163-150-0 · logged this run 1 · open 8
+Bankroll $523.81 · 163-150-0 · logged this run 0 · open 8
 
 ## Data gaps
 
