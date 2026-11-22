@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-21
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-22T04:00:32+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-22T04:15:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -97,12 +97,13 @@ WHY: Model line Maryland Eastern Shore Hawks +6.5 vs market +10.5 (+3.9 pts) fro
 LOGGED: 2026-11-22T02:00:27+00:00 · model ncaab_v1
 ```
 
-## Watch list (15) — positive EV but not a qualified bet
+## Watch list (16) — positive EV but not a qualified bet
 
 - Utah Tech Trailblazers ML -110 (-110) · South Dakota Coyotes at Utah Tech Trailblazers · Sun 2:00 PM ET · EV +8.5% · min -123
 - Rhode Island Rams ML -135 (-135) · Rhode Island Rams at UAB Blazers · Sun 7:00 PM ET · EV +5.3% · min -142
 - UC San Diego Tritons ML -115 (-115) · Seattle U Redhawks at UC San Diego Tritons · Sun 9:30 PM ET · EV +4.5% · min -119
 - Richmond Spiders ML +110 (+110) · Richmond Spiders at Liberty Flames · Sun 4:30 PM ET · EV +4.3% · min +107
+- Maryland Eastern Shore Hawks ML +400 (+400) · IU Indianapolis Jaguars at Maryland Eastern Shore Hawks · Sun 4:30 PM ET · EV +4.1% · min +395
 - UIC Flames ML -110 (-110) · Miami (OH) RedHawks at UIC Flames · Sun 12:00 PM ET · EV +3.8% · min -112
 - American University Eagles ML -115 (-115) · Towson Tigers at American University Eagles · Sun 1:00 PM ET · EV +3.4% · min -116
 - Virginia Tech Hokies ML -115 (-115) · Virginia Tech Hokies at Oklahoma State Cowboys · Sun 3:30 PM ET · EV +2.0% · min -113
@@ -110,15 +111,14 @@ LOGGED: 2026-11-22T02:00:27+00:00 · model ncaab_v1
 - OVER 158.5 (-105) · Virginia Tech Hokies at Oklahoma State Cowboys · Sun 3:30 PM ET · EV +1.8% · min -102
 - OVER 129.5 (-105) · Mercyhurst Lakers at UAlbany Great Danes · Sun 3:30 PM ET · EV +1.8% · min -102
 - OVER 144.5 (-105) · San Diego Toreros at Fordham Rams · Sun 2:00 PM ET · EV +1.8% · min -102
-- OVER 143.5 (-105) · Richmond Spiders at Liberty Flames · Sun 4:30 PM ET · EV +1.7% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $514.57 · 159-148-0 · logged this run 0 · open 8
+Bankroll $514.57 · 159-148-0 · logged this run 1 · open 9
 
 ## Data gaps
 
 - no line posted yet (4): Lancaster Bible Chargers @ UMBC Retrievers, Alice Lloyd Eagles @ Eastern Kentucky Colonels, Milligan Buffaloes @ Lipscomb Bisons, Menlo Oaks @ Saint Mary's Gaels
-- possession data coverage: 0.99
+- possession data coverage: 0.989
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
