@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-22
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-22T22:45:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-22T23:00:35+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -56,22 +56,22 @@ LOGGED: 2026-11-22T22:15:22+00:00 · model ncaab_v1
 ## Watch list (9) — positive EV but not a qualified bet
 
 - Colorado State Rams ML +1200 (+1200) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +7.1% · min +1150
+- Wright State Raiders ML -122 (-122) · Akron Zips at Wright State Raiders · Mon 1:30 PM ET · EV +5.5% · min -129
 - Rhode Island Rams ML -135 (-135) · Rhode Island Rams at UAB Blazers · Sun 7:00 PM ET · EV +5.3% · min -142
 - UC San Diego Tritons ML -115 (-115) · Seattle U Redhawks at UC San Diego Tritons · Sun 9:30 PM ET · EV +4.5% · min -119
-- OVER 130.5 (-105) · Utah Utes at Minnesota Golden Gophers · Sun 6:00 PM ET · EV +1.7% · min -102
+- OVER 149.5 (-105) · Tulane Green Wave at Georgia State Panthers · Mon 4:00 PM ET · EV +1.7% · min -102
 - Washington Huskies +10.5 (-108) · Washington Huskies at BYU Cougars · Mon 5:00 PM ET · EV +1.6% · min -107
 - OVER 153.5 (-105) · Monmouth Hawks at North Carolina Tar Heels · Mon 8:00 PM ET · EV +1.6% · min -102
 - Colorado State Rams +16.5 (-105) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +1.4% · min -104
 - Washington Huskies ML +410 (+410) · Washington Huskies at BYU Cougars · Mon 5:00 PM ET · EV +1.4% · min +418
-- Utah Utes ML +490 (+490) · Utah Utes at Minnesota Golden Gophers · Sun 6:00 PM ET · EV +0.1% · min +507
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $519.18 · 162-150-0 · logged this run 0 · open 8
+Bankroll $523.81 · 163-150-0 · logged this run 0 · open 7
 
 ## Data gaps
 
-- no line posted yet (30): Menlo Oaks @ Saint Mary's Gaels, Ecclesia Royals @ Grambling Tigers, St. Bonaventure Bonnies @ App State Mountaineers, Northern Iowa Panthers @ Davidson Wildcats, Indiana State Sycamores @ East Carolina Pirates, IU South Bend Titans @ Eastern Illinois Panthers, Long Beach State Beach @ Florida International Panthers, Akron Zips @ Wright State Raiders, Charlotte 49ers @ Florida Gulf Coast Eagles, Middle Tennessee Blue Raiders @ Southern Illinois Salukis, Arkansas State Red Wolves @ Southern Utah Thunderbirds, William & Mary Tribe @ IU Indianapolis Jaguars, Yale Bulldogs @ Belmont Bruins, Tulane Green Wave @ Georgia State Panthers, Nevada Wolf Pack @ San Francisco Dons …
-- possession data coverage: 0.982
+- no line posted yet (30): Menlo Oaks @ Saint Mary's Gaels, Ecclesia Royals @ Grambling Tigers, Indiana State Sycamores @ East Carolina Pirates, IU South Bend Titans @ Eastern Illinois Panthers, Long Beach State Beach @ Florida International Panthers, Charlotte 49ers @ Florida Gulf Coast Eagles, Middle Tennessee Blue Raiders @ Southern Illinois Salukis, Arkansas State Red Wolves @ Southern Utah Thunderbirds, William & Mary Tribe @ IU Indianapolis Jaguars, Yale Bulldogs @ Belmont Bruins, Nevada Wolf Pack @ San Francisco Dons, TBD @ TBD, Maryland Eastern Shore Hawks @ Youngstown State Penguins, RIT Tigers @ Buffalo Bulls, Notre Dame (MD) Gators @ Howard Bison …
+- possession data coverage: 0.986
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
