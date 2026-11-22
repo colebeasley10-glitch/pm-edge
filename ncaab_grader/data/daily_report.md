@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-21
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-21T23:45:18+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-22T00:00:32+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -97,28 +97,28 @@ WHY: Model line UC San Diego Tritons -2 vs market -1.5 (+0.7 pts) from opponent-
 LOGGED: 2026-11-21T23:00:30+00:00 · model ncaab_v1
 ```
 
-## Watch list (20) — positive EV but not a qualified bet
+## Watch list (16) — positive EV but not a qualified bet
 
 - Utah Tech Trailblazers ML -110 (-110) · South Dakota Coyotes at Utah Tech Trailblazers · Sun 2:00 PM ET · EV +8.5% · min -123
 - UC San Diego Tritons ML -115 (-115) · Seattle U Redhawks at UC San Diego Tritons · Sun 9:30 PM ET · EV +4.5% · min -119
 - Richmond Spiders ML +110 (+110) · Richmond Spiders at Liberty Flames · Sun 4:30 PM ET · EV +4.3% · min +107
-- California Baptist Lancers ML +700 (+700) · California Baptist Lancers at Loyola Marymount Lions · Sat 7:00 PM ET · EV +4.1% · min +692
 - UIC Flames ML -110 (-110) · Miami (OH) RedHawks at UIC Flames · Sun 12:00 PM ET · EV +3.8% · min -112
 - Virginia Tech Hokies ML -115 (-115) · Virginia Tech Hokies at Oklahoma State Cowboys · Sun 3:30 PM ET · EV +2.0% · min -113
 - Valparaiso Beacons ML -180 (-180) · Troy Trojans at Valparaiso Beacons · Sat 8:00 PM ET · EV +2.0% · min -175
 - Texas Southern Tigers -1.5 (+105) · LSU New Orleans Privateers at Texas Southern Tigers · Sat 8:30 PM ET · EV +1.9% · min +105
 - Fordham Rams ML -148 (-148) · San Diego Toreros at Fordham Rams · Sun 2:00 PM ET · EV +1.8% · min -144
-- Vermont Catamounts ML -180 (-180) · Brown Bears at Vermont Catamounts · Sat 7:00 PM ET · EV +1.8% · min -174
 - OVER 158.5 (-105) · Virginia Tech Hokies at Oklahoma State Cowboys · Sun 3:30 PM ET · EV +1.8% · min -102
 - OVER 144.5 (-105) · San Diego Toreros at Fordham Rams · Sun 2:00 PM ET · EV +1.8% · min -102
+- OVER 143.5 (-105) · Richmond Spiders at Liberty Flames · Sun 4:30 PM ET · EV +1.7% · min -102
+- OVER 130.5 (-105) · Utah Utes at Minnesota Golden Gophers · Sun 6:00 PM ET · EV +1.7% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $510.22 · 158-148-0 · logged this run 1 · open 5
+Bankroll $510.22 · 158-148-0 · logged this run 0 · open 5
 
 ## Data gaps
 
 - no line posted yet (25): Southwestern Adventist Knights @ Abilene Christian Wildcats, Lancaster Bible Chargers @ UMBC Retrievers, Fairfield Stags @ Long Island University Sharks, Towson Tigers @ American University Eagles, Chicago State Cougars @ Marquette Golden Eagles, UMass Lowell River Hawks @ Cincinnati Bearcats, Troy Trojans @ Nicholls Colonels, West Florida Argonauts @ South Alabama Jaguars, McNeese Cowboys @ Texas State Bobcats, Mercyhurst Lakers @ UAlbany Great Danes, Alice Lloyd Eagles @ Eastern Kentucky Colonels, IU Indianapolis Jaguars @ Maryland Eastern Shore Hawks, UC Irvine Anteaters @ Loyola Marymount Lions, Rice Owls @ Lamar Cardinals, UNC Asheville Bulldogs @ Samford Bulldogs …
-- possession data coverage: 0.981
+- possession data coverage: 0.985
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
