@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-22
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-22T16:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-22T16:30:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -118,7 +118,7 @@ Bankroll $514.57 · 159-148-0 · logged this run 0 · open 11
 
 ## Data gaps
 
-- no line posted yet (21): Lancaster Bible Chargers @ UMBC Retrievers, Alice Lloyd Eagles @ Eastern Kentucky Colonels, Milligan Buffaloes @ Lipscomb Bisons, Menlo Oaks @ Saint Mary's Gaels, Ecclesia Royals @ Grambling Tigers, St. Bonaventure Bonnies @ App State Mountaineers, Northern Iowa Panthers @ Davidson Wildcats, Indiana State Sycamores @ East Carolina Pirates, IU South Bend Titans @ Eastern Illinois Panthers, Long Beach State Beach @ Florida International Panthers, Akron Zips @ Wright State Raiders, Charlotte 49ers @ Florida Gulf Coast Eagles, Tulsa Golden Hurricane @ Oregon State Beavers, Ole Miss Rebels @ Clemson Tigers, Middle Tennessee Blue Raiders @ Southern Illinois Salukis …
+- no line posted yet (22): Lancaster Bible Chargers @ UMBC Retrievers, Alice Lloyd Eagles @ Eastern Kentucky Colonels, Milligan Buffaloes @ Lipscomb Bisons, Menlo Oaks @ Saint Mary's Gaels, Ecclesia Royals @ Grambling Tigers, St. Bonaventure Bonnies @ App State Mountaineers, Northern Iowa Panthers @ Davidson Wildcats, Indiana State Sycamores @ East Carolina Pirates, IU South Bend Titans @ Eastern Illinois Panthers, Long Beach State Beach @ Florida International Panthers, Akron Zips @ Wright State Raiders, Charlotte 49ers @ Florida Gulf Coast Eagles, Tulsa Golden Hurricane @ Oregon State Beavers, Ole Miss Rebels @ Clemson Tigers, Middle Tennessee Blue Raiders @ Southern Illinois Salukis …
 - possession data coverage: 0.993
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
