@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-22
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-22T23:15:33+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-22T23:30:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -72,6 +72,6 @@ Bankroll $523.81 · 163-150-0 · logged this run 0 · open 7
 ## Data gaps
 
 - no line posted yet (30): Menlo Oaks @ Saint Mary's Gaels, Ecclesia Royals @ Grambling Tigers, Indiana State Sycamores @ East Carolina Pirates, IU South Bend Titans @ Eastern Illinois Panthers, Long Beach State Beach @ Florida International Panthers, Charlotte 49ers @ Florida Gulf Coast Eagles, Middle Tennessee Blue Raiders @ Southern Illinois Salukis, Arkansas State Red Wolves @ Southern Utah Thunderbirds, William & Mary Tribe @ IU Indianapolis Jaguars, Yale Bulldogs @ Belmont Bruins, Nevada Wolf Pack @ San Francisco Dons, TBD @ TBD, Maryland Eastern Shore Hawks @ Youngstown State Penguins, RIT Tigers @ Buffalo Bulls, Notre Dame (MD) Gators @ Howard Bison …
-- possession data coverage: 0.986
+- possession data coverage: 0.987
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
