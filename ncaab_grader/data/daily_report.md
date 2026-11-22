@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-21
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-22T01:00:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-22T01:15:20+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -114,11 +114,11 @@ LOGGED: 2026-11-21T23:00:30+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $510.22 · 158-148-0 · logged this run 0 · open 6
+Bankroll $514.57 · 159-148-0 · logged this run 0 · open 5
 
 ## Data gaps
 
-- no line posted yet (23): Lancaster Bible Chargers @ UMBC Retrievers, Fairfield Stags @ Long Island University Sharks, Towson Tigers @ American University Eagles, Chicago State Cougars @ Marquette Golden Eagles, UMass Lowell River Hawks @ Cincinnati Bearcats, Troy Trojans @ Nicholls Colonels, West Florida Argonauts @ South Alabama Jaguars, McNeese Cowboys @ Texas State Bobcats, Mercyhurst Lakers @ UAlbany Great Danes, Alice Lloyd Eagles @ Eastern Kentucky Colonels, IU Indianapolis Jaguars @ Maryland Eastern Shore Hawks, UC Irvine Anteaters @ Loyola Marymount Lions, Rice Owls @ Lamar Cardinals, UNC Asheville Bulldogs @ Samford Bulldogs, Milligan Buffaloes @ Lipscomb Bisons …
-- possession data coverage: 0.988
+- no line posted yet (21): Lancaster Bible Chargers @ UMBC Retrievers, Fairfield Stags @ Long Island University Sharks, Towson Tigers @ American University Eagles, Chicago State Cougars @ Marquette Golden Eagles, UMass Lowell River Hawks @ Cincinnati Bearcats, Troy Trojans @ Nicholls Colonels, West Florida Argonauts @ South Alabama Jaguars, McNeese Cowboys @ Texas State Bobcats, Mercyhurst Lakers @ UAlbany Great Danes, Alice Lloyd Eagles @ Eastern Kentucky Colonels, IU Indianapolis Jaguars @ Maryland Eastern Shore Hawks, Rice Owls @ Lamar Cardinals, UNC Asheville Bulldogs @ Samford Bulldogs, Milligan Buffaloes @ Lipscomb Bisons, NJIT Highlanders @ Boston College Eagles …
+- possession data coverage: 0.983
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
