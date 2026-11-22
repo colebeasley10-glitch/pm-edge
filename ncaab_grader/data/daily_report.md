@@ -1,35 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-22
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-22T18:45:29+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-22T19:00:36+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $511.50 (start $500, at risk $20.00) · ¼-Kelly comparison $517.30
 **Season to date (BET tier):** 12-9-0 · flat P/L $+11.50 (+11.0% on risk) · ¼-Kelly P/L $+17.30 · beat close 24%
 
-## Qualified bets (4)
-
-```
-GAME: South Dakota Coyotes at Utah Tech Trailblazers (neutral)
-TIPOFF: Sun 2:00 PM ET
-
-SPORTSBOOK LINE: Utah Tech Trailblazers -1.5 (+110)
-MODEL LINE: Utah Tech Trailblazers -3
-PROJECTED SCORE: South Dakota Coyotes 79 - Utah Tech Trailblazers 82
-
-MODEL COVER PROBABILITY: 51.6%
-BREAK-EVEN PROBABILITY: 47.62%
-EXPECTED ROI: +8.5%
-
-RECOMMENDATION: Utah Tech Trailblazers -1.5
-MINIMUM ACCEPTABLE PRICE: -103
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $9.60
-CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 51.6% (backtest-shrunk toward the market)
-FLAGS: neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Utah Tech Trailblazers -3 vs market -1.5 (+1.6 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-21T23:45:18+00:00 · model ncaab_v1
-```
+## Qualified bets (3)
 
 ```
 GAME: Richmond Spiders at Liberty Flames (neutral)
@@ -97,20 +75,18 @@ WHY: Model line Maryland Eastern Shore Hawks +6.5 vs market +10.5 (+3.9 pts) fro
 LOGGED: 2026-11-22T02:00:27+00:00 · model ncaab_v1
 ```
 
-## Watch list (13) — positive EV but not a qualified bet
+## Watch list (10) — positive EV but not a qualified bet
 
-- Utah Tech Trailblazers ML -110 (-110) · South Dakota Coyotes at Utah Tech Trailblazers · Sun 2:00 PM ET · EV +8.5% · min -123
 - Rhode Island Rams ML -135 (-135) · Rhode Island Rams at UAB Blazers · Sun 7:00 PM ET · EV +5.3% · min -142
 - UC San Diego Tritons ML -115 (-115) · Seattle U Redhawks at UC San Diego Tritons · Sun 9:30 PM ET · EV +4.5% · min -119
 - Richmond Spiders ML +110 (+110) · Richmond Spiders at Liberty Flames · Sun 4:30 PM ET · EV +4.3% · min +107
 - Maryland Eastern Shore Hawks ML +400 (+400) · IU Indianapolis Jaguars at Maryland Eastern Shore Hawks · Sun 4:30 PM ET · EV +4.1% · min +395
 - Virginia Tech Hokies ML -115 (-115) · Virginia Tech Hokies at Oklahoma State Cowboys · Sun 3:30 PM ET · EV +2.0% · min -113
-- Fordham Rams ML -148 (-148) · San Diego Toreros at Fordham Rams · Sun 2:00 PM ET · EV +1.8% · min -144
 - OVER 158.5 (-105) · Virginia Tech Hokies at Oklahoma State Cowboys · Sun 3:30 PM ET · EV +1.8% · min -102
 - OVER 129.5 (-105) · Mercyhurst Lakers at UAlbany Great Danes · Sun 3:30 PM ET · EV +1.8% · min -102
-- OVER 144.5 (-105) · San Diego Toreros at Fordham Rams · Sun 2:00 PM ET · EV +1.8% · min -102
 - OVER 143.5 (-105) · Richmond Spiders at Liberty Flames · Sun 4:30 PM ET · EV +1.7% · min -102
 - OVER 130.5 (-105) · Utah Utes at Minnesota Golden Gophers · Sun 6:00 PM ET · EV +1.7% · min -102
+- Utah Utes ML +490 (+490) · Utah Utes at Minnesota Golden Gophers · Sun 6:00 PM ET · EV +0.1% · min +507
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
