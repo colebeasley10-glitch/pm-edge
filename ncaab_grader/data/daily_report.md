@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-21
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-22T00:15:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-22T00:30:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -97,7 +97,7 @@ WHY: Model line UC San Diego Tritons -2 vs market -1.5 (+0.7 pts) from opponent-
 LOGGED: 2026-11-21T23:00:30+00:00 · model ncaab_v1
 ```
 
-## Watch list (16) — positive EV but not a qualified bet
+## Watch list (15) — positive EV but not a qualified bet
 
 - Utah Tech Trailblazers ML -110 (-110) · South Dakota Coyotes at Utah Tech Trailblazers · Sun 2:00 PM ET · EV +8.5% · min -123
 - UC San Diego Tritons ML -115 (-115) · Seattle U Redhawks at UC San Diego Tritons · Sun 9:30 PM ET · EV +4.5% · min -119
@@ -114,11 +114,11 @@ LOGGED: 2026-11-21T23:00:30+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $510.22 · 158-148-0 · logged this run 0 · open 5
+Bankroll $510.22 · 158-148-0 · logged this run 1 · open 6
 
 ## Data gaps
 
-- no line posted yet (25): Southwestern Adventist Knights @ Abilene Christian Wildcats, Lancaster Bible Chargers @ UMBC Retrievers, Fairfield Stags @ Long Island University Sharks, Towson Tigers @ American University Eagles, Chicago State Cougars @ Marquette Golden Eagles, UMass Lowell River Hawks @ Cincinnati Bearcats, Troy Trojans @ Nicholls Colonels, West Florida Argonauts @ South Alabama Jaguars, McNeese Cowboys @ Texas State Bobcats, Mercyhurst Lakers @ UAlbany Great Danes, Alice Lloyd Eagles @ Eastern Kentucky Colonels, IU Indianapolis Jaguars @ Maryland Eastern Shore Hawks, UC Irvine Anteaters @ Loyola Marymount Lions, Rice Owls @ Lamar Cardinals, UNC Asheville Bulldogs @ Samford Bulldogs …
-- possession data coverage: 0.985
+- no line posted yet (24): Southwestern Adventist Knights @ Abilene Christian Wildcats, Lancaster Bible Chargers @ UMBC Retrievers, Fairfield Stags @ Long Island University Sharks, Towson Tigers @ American University Eagles, Chicago State Cougars @ Marquette Golden Eagles, UMass Lowell River Hawks @ Cincinnati Bearcats, Troy Trojans @ Nicholls Colonels, West Florida Argonauts @ South Alabama Jaguars, McNeese Cowboys @ Texas State Bobcats, Mercyhurst Lakers @ UAlbany Great Danes, Alice Lloyd Eagles @ Eastern Kentucky Colonels, IU Indianapolis Jaguars @ Maryland Eastern Shore Hawks, UC Irvine Anteaters @ Loyola Marymount Lions, Rice Owls @ Lamar Cardinals, UNC Asheville Bulldogs @ Samford Bulldogs …
+- possession data coverage: 0.982
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
