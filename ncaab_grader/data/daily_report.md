@@ -1,6 +1,6 @@
-# NCAA Basketball Model — daily report 2026-11-21
+# NCAA Basketball Model — daily report 2026-11-22
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-22T04:45:21+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-22T05:00:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -119,6 +119,6 @@ Bankroll $514.57 · 159-148-0 · logged this run 0 · open 9
 ## Data gaps
 
 - no line posted yet (4): Lancaster Bible Chargers @ UMBC Retrievers, Alice Lloyd Eagles @ Eastern Kentucky Colonels, Milligan Buffaloes @ Lipscomb Bisons, Menlo Oaks @ Saint Mary's Gaels
-- possession data coverage: 0.99
+- possession data coverage: 0.991
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
