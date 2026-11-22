@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-22
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-22T07:00:27+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-22T07:15:23+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $506.95 (start $500, at risk $25.00) · ¼-Kelly comparison $509.57
-**Season to date (BET tier):** 11-9-0 · flat P/L $+6.95 (+6.9% on risk) · ¼-Kelly P/L $+9.57 · beat close 25%
+**Paper bankroll:** $511.50 (start $500, at risk $20.00) · ¼-Kelly comparison $517.30
+**Season to date (BET tier):** 12-9-0 · flat P/L $+11.50 (+11.0% on risk) · ¼-Kelly P/L $+17.30 · beat close 24%
 
 ## Qualified bets (4)
 
@@ -119,6 +119,6 @@ Bankroll $514.57 · 159-148-0 · logged this run 0 · open 9
 ## Data gaps
 
 - no line posted yet (4): Lancaster Bible Chargers @ UMBC Retrievers, Alice Lloyd Eagles @ Eastern Kentucky Colonels, Milligan Buffaloes @ Lipscomb Bisons, Menlo Oaks @ Saint Mary's Gaels
-- possession data coverage: 0.993
+- possession data coverage: 0.992
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
