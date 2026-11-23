@@ -1,35 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-22
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-23T02:15:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-23T02:30:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $506.26 (start $500, at risk $10.00) · ¼-Kelly comparison $512.49
 **Season to date (BET tier):** 13-11-0 · flat P/L $+6.26 (+5.2% on risk) · ¼-Kelly P/L $+12.49 · beat close 25%
 
-## Qualified bets (2)
-
-```
-GAME: Seattle U Redhawks at UC San Diego Tritons (neutral)
-TIPOFF: Sun 9:30 PM ET
-
-SPORTSBOOK LINE: UC San Diego Tritons -1.5 (+105)
-MODEL LINE: UC San Diego Tritons -2
-PROJECTED SCORE: Seattle U Redhawks 73 - UC San Diego Tritons 75
-
-MODEL COVER PROBABILITY: 50.7%
-BREAK-EVEN PROBABILITY: 48.78%
-EXPECTED ROI: +3.9%
-
-RECOMMENDATION: UC San Diego Tritons -1.5
-MINIMUM ACCEPTABLE PRICE: +101
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $4.64
-CONFIDENCE/UNCERTAINTY: LOW — ratings are still mostly the preseason prior; calibrated win prob 50.7% (backtest-shrunk toward the market)
-FLAGS: early season (<4 games): mostly preseason prior; neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line UC San Diego Tritons -2 vs market -1.5 (+0.7 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-21T23:00:30+00:00 · model ncaab_v1
-```
+## Qualified bets (1)
 
 ```
 GAME: Tulsa Golden Hurricane at Oregon State Beavers (neutral)
@@ -53,11 +31,10 @@ WHY: Model line Tulsa Golden Hurricane +3.5 vs market +6.5 (+2.8 pts) from oppon
 LOGGED: 2026-11-22T22:15:22+00:00 · model ncaab_v1
 ```
 
-## Watch list (13) — positive EV but not a qualified bet
+## Watch list (12) — positive EV but not a qualified bet
 
 - Colorado State Rams ML +1200 (+1200) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +7.1% · min +1150
 - Wright State Raiders ML -122 (-122) · Akron Zips at Wright State Raiders · Mon 1:30 PM ET · EV +5.5% · min -129
-- UC San Diego Tritons ML -115 (-115) · Seattle U Redhawks at UC San Diego Tritons · Sun 9:30 PM ET · EV +4.5% · min -119
 - Southern Illinois Salukis ML -115 (-115) · Middle Tennessee Blue Raiders at Southern Illinois Salukis · Mon 3:00 PM ET · EV +3.6% · min -116
 - OVER 142.5 (-105) · Yale Bulldogs at Belmont Bruins · Mon 4:00 PM ET · EV +1.8% · min -102
 - OVER 145.5 (-105) · Charlotte 49ers at Florida Gulf Coast Eagles · Mon 1:30 PM ET · EV +1.7% · min -102
@@ -67,6 +44,7 @@ LOGGED: 2026-11-22T22:15:22+00:00 · model ncaab_v1
 - OVER 153.5 (-105) · Monmouth Hawks at North Carolina Tar Heels · Mon 8:00 PM ET · EV +1.6% · min -102
 - OVER 148.5 (-105) · Alabama State Hornets at California Golden Bears · Mon 10:00 PM ET · EV +1.5% · min -102
 - Colorado State Rams +16.5 (-105) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +1.4% · min -104
+- Washington Huskies ML +410 (+410) · Washington Huskies at BYU Cougars · Mon 5:00 PM ET · EV +1.4% · min +418
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -75,6 +53,6 @@ Bankroll $528.20 · 165-151-0 · logged this run 0 · open 6
 ## Data gaps
 
 - no line posted yet (22): Ecclesia Royals @ Grambling Tigers, IU South Bend Titans @ Eastern Illinois Panthers, William & Mary Tribe @ IU Indianapolis Jaguars, Temple Owls @ TBD, Maryland Eastern Shore Hawks @ Youngstown State Penguins, RIT Tigers @ Buffalo Bulls, Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, North Carolina A&T Aggies @ South Carolina State Bulldogs, Mansfield Mountaineers @ Le Moyne Dolphins, Fairleigh Dickinson Knights @ Iona Gaels, Carolina University Bruins @ North Carolina Central Eagles, Texas A&M-Corpus Christi Islanders @ Wichita State Shockers …
-- possession data coverage: 0.989
+- possession data coverage: 0.99
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
