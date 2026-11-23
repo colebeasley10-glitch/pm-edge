@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-23
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-23T13:15:29+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-23T13:30:27+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -74,7 +74,7 @@ Bankroll $532.75 · 166-151-0 · logged this run 0 · open 7
 
 ## Data gaps
 
-- no line posted yet (24): IU South Bend Titans @ Eastern Illinois Panthers, Ecclesia Royals @ Grambling Tigers, RIT Tigers @ Buffalo Bulls, Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, Mansfield Mountaineers @ Le Moyne Dolphins, Carolina University Bruins @ North Carolina Central Eagles, Wisconsin Stout Blue Devils @ North Dakota State Bison, Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, Loyola Chicago Ramblers @ Seattle U Redhawks, San José State Spartans @ UC San Diego Tritons, Bellarmine Knights @ Georgia Southern Eagles …
+- no line posted yet (25): IU South Bend Titans @ Eastern Illinois Panthers, Ecclesia Royals @ Grambling Tigers, RIT Tigers @ Buffalo Bulls, Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, Mansfield Mountaineers @ Le Moyne Dolphins, Carolina University Bruins @ North Carolina Central Eagles, Wisconsin Stout Blue Devils @ North Dakota State Bison, Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, Loyola Chicago Ramblers @ Seattle U Redhawks, San José State Spartans @ UC San Diego Tritons, Bellarmine Knights @ Georgia Southern Eagles …
 - possession data coverage: 0.994
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
