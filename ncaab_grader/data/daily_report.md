@@ -1,35 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-23
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-23T22:15:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-23T22:30:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $516.27 (start $500, at risk $10.00) · ¼-Kelly comparison $521.34
 **Season to date (BET tier):** 15-11-0 · flat P/L $+16.27 (+12.5% on risk) · ¼-Kelly P/L $+21.34 · beat close 27%
 
-## Qualified bets (2)
-
-```
-GAME: Temple Owls at UT Martin Skyhawks (neutral)
-TIPOFF: Mon 5:30 PM ET
-
-SPORTSBOOK LINE: UT Martin Skyhawks +4.5 (+100)
-MODEL LINE: UT Martin Skyhawks +2
-PROJECTED SCORE: Temple Owls 74 - UT Martin Skyhawks 72
-
-MODEL COVER PROBABILITY: 52.6%
-BREAK-EVEN PROBABILITY: 50.00%
-EXPECTED ROI: +5.1%
-
-RECOMMENDATION: UT Martin Skyhawks +4.5
-MINIMUM ACCEPTABLE PRICE: -106
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $6.40
-CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 52.6% (backtest-shrunk toward the market)
-FLAGS: neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line UT Martin Skyhawks +2 vs market +4.5 (+2.5 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-23T05:45:22+00:00 · model ncaab_v1
-```
+## Qualified bets (1)
 
 ```
 GAME: DePaul Blue Demons at Purdue Boilermakers (neutral)
@@ -53,9 +31,8 @@ WHY: Model line DePaul Blue Demons +0.5 vs market +4.5 (+3.9 pts) from opponent-
 LOGGED: 2026-11-23T21:30:28+00:00 · model ncaab_v1
 ```
 
-## Watch list (13) — positive EV but not a qualified bet
+## Watch list (12) — positive EV but not a qualified bet
 
-- UT Martin Skyhawks ML +190 (+190) · Temple Owls at UT Martin Skyhawks · Mon 5:30 PM ET · EV +7.7% · min +177
 - Colorado State Rams ML +1200 (+1200) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +7.1% · min +1150
 - Miami Hurricanes ML -285 (-285) · Miami Hurricanes at TCU Horned Frogs · Tue 3:00 PM ET · EV +2.2% · min -276
 - Baylor Bears +2.5 (-110) · Baylor Bears at Alabama Crimson Tide · Tue 10:00 PM ET · EV +1.8% · min -110
@@ -67,6 +44,7 @@ LOGGED: 2026-11-23T21:30:28+00:00 · model ncaab_v1
 - OVER 148.5 (-105) · Alabama State Hornets at California Golden Bears · Mon 10:00 PM ET · EV +1.5% · min -102
 - OVER 147.5 (-105) · Tennessee Volunteers at Maryland Terrapins · Tue 3:00 PM ET · EV +1.5% · min -102
 - Colorado State Rams +16.5 (-105) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +1.4% · min -104
+- Iowa State Cyclones -7.5 (-105) · San Diego State Aztecs at Iowa State Cyclones · Tue 5:30 PM ET · EV +1.2% · min -103
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -75,6 +53,6 @@ Bankroll $537.51 · 167-151-0 · logged this run 0 · open 7
 ## Data gaps
 
 - no line posted yet (30): RIT Tigers @ Buffalo Bulls, Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, Mansfield Mountaineers @ Le Moyne Dolphins, Carolina University Bruins @ North Carolina Central Eagles, Wisconsin Stout Blue Devils @ North Dakota State Bison, Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, Wright State Raiders @ St. Bonaventure Bonnies, Ohio Bobcats @ New Mexico State Aggies, Belmont Bruins @ Akron Zips, SE Louisiana Lions @ Northern Colorado Bears, Southern Utah Thunderbirds @ Florida International Panthers …
-- possession data coverage: 0.99
+- possession data coverage: 0.992
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
