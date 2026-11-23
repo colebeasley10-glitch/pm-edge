@@ -1,11 +1,11 @@
-# NCAA Basketball Model — daily report 2026-11-22
+# NCAA Basketball Model — daily report 2026-11-23
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-23T04:45:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-23T05:00:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $506.26 (start $500, at risk $10.00) · ¼-Kelly comparison $512.49
-**Season to date (BET tier):** 13-11-0 · flat P/L $+6.26 (+5.2% on risk) · ¼-Kelly P/L $+12.49 · beat close 25%
+**Paper bankroll:** $511.51 (start $500, at risk $5.00) · ¼-Kelly comparison $517.36
+**Season to date (BET tier):** 14-11-0 · flat P/L $+11.51 (+9.2% on risk) · ¼-Kelly P/L $+17.36 · beat close 24%
 
 ## Qualified bets (1)
 
@@ -52,7 +52,7 @@ Bankroll $532.75 · 166-151-0 · logged this run 0 · open 7
 
 ## Data gaps
 
-- no line posted yet (16): IU South Bend Titans @ Eastern Illinois Panthers, Ecclesia Royals @ Grambling Tigers, Temple Owls @ UT Martin Skyhawks, RIT Tigers @ Buffalo Bulls, Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, Mansfield Mountaineers @ Le Moyne Dolphins, Carolina University Bruins @ North Carolina Central Eagles, Wisconsin Stout Blue Devils @ North Dakota State Bison, Stephen F. Austin Lumberjacks @ Utah Valley Wolverines, Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, TBD @ TBD …
+- no line posted yet (17): IU South Bend Titans @ Eastern Illinois Panthers, Ecclesia Royals @ Grambling Tigers, Temple Owls @ UT Martin Skyhawks, RIT Tigers @ Buffalo Bulls, Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, Mansfield Mountaineers @ Le Moyne Dolphins, Carolina University Bruins @ North Carolina Central Eagles, Wisconsin Stout Blue Devils @ North Dakota State Bison, Stephen F. Austin Lumberjacks @ Utah Valley Wolverines, Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, TBD @ Seattle U Redhawks …
 - possession data coverage: 0.992
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
