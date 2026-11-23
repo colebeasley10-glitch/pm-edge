@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-23
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-23T21:15:34+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-23T21:30:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $511.51 (start $500, at risk $10.00) · ¼-Kelly comparison $517.36
-**Season to date (BET tier):** 14-11-0 · flat P/L $+11.51 (+9.2% on risk) · ¼-Kelly P/L $+17.36 · beat close 24%
+**Paper bankroll:** $516.27 (start $500, at risk $10.00) · ¼-Kelly comparison $521.34
+**Season to date (BET tier):** 15-11-0 · flat P/L $+16.27 (+12.5% on risk) · ¼-Kelly P/L $+21.34 · beat close 27%
 
-## Qualified bets (1)
+## Qualified bets (2)
 
 ```
 GAME: Temple Owls at UT Martin Skyhawks (neutral)
@@ -29,6 +29,28 @@ FLAGS: neutral site; injuries/lineups not modeled — check before betting
 
 WHY: Model line UT Martin Skyhawks +2 vs market +4.5 (+2.5 pts) from opponent-adjusted efficiency and venue.
 LOGGED: 2026-11-23T05:45:22+00:00 · model ncaab_v1
+```
+
+```
+GAME: DePaul Blue Demons at Purdue Boilermakers (neutral)
+TIPOFF: Tue 6:00 PM ET
+
+SPORTSBOOK LINE: DePaul Blue Demons +4.5 (-110)
+MODEL LINE: DePaul Blue Demons +0.5
+PROJECTED SCORE: DePaul Blue Demons 70 - Purdue Boilermakers 71
+
+MODEL COVER PROBABILITY: 54.0%
+BREAK-EVEN PROBABILITY: 52.38%
+EXPECTED ROI: +3.0%
+
+RECOMMENDATION: DePaul Blue Demons +4.5
+MINIMUM ACCEPTABLE PRICE: -112
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $4.19
+CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 54.0% (backtest-shrunk toward the market)
+FLAGS: neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line DePaul Blue Demons +0.5 vs market +4.5 (+3.9 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-23T21:30:28+00:00 · model ncaab_v1
 ```
 
 ## Watch list (15) — positive EV but not a qualified bet
