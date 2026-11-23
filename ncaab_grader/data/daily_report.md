@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-23
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-23T13:45:21+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-23T14:00:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,7 +53,7 @@ WHY: Model line Tulsa Golden Hurricane +3.5 vs market +6.5 (+2.8 pts) from oppon
 LOGGED: 2026-11-22T22:15:22+00:00 · model ncaab_v1
 ```
 
-## Watch list (17) — positive EV but not a qualified bet
+## Watch list (18) — positive EV but not a qualified bet
 
 - UT Martin Skyhawks ML +190 (+190) · Temple Owls at UT Martin Skyhawks · Mon 5:30 PM ET · EV +7.7% · min +177
 - Colorado State Rams ML +1200 (+1200) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +7.1% · min +1150
@@ -74,7 +74,7 @@ Bankroll $532.75 · 166-151-0 · logged this run 0 · open 7
 
 ## Data gaps
 
-- no line posted yet (25): IU South Bend Titans @ Eastern Illinois Panthers, Ecclesia Royals @ Grambling Tigers, RIT Tigers @ Buffalo Bulls, Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, Mansfield Mountaineers @ Le Moyne Dolphins, Carolina University Bruins @ North Carolina Central Eagles, Wisconsin Stout Blue Devils @ North Dakota State Bison, Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, Loyola Chicago Ramblers @ Seattle U Redhawks, San José State Spartans @ UC San Diego Tritons, Bellarmine Knights @ Georgia Southern Eagles …
+- no line posted yet (27): IU South Bend Titans @ Eastern Illinois Panthers, Ecclesia Royals @ Grambling Tigers, RIT Tigers @ Buffalo Bulls, Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, Mansfield Mountaineers @ Le Moyne Dolphins, Carolina University Bruins @ North Carolina Central Eagles, Wisconsin Stout Blue Devils @ North Dakota State Bison, Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, Loyola Chicago Ramblers @ Seattle U Redhawks, San José State Spartans @ UC San Diego Tritons, Bellarmine Knights @ Georgia Southern Eagles …
 - possession data coverage: 0.994
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
