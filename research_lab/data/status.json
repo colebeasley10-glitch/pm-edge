@@ -20,7 +20,7 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 11/22"
  },
  "last_run": {
-  "at": "2026-11-23T14:32:33.850636Z",
+  "at": "2026-11-23T14:47:36.077157Z",
   "best_price": {
    "compared": 0,
    "new_picks": 0,
@@ -28,21 +28,21 @@
   },
   "bet_queue": {
    "alerted": 0,
-   "candidates": 1,
+   "candidates": 4,
    "eligible_lanes": 10,
    "queued": 0,
    "settled": 0
   },
   "book_errors": 0,
   "coles_plays": {
-   "app_props": 6718,
+   "app_props": 6755,
    "apps": {
     "PrizePicks": {
      "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.prizepicks.com/projections?per_page=2000&single_stat=true&game_mode=pickem",
      "props": null,
      "skipped": {
-      "event_type": 1408,
-      "not_standard": 20658
+      "event_type": 1435,
+      "not_standard": 20913
      },
      "tried": [
       "partner-api.prizepicks.com/projections: 200 but 0 usable",
@@ -52,13 +52,13 @@
     },
     "Sleeper": {
      "error": null,
-     "props": 2366,
+     "props": 2380,
      "tried": null,
      "url": null
     },
     "Underdog": {
      "error": null,
-     "props": 4352,
+     "props": 4375,
      "tried": [
       "api.underdogfantasy.com/beta/v7/over_under_lines: 404",
       "api.underdogfantasy.com/beta/v6/over_under_lines: 426"
@@ -93,6 +93,7 @@
   },
   "data_failures": [],
   "ev": {
+   "book_offers": 0,
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
@@ -103,11 +104,13 @@
     "taken_at": "2026-11-01T08:32:40.763365Z"
    },
    "errors": [],
-   "games": 0,
-   "picks": 0
+   "games": 37,
+   "kalshi_offers": 16,
+   "picks": 154,
+   "polymarket_offers": 58
   },
   "maker_candidates": {
-   "candidates": 0,
+   "candidates": 96,
    "sharp_agrees": 0
   },
   "my_bets": {
@@ -119,36 +122,48 @@
    "bets_settled": 0,
    "digest": 0,
    "pushed": 0,
-   "sent": 0,
+   "sent": 3,
    "settled": 0
   },
   "odds_fam_board": {
-   "arbs_possible": 0,
+   "arbs_possible": 140,
    "bets_graded": 0,
    "clv_scored": 0,
    "props": 82,
-   "rows": 82
+   "rows": 236
   },
   "paper_only": true,
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [],
-   "kalshi_markets": 0,
-   "matched": 0,
-   "note": "no Pinnacle fetch due this round",
-   "pinnacle_games": 0,
-   "requests_today": 36,
-   "samples": [],
-   "skipped": [
-    "football: next in 15 min",
-    "basketball: next in 14 min",
-    "hockey: next in 45 min",
-    "baseball: next in 74 min",
-    "soccer: next in 15 min",
-    "tennis: next in 195 min"
+   "fetched": [
+    "basketball"
    ],
-   "unmatched": {}
+   "kalshi_markets": 682,
+   "matched": 56,
+   "pinnacle_games": 42,
+   "requests_today": 37,
+   "samples": [
+    "no_pinnacle_match: San Antonio vs Sacramento: San Antonio wins",
+    "no_pinnacle_match: San Antonio vs Sacramento: Sacramento wins",
+    "no_pinnacle_match: Utah vs Los Angeles L: Utah wins",
+    "no_pinnacle_match: Utah vs Los Angeles L: Los Angeles L wins",
+    "no_pinnacle_match: Detroit vs Orlando: Detroit wins",
+    "no_pinnacle_match: Detroit vs Orlando: Orlando wins",
+    "no_pinnacle_match: Boston vs Washington: Boston wins",
+    "no_pinnacle_match: Boston vs Washington: Washington wins"
+   ],
+   "skipped": [
+    "football: next in 0 min",
+    "hockey: next in 30 min",
+    "baseball: next in 59 min",
+    "soccer: next in 0 min",
+    "tennis: next in 180 min"
+   ],
+   "unmatched": {
+    "no_pinnacle_match": 402,
+    "pinnacle_line_not_offered": 224
+   }
   },
   "prop_board": {
    "new_plays": 0,
@@ -158,15 +173,15 @@
   },
   "reconciled": true,
   "sharp_plays": {
-   "games": 0,
-   "new_plays": 0,
+   "games": 42,
+   "new_plays": 3,
    "pushed": 0,
    "settled": 0
   },
   "sleeper": {
    "edges": 0,
    "errors": [],
-   "lines": 1712,
+   "lines": 1717,
    "matched_props": 33,
    "unmatched_stats": [
     "anytime_touchdowns",
@@ -222,13 +237,13 @@
   "strategies": {
    "EV_FINDER_v2": {
     "filled": 0,
-    "no_fill": 0,
+    "no_fill": 1,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 1,
     "reconcile_problems": [],
     "rejected": 0,
-    "scanned": 0,
+    "scanned": 154,
     "settle": {
      "marked": 7,
      "pending": 8,
@@ -237,13 +252,13 @@
    },
    "EV_FINDER_v3": {
     "filled": 0,
-    "no_fill": 0,
+    "no_fill": 1,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 1,
     "reconcile_problems": [],
     "rejected": 0,
-    "scanned": 0,
+    "scanned": 154,
     "settle": {
      "marked": 5,
      "pending": 5,
@@ -252,6 +267,6 @@
    }
   }
  },
- "last_success": "2026-11-23T14:32:33.850636Z",
+ "last_success": "2026-11-23T14:47:36.077157Z",
  "report_sent": "20261031"
 }
