@@ -1,13 +1,35 @@
 # NCAA Basketball Model — daily report 2026-11-23
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-23T23:15:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-23T23:30:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $516.27 (start $500, at risk $20.00) · ¼-Kelly comparison $521.34
+**Paper bankroll:** $516.27 (start $500, at risk $25.00) · ¼-Kelly comparison $521.34
 **Season to date (BET tier):** 15-11-0 · flat P/L $+16.27 (+12.5% on risk) · ¼-Kelly P/L $+21.34 · beat close 27%
 
-## Qualified bets (3)
+## Qualified bets (4)
+
+```
+GAME: Gonzaga Bulldogs at Kansas State Wildcats (neutral)
+TIPOFF: Wed 12:30 AM ET
+
+SPORTSBOOK LINE: Kansas State Wildcats +15.5 (-110)
+MODEL LINE: Kansas State Wildcats +9
+PROJECTED SCORE: Gonzaga Bulldogs 80 - Kansas State Wildcats 71
+
+MODEL COVER PROBABILITY: 56.8%
+BREAK-EVEN PROBABILITY: 52.38%
+EXPECTED ROI: +8.5%
+
+RECOMMENDATION: Kansas State Wildcats +15.5
+MINIMUM ACCEPTABLE PRICE: -126
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $10.00
+CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 56.8% (backtest-shrunk toward the market)
+FLAGS: neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line Kansas State Wildcats +9 vs market +15.5 (+6.7 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-23T23:30:28+00:00 · model ncaab_v1
+```
 
 ```
 GAME: Belmont Bruins at Akron Zips (neutral)
@@ -96,7 +118,7 @@ Bankroll $537.51 · 167-151-0 · logged this run 0 · open 8
 
 ## Data gaps
 
-- no line posted yet (30): RIT Tigers @ Buffalo Bulls, Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, Mansfield Mountaineers @ Le Moyne Dolphins, Carolina University Bruins @ North Carolina Central Eagles, Wisconsin Stout Blue Devils @ North Dakota State Bison, Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, Southern Utah Thunderbirds @ Florida International Panthers, Vermont State Randolph Knights @ Stonehill Skyhawks, Oregon State Beavers @ San Francisco Dons, TBD @ TBD, App State Mountaineers @ Yale Bulldogs …
-- possession data coverage: 0.989
+- no line posted yet (30): Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, Mansfield Mountaineers @ Le Moyne Dolphins, Carolina University Bruins @ North Carolina Central Eagles, Wisconsin Stout Blue Devils @ North Dakota State Bison, Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, Southern Utah Thunderbirds @ Florida International Panthers, Vermont State Randolph Knights @ Stonehill Skyhawks, Oregon State Beavers @ San Francisco Dons, TBD @ TBD, App State Mountaineers @ Yale Bulldogs, North Dakota Fighting Hawks @ Detroit Mercy Titans …
+- possession data coverage: 0.99
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
