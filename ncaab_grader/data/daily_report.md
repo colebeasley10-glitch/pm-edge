@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-22
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-23T04:00:31+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-23T04:15:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,9 +31,10 @@ WHY: Model line Tulsa Golden Hurricane +3.5 vs market +6.5 (+2.8 pts) from oppon
 LOGGED: 2026-11-22T22:15:22+00:00 · model ncaab_v1
 ```
 
-## Watch list (15) — positive EV but not a qualified bet
+## Watch list (16) — positive EV but not a qualified bet
 
 - Colorado State Rams ML +1200 (+1200) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +7.1% · min +1150
+- Tulsa Golden Hurricane ML +240 (+240) · Tulsa Golden Hurricane at Oregon State Beavers · Mon 2:00 PM ET · EV +5.7% · min +231
 - Wright State Raiders ML -122 (-122) · Akron Zips at Wright State Raiders · Mon 1:30 PM ET · EV +5.5% · min -129
 - Southern Illinois Salukis ML -115 (-115) · Middle Tennessee Blue Raiders at Southern Illinois Salukis · Mon 3:00 PM ET · EV +3.6% · min -116
 - OVER 142.5 (-105) · Yale Bulldogs at Belmont Bruins · Mon 4:00 PM ET · EV +1.8% · min -102
@@ -44,7 +45,6 @@ LOGGED: 2026-11-22T22:15:22+00:00 · model ncaab_v1
 - Southern Utah Thunderbirds ML +245 (+245) · Arkansas State Red Wolves at Southern Utah Thunderbirds · Mon 3:30 PM ET · EV +1.6% · min +250
 - Washington Huskies +10.5 (-108) · Washington Huskies at BYU Cougars · Mon 5:00 PM ET · EV +1.6% · min -107
 - OVER 153.5 (-105) · Monmouth Hawks at North Carolina Tar Heels · Mon 8:00 PM ET · EV +1.6% · min -102
-- OVER 145.5 (-105) · Texas A&M-Corpus Christi Islanders at Wichita State Shockers · Mon 7:30 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -52,7 +52,7 @@ Bankroll $532.75 · 166-151-0 · logged this run 0 · open 7
 
 ## Data gaps
 
-- no line posted yet (17): IU South Bend Titans @ Eastern Illinois Panthers, Ecclesia Royals @ Grambling Tigers, William & Mary Tribe @ IU Indianapolis Jaguars, Temple Owls @ TBD, RIT Tigers @ Buffalo Bulls, Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, Mansfield Mountaineers @ Le Moyne Dolphins, Carolina University Bruins @ North Carolina Central Eagles, Wisconsin Stout Blue Devils @ North Dakota State Bison, Stephen F. Austin Lumberjacks @ TBD, Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies …
-- possession data coverage: 0.992
+- no line posted yet (16): IU South Bend Titans @ Eastern Illinois Panthers, Ecclesia Royals @ Grambling Tigers, Temple Owls @ UT Martin Skyhawks, RIT Tigers @ Buffalo Bulls, Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, Mansfield Mountaineers @ Le Moyne Dolphins, Carolina University Bruins @ North Carolina Central Eagles, Wisconsin Stout Blue Devils @ North Dakota State Bison, Stephen F. Austin Lumberjacks @ Utah Valley Wolverines, Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, TBD @ TBD …
+- possession data coverage: 0.99
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
