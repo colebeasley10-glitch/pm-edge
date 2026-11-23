@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-23
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-23T23:30:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-23T23:45:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -97,28 +97,28 @@ WHY: Model line DePaul Blue Demons +0.5 vs market +4.5 (+3.9 pts) from opponent-
 LOGGED: 2026-11-23T21:30:28+00:00 · model ncaab_v1
 ```
 
-## Watch list (17) — positive EV but not a qualified bet
+## Watch list (27) — positive EV but not a qualified bet
 
 - Colorado State Rams ML +1200 (+1200) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +7.1% · min +1150
+- Weber State Wildcats ML -110 (-110) · Tarleton State Texans at Weber State Wildcats · Tue 7:00 PM ET · EV +5.3% · min -115
 - New Mexico State Aggies ML +190 (+190) · Ohio Bobcats at New Mexico State Aggies · Tue 11:00 AM ET · EV +5.2% · min +184
+- Green Bay Phoenix ML -110 (-110) · Green Bay Phoenix at Kansas City Roos · Tue 8:00 PM ET · EV +5.2% · min -115
+- Green Bay Phoenix -1.5 (+110) · Green Bay Phoenix at Kansas City Roos · Tue 8:00 PM ET · EV +4.4% · min +105
 - Wright State Raiders ML -115 (-115) · Wright State Raiders at St. Bonaventure Bonnies · Tue 10:00 AM ET · EV +4.2% · min -118
 - Miami Hurricanes ML -285 (-285) · Miami Hurricanes at TCU Horned Frogs · Tue 3:00 PM ET · EV +2.2% · min -276
 - Baylor Bears +2.5 (-110) · Baylor Bears at Alabama Crimson Tide · Tue 10:00 PM ET · EV +1.8% · min -110
 - OVER 132.5 (-105) · Fairleigh Dickinson Knights at Iona Gaels · Mon 7:00 PM ET · EV +1.8% · min -102
 - OVER 149.5 (-105) · Ohio Bobcats at New Mexico State Aggies · Tue 11:00 AM ET · EV +1.8% · min -102
 - OVER 143.5 (-105) · SE Louisiana Lions at Northern Colorado Bears · Tue 12:30 PM ET · EV +1.7% · min -102
-- OVER 157.5 (-105) · San José State Spartans at UC San Diego Tritons · Mon 11:59 PM ET · EV +1.7% · min -102
-- OVER 150.5 (-105) · North Carolina A&T Aggies at South Carolina State Bulldogs · Mon 7:00 PM ET · EV +1.6% · min -102
-- OVER 153.5 (-105) · Monmouth Hawks at North Carolina Tar Heels · Mon 8:00 PM ET · EV +1.6% · min -102
-- OVER 145.5 (-105) · Texas A&M-Corpus Christi Islanders at Wichita State Shockers · Mon 7:30 PM ET · EV +1.6% · min -102
+- OVER 130.5 (-105) · Hampton Pirates at Old Dominion Monarchs · Tue 7:00 PM ET · EV +1.7% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $537.51 · 167-151-0 · logged this run 0 · open 8
+Bankroll $537.51 · 167-151-0 · logged this run 5 · open 13
 
 ## Data gaps
 
-- no line posted yet (30): Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, Mansfield Mountaineers @ Le Moyne Dolphins, Carolina University Bruins @ North Carolina Central Eagles, Wisconsin Stout Blue Devils @ North Dakota State Bison, Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, Southern Utah Thunderbirds @ Florida International Panthers, Vermont State Randolph Knights @ Stonehill Skyhawks, Oregon State Beavers @ San Francisco Dons, TBD @ TBD, App State Mountaineers @ Yale Bulldogs, North Dakota Fighting Hawks @ Detroit Mercy Titans …
-- possession data coverage: 0.99
+- no line posted yet (30): Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, Mansfield Mountaineers @ Le Moyne Dolphins, Carolina University Bruins @ North Carolina Central Eagles, Wisconsin Stout Blue Devils @ North Dakota State Bison, Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, Southern Utah Thunderbirds @ Florida International Panthers, Vermont State Randolph Knights @ Stonehill Skyhawks, Oregon State Beavers @ San Francisco Dons, Ole Miss Rebels @ TBD, App State Mountaineers @ Yale Bulldogs, Long Beach State Beach @ Arkansas State Red Wolves …
+- possession data coverage: 0.987
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
