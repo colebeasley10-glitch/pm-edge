@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-22
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-22T23:53:47+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-23T00:00:38+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,11 +53,10 @@ WHY: Model line Tulsa Golden Hurricane +3.5 vs market +6.5 (+2.8 pts) from oppon
 LOGGED: 2026-11-22T22:15:22+00:00 · model ncaab_v1
 ```
 
-## Watch list (13) — positive EV but not a qualified bet
+## Watch list (11) — positive EV but not a qualified bet
 
 - Colorado State Rams ML +1200 (+1200) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +7.1% · min +1150
 - Wright State Raiders ML -122 (-122) · Akron Zips at Wright State Raiders · Mon 1:30 PM ET · EV +5.5% · min -129
-- Rhode Island Rams ML -135 (-135) · Rhode Island Rams at UAB Blazers · Sun 7:00 PM ET · EV +5.3% · min -142
 - UC San Diego Tritons ML -115 (-115) · Seattle U Redhawks at UC San Diego Tritons · Sun 9:30 PM ET · EV +4.5% · min -119
 - Southern Illinois Salukis ML -115 (-115) · Middle Tennessee Blue Raiders at Southern Illinois Salukis · Mon 3:00 PM ET · EV +3.6% · min -116
 - OVER 142.5 (-105) · Yale Bulldogs at Belmont Bruins · Mon 4:00 PM ET · EV +1.8% · min -102
@@ -75,6 +74,6 @@ Bankroll $523.81 · 163-150-0 · logged this run 0 · open 8
 ## Data gaps
 
 - no line posted yet (26): Menlo Oaks @ Saint Mary's Gaels, Ecclesia Royals @ Grambling Tigers, IU South Bend Titans @ Eastern Illinois Panthers, Charlotte 49ers @ Florida Gulf Coast Eagles, William & Mary Tribe @ IU Indianapolis Jaguars, TBD @ TBD, Maryland Eastern Shore Hawks @ Youngstown State Penguins, RIT Tigers @ Buffalo Bulls, Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, North Carolina A&T Aggies @ South Carolina State Bulldogs, Mansfield Mountaineers @ Le Moyne Dolphins, Fairleigh Dickinson Knights @ Iona Gaels …
-- possession data coverage: 0.985
+- possession data coverage: 0.988
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
