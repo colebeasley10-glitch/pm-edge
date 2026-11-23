@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-23
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-23T20:37:40+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-23T20:45:35+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -48,11 +48,11 @@ LOGGED: 2026-11-23T05:45:22+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $532.75 · 166-151-0 · logged this run 0 · open 8
+Bankroll $537.51 · 167-151-0 · logged this run 0 · open 7
 
 ## Data gaps
 
 - no line posted yet (30): RIT Tigers @ Buffalo Bulls, Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, Mansfield Mountaineers @ Le Moyne Dolphins, Carolina University Bruins @ North Carolina Central Eagles, Wisconsin Stout Blue Devils @ North Dakota State Bison, Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, Wright State Raiders @ St. Bonaventure Bonnies, Ohio Bobcats @ New Mexico State Aggies, Belmont Bruins @ Akron Zips, SE Louisiana Lions @ Northern Colorado Bears, Southern Utah Thunderbirds @ Florida International Panthers …
-- possession data coverage: 0.993
+- possession data coverage: 0.989
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
