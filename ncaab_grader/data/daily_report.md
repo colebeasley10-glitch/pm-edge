@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-22
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-23T00:15:34+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-23T00:30:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $501.50 (start $500, at risk $15.00) · ¼-Kelly comparison $503.55
-**Season to date (BET tier):** 12-11-0 · flat P/L $+1.50 (+1.3% on risk) · ¼-Kelly P/L $+3.55 · beat close 22%
+**Paper bankroll:** $506.26 (start $500, at risk $10.00) · ¼-Kelly comparison $512.49
+**Season to date (BET tier):** 13-11-0 · flat P/L $+6.26 (+5.2% on risk) · ¼-Kelly P/L $+12.49 · beat close 25%
 
 ## Qualified bets (2)
 
@@ -69,11 +69,11 @@ LOGGED: 2026-11-22T22:15:22+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $523.81 · 163-150-0 · logged this run 0 · open 8
+Bankroll $533.20 · 165-150-0 · logged this run 0 · open 6
 
 ## Data gaps
 
 - no line posted yet (26): Menlo Oaks @ Saint Mary's Gaels, Ecclesia Royals @ Grambling Tigers, IU South Bend Titans @ Eastern Illinois Panthers, Charlotte 49ers @ Florida Gulf Coast Eagles, William & Mary Tribe @ IU Indianapolis Jaguars, TBD @ TBD, Maryland Eastern Shore Hawks @ Youngstown State Penguins, RIT Tigers @ Buffalo Bulls, Notre Dame (MD) Gators @ Howard Bison, Spalding Pelicans @ Ball State Cardinals, Kentucky State Thorobreds @ East Tennessee State Buccaneers, Penn State Brandywine Lions @ La Salle Explorers, North Carolina A&T Aggies @ South Carolina State Bulldogs, Mansfield Mountaineers @ Le Moyne Dolphins, Fairleigh Dickinson Knights @ Iona Gaels …
-- possession data coverage: 0.988
+- possession data coverage: 0.987
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
