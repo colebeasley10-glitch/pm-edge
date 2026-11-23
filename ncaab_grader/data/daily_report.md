@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-23
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-23T20:15:27+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-23T20:30:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,7 +31,7 @@ WHY: Model line UT Martin Skyhawks +2 vs market +4.5 (+2.5 pts) from opponent-ad
 LOGGED: 2026-11-23T05:45:22+00:00 · model ncaab_v1
 ```
 
-## Watch list (17) — positive EV but not a qualified bet
+## Watch list (16) — positive EV but not a qualified bet
 
 - UT Martin Skyhawks ML +190 (+190) · Temple Owls at UT Martin Skyhawks · Mon 5:30 PM ET · EV +7.7% · min +177
 - Colorado State Rams ML +1200 (+1200) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +7.1% · min +1150
@@ -41,10 +41,10 @@ LOGGED: 2026-11-23T05:45:22+00:00 · model ncaab_v1
 - OVER 149.5 (-105) · Tulane Green Wave at Georgia State Panthers · Mon 4:00 PM ET · EV +1.7% · min -102
 - OVER 157.5 (-105) · San José State Spartans at UC San Diego Tritons · Mon 11:59 PM ET · EV +1.7% · min -102
 - OVER 150.5 (-105) · North Carolina A&T Aggies at South Carolina State Bulldogs · Mon 7:00 PM ET · EV +1.6% · min -102
-- Southern Utah Thunderbirds ML +245 (+245) · Arkansas State Red Wolves at Southern Utah Thunderbirds · Mon 3:30 PM ET · EV +1.6% · min +250
 - Washington Huskies +10.5 (-108) · Washington Huskies at BYU Cougars · Mon 5:00 PM ET · EV +1.6% · min -107
 - OVER 153.5 (-105) · Monmouth Hawks at North Carolina Tar Heels · Mon 8:00 PM ET · EV +1.6% · min -102
 - OVER 145.5 (-105) · Texas A&M-Corpus Christi Islanders at Wichita State Shockers · Mon 7:30 PM ET · EV +1.6% · min -102
+- OVER 148.5 (-105) · Alabama State Hornets at California Golden Bears · Mon 10:00 PM ET · EV +1.5% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
