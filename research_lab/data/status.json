@@ -8,7 +8,7 @@
  "last_report_preview": {
   "lines": [
    "PM EDGE STRATEGY RESEARCH LAB \u2014 2026-11-22 (PAPER)",
-   "Existing Sharp (paper): 2751-2204, \u2212$1835.28, ROI -3.7%",
+   "Existing Sharp (paper): 2753-2204, \u2212$1822.28, ROI -3.7%",
    "Today's Plays: 122-64, +$14.37, ROI +0.8%",
    "Today's Plays (-200 to +150): 94-80, \u2212$0.59, ROI -0.0%",
    "Structural: 0 quote-level opportunities, 0 fully executable today",
@@ -20,7 +20,7 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 11/22"
  },
  "last_run": {
-  "at": "2026-11-23T10:17:35.039080Z",
+  "at": "2026-11-23T10:32:38.063641Z",
   "best_price": {
    "compared": 0,
    "new_picks": 0,
@@ -28,21 +28,21 @@
   },
   "bet_queue": {
    "alerted": 0,
-   "candidates": 0,
+   "candidates": 3,
    "eligible_lanes": 10,
-   "queued": 0,
+   "queued": 3,
    "settled": 0
   },
   "book_errors": 0,
   "coles_plays": {
-   "app_props": 6117,
+   "app_props": 6123,
    "apps": {
     "PrizePicks": {
      "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.prizepicks.com/projections?per_page=2000&single_stat=true&game_mode=pickem",
      "props": null,
      "skipped": {
-      "event_type": 1076,
-      "not_standard": 17956
+      "event_type": 1072,
+      "not_standard": 18158
      },
      "tried": [
       "partner-api.prizepicks.com/projections: 200 but 0 usable",
@@ -52,13 +52,13 @@
     },
     "Sleeper": {
      "error": null,
-     "props": 2057,
+     "props": 2067,
      "tried": null,
      "url": null
     },
     "Underdog": {
      "error": null,
-     "props": 4060,
+     "props": 4056,
      "tried": [
       "api.underdogfantasy.com/beta/v7/over_under_lines: 404",
       "api.underdogfantasy.com/beta/v6/over_under_lines: 426"
@@ -93,6 +93,7 @@
   },
   "data_failures": [],
   "ev": {
+   "book_offers": 0,
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
@@ -103,11 +104,13 @@
     "taken_at": "2026-11-01T08:32:40.763365Z"
    },
    "errors": [],
-   "games": 0,
-   "picks": 0
+   "games": 25,
+   "kalshi_offers": 16,
+   "picks": 138,
+   "polymarket_offers": 40
   },
   "maker_candidates": {
-   "candidates": 0,
+   "candidates": 104,
    "sharp_agrees": 0
   },
   "my_bets": {
@@ -118,36 +121,48 @@
   "odds_fam": {
    "bets_settled": 0,
    "pushed": 0,
-   "sent": 0,
+   "sent": 3,
    "settled": 0
   },
   "odds_fam_board": {
-   "arbs_possible": 0,
+   "arbs_possible": 130,
    "bets_graded": 0,
    "clv_scored": 0,
    "props": 82,
-   "rows": 82
+   "rows": 220
   },
   "paper_only": true,
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [],
-   "kalshi_markets": 0,
-   "matched": 0,
-   "note": "no Pinnacle fetch due this round",
-   "pinnacle_games": 0,
-   "requests_today": 21,
-   "samples": [],
-   "skipped": [
-    "football: next in 29 min",
-    "basketball: next in 0 min",
-    "hockey: next in 45 min",
-    "baseball: next in 60 min",
-    "soccer: next in 60 min",
-    "tennis: next in 59 min"
+   "fetched": [
+    "basketball"
    ],
-   "unmatched": {}
+   "kalshi_markets": 682,
+   "matched": 60,
+   "pinnacle_games": 28,
+   "requests_today": 22,
+   "samples": [
+    "no_pinnacle_match: San Antonio vs Sacramento: San Antonio wins",
+    "no_pinnacle_match: San Antonio vs Sacramento: Sacramento wins",
+    "no_pinnacle_match: Utah vs Los Angeles L: Utah wins",
+    "no_pinnacle_match: Utah vs Los Angeles L: Los Angeles L wins",
+    "no_pinnacle_match: Detroit vs Orlando: Detroit wins",
+    "no_pinnacle_match: Detroit vs Orlando: Orlando wins",
+    "no_pinnacle_match: Boston vs Washington: Boston wins",
+    "no_pinnacle_match: Boston vs Washington: Washington wins"
+   ],
+   "skipped": [
+    "football: next in 14 min",
+    "hockey: next in 30 min",
+    "baseball: next in 45 min",
+    "soccer: next in 45 min",
+    "tennis: next in 44 min"
+   ],
+   "unmatched": {
+    "no_pinnacle_match": 402,
+    "pinnacle_line_not_offered": 220
+   }
   },
   "prop_board": {
    "new_plays": 0,
@@ -157,15 +172,15 @@
   },
   "reconciled": true,
   "sharp_plays": {
-   "games": 0,
-   "new_plays": 0,
+   "games": 28,
+   "new_plays": 3,
    "pushed": 0,
    "settled": 0
   },
   "sleeper": {
    "edges": 0,
    "errors": [],
-   "lines": 1534,
+   "lines": 1542,
    "matched_props": 33,
    "unmatched_stats": [
     "anytime_touchdowns",
@@ -221,13 +236,13 @@
   "strategies": {
    "EV_FINDER_v2": {
     "filled": 0,
-    "no_fill": 0,
+    "no_fill": 1,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 1,
     "reconcile_problems": [],
     "rejected": 0,
-    "scanned": 0,
+    "scanned": 138,
     "settle": {
      "marked": 7,
      "pending": 8,
@@ -242,7 +257,7 @@
     "qualified": 0,
     "reconcile_problems": [],
     "rejected": 0,
-    "scanned": 0,
+    "scanned": 138,
     "settle": {
      "marked": 5,
      "pending": 5,
@@ -251,6 +266,6 @@
    }
   }
  },
- "last_success": "2026-11-23T10:17:35.039080Z",
+ "last_success": "2026-11-23T10:32:38.063641Z",
  "report_sent": "20261031"
 }
