@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-22
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-23T02:00:31+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-23T02:15:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -60,8 +60,8 @@ LOGGED: 2026-11-22T22:15:22+00:00 · model ncaab_v1
 - UC San Diego Tritons ML -115 (-115) · Seattle U Redhawks at UC San Diego Tritons · Sun 9:30 PM ET · EV +4.5% · min -119
 - Southern Illinois Salukis ML -115 (-115) · Middle Tennessee Blue Raiders at Southern Illinois Salukis · Mon 3:00 PM ET · EV +3.6% · min -116
 - OVER 142.5 (-105) · Yale Bulldogs at Belmont Bruins · Mon 4:00 PM ET · EV +1.8% · min -102
-- OVER 149.5 (-105) · Tulane Green Wave at Georgia State Panthers · Mon 4:00 PM ET · EV +1.7% · min -102
 - OVER 145.5 (-105) · Charlotte 49ers at Florida Gulf Coast Eagles · Mon 1:30 PM ET · EV +1.7% · min -102
+- OVER 149.5 (-105) · Tulane Green Wave at Georgia State Panthers · Mon 4:00 PM ET · EV +1.7% · min -102
 - Southern Utah Thunderbirds ML +245 (+245) · Arkansas State Red Wolves at Southern Utah Thunderbirds · Mon 3:30 PM ET · EV +1.6% · min +250
 - Washington Huskies +10.5 (-108) · Washington Huskies at BYU Cougars · Mon 5:00 PM ET · EV +1.6% · min -107
 - OVER 153.5 (-105) · Monmouth Hawks at North Carolina Tar Heels · Mon 8:00 PM ET · EV +1.6% · min -102
