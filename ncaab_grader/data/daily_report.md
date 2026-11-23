@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-23
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-23T16:15:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-23T16:30:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,7 +53,7 @@ WHY: Model line Tulsa Golden Hurricane +3.5 vs market +6.5 (+2.8 pts) from oppon
 LOGGED: 2026-11-22T22:15:22+00:00 · model ncaab_v1
 ```
 
-## Watch list (18) — positive EV but not a qualified bet
+## Watch list (19) — positive EV but not a qualified bet
 
 - UT Martin Skyhawks ML +190 (+190) · Temple Owls at UT Martin Skyhawks · Mon 5:30 PM ET · EV +7.7% · min +177
 - Colorado State Rams ML +1200 (+1200) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +7.1% · min +1150
@@ -70,7 +70,7 @@ LOGGED: 2026-11-22T22:15:22+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $532.75 · 166-151-0 · logged this run 1 · open 8
+Bankroll $532.75 · 166-151-0 · logged this run 0 · open 8
 
 ## Data gaps
 
