@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-23
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T00:45:27+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T01:00:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -97,7 +97,7 @@ WHY: Model line DePaul Blue Demons +0.5 vs market +4.5 (+3.9 pts) from opponent-
 LOGGED: 2026-11-23T21:30:28+00:00 · model ncaab_v1
 ```
 
-## Watch list (24) — positive EV but not a qualified bet
+## Watch list (23) — positive EV but not a qualified bet
 
 - Colorado State Rams ML +1200 (+1200) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +7.1% · min +1150
 - Weber State Wildcats ML -110 (-110) · Tarleton State Texans at Weber State Wildcats · Tue 7:00 PM ET · EV +5.3% · min -115
@@ -118,7 +118,7 @@ Bankroll $537.51 · 167-151-0 · logged this run 0 · open 13
 
 ## Data gaps
 
-- no line posted yet (30): Wisconsin Stout Blue Devils @ North Dakota State Bison, Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, Southern Utah Thunderbirds @ Florida International Panthers, Vermont State Randolph Knights @ Stonehill Skyhawks, Oregon State Beavers @ San Francisco Dons, Ole Miss Rebels @ TBD, App State Mountaineers @ Yale Bulldogs, Long Beach State Beach @ Arkansas State Red Wolves, Lindenwood Lions @ New Haven Chargers, Tulsa Golden Hurricane @ Illinois State Redbirds, Penn State Berks Nittany Lions @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, TBD @ TBD, Emerson Lions @ Quinnipiac Bobcats …
-- possession data coverage: 0.99
+- no line posted yet (30): Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, Southern Utah Thunderbirds @ Florida International Panthers, Vermont State Randolph Knights @ Stonehill Skyhawks, Oregon State Beavers @ San Francisco Dons, Ole Miss Rebels @ TBD, App State Mountaineers @ Yale Bulldogs, Long Beach State Beach @ Arkansas State Red Wolves, Lindenwood Lions @ New Haven Chargers, Tulsa Golden Hurricane @ Illinois State Redbirds, Penn State Berks Nittany Lions @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, TBD @ TBD, Emerson Lions @ Quinnipiac Bobcats, Queens University Royals @ Wofford Terriers …
+- possession data coverage: 0.991
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
