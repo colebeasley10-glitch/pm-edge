@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T17:30:30+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T17:45:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $521.27 (start $500, at risk $40.00) · ¼-Kelly comparison $527.74
-**Season to date (BET tier):** 16-11-0 · flat P/L $+21.27 (+15.8% on risk) · ¼-Kelly P/L $+27.74 · beat close 30%
+**Paper bankroll:** $516.27 (start $500, at risk $35.00) · ¼-Kelly comparison $523.39
+**Season to date (BET tier):** 16-12-0 · flat P/L $+16.27 (+11.6% on risk) · ¼-Kelly P/L $+23.39 · beat close 29%
 
 ## Qualified bets (6)
 
@@ -158,11 +158,11 @@ LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $531.52 · 169-154-0 · logged this run 0 · open 19
+Bankroll $531.52 · 169-154-0 · logged this run 1 · open 20
 
 ## Data gaps
 
-- no line posted yet (30): Vermont State Randolph Knights @ Stonehill Skyhawks, Penn State Berks Nittany Lions @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, Emerson Lions @ Quinnipiac Bobcats, Carolina Christian Centurions @ Presbyterian Blue Hose, SUNY Fredonia Blue Devils @ Mercyhurst Lakers, Arlington Baptist Patriots @ East Texas A&M Lions, Arkansas Baptist Buffaloes @ Little Rock Trojans, Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns, St. Bonaventure Bonnies @ Belmont Bruins, Rice Owls @ Ohio Bobcats, Northern Iowa Panthers @ Charlotte 49ers, Mercy Mavericks @ Fordham Rams, Virginia Cavaliers @ Marquette Golden Eagles, Penn State Abington Nittany Lions @ Saint Joseph's Hawks …
-- possession data coverage: 0.992
+- no line posted yet (30): Vermont State Randolph Knights @ Stonehill Skyhawks, Penn State Berks Nittany Lions @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, Emerson Lions @ Quinnipiac Bobcats, Carolina Christian Centurions @ Presbyterian Blue Hose, SUNY Fredonia Blue Devils @ Mercyhurst Lakers, Arlington Baptist Patriots @ East Texas A&M Lions, Alcorn State Braves @ Louisiana Tech Bulldogs, Arkansas Baptist Buffaloes @ Little Rock Trojans, Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns, St. Bonaventure Bonnies @ Belmont Bruins, Rice Owls @ Ohio Bobcats, Northern Iowa Panthers @ Charlotte 49ers, Mercy Mavericks @ Fordham Rams, Virginia Cavaliers @ Marquette Golden Eagles …
+- possession data coverage: 0.991
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
