@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-23
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T02:00:32+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T02:15:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -154,11 +154,11 @@ LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
 - Baylor Bears +2.5 (-110) · Baylor Bears at Alabama Crimson Tide · Tue 10:00 PM ET · EV +1.8% · min -110
 - OVER 149.5 (-105) · Ohio Bobcats at New Mexico State Aggies · Tue 11:00 AM ET · EV +1.8% · min -102
 - OVER 143.5 (-105) · SE Louisiana Lions at Northern Colorado Bears · Tue 12:30 PM ET · EV +1.7% · min -102
-- OVER 130.5 (-105) · Hampton Pirates at Old Dominion Monarchs · Tue 7:00 PM ET · EV +1.7% · min -102
+- OVER 147.5 (-105) · Jacksonville Dolphins at Indiana Hoosiers · Tue 7:00 PM ET · EV +1.7% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $537.51 · 167-151-0 · logged this run 2 · open 15
+Bankroll $537.51 · 167-151-0 · logged this run 0 · open 15
 
 ## Data gaps
 
