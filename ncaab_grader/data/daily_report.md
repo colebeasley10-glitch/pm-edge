@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-23
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T02:30:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T02:45:23+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $521.27 (start $500, at risk $30.00) · ¼-Kelly comparison $527.74
+**Paper bankroll:** $521.27 (start $500, at risk $35.00) · ¼-Kelly comparison $527.74
 **Season to date (BET tier):** 16-11-0 · flat P/L $+21.27 (+15.8% on risk) · ¼-Kelly P/L $+27.74 · beat close 30%
 
-## Qualified bets (6)
+## Qualified bets (7)
 
 ```
 GAME: Gonzaga Bulldogs at Kansas State Wildcats (neutral)
@@ -51,6 +51,28 @@ FLAGS: neutral site; injuries/lineups not modeled — check before betting
 
 WHY: Model line Belmont Bruins PK vs market +2.5 (+2.7 pts) from opponent-adjusted efficiency and venue.
 LOGGED: 2026-11-23T23:00:36+00:00 · model ncaab_v1
+```
+
+```
+GAME: Nevada Wolf Pack at Santa Clara Broncos (neutral)
+TIPOFF: Tue 7:00 PM ET
+
+SPORTSBOOK LINE: Santa Clara Broncos +1.5 (+100)
+MODEL LINE: Santa Clara Broncos -0.5
+PROJECTED SCORE: Nevada Wolf Pack 80 - Santa Clara Broncos 81
+
+MODEL COVER PROBABILITY: 52.0%
+BREAK-EVEN PROBABILITY: 50.00%
+EXPECTED ROI: +4.0%
+
+RECOMMENDATION: Santa Clara Broncos +1.5
+MINIMUM ACCEPTABLE PRICE: -104
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $4.96
+CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 52.0% (backtest-shrunk toward the market)
+FLAGS: neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line Santa Clara Broncos -0.5 vs market +1.5 (+1.9 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-24T02:45:23+00:00 · model ncaab_v1
 ```
 
 ```
@@ -141,28 +163,28 @@ WHY: Model line New Haven Chargers PK vs market +2.5 (+2.4 pts) from opponent-ad
 LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
 ```
 
-## Watch list (25) — positive EV but not a qualified bet
+## Watch list (28) — positive EV but not a qualified bet
 
 - Colorado State Rams ML +1200 (+1200) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +7.1% · min +1150
+- Wofford Terriers ML -110 (-110) · Queens University Royals at Wofford Terriers · Tue 6:00 PM ET · EV +5.5% · min -116
 - Weber State Wildcats ML -110 (-110) · Tarleton State Texans at Weber State Wildcats · Tue 7:00 PM ET · EV +5.3% · min -115
 - New Mexico State Aggies ML +190 (+190) · Ohio Bobcats at New Mexico State Aggies · Tue 11:00 AM ET · EV +5.2% · min +184
 - Green Bay Phoenix ML -110 (-110) · Green Bay Phoenix at Kansas City Roos · Tue 8:00 PM ET · EV +5.2% · min -115
+- Wofford Terriers -1.5 (+110) · Queens University Royals at Wofford Terriers · Tue 6:00 PM ET · EV +4.8% · min +104
 - Green Bay Phoenix -1.5 (+110) · Green Bay Phoenix at Kansas City Roos · Tue 8:00 PM ET · EV +4.4% · min +105
 - Wright State Raiders ML -115 (-115) · Wright State Raiders at St. Bonaventure Bonnies · Tue 10:00 AM ET · EV +4.2% · min -118
 - North Alabama Lions ML -155 (-155) · Alabama A&M Bulldogs at North Alabama Lions · Tue 8:00 PM ET · EV +2.8% · min -154
 - Miami Hurricanes ML -285 (-285) · Miami Hurricanes at TCU Horned Frogs · Tue 3:00 PM ET · EV +2.2% · min -276
 - Baylor Bears +2.5 (-110) · Baylor Bears at Alabama Crimson Tide · Tue 10:00 PM ET · EV +1.8% · min -110
 - OVER 149.5 (-105) · Ohio Bobcats at New Mexico State Aggies · Tue 11:00 AM ET · EV +1.8% · min -102
-- OVER 143.5 (-105) · SE Louisiana Lions at Northern Colorado Bears · Tue 12:30 PM ET · EV +1.7% · min -102
-- OVER 147.5 (-105) · Jacksonville Dolphins at Indiana Hoosiers · Tue 7:00 PM ET · EV +1.7% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $537.51 · 167-151-0 · logged this run 0 · open 15
+Bankroll $541.97 · 168-151-0 · logged this run 1 · open 15
 
 ## Data gaps
 
-- no line posted yet (30): Vermont State Randolph Knights @ Stonehill Skyhawks, Tulsa Golden Hurricane @ Illinois State Redbirds, Penn State Berks Nittany Lions @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, TBD @ TBD, Emerson Lions @ Quinnipiac Bobcats, Queens University Royals @ Wofford Terriers, Robert Morris Colonials @ Lamar Cardinals, Carolina Christian Centurions @ Presbyterian Blue Hose, Bryant Bulldogs @ Marist Red Foxes, Coppin State Eagles @ Villanova Wildcats, Rider Broncs @ Loyola Maryland Greyhounds, Bellarmine Knights @ Georgia Southern Eagles, Delaware State Hornets @ Chattanooga Mocs, Mount St. Mary's Mountaineers @ Morgan State Bears …
-- possession data coverage: 0.991
+- no line posted yet (27): Vermont State Randolph Knights @ Stonehill Skyhawks, Penn State Berks Nittany Lions @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, TBD @ TBD, Emerson Lions @ Quinnipiac Bobcats, Robert Morris Colonials @ Lamar Cardinals, Carolina Christian Centurions @ Presbyterian Blue Hose, Bryant Bulldogs @ Marist Red Foxes, Coppin State Eagles @ Villanova Wildcats, Rider Broncs @ Loyola Maryland Greyhounds, Delaware State Hornets @ Chattanooga Mocs, Mount St. Mary's Mountaineers @ Morgan State Bears, UMBC Retrievers @ Iowa Hawkeyes, Vermont Catamounts @ Siena Saints, SUNY Fredonia Blue Devils @ Mercyhurst Lakers …
+- possession data coverage: 0.986
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
