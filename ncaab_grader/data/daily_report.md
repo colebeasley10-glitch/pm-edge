@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T20:30:29+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T20:45:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -119,7 +119,7 @@ WHY: Model line New Haven Chargers PK vs market +2.5 (+2.4 pts) from opponent-ad
 LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
 ```
 
-## Watch list (26) — positive EV but not a qualified bet
+## Watch list (27) — positive EV but not a qualified bet
 
 - Kansas State Wildcats ML +900 (+900) · Gonzaga Bulldogs at Kansas State Wildcats · Wed 12:30 AM ET · EV +19.4% · min +763
 - Siena Saints ML -142 (-142) · Vermont Catamounts at Siena Saints · Tue 7:00 PM ET · EV +6.1% · min -153
@@ -140,7 +140,7 @@ Bankroll $531.52 · 169-154-0 · logged this run 0 · open 20
 
 ## Data gaps
 
-- no line posted yet (30): Penn State Berks Nittany Lions @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, Emerson Lions @ Quinnipiac Bobcats, Carolina Christian Centurions @ Presbyterian Blue Hose, SUNY Fredonia Blue Devils @ Mercyhurst Lakers, Arlington Baptist Patriots @ East Texas A&M Lions, Alcorn State Braves @ Louisiana Tech Bulldogs, Arkansas Baptist Buffaloes @ Little Rock Trojans, Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns, St. Bonaventure Bonnies @ Belmont Bruins, Rice Owls @ Ohio Bobcats, Northern Iowa Panthers @ Charlotte 49ers, Mercy Mavericks @ Fordham Rams, Virginia Cavaliers @ Marquette Golden Eagles, Penn State Abington Nittany Lions @ Saint Joseph's Hawks …
+- no line posted yet (30): Penn State Berks PENN STATE-LEHIGH VALLEY @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, Emerson Lions @ Quinnipiac Bobcats, Carolina Christian Centurions @ Presbyterian Blue Hose, SUNY Fredonia Blue Devils @ Mercyhurst Lakers, Arlington Baptist Patriots @ East Texas A&M Lions, Alcorn State Braves @ Louisiana Tech Bulldogs, Arkansas Baptist Buffaloes @ Little Rock Trojans, Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns, St. Bonaventure Bonnies @ Belmont Bruins, Rice Owls @ Ohio Bobcats, Northern Iowa Panthers @ Charlotte 49ers, Mercy Mavericks @ Fordham Rams, Virginia Cavaliers @ Marquette Golden Eagles, Penn State Abington Nittany Lions @ Saint Joseph's Hawks …
 - possession data coverage: 0.989
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
