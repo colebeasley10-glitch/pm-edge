@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T17:15:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T17:30:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $521.27 (start $500, at risk $40.00) · ¼-Kelly comparison $527.74
 **Season to date (BET tier):** 16-11-0 · flat P/L $+21.27 (+15.8% on risk) · ¼-Kelly P/L $+27.74 · beat close 30%
 
-## Qualified bets (7)
+## Qualified bets (6)
 
 ```
 GAME: Gonzaga Bulldogs at Kansas State Wildcats (neutral)
@@ -29,28 +29,6 @@ FLAGS: neutral site; injuries/lineups not modeled — check before betting
 
 WHY: Model line Kansas State Wildcats +9 vs market +15.5 (+6.7 pts) from opponent-adjusted efficiency and venue.
 LOGGED: 2026-11-23T23:30:28+00:00 · model ncaab_v1
-```
-
-```
-GAME: Belmont Bruins at Akron Zips (neutral)
-TIPOFF: Tue 12:30 PM ET
-
-SPORTSBOOK LINE: Belmont Bruins +2.5 (+100)
-MODEL LINE: Belmont Bruins PK
-PROJECTED SCORE: Belmont Bruins 71 - Akron Zips 70
-
-MODEL COVER PROBABILITY: 52.8%
-BREAK-EVEN PROBABILITY: 50.00%
-EXPECTED ROI: +5.6%
-
-RECOMMENDATION: Belmont Bruins +2.5
-MINIMUM ACCEPTABLE PRICE: -107
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $6.99
-CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 52.8% (backtest-shrunk toward the market)
-FLAGS: neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Belmont Bruins PK vs market +2.5 (+2.7 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-23T23:00:36+00:00 · model ncaab_v1
 ```
 
 ```
@@ -163,7 +141,7 @@ WHY: Model line New Haven Chargers PK vs market +2.5 (+2.4 pts) from opponent-ad
 LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
 ```
 
-## Watch list (30) — positive EV but not a qualified bet
+## Watch list (28) — positive EV but not a qualified bet
 
 - Kansas State Wildcats ML +900 (+900) · Gonzaga Bulldogs at Kansas State Wildcats · Wed 12:30 AM ET · EV +19.4% · min +763
 - Siena Saints ML -142 (-142) · Vermont Catamounts at Siena Saints · Tue 7:00 PM ET · EV +6.1% · min -153
