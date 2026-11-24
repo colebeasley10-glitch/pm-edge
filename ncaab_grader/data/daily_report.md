@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T18:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T18:30:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -163,6 +163,6 @@ Bankroll $531.52 · 169-154-0 · logged this run 0 · open 20
 ## Data gaps
 
 - no line posted yet (30): Penn State Berks Nittany Lions @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, Emerson Lions @ Quinnipiac Bobcats, Carolina Christian Centurions @ Presbyterian Blue Hose, SUNY Fredonia Blue Devils @ Mercyhurst Lakers, Arlington Baptist Patriots @ East Texas A&M Lions, Alcorn State Braves @ Louisiana Tech Bulldogs, Arkansas Baptist Buffaloes @ Little Rock Trojans, Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns, St. Bonaventure Bonnies @ Belmont Bruins, Rice Owls @ Ohio Bobcats, Northern Iowa Panthers @ Charlotte 49ers, Mercy Mavericks @ Fordham Rams, Virginia Cavaliers @ Marquette Golden Eagles, Penn State Abington Nittany Lions @ Saint Joseph's Hawks …
-- possession data coverage: 0.991
+- possession data coverage: 0.99
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
