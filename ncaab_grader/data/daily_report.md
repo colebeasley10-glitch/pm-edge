@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T22:15:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T22:30:27+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -119,7 +119,7 @@ WHY: Model line Penn State Nittany Lions +1 vs market +4.5 (+3.4 pts) from oppon
 LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (36) — positive EV but not a qualified bet
+## Watch list (34) — positive EV but not a qualified bet
 
 - Kansas State Wildcats ML +900 (+900) · Gonzaga Bulldogs at Kansas State Wildcats · Wed 12:30 AM ET · EV +19.4% · min +763
 - Northern Iowa Panthers ML +320 (+320) · Northern Iowa Panthers at Charlotte 49ers · Wed 11:00 AM ET · EV +15.2% · min +276
@@ -136,11 +136,11 @@ LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $531.52 · 169-154-0 · logged this run 1 · open 21
+Bankroll $531.52 · 169-154-0 · logged this run 0 · open 21
 
 ## Data gaps
 
-- no line posted yet (30): Emerson Lions @ Quinnipiac Bobcats, Carolina Christian Centurions @ Presbyterian Blue Hose, SUNY Fredonia Blue Devils @ Mercyhurst Lakers, Arlington Baptist Patriots @ East Texas A&M Lions, Arkansas Baptist Buffaloes @ Little Rock Trojans, Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns, St. Bonaventure Bonnies @ Belmont Bruins, Rice Owls @ Ohio Bobcats, Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, Yale Bulldogs @ Wright State Raiders, Northern Colorado Bears @ TBD, Lindenwood Lions @ Stony Brook Seawolves, Southern Utah Thunderbirds @ Long Beach State Beach …
-- possession data coverage: 0.986
+- no line posted yet (30): Carolina Christian Centurions @ Presbyterian Blue Hose, SUNY Fredonia Blue Devils @ Mercyhurst Lakers, Arlington Baptist Patriots @ East Texas A&M Lions, Arkansas Baptist Buffaloes @ Little Rock Trojans, Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns, St. Bonaventure Bonnies @ Belmont Bruins, Rice Owls @ Ohio Bobcats, Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, Yale Bulldogs @ Wright State Raiders, Northern Colorado Bears @ TBD, Lindenwood Lions @ Stony Brook Seawolves, Southern Utah Thunderbirds @ Long Beach State Beach, American International Yellow Jackets @ Rhode Island Rams …
+- possession data coverage: 0.988
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
