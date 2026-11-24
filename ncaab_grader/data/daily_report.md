@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T20:45:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T21:00:37+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $511.27 (start $500, at risk $30.00) · ¼-Kelly comparison $516.40
 **Season to date (BET tier):** 16-13-0 · flat P/L $+11.27 (+7.8% on risk) · ¼-Kelly P/L $+16.40 · beat close 28%
 
-## Qualified bets (5)
+## Qualified bets (4)
 
 ```
 GAME: Gonzaga Bulldogs at Kansas State Wildcats (neutral)
@@ -95,28 +95,6 @@ FLAGS: neutral site; injuries/lineups not modeled — check before betting
 
 WHY: Model line Washington Huskies -1.5 vs market +1.5 (+3.2 pts) from opponent-adjusted efficiency and venue.
 LOGGED: 2026-11-24T05:00:34+00:00 · model ncaab_v1
-```
-
-```
-GAME: Lindenwood Lions at New Haven Chargers (neutral)
-TIPOFF: Tue 4:00 PM ET
-
-SPORTSBOOK LINE: New Haven Chargers +2.5 (-105)
-MODEL LINE: New Haven Chargers PK
-PROJECTED SCORE: Lindenwood Lions 65 - New Haven Chargers 65
-
-MODEL COVER PROBABILITY: 52.4%
-BREAK-EVEN PROBABILITY: 51.22%
-EXPECTED ROI: +2.4%
-
-RECOMMENDATION: New Haven Chargers +2.5
-MINIMUM ACCEPTABLE PRICE: -106
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $3.15
-CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 52.4% (backtest-shrunk toward the market)
-FLAGS: neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line New Haven Chargers PK vs market +2.5 (+2.4 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
 ```
 
 ## Watch list (27) — positive EV but not a qualified bet
