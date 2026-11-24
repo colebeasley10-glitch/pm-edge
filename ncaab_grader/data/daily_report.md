@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T22:00:34+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T22:15:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -119,9 +119,10 @@ WHY: Model line Penn State Nittany Lions +1 vs market +4.5 (+3.4 pts) from oppon
 LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (32) — positive EV but not a qualified bet
+## Watch list (36) — positive EV but not a qualified bet
 
 - Kansas State Wildcats ML +900 (+900) · Gonzaga Bulldogs at Kansas State Wildcats · Wed 12:30 AM ET · EV +19.4% · min +763
+- Northern Iowa Panthers ML +320 (+320) · Northern Iowa Panthers at Charlotte 49ers · Wed 11:00 AM ET · EV +15.2% · min +276
 - Penn State Nittany Lions ML +185 (+185) · Memphis Tigers at Penn State Nittany Lions · Wed 5:00 PM ET · EV +8.3% · min +171
 - Siena Saints ML -142 (-142) · Vermont Catamounts at Siena Saints · Tue 7:00 PM ET · EV +6.1% · min -153
 - Marquette Golden Eagles ML +200 (+200) · Virginia Cavaliers at Marquette Golden Eagles · Wed 12:00 PM ET · EV +6.1% · min +191
@@ -132,15 +133,14 @@ LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 - Green Bay Phoenix -1.5 (+110) · Green Bay Phoenix at Kansas City Roos · Tue 8:00 PM ET · EV +4.4% · min +105
 - SMU Mustangs ML +190 (+190) · SMU Mustangs at Utah State Aggies · Wed 7:00 PM ET · EV +3.0% · min +190
 - Loyola Maryland Greyhounds ML -155 (-155) · Rider Broncs at Loyola Maryland Greyhounds · Tue 7:00 PM ET · EV +2.9% · min -155
-- North Alabama Lions ML -155 (-155) · Alabama A&M Bulldogs at North Alabama Lions · Tue 8:00 PM ET · EV +2.8% · min -154
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $531.52 · 169-154-0 · logged this run 0 · open 20
+Bankroll $531.52 · 169-154-0 · logged this run 1 · open 21
 
 ## Data gaps
 
-- no line posted yet (30): Emerson Lions @ Quinnipiac Bobcats, Carolina Christian Centurions @ Presbyterian Blue Hose, SUNY Fredonia Blue Devils @ Mercyhurst Lakers, Arlington Baptist Patriots @ East Texas A&M Lions, Alcorn State Braves @ Louisiana Tech Bulldogs, Arkansas Baptist Buffaloes @ Little Rock Trojans, Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns, St. Bonaventure Bonnies @ Belmont Bruins, Rice Owls @ Ohio Bobcats, Northern Iowa Panthers @ Charlotte 49ers, Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, Yale Bulldogs @ Wright State Raiders, Northern Colorado Bears @ TBD …
-- possession data coverage: 0.989
+- no line posted yet (30): Emerson Lions @ Quinnipiac Bobcats, Carolina Christian Centurions @ Presbyterian Blue Hose, SUNY Fredonia Blue Devils @ Mercyhurst Lakers, Arlington Baptist Patriots @ East Texas A&M Lions, Arkansas Baptist Buffaloes @ Little Rock Trojans, Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns, St. Bonaventure Bonnies @ Belmont Bruins, Rice Owls @ Ohio Bobcats, Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, Yale Bulldogs @ Wright State Raiders, Northern Colorado Bears @ TBD, Lindenwood Lions @ Stony Brook Seawolves, Southern Utah Thunderbirds @ Long Beach State Beach …
+- possession data coverage: 0.986
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
