@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-23
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T02:45:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T03:00:36+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -163,7 +163,7 @@ WHY: Model line New Haven Chargers PK vs market +2.5 (+2.4 pts) from opponent-ad
 LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
 ```
 
-## Watch list (28) — positive EV but not a qualified bet
+## Watch list (27) — positive EV but not a qualified bet
 
 - Colorado State Rams ML +1200 (+1200) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +7.1% · min +1150
 - Wofford Terriers ML -110 (-110) · Queens University Royals at Wofford Terriers · Tue 6:00 PM ET · EV +5.5% · min -116
@@ -180,11 +180,11 @@ LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $541.97 · 168-151-0 · logged this run 1 · open 15
+Bankroll $541.97 · 168-151-0 · logged this run 0 · open 15
 
 ## Data gaps
 
 - no line posted yet (27): Vermont State Randolph Knights @ Stonehill Skyhawks, Penn State Berks Nittany Lions @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, TBD @ TBD, Emerson Lions @ Quinnipiac Bobcats, Robert Morris Colonials @ Lamar Cardinals, Carolina Christian Centurions @ Presbyterian Blue Hose, Bryant Bulldogs @ Marist Red Foxes, Coppin State Eagles @ Villanova Wildcats, Rider Broncs @ Loyola Maryland Greyhounds, Delaware State Hornets @ Chattanooga Mocs, Mount St. Mary's Mountaineers @ Morgan State Bears, UMBC Retrievers @ Iowa Hawkeyes, Vermont Catamounts @ Siena Saints, SUNY Fredonia Blue Devils @ Mercyhurst Lakers …
-- possession data coverage: 0.986
+- possession data coverage: 0.987
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
