@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T21:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T21:30:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $511.27 (start $500, at risk $30.00) · ¼-Kelly comparison $516.40
+**Paper bankroll:** $511.27 (start $500, at risk $35.00) · ¼-Kelly comparison $516.40
 **Season to date (BET tier):** 16-13-0 · flat P/L $+11.27 (+7.8% on risk) · ¼-Kelly P/L $+16.40 · beat close 28%
 
-## Qualified bets (4)
+## Qualified bets (5)
 
 ```
 GAME: Gonzaga Bulldogs at Kansas State Wildcats (neutral)
@@ -97,20 +97,42 @@ WHY: Model line Washington Huskies -1.5 vs market +1.5 (+3.2 pts) from opponent-
 LOGGED: 2026-11-24T05:00:34+00:00 · model ncaab_v1
 ```
 
-## Watch list (27) — positive EV but not a qualified bet
+```
+GAME: Memphis Tigers at Penn State Nittany Lions (neutral)
+TIPOFF: Wed 5:00 PM ET
+
+SPORTSBOOK LINE: Penn State Nittany Lions +4.5 (-110)
+MODEL LINE: Penn State Nittany Lions +1
+PROJECTED SCORE: Memphis Tigers 82 - Penn State Nittany Lions 81
+
+MODEL COVER PROBABILITY: 53.4%
+BREAK-EVEN PROBABILITY: 52.38%
+EXPECTED ROI: +2.0%
+
+RECOMMENDATION: Penn State Nittany Lions +4.5
+MINIMUM ACCEPTABLE PRICE: -110
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $2.79
+CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 53.4% (backtest-shrunk toward the market)
+FLAGS: neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line Penn State Nittany Lions +1 vs market +4.5 (+3.4 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
+```
+
+## Watch list (32) — positive EV but not a qualified bet
 
 - Kansas State Wildcats ML +900 (+900) · Gonzaga Bulldogs at Kansas State Wildcats · Wed 12:30 AM ET · EV +19.4% · min +763
+- Penn State Nittany Lions ML +185 (+185) · Memphis Tigers at Penn State Nittany Lions · Wed 5:00 PM ET · EV +8.3% · min +171
 - Siena Saints ML -142 (-142) · Vermont Catamounts at Siena Saints · Tue 7:00 PM ET · EV +6.1% · min -153
+- Marquette Golden Eagles ML +200 (+200) · Virginia Cavaliers at Marquette Golden Eagles · Wed 12:00 PM ET · EV +6.1% · min +191
 - Wofford Terriers ML -110 (-110) · Queens University Royals at Wofford Terriers · Tue 6:00 PM ET · EV +5.5% · min -116
 - Weber State Wildcats ML -110 (-110) · Tarleton State Texans at Weber State Wildcats · Tue 7:00 PM ET · EV +5.3% · min -115
 - Green Bay Phoenix ML -110 (-110) · Green Bay Phoenix at Kansas City Roos · Tue 8:00 PM ET · EV +5.2% · min -115
 - Wofford Terriers -1.5 (+110) · Queens University Royals at Wofford Terriers · Tue 6:00 PM ET · EV +4.8% · min +104
 - Green Bay Phoenix -1.5 (+110) · Green Bay Phoenix at Kansas City Roos · Tue 8:00 PM ET · EV +4.4% · min +105
+- SMU Mustangs ML +190 (+190) · SMU Mustangs at Utah State Aggies · Wed 7:00 PM ET · EV +3.0% · min +190
 - Loyola Maryland Greyhounds ML -155 (-155) · Rider Broncs at Loyola Maryland Greyhounds · Tue 7:00 PM ET · EV +2.9% · min -155
 - North Alabama Lions ML -155 (-155) · Alabama A&M Bulldogs at North Alabama Lions · Tue 8:00 PM ET · EV +2.8% · min -154
-- Morgan State Bears ML -115 (-115) · Mount St. Mary's Mountaineers at Morgan State Bears · Tue 7:00 PM ET · EV +2.7% · min -114
-- Baylor Bears +2.5 (-110) · Baylor Bears at Alabama Crimson Tide · Tue 10:00 PM ET · EV +1.8% · min -110
-- OVER 147.5 (-105) · Jacksonville Dolphins at Indiana Hoosiers · Tue 7:00 PM ET · EV +1.7% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -118,7 +140,7 @@ Bankroll $531.52 · 169-154-0 · logged this run 0 · open 20
 
 ## Data gaps
 
-- no line posted yet (30): Penn State Berks PENN STATE-LEHIGH VALLEY @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, Emerson Lions @ Quinnipiac Bobcats, Carolina Christian Centurions @ Presbyterian Blue Hose, SUNY Fredonia Blue Devils @ Mercyhurst Lakers, Arlington Baptist Patriots @ East Texas A&M Lions, Alcorn State Braves @ Louisiana Tech Bulldogs, Arkansas Baptist Buffaloes @ Little Rock Trojans, Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns, St. Bonaventure Bonnies @ Belmont Bruins, Rice Owls @ Ohio Bobcats, Northern Iowa Panthers @ Charlotte 49ers, Mercy Mavericks @ Fordham Rams, Virginia Cavaliers @ Marquette Golden Eagles, Penn State Abington Nittany Lions @ Saint Joseph's Hawks …
-- possession data coverage: 0.989
+- no line posted yet (30): Bloomsburg Huskies @ Wagner Seahawks, Emerson Lions @ Quinnipiac Bobcats, Carolina Christian Centurions @ Presbyterian Blue Hose, SUNY Fredonia Blue Devils @ Mercyhurst Lakers, Arlington Baptist Patriots @ East Texas A&M Lions, Alcorn State Braves @ Louisiana Tech Bulldogs, Arkansas Baptist Buffaloes @ Little Rock Trojans, Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns, St. Bonaventure Bonnies @ Belmont Bruins, Rice Owls @ Ohio Bobcats, Northern Iowa Panthers @ Charlotte 49ers, Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, Yale Bulldogs @ Wright State Raiders …
+- possession data coverage: 0.988
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.

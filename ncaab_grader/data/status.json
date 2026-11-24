@@ -1,7 +1,7 @@
 {
-  "at": "2026-11-24T21:15:25+00:00",
+  "at": "2026-11-24T21:30:29+00:00",
   "bankroll": {
-    "at_risk": 30.0,
+    "at_risk": 35.0,
     "balance": 511.27,
     "kelly_balance": 516.4,
     "pnl": 11.27,
@@ -9,7 +9,7 @@
     "start": 500.0
   },
   "bets_pushed": 0,
-  "box_calls": 0,
+  "box_calls": 2,
   "box_errors": [],
   "calibration": {
     "brier": 0.2503,
@@ -17,12 +17,12 @@
     "n": 1956,
     "suspend": false
   },
-  "close_updates": 185,
-  "espn_calls": 0,
+  "close_updates": 203,
+  "espn_calls": 3,
   "espn_errors": [],
-  "finals_d1": 984,
+  "finals_d1": 987,
   "games_this_season": 1428,
-  "games_with_lines": 63,
+  "games_with_lines": 69,
   "home_court_pts": 3.1,
   "home_test": {
     "bankroll": {
@@ -51,11 +51,10 @@
   "insufficient": [],
   "league_eff": 106.8,
   "league_tempo": 70.3,
-  "lines": 65,
-  "logged": 0,
+  "lines": 70,
+  "logged": 21,
   "model": "ncaab_v1",
   "no_line": [
-    "Penn State Berks PENN STATE-LEHIGH VALLEY @ Navy Midshipmen",
     "Bloomsburg Huskies @ Wagner Seahawks",
     "Emerson Lions @ Quinnipiac Bobcats",
     "Carolina Christian Centurions @ Presbyterian Blue Hose",
@@ -68,7 +67,6 @@
     "Rice Owls @ Ohio Bobcats",
     "Northern Iowa Panthers @ Charlotte 49ers",
     "Mercy Mavericks @ Fordham Rams",
-    "Virginia Cavaliers @ Marquette Golden Eagles",
     "Penn State Abington Nittany Lions @ Saint Joseph's Hawks",
     "Vermont State Randolph Knights @ Fairleigh Dickinson Knights",
     "Yale Bulldogs @ Wright State Raiders",
@@ -78,16 +76,18 @@
     "American International Yellow Jackets @ Rhode Island Rams",
     "Eastern Kentucky Colonels @ Miami (OH) RedHawks",
     "Tulane Green Wave @ Davidson Wildcats",
-    "Arizona State Sun Devils @ LSU Tigers",
     "Arkansas-Pine Bluff Golden Lions @ South Dakota Coyotes",
     "Grace Christian Tigers @ Western Michigan Broncos",
     "Montreat Cavaliers @ Western Carolina Catamounts",
     "Saint Peter's Peacocks @ Columbia Lions",
     "Warner Royals @ North Florida Ospreys",
-    "Manhattan Jaspers @ NJIT Highlanders"
+    "Manhattan Jaspers @ NJIT Highlanders",
+    "Abilene Christian Wildcats @ South Dakota State Jackrabbits",
+    "Johnson & Wales Griffins @ Brown Bears",
+    "TBD @ TBD"
   ],
   "out_of_scope_games": 0,
-  "possession_coverage": 0.989,
+  "possession_coverage": 0.988,
   "ratings": [
     {
       "adj_d": 94.6,
@@ -96,11 +96,11 @@
       "net": 34.7,
       "prior_net": 26.7,
       "team": "Illinois Fighting Illini",
-      "tempo": 74.7
+      "tempo": 74.6
     },
     {
       "adj_d": 94.3,
-      "adj_o": 127.3,
+      "adj_o": 127.4,
       "games": 7,
       "net": 33.0,
       "prior_net": 33.5,
@@ -135,7 +135,7 @@
       "tempo": 72.8
     },
     {
-      "adj_d": 91.9,
+      "adj_d": 92.0,
       "adj_o": 121.7,
       "games": 5,
       "net": 29.7,
@@ -199,16 +199,16 @@
     },
     {
       "adj_d": 91.2,
-      "adj_o": 118.0,
+      "adj_o": 118.1,
       "games": 5,
-      "net": 26.8,
+      "net": 26.9,
       "prior_net": 20.7,
       "team": "Ole Miss Rebels",
-      "tempo": 71.2
+      "tempo": 71.3
     },
     {
       "adj_d": 97.4,
-      "adj_o": 124.1,
+      "adj_o": 124.2,
       "games": 7,
       "net": 26.7,
       "prior_net": 22.4,
@@ -252,7 +252,7 @@
       "tempo": 69.4
     },
     {
-      "adj_d": 97.6,
+      "adj_d": 97.7,
       "adj_o": 123.8,
       "games": 5,
       "net": 26.1,
@@ -267,25 +267,25 @@
       "net": 25.8,
       "prior_net": 19.6,
       "team": "Missouri Tigers",
-      "tempo": 70.1
+      "tempo": 70.0
     },
     {
       "adj_d": 96.5,
       "adj_o": 122.2,
       "games": 6,
-      "net": 25.8,
+      "net": 25.7,
       "prior_net": 21.3,
       "team": "Texas Longhorns",
       "tempo": 70.5
     },
     {
-      "adj_d": 97.9,
+      "adj_d": 98.1,
       "adj_o": 123.4,
       "games": 6,
-      "net": 25.5,
+      "net": 25.3,
       "prior_net": 22.9,
       "team": "BYU Cougars",
-      "tempo": 72.0
+      "tempo": 72.1
     },
     {
       "adj_d": 94.3,
@@ -298,9 +298,9 @@
     },
     {
       "adj_d": 96.0,
-      "adj_o": 121.0,
+      "adj_o": 121.2,
       "games": 6,
-      "net": 25.0,
+      "net": 25.1,
       "prior_net": 20.1,
       "team": "Texas A&M Aggies",
       "tempo": 75.3
@@ -342,15 +342,6 @@
       "tempo": 70.0
     },
     {
-      "adj_d": 99.0,
-      "adj_o": 122.4,
-      "games": 5,
-      "net": 23.5,
-      "prior_net": 17.4,
-      "team": "Utah State Aggies",
-      "tempo": 72.9
-    },
-    {
       "adj_d": 95.3,
       "adj_o": 118.7,
       "games": 6,
@@ -358,6 +349,15 @@
       "prior_net": 12.9,
       "team": "USC Trojans",
       "tempo": 72.2
+    },
+    {
+      "adj_d": 99.0,
+      "adj_o": 122.4,
+      "games": 5,
+      "net": 23.4,
+      "prior_net": 17.4,
+      "team": "Utah State Aggies",
+      "tempo": 72.9
     },
     {
       "adj_d": 98.7,
@@ -372,7 +372,7 @@
       "adj_d": 96.5,
       "adj_o": 119.1,
       "games": 5,
-      "net": 22.7,
+      "net": 22.6,
       "prior_net": 16.8,
       "team": "Baylor Bears",
       "tempo": 71.9
@@ -423,15 +423,6 @@
       "tempo": 69.6
     },
     {
-      "adj_d": 98.4,
-      "adj_o": 119.2,
-      "games": 4,
-      "net": 20.8,
-      "prior_net": 25.8,
-      "team": "Louisville Cardinals",
-      "tempo": 71.6
-    },
-    {
       "adj_d": 96.1,
       "adj_o": 116.9,
       "games": 6,
@@ -441,8 +432,17 @@
       "tempo": 71.8
     },
     {
+      "adj_d": 98.4,
+      "adj_o": 119.2,
+      "games": 4,
+      "net": 20.7,
+      "prior_net": 25.8,
+      "team": "Louisville Cardinals",
+      "tempo": 71.6
+    },
+    {
       "adj_d": 100.2,
-      "adj_o": 120.8,
+      "adj_o": 120.9,
       "games": 6,
       "net": 20.6,
       "prior_net": 18.3,
@@ -451,12 +451,21 @@
     },
     {
       "adj_d": 100.7,
-      "adj_o": 121.1,
+      "adj_o": 121.2,
       "games": 7,
       "net": 20.4,
       "prior_net": 19.7,
       "team": "Virginia Tech Hokies",
       "tempo": 71.1
+    },
+    {
+      "adj_d": 98.7,
+      "adj_o": 118.5,
+      "games": 6,
+      "net": 19.8,
+      "prior_net": 20.3,
+      "team": "Auburn Tigers",
+      "tempo": 69.5
     },
     {
       "adj_d": 93.2,
@@ -468,22 +477,13 @@
       "tempo": 68.6
     },
     {
-      "adj_d": 98.7,
-      "adj_o": 118.4,
-      "games": 6,
-      "net": 19.7,
-      "prior_net": 20.3,
-      "team": "Auburn Tigers",
-      "tempo": 69.4
-    },
-    {
       "adj_d": 98.9,
       "adj_o": 117.8,
       "games": 5,
       "net": 18.9,
       "prior_net": 16.3,
       "team": "Saint Louis Billikens",
-      "tempo": 73.0
+      "tempo": 72.9
     },
     {
       "adj_d": 101.5,
@@ -496,7 +496,7 @@
     },
     {
       "adj_d": 95.7,
-      "adj_o": 114.4,
+      "adj_o": 114.5,
       "games": 5,
       "net": 18.8,
       "prior_net": 18.4,
@@ -514,7 +514,7 @@
     },
     {
       "adj_d": 101.2,
-      "adj_o": 119.6,
+      "adj_o": 119.7,
       "games": 6,
       "net": 18.5,
       "prior_net": 20.0,
@@ -528,7 +528,7 @@
       "net": 18.1,
       "prior_net": 13.0,
       "team": "Notre Dame Fighting Irish",
-      "tempo": 71.3
+      "tempo": 71.2
     },
     {
       "adj_d": 97.7,
@@ -546,7 +546,7 @@
       "net": 17.8,
       "prior_net": 17.1,
       "team": "TCU Horned Frogs",
-      "tempo": 74.0
+      "tempo": 73.9
     },
     {
       "adj_d": 101.8,
@@ -569,20 +569,20 @@
     {
       "adj_d": 97.7,
       "adj_o": 114.9,
-      "games": 6,
+      "games": 7,
       "net": 17.2,
       "prior_net": 8.7,
       "team": "Pittsburgh Panthers",
       "tempo": 71.3
     },
     {
-      "adj_d": 101.9,
+      "adj_d": 102.0,
       "adj_o": 119.1,
       "games": 6,
       "net": 17.2,
       "prior_net": 10.8,
       "team": "Saint Mary's Gaels",
-      "tempo": 72.2
+      "tempo": 72.1
     },
     {
       "adj_d": 100.7,
@@ -612,15 +612,6 @@
       "tempo": 71.5
     },
     {
-      "adj_d": 101.1,
-      "adj_o": 117.6,
-      "games": 5,
-      "net": 16.5,
-      "prior_net": 16.5,
-      "team": "Arizona State Sun Devils",
-      "tempo": 67.7
-    },
-    {
       "adj_d": 95.8,
       "adj_o": 112.2,
       "games": 6,
@@ -628,6 +619,15 @@
       "prior_net": 14.2,
       "team": "Xavier Musketeers",
       "tempo": 73.5
+    },
+    {
+      "adj_d": 101.3,
+      "adj_o": 117.6,
+      "games": 5,
+      "net": 16.4,
+      "prior_net": 16.5,
+      "team": "Arizona State Sun Devils",
+      "tempo": 67.8
     },
     {
       "adj_d": 95.8,
@@ -686,7 +686,7 @@
     {
       "adj_d": 103.7,
       "adj_o": 118.6,
-      "games": 5,
+      "games": 6,
       "net": 14.9,
       "prior_net": 24.8,
       "team": "Oklahoma Sooners",
@@ -699,7 +699,7 @@
       "net": 14.9,
       "prior_net": 19.2,
       "team": "Washington Huskies",
-      "tempo": 68.8
+      "tempo": 68.7
     },
     {
       "adj_d": 102.9,
@@ -711,7 +711,7 @@
       "tempo": 70.8
     },
     {
-      "adj_d": 99.7,
+      "adj_d": 99.8,
       "adj_o": 114.1,
       "games": 6,
       "net": 14.3,
@@ -758,7 +758,7 @@
     {
       "adj_d": 101.8,
       "adj_o": 115.1,
-      "games": 7,
+      "games": 8,
       "net": 13.3,
       "prior_net": 5.4,
       "team": "Oregon State Beavers",
@@ -780,7 +780,7 @@
       "net": 13.2,
       "prior_net": 12.6,
       "team": "Syracuse Orange",
-      "tempo": 70.6
+      "tempo": 70.5
     },
     {
       "adj_d": 100.3,
@@ -811,7 +811,7 @@
     },
     {
       "adj_d": 104.2,
-      "adj_o": 116.5,
+      "adj_o": 116.6,
       "games": 6,
       "net": 12.4,
       "prior_net": 15.9,
@@ -825,15 +825,6 @@
       "net": 12.0,
       "prior_net": 4.6,
       "team": "Memphis Tigers",
-      "tempo": 71.2
-    },
-    {
-      "adj_d": 99.9,
-      "adj_o": 111.7,
-      "games": 5,
-      "net": 11.9,
-      "prior_net": 13.8,
-      "team": "Kansas State Wildcats",
       "tempo": 71.1
     },
     {
@@ -853,6 +844,15 @@
       "prior_net": 8.3,
       "team": "New Mexico Lobos",
       "tempo": 71.7
+    },
+    {
+      "adj_d": 99.9,
+      "adj_o": 111.7,
+      "games": 5,
+      "net": 11.8,
+      "prior_net": 13.8,
+      "team": "Kansas State Wildcats",
+      "tempo": 71.1
     },
     {
       "adj_d": 102.3,
@@ -892,7 +892,7 @@
     },
     {
       "adj_d": 102.5,
-      "adj_o": 112.7,
+      "adj_o": 112.8,
       "games": 5,
       "net": 10.3,
       "prior_net": 2.2,
@@ -909,13 +909,13 @@
       "tempo": 67.8
     },
     {
-      "adj_d": 103.6,
+      "adj_d": 103.7,
       "adj_o": 113.3,
       "games": 6,
       "net": 9.7,
       "prior_net": 10.6,
       "team": "South Florida Bulls",
-      "tempo": 72.3
+      "tempo": 72.2
     },
     {
       "adj_d": 102.5,
@@ -945,13 +945,22 @@
       "tempo": 75.4
     },
     {
-      "adj_d": 106.2,
+      "adj_d": 106.3,
       "adj_o": 114.9,
       "games": 6,
-      "net": 8.7,
+      "net": 8.6,
       "prior_net": 9.8,
       "team": "UCF Knights",
       "tempo": 71.3
+    },
+    {
+      "adj_d": 104.3,
+      "adj_o": 112.8,
+      "games": 6,
+      "net": 8.5,
+      "prior_net": -1.4,
+      "team": "Wright State Raiders",
+      "tempo": 69.4
     },
     {
       "adj_d": 101.8,
@@ -990,15 +999,6 @@
       "tempo": 67.9
     },
     {
-      "adj_d": 104.7,
-      "adj_o": 112.8,
-      "games": 6,
-      "net": 8.2,
-      "prior_net": -1.4,
-      "team": "Wright State Raiders",
-      "tempo": 69.3
-    },
-    {
       "adj_d": 102.8,
       "adj_o": 110.3,
       "games": 7,
@@ -1035,13 +1035,13 @@
       "tempo": 69.2
     },
     {
-      "adj_d": 104.1,
-      "adj_o": 110.4,
-      "games": 6,
-      "net": 6.3,
-      "prior_net": 2.3,
-      "team": "Montana State Bobcats",
-      "tempo": 68.5
+      "adj_d": 102.7,
+      "adj_o": 109.1,
+      "games": 5,
+      "net": 6.4,
+      "prior_net": 6.0,
+      "team": "Akron Zips",
+      "tempo": 67.3
     },
     {
       "adj_d": 100.9,
@@ -1051,6 +1051,15 @@
       "prior_net": 4.1,
       "team": "George Mason Patriots",
       "tempo": 68.2
+    },
+    {
+      "adj_d": 104.1,
+      "adj_o": 110.4,
+      "games": 6,
+      "net": 6.2,
+      "prior_net": 2.3,
+      "team": "Montana State Bobcats",
+      "tempo": 68.4
     },
     {
       "adj_d": 100.3,
@@ -1072,9 +1081,9 @@
     },
     {
       "adj_d": 104.4,
-      "adj_o": 110.4,
+      "adj_o": 110.5,
       "games": 7,
-      "net": 6.0,
+      "net": 6.1,
       "prior_net": -1.7,
       "team": "St. Bonaventure Bonnies",
       "tempo": 68.3
@@ -1083,13 +1092,13 @@
       "adj_d": 102.4,
       "adj_o": 107.7,
       "games": 5,
-      "net": 5.2,
+      "net": 5.3,
       "prior_net": -0.8,
       "team": "Columbia Lions",
       "tempo": 70.1
     },
     {
-      "adj_d": 104.5,
+      "adj_d": 104.6,
       "adj_o": 109.7,
       "games": 6,
       "net": 5.1,
@@ -1109,11 +1118,11 @@
     {
       "adj_d": 102.6,
       "adj_o": 107.5,
-      "games": 5,
+      "games": 6,
       "net": 4.8,
       "prior_net": 9.9,
       "team": "UIC Flames",
-      "tempo": 66.6
+      "tempo": 66.5
     },
     {
       "adj_d": 104.7,
@@ -1123,15 +1132,6 @@
       "prior_net": -1.7,
       "team": "Sam Houston Bearkats",
       "tempo": 73.4
-    },
-    {
-      "adj_d": 103.6,
-      "adj_o": 107.9,
-      "games": 5,
-      "net": 4.3,
-      "prior_net": 5.1,
-      "team": "Belmont Bruins",
-      "tempo": 69.6
     },
     {
       "adj_d": 102.4,
@@ -1144,7 +1144,7 @@
     },
     {
       "adj_d": 105.4,
-      "adj_o": 109.2,
+      "adj_o": 109.3,
       "games": 5,
       "net": 3.9,
       "prior_net": -1.3,
@@ -1179,15 +1179,6 @@
       "tempo": 70.3
     },
     {
-      "adj_d": 102.5,
-      "adj_o": 105.5,
-      "games": 5,
-      "net": 3.0,
-      "prior_net": 6.0,
-      "team": "Akron Zips",
-      "tempo": 68.1
-    },
-    {
       "adj_d": 108.3,
       "adj_o": 111.2,
       "games": 5,
@@ -1206,7 +1197,7 @@
       "tempo": 67.9
     },
     {
-      "adj_d": 105.2,
+      "adj_d": 105.3,
       "adj_o": 108.2,
       "games": 7,
       "net": 2.9,
@@ -1224,6 +1215,15 @@
       "tempo": 69.9
     },
     {
+      "adj_d": 105.0,
+      "adj_o": 108.0,
+      "games": 4,
+      "net": 2.9,
+      "prior_net": 0.3,
+      "team": "Kennesaw State Owls",
+      "tempo": 74.2
+    },
+    {
       "adj_d": 104.5,
       "adj_o": 107.4,
       "games": 6,
@@ -1233,22 +1233,13 @@
       "tempo": 73.7
     },
     {
-      "adj_d": 105.0,
-      "adj_o": 107.8,
-      "games": 4,
-      "net": 2.8,
-      "prior_net": 0.3,
-      "team": "Kennesaw State Owls",
-      "tempo": 74.2
-    },
-    {
       "adj_d": 106.9,
       "adj_o": 109.5,
       "games": 6,
       "net": 2.6,
       "prior_net": -3.5,
       "team": "San Diego Toreros",
-      "tempo": 70.0
+      "tempo": 69.9
     },
     {
       "adj_d": 105.1,
@@ -1266,13 +1257,13 @@
       "net": 2.4,
       "prior_net": 2.1,
       "team": "Charleston Cougars",
-      "tempo": 70.4
+      "tempo": 70.3
     },
     {
       "adj_d": 104.5,
       "adj_o": 106.8,
       "games": 6,
-      "net": 2.2,
+      "net": 2.3,
       "prior_net": -0.3,
       "team": "Central Arkansas Bears",
       "tempo": 70.4
@@ -1287,7 +1278,7 @@
       "tempo": 70.4
     },
     {
-      "adj_d": 102.8,
+      "adj_d": 102.9,
       "adj_o": 104.7,
       "games": 4,
       "net": 1.8,
@@ -1296,7 +1287,7 @@
       "tempo": 68.4
     },
     {
-      "adj_d": 100.4,
+      "adj_d": 100.5,
       "adj_o": 101.9,
       "games": 4,
       "net": 1.5,
@@ -1342,6 +1333,15 @@
     },
     {
       "adj_d": 107.1,
+      "adj_o": 108.0,
+      "games": 5,
+      "net": 0.9,
+      "prior_net": 5.1,
+      "team": "Belmont Bruins",
+      "tempo": 68.8
+    },
+    {
+      "adj_d": 107.1,
       "adj_o": 107.6,
       "games": 5,
       "net": 0.5,
@@ -1368,18 +1368,9 @@
       "tempo": 68.1
     },
     {
-      "adj_d": 106.1,
-      "adj_o": 106.5,
-      "games": 4,
-      "net": 0.4,
-      "prior_net": -4.7,
-      "team": "South Dakota State Jackrabbits",
-      "tempo": 67.9
-    },
-    {
       "adj_d": 103.6,
-      "adj_o": 103.8,
-      "games": 6,
+      "adj_o": 103.9,
+      "games": 7,
       "net": 0.3,
       "prior_net": -2.8,
       "team": "San Francisco Dons",
@@ -1393,6 +1384,15 @@
       "prior_net": -2.6,
       "team": "Eastern Michigan Eagles",
       "tempo": 67.3
+    },
+    {
+      "adj_d": 106.2,
+      "adj_o": 106.5,
+      "games": 4,
+      "net": 0.2,
+      "prior_net": -4.7,
+      "team": "South Dakota State Jackrabbits",
+      "tempo": 67.9
     },
     {
       "adj_d": 106.7,
@@ -1413,7 +1413,7 @@
       "tempo": 73.1
     },
     {
-      "adj_d": 105.1,
+      "adj_d": 105.2,
       "adj_o": 105.2,
       "games": 5,
       "net": 0.1,
@@ -1437,10 +1437,10 @@
       "net": -0.1,
       "prior_net": -0.5,
       "team": "Massachusetts Minutemen",
-      "tempo": 71.8
+      "tempo": 71.7
     },
     {
-      "adj_d": 102.7,
+      "adj_d": 102.8,
       "adj_o": 102.7,
       "games": 7,
       "net": -0.1,
@@ -1458,8 +1458,8 @@
       "tempo": 67.1
     },
     {
-      "adj_d": 104.3,
-      "adj_o": 104.2,
+      "adj_d": 104.4,
+      "adj_o": 104.3,
       "games": 6,
       "net": -0.1,
       "prior_net": -5.2,
@@ -1476,22 +1476,13 @@
       "tempo": 67.5
     },
     {
-      "adj_d": 107.5,
-      "adj_o": 107.1,
-      "games": 5,
-      "net": -0.3,
-      "prior_net": -4.4,
-      "team": "Furman Paladins",
-      "tempo": 70.3
-    },
-    {
       "adj_d": 105.0,
       "adj_o": 104.4,
       "games": 5,
       "net": -0.5,
       "prior_net": -5.0,
       "team": "UTEP Miners",
-      "tempo": 67.6
+      "tempo": 67.5
     },
     {
       "adj_d": 108.4,
@@ -1503,13 +1494,22 @@
       "tempo": 68.7
     },
     {
-      "adj_d": 107.1,
+      "adj_d": 107.2,
       "adj_o": 106.5,
       "games": 6,
       "net": -0.6,
       "prior_net": -4.0,
       "team": "Elon Phoenix",
       "tempo": 69.0
+    },
+    {
+      "adj_d": 107.5,
+      "adj_o": 106.8,
+      "games": 5,
+      "net": -0.7,
+      "prior_net": -4.4,
+      "team": "Furman Paladins",
+      "tempo": 70.4
     },
     {
       "adj_d": 111.2,
@@ -1521,13 +1521,13 @@
       "tempo": 70.1
     },
     {
-      "adj_d": 107.5,
-      "adj_o": 106.7,
+      "adj_d": 107.6,
+      "adj_o": 106.8,
       "games": 6,
       "net": -0.8,
       "prior_net": -1.2,
       "team": "Toledo Rockets",
-      "tempo": 70.8
+      "tempo": 70.7
     },
     {
       "adj_d": 109.5,
@@ -1602,7 +1602,7 @@
       "tempo": 71.5
     },
     {
-      "adj_d": 110.4,
+      "adj_d": 110.5,
       "adj_o": 108.5,
       "games": 5,
       "net": -1.9,
@@ -1611,7 +1611,7 @@
       "tempo": 73.0
     },
     {
-      "adj_d": 108.9,
+      "adj_d": 109.0,
       "adj_o": 107.1,
       "games": 5,
       "net": -1.9,
@@ -1665,15 +1665,6 @@
       "tempo": 72.6
     },
     {
-      "adj_d": 111.0,
-      "adj_o": 108.5,
-      "games": 6,
-      "net": -2.4,
-      "prior_net": 2.1,
-      "team": "Yale Bulldogs",
-      "tempo": 67.0
-    },
-    {
       "adj_d": 107.6,
       "adj_o": 105.1,
       "games": 6,
@@ -1681,6 +1672,15 @@
       "prior_net": -9.8,
       "team": "UT Martin Skyhawks",
       "tempo": 70.5
+    },
+    {
+      "adj_d": 111.0,
+      "adj_o": 108.2,
+      "games": 6,
+      "net": -2.7,
+      "prior_net": 2.1,
+      "team": "Yale Bulldogs",
+      "tempo": 67.1
     },
     {
       "adj_d": 109.9,
@@ -1694,7 +1694,7 @@
     {
       "adj_d": 109.2,
       "adj_o": 106.4,
-      "games": 5,
+      "games": 6,
       "net": -2.8,
       "prior_net": -3.2,
       "team": "Rice Owls",
@@ -1728,7 +1728,7 @@
       "tempo": 70.7
     },
     {
-      "adj_d": 109.2,
+      "adj_d": 109.3,
       "adj_o": 106.1,
       "games": 5,
       "net": -3.1,
@@ -1770,7 +1770,7 @@
       "net": -3.4,
       "prior_net": -7.0,
       "team": "UTSA Roadrunners",
-      "tempo": 71.8
+      "tempo": 71.7
     },
     {
       "adj_d": 109.8,
@@ -1801,7 +1801,7 @@
     },
     {
       "adj_d": 112.5,
-      "adj_o": 108.6,
+      "adj_o": 108.7,
       "games": 6,
       "net": -3.8,
       "prior_net": -7.8,
@@ -1827,22 +1827,13 @@
       "tempo": 70.0
     },
     {
-      "adj_d": 110.2,
-      "adj_o": 106.1,
-      "games": 7,
-      "net": -4.0,
-      "prior_net": -2.9,
-      "team": "Lipscomb Bisons",
-      "tempo": 71.9
-    },
-    {
       "adj_d": 109.0,
       "adj_o": 105.1,
       "games": 5,
       "net": -4.0,
       "prior_net": -5.2,
       "team": "Eastern Washington Eagles",
-      "tempo": 71.9
+      "tempo": 71.8
     },
     {
       "adj_d": 106.9,
@@ -1870,6 +1861,15 @@
       "prior_net": -2.8,
       "team": "Troy Trojans",
       "tempo": 67.4
+    },
+    {
+      "adj_d": 110.2,
+      "adj_o": 105.9,
+      "games": 7,
+      "net": -4.3,
+      "prior_net": -2.9,
+      "team": "Lipscomb Bisons",
+      "tempo": 71.9
     },
     {
       "adj_d": 108.9,
@@ -1909,7 +1909,7 @@
     },
     {
       "adj_d": 111.0,
-      "adj_o": 106.2,
+      "adj_o": 106.3,
       "games": 6,
       "net": -4.8,
       "prior_net": -8.8,
@@ -1926,7 +1926,7 @@
       "tempo": 69.7
     },
     {
-      "adj_d": 113.0,
+      "adj_d": 113.1,
       "adj_o": 108.1,
       "games": 5,
       "net": -5.0,
@@ -1950,7 +1950,7 @@
       "net": -5.1,
       "prior_net": -11.3,
       "team": "Chattanooga Mocs",
-      "tempo": 69.3
+      "tempo": 69.2
     },
     {
       "adj_d": 105.6,
@@ -1971,7 +1971,7 @@
       "tempo": 72.6
     },
     {
-      "adj_d": 109.8,
+      "adj_d": 109.9,
       "adj_o": 104.4,
       "games": 5,
       "net": -5.4,
@@ -1981,7 +1981,7 @@
     },
     {
       "adj_d": 105.6,
-      "adj_o": 100.1,
+      "adj_o": 100.2,
       "games": 6,
       "net": -5.4,
       "prior_net": -2.9,
@@ -2022,7 +2022,7 @@
       "net": -5.5,
       "prior_net": -3.8,
       "team": "Portland Pilots",
-      "tempo": 73.7
+      "tempo": 73.6
     },
     {
       "adj_d": 108.1,
@@ -2043,6 +2043,15 @@
       "tempo": 67.7
     },
     {
+      "adj_d": 110.0,
+      "adj_o": 104.4,
+      "games": 6,
+      "net": -5.6,
+      "prior_net": -4.0,
+      "team": "Tulane Green Wave",
+      "tempo": 71.1
+    },
+    {
       "adj_d": 106.4,
       "adj_o": 100.7,
       "games": 3,
@@ -2052,6 +2061,24 @@
       "tempo": 73.4
     },
     {
+      "adj_d": 107.8,
+      "adj_o": 102.0,
+      "games": 6,
+      "net": -5.7,
+      "prior_net": -5.5,
+      "team": "Texas A&M-Corpus Christi Islanders",
+      "tempo": 69.3
+    },
+    {
+      "adj_d": 111.2,
+      "adj_o": 105.3,
+      "games": 6,
+      "net": -5.8,
+      "prior_net": -8.8,
+      "team": "Siena Saints",
+      "tempo": 75.0
+    },
+    {
       "adj_d": 111.9,
       "adj_o": 106.1,
       "games": 5,
@@ -2059,33 +2086,6 @@
       "prior_net": -4.3,
       "team": "Green Bay Phoenix",
       "tempo": 68.7
-    },
-    {
-      "adj_d": 107.8,
-      "adj_o": 102.0,
-      "games": 6,
-      "net": -5.8,
-      "prior_net": -5.5,
-      "team": "Texas A&M-Corpus Christi Islanders",
-      "tempo": 69.3
-    },
-    {
-      "adj_d": 111.1,
-      "adj_o": 105.3,
-      "games": 6,
-      "net": -5.9,
-      "prior_net": -8.8,
-      "team": "Siena Saints",
-      "tempo": 75.0
-    },
-    {
-      "adj_d": 110.3,
-      "adj_o": 104.4,
-      "games": 6,
-      "net": -5.9,
-      "prior_net": -4.0,
-      "team": "Tulane Green Wave",
-      "tempo": 71.0
     },
     {
       "adj_d": 107.3,
@@ -2098,15 +2098,15 @@
     },
     {
       "adj_d": 111.9,
-      "adj_o": 105.7,
+      "adj_o": 105.8,
       "games": 4,
-      "net": -6.2,
+      "net": -6.1,
       "prior_net": -4.0,
       "team": "Samford Bulldogs",
       "tempo": 70.2
     },
     {
-      "adj_d": 108.4,
+      "adj_d": 108.5,
       "adj_o": 102.2,
       "games": 3,
       "net": -6.2,
@@ -2143,7 +2143,7 @@
     },
     {
       "adj_d": 112.3,
-      "adj_o": 105.5,
+      "adj_o": 105.6,
       "games": 4,
       "net": -6.7,
       "prior_net": -10.9,
@@ -2247,7 +2247,7 @@
       "net": -7.2,
       "prior_net": -14.7,
       "team": "UMass Lowell River Hawks",
-      "tempo": 69.5
+      "tempo": 69.4
     },
     {
       "adj_d": 113.2,
@@ -2296,7 +2296,7 @@
     },
     {
       "adj_d": 111.1,
-      "adj_o": 103.4,
+      "adj_o": 103.5,
       "games": 5,
       "net": -7.7,
       "prior_net": -11.9,
@@ -2358,8 +2358,8 @@
       "tempo": 66.6
     },
     {
-      "adj_d": 110.8,
-      "adj_o": 102.9,
+      "adj_d": 110.9,
+      "adj_o": 103.0,
       "games": 3,
       "net": -7.9,
       "prior_net": -8.7,
@@ -2379,7 +2379,7 @@
       "adj_d": 117.9,
       "adj_o": 109.9,
       "games": 5,
-      "net": -8.1,
+      "net": -8.0,
       "prior_net": -9.6,
       "team": "Northern Arizona Lumberjacks",
       "tempo": 65.3
@@ -2458,12 +2458,12 @@
     },
     {
       "adj_d": 108.6,
-      "adj_o": 99.8,
+      "adj_o": 99.9,
       "games": 5,
       "net": -8.7,
       "prior_net": -9.5,
       "team": "Louisiana Tech Bulldogs",
-      "tempo": 69.1
+      "tempo": 69.0
     },
     {
       "adj_d": 111.0,
@@ -2476,7 +2476,7 @@
     },
     {
       "adj_d": 109.8,
-      "adj_o": 100.9,
+      "adj_o": 101.0,
       "games": 6,
       "net": -8.8,
       "prior_net": -6.1,
@@ -2484,8 +2484,8 @@
       "tempo": 71.1
     },
     {
-      "adj_d": 110.0,
-      "adj_o": 101.0,
+      "adj_d": 110.1,
+      "adj_o": 101.1,
       "games": 5,
       "net": -9.0,
       "prior_net": -8.2,
@@ -2499,16 +2499,7 @@
       "net": -9.1,
       "prior_net": -8.8,
       "team": "Hampton Pirates",
-      "tempo": 68.4
-    },
-    {
-      "adj_d": 109.1,
-      "adj_o": 99.9,
-      "games": 4,
-      "net": -9.2,
-      "prior_net": -1.5,
-      "team": "Northern Colorado Bears",
-      "tempo": 71.7
+      "tempo": 68.3
     },
     {
       "adj_d": 113.8,
@@ -2538,15 +2529,6 @@
       "tempo": 70.3
     },
     {
-      "adj_d": 113.3,
-      "adj_o": 103.7,
-      "games": 5,
-      "net": -9.5,
-      "prior_net": -10.3,
-      "team": "Idaho State Bengals",
-      "tempo": 70.5
-    },
-    {
       "adj_d": 111.5,
       "adj_o": 101.9,
       "games": 5,
@@ -2554,6 +2536,15 @@
       "prior_net": -8.4,
       "team": "Milwaukee Panthers",
       "tempo": 71.6
+    },
+    {
+      "adj_d": 113.3,
+      "adj_o": 103.7,
+      "games": 5,
+      "net": -9.6,
+      "prior_net": -10.3,
+      "team": "Idaho State Bengals",
+      "tempo": 70.5
     },
     {
       "adj_d": 104.7,
@@ -2565,7 +2556,7 @@
       "tempo": 70.5
     },
     {
-      "adj_d": 110.5,
+      "adj_d": 110.6,
       "adj_o": 100.9,
       "games": 6,
       "net": -9.7,
@@ -2625,7 +2616,7 @@
       "net": -10.3,
       "prior_net": -5.7,
       "team": "Oakland Golden Grizzlies",
-      "tempo": 68.8
+      "tempo": 68.7
     },
     {
       "adj_d": 113.3,
@@ -2638,7 +2629,7 @@
     },
     {
       "adj_d": 110.4,
-      "adj_o": 99.6,
+      "adj_o": 99.7,
       "games": 6,
       "net": -10.7,
       "prior_net": -4.5,
@@ -2656,7 +2647,7 @@
     },
     {
       "adj_d": 110.9,
-      "adj_o": 100.1,
+      "adj_o": 100.2,
       "games": 4,
       "net": -10.7,
       "prior_net": -9.1,
@@ -2694,7 +2685,7 @@
       "adj_d": 109.6,
       "adj_o": 98.6,
       "games": 6,
-      "net": -11.0,
+      "net": -10.9,
       "prior_net": -9.9,
       "team": "Nicholls Colonels",
       "tempo": 69.3
@@ -2709,6 +2700,24 @@
       "tempo": 74.3
     },
     {
+      "adj_d": 117.2,
+      "adj_o": 106.1,
+      "games": 6,
+      "net": -11.2,
+      "prior_net": -10.1,
+      "team": "Little Rock Trojans",
+      "tempo": 69.8
+    },
+    {
+      "adj_d": 109.4,
+      "adj_o": 98.2,
+      "games": 4,
+      "net": -11.2,
+      "prior_net": -1.5,
+      "team": "Northern Colorado Bears",
+      "tempo": 71.2
+    },
+    {
       "adj_d": 111.7,
       "adj_o": 100.4,
       "games": 4,
@@ -2716,15 +2725,6 @@
       "prior_net": -8.5,
       "team": "Abilene Christian Wildcats",
       "tempo": 69.4
-    },
-    {
-      "adj_d": 117.2,
-      "adj_o": 105.9,
-      "games": 6,
-      "net": -11.3,
-      "prior_net": -10.1,
-      "team": "Little Rock Trojans",
-      "tempo": 69.8
     },
     {
       "adj_d": 111.2,
@@ -2754,7 +2754,7 @@
       "tempo": 71.0
     },
     {
-      "adj_d": 114.9,
+      "adj_d": 115.0,
       "adj_o": 103.3,
       "games": 5,
       "net": -11.6,
@@ -2763,8 +2763,8 @@
       "tempo": 71.3
     },
     {
-      "adj_d": 114.8,
-      "adj_o": 103.1,
+      "adj_d": 114.9,
+      "adj_o": 103.2,
       "games": 5,
       "net": -11.7,
       "prior_net": -9.3,
@@ -2781,7 +2781,7 @@
       "tempo": 72.4
     },
     {
-      "adj_d": 115.0,
+      "adj_d": 115.1,
       "adj_o": 103.2,
       "games": 5,
       "net": -11.9,
@@ -2817,6 +2817,15 @@
       "tempo": 72.9
     },
     {
+      "adj_d": 113.1,
+      "adj_o": 100.5,
+      "games": 5,
+      "net": -12.5,
+      "prior_net": -10.2,
+      "team": "Northwestern State Demons",
+      "tempo": 68.0
+    },
+    {
       "adj_d": 110.3,
       "adj_o": 97.8,
       "games": 4,
@@ -2824,15 +2833,6 @@
       "prior_net": -10.2,
       "team": "SIU Edwardsville Cougars",
       "tempo": 69.8
-    },
-    {
-      "adj_d": 113.1,
-      "adj_o": 100.5,
-      "games": 5,
-      "net": -12.6,
-      "prior_net": -10.2,
-      "team": "Northwestern State Demons",
-      "tempo": 68.0
     },
     {
       "adj_d": 110.4,
@@ -2856,7 +2856,7 @@
       "adj_d": 112.3,
       "adj_o": 99.4,
       "games": 6,
-      "net": -12.9,
+      "net": -12.8,
       "prior_net": -12.3,
       "team": "North Florida Ospreys",
       "tempo": 76.0
@@ -2898,6 +2898,24 @@
       "tempo": 67.2
     },
     {
+      "adj_d": 112.8,
+      "adj_o": 99.5,
+      "games": 6,
+      "net": -13.3,
+      "prior_net": -10.5,
+      "team": "SE Louisiana Lions",
+      "tempo": 69.1
+    },
+    {
+      "adj_d": 110.7,
+      "adj_o": 97.3,
+      "games": 4,
+      "net": -13.4,
+      "prior_net": -10.4,
+      "team": "Louisiana Ragin' Cajuns",
+      "tempo": 67.7
+    },
+    {
       "adj_d": 115.2,
       "adj_o": 101.6,
       "games": 6,
@@ -2916,15 +2934,6 @@
       "tempo": 74.2
     },
     {
-      "adj_d": 111.0,
-      "adj_o": 97.3,
-      "games": 4,
-      "net": -13.7,
-      "prior_net": -10.4,
-      "team": "Louisiana Ragin' Cajuns",
-      "tempo": 67.6
-    },
-    {
       "adj_d": 112.7,
       "adj_o": 98.9,
       "games": 5,
@@ -2935,7 +2944,7 @@
     },
     {
       "adj_d": 115.6,
-      "adj_o": 101.6,
+      "adj_o": 101.7,
       "games": 5,
       "net": -13.9,
       "prior_net": -11.8,
@@ -2943,8 +2952,8 @@
       "tempo": 67.8
     },
     {
-      "adj_d": 109.6,
-      "adj_o": 95.4,
+      "adj_d": 109.7,
+      "adj_o": 95.5,
       "games": 4,
       "net": -14.2,
       "prior_net": -11.5,
@@ -2976,19 +2985,10 @@
       "net": -14.4,
       "prior_net": -17.5,
       "team": "Bryant Bulldogs",
-      "tempo": 69.9
+      "tempo": 69.8
     },
     {
-      "adj_d": 108.9,
-      "adj_o": 94.5,
-      "games": 5,
-      "net": -14.4,
-      "prior_net": -13.4,
-      "team": "Southern Indiana Screaming Eagles",
-      "tempo": 72.1
-    },
-    {
-      "adj_d": 111.3,
+      "adj_d": 111.4,
       "adj_o": 96.7,
       "games": 6,
       "net": -14.6,
@@ -3006,7 +3006,7 @@
       "tempo": 69.7
     },
     {
-      "adj_d": 113.2,
+      "adj_d": 113.3,
       "adj_o": 98.6,
       "games": 4,
       "net": -14.6,
@@ -3033,6 +3033,15 @@
       "tempo": 72.5
     },
     {
+      "adj_d": 108.9,
+      "adj_o": 94.3,
+      "games": 5,
+      "net": -14.7,
+      "prior_net": -13.4,
+      "team": "Southern Indiana Screaming Eagles",
+      "tempo": 72.2
+    },
+    {
       "adj_d": 111.3,
       "adj_o": 96.4,
       "games": 7,
@@ -3051,24 +3060,6 @@
       "tempo": 68.5
     },
     {
-      "adj_d": 113.9,
-      "adj_o": 98.8,
-      "games": 4,
-      "net": -15.0,
-      "prior_net": -10.4,
-      "team": "Omaha Mavericks",
-      "tempo": 70.2
-    },
-    {
-      "adj_d": 114.2,
-      "adj_o": 99.2,
-      "games": 6,
-      "net": -15.0,
-      "prior_net": -10.5,
-      "team": "SE Louisiana Lions",
-      "tempo": 69.5
-    },
-    {
       "adj_d": 107.7,
       "adj_o": 92.7,
       "games": 7,
@@ -3078,8 +3069,17 @@
       "tempo": 69.6
     },
     {
+      "adj_d": 113.9,
+      "adj_o": 98.8,
+      "games": 4,
+      "net": -15.1,
+      "prior_net": -10.4,
+      "team": "Omaha Mavericks",
+      "tempo": 70.2
+    },
+    {
       "adj_d": 113.7,
-      "adj_o": 98.3,
+      "adj_o": 98.4,
       "games": 6,
       "net": -15.3,
       "prior_net": -18.6,
@@ -3105,13 +3105,13 @@
       "tempo": 66.1
     },
     {
-      "adj_d": 113.6,
+      "adj_d": 113.3,
       "adj_o": 97.7,
       "games": 6,
-      "net": -15.9,
+      "net": -15.6,
       "prior_net": -13.9,
       "team": "Bucknell Bison",
-      "tempo": 69.2
+      "tempo": 69.3
     },
     {
       "adj_d": 112.4,
@@ -3124,7 +3124,7 @@
     },
     {
       "adj_d": 117.1,
-      "adj_o": 101.0,
+      "adj_o": 101.1,
       "games": 5,
       "net": -16.0,
       "prior_net": -6.6,
@@ -3151,7 +3151,7 @@
     },
     {
       "adj_d": 112.1,
-      "adj_o": 95.4,
+      "adj_o": 95.5,
       "games": 5,
       "net": -16.6,
       "prior_net": -10.6,
@@ -3159,8 +3159,8 @@
       "tempo": 70.6
     },
     {
-      "adj_d": 116.9,
-      "adj_o": 100.2,
+      "adj_d": 117.0,
+      "adj_o": 100.3,
       "games": 5,
       "net": -16.7,
       "prior_net": -11.7,
@@ -3192,10 +3192,10 @@
       "net": -17.4,
       "prior_net": -14.0,
       "team": "UAlbany Great Danes",
-      "tempo": 69.4
+      "tempo": 69.3
     },
     {
-      "adj_d": 114.0,
+      "adj_d": 114.1,
       "adj_o": 96.6,
       "games": 5,
       "net": -17.5,
@@ -3241,7 +3241,7 @@
     },
     {
       "adj_d": 114.5,
-      "adj_o": 96.0,
+      "adj_o": 96.1,
       "games": 5,
       "net": -18.4,
       "prior_net": -13.2,
@@ -3285,7 +3285,7 @@
       "tempo": 69.7
     },
     {
-      "adj_d": 112.8,
+      "adj_d": 112.9,
       "adj_o": 93.7,
       "games": 4,
       "net": -19.1,
@@ -3306,7 +3306,7 @@
       "adj_d": 119.1,
       "adj_o": 99.1,
       "games": 5,
-      "net": -20.0,
+      "net": -19.9,
       "prior_net": -15.6,
       "team": "Norfolk State Spartans",
       "tempo": 67.9
@@ -3339,7 +3339,7 @@
       "tempo": 68.6
     },
     {
-      "adj_d": 117.0,
+      "adj_d": 117.1,
       "adj_o": 96.2,
       "games": 6,
       "net": -20.9,
@@ -3403,7 +3403,7 @@
     }
   ],
   "season": 2027,
-  "settled": 0,
+  "settled": 9,
   "suspended": "",
-  "upcoming_games": 136
+  "upcoming_games": 135
 }
