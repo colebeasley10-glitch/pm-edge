@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-24T09:30:44.724944Z",
+ "ran_at": "2026-11-24T09:45:37.771876Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -17,38 +17,26 @@
    }
   },
   "polymarket": {
-   "picks_found": 1,
+   "picks_found": 0,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [
-    {
-     "ticker": "KXAHLGAME-26NOV242000TUCTEX-TEX",
-     "side": "NO",
-     "ask": 0.48,
-     "fair": 0.52,
-     "edge": 0.0225
-    }
-   ],
+   "shadow": [],
    "shadow_opened": 0,
    "diag": {
     "poly_events": 600,
-    "poly_games": 236,
-    "kalshi_events": 1476,
-    "matched": 164,
+    "poly_games": 237,
+    "kalshi_events": 1472,
+    "matched": 163,
     "priced": 306,
     "best_gaps": [
-     [
-      0.02,
-      "KXAHLGAME-26NOV241030GRAMAN-MAN"
-     ],
      [
       0.015,
       "KXNCAAFGAME-26NOV27TLSAUTSA-UTSA"
      ],
      [
       0.015,
-      "KXCS2GAME-26NOV240600DENEF-EF"
+      "KXEFLCHAMPIONSHIPGAME-26NOV24CHALIC-LIC"
      ],
      [
       0.01,
@@ -63,12 +51,16 @@
       "KXBRASILEIROGAME-26NOV24CHAPAL-CHA"
      ],
      [
-      0.01,
-      "KXAHLGAME-26NOV242000TUCTEX-TUC"
+      0.005,
+      "KXUELGAME-26NOV26USGLPO-LPO"
      ],
      [
       0.005,
-      "KXUELGAME-26NOV26USGLPO-LPO"
+      "KXUELGAME-26NOV26SUNJAG-SUN"
+     ],
+     [
+      0.005,
+      "KXUELGAME-26NOV26RCCBOU-BOU"
      ]
     ]
    }
@@ -80,8 +72,11 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 4,
-   "skipped": {},
+   "opened": 2,
+   "skipped": {
+    "already_holding": 1,
+    "same_game": 1
+   },
    "diag": {
     "skipped_settles_late": 2
    }
@@ -96,8 +91,8 @@
    "diag": {
     "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.008156350446183786,
-     "ETH-USD": 0.008614135526784462
+     "BTC-USD": 0.008133630534252652,
+     "ETH-USD": 0.008603384491315416
     },
     "best": []
    }
@@ -110,7 +105,7 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 16,
+  "marked": 17,
   "settled": 0
  },
  "shadow_update": {
@@ -141,16 +136,16 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 5142,
-   "open": 21,
-   "won": 2849,
-   "lost": 2272,
-   "pl": -1898.5499999999827,
-   "risked": 51339.50000000024,
-   "clv_sum": -3511.0700000000006,
-   "clv_n": 5060,
-   "roi": -0.0369802978213651,
-   "clv": -0.6938873517786562
+   "picks": 5144,
+   "open": 20,
+   "won": 2851,
+   "lost": 2273,
+   "pl": -1886.1799999999826,
+   "risked": 51370.130000000245,
+   "clv_sum": -3461.0700000000006,
+   "clv_n": 5063,
+   "roi": -0.036717446500524206,
+   "clv": -0.6836006320363422
   },
   {
    "strategy": "weather",
