@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T14:45:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T15:00:34+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $521.27 (start $500, at risk $40.00) · ¼-Kelly comparison $527.74
 **Season to date (BET tier):** 16-11-0 · flat P/L $+21.27 (+15.8% on risk) · ¼-Kelly P/L $+27.74 · beat close 30%
 
-## Qualified bets (8)
+## Qualified bets (7)
 
 ```
 GAME: Gonzaga Bulldogs at Kansas State Wildcats (neutral)
@@ -73,28 +73,6 @@ FLAGS: neutral site; injuries/lineups not modeled — check before betting
 
 WHY: Model line Santa Clara Broncos -0.5 vs market +1.5 (+1.9 pts) from opponent-adjusted efficiency and venue.
 LOGGED: 2026-11-24T02:45:23+00:00 · model ncaab_v1
-```
-
-```
-GAME: Wright State Raiders at St. Bonaventure Bonnies (neutral)
-TIPOFF: Tue 10:00 AM ET
-
-SPORTSBOOK LINE: Wright State Raiders -1.5 (+105)
-MODEL LINE: Wright State Raiders -2
-PROJECTED SCORE: Wright State Raiders 75 - St. Bonaventure Bonnies 73
-
-MODEL COVER PROBABILITY: 50.6%
-BREAK-EVEN PROBABILITY: 48.78%
-EXPECTED ROI: +3.6%
-
-RECOMMENDATION: Wright State Raiders -1.5
-MINIMUM ACCEPTABLE PRICE: +102
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $4.35
-CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 50.6% (backtest-shrunk toward the market)
-FLAGS: neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Wright State Raiders -2 vs market -1.5 (+0.6 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-23T23:00:36+00:00 · model ncaab_v1
 ```
 
 ```
@@ -185,7 +163,7 @@ WHY: Model line New Haven Chargers PK vs market +2.5 (+2.4 pts) from opponent-ad
 LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
 ```
 
-## Watch list (33) — positive EV but not a qualified bet
+## Watch list (32) — positive EV but not a qualified bet
 
 - Kansas State Wildcats ML +900 (+900) · Gonzaga Bulldogs at Kansas State Wildcats · Wed 12:30 AM ET · EV +19.4% · min +763
 - Siena Saints ML -142 (-142) · Vermont Catamounts at Siena Saints · Tue 7:00 PM ET · EV +6.1% · min -153
@@ -195,14 +173,14 @@ LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
 - Green Bay Phoenix ML -110 (-110) · Green Bay Phoenix at Kansas City Roos · Tue 8:00 PM ET · EV +5.2% · min -115
 - Wofford Terriers -1.5 (+110) · Queens University Royals at Wofford Terriers · Tue 6:00 PM ET · EV +4.8% · min +104
 - Green Bay Phoenix -1.5 (+110) · Green Bay Phoenix at Kansas City Roos · Tue 8:00 PM ET · EV +4.4% · min +105
-- Wright State Raiders ML -115 (-115) · Wright State Raiders at St. Bonaventure Bonnies · Tue 10:00 AM ET · EV +4.2% · min -118
 - Loyola Maryland Greyhounds ML -155 (-155) · Rider Broncs at Loyola Maryland Greyhounds · Tue 7:00 PM ET · EV +2.9% · min -155
 - North Alabama Lions ML -155 (-155) · Alabama A&M Bulldogs at North Alabama Lions · Tue 8:00 PM ET · EV +2.8% · min -154
 - Morgan State Bears ML -115 (-115) · Mount St. Mary's Mountaineers at Morgan State Bears · Tue 7:00 PM ET · EV +2.7% · min -114
+- Miami Hurricanes ML -285 (-285) · Miami Hurricanes at TCU Horned Frogs · Tue 3:00 PM ET · EV +2.2% · min -276
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $531.52 · 169-154-0 · logged this run 2 · open 19
+Bankroll $531.52 · 169-154-0 · logged this run 0 · open 19
 
 ## Data gaps
 
