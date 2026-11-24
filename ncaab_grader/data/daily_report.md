@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T07:00:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T07:15:22+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -185,7 +185,7 @@ WHY: Model line New Haven Chargers PK vs market +2.5 (+2.4 pts) from opponent-ad
 LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
 ```
 
-## Watch list (32) — positive EV but not a qualified bet
+## Watch list (33) — positive EV but not a qualified bet
 
 - Kansas State Wildcats ML +900 (+900) · Gonzaga Bulldogs at Kansas State Wildcats · Wed 12:30 AM ET · EV +19.4% · min +763
 - Siena Saints ML -142 (-142) · Vermont Catamounts at Siena Saints · Tue 7:00 PM ET · EV +6.1% · min -153
@@ -206,7 +206,7 @@ Bankroll $531.52 · 169-154-0 · logged this run 0 · open 16
 
 ## Data gaps
 
-- no line posted yet (11): Vermont State Randolph Knights @ Stonehill Skyhawks, Penn State Berks Nittany Lions @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, Providence Friars @ TBD, Emerson Lions @ Quinnipiac Bobcats, Carolina Christian Centurions @ Presbyterian Blue Hose, SUNY Fredonia Blue Devils @ Mercyhurst Lakers, Arlington Baptist Patriots @ East Texas A&M Lions, Arkansas Baptist Buffaloes @ Little Rock Trojans, Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns, VCU Rams @ TBD
-- possession data coverage: 0.992
+- no line posted yet (9): Vermont State Randolph Knights @ Stonehill Skyhawks, Penn State Berks Nittany Lions @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, Emerson Lions @ Quinnipiac Bobcats, Carolina Christian Centurions @ Presbyterian Blue Hose, SUNY Fredonia Blue Devils @ Mercyhurst Lakers, Arlington Baptist Patriots @ East Texas A&M Lions, Arkansas Baptist Buffaloes @ Little Rock Trojans, Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns
+- possession data coverage: 0.99
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
