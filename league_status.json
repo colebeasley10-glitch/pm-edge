@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-24T13:45:42.516693Z",
+ "ran_at": "2026-11-24T14:00:48.164236Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -17,22 +17,37 @@
    }
   },
   "polymarket": {
-   "picks_found": 0,
+   "picks_found": 2,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [],
-   "shadow_opened": 0,
+   "shadow": [
+    {
+     "ticker": "KXCS2GAME-26NOV250200FAZEPV-FAZE",
+     "side": "NO",
+     "ask": 0.51,
+     "fair": 0.545,
+     "edge": 0.0171
+    },
+    {
+     "ticker": "KXCS2GAME-26NOV250200FAZEPV-PV",
+     "side": "YES",
+     "ask": 0.51,
+     "fair": 0.545,
+     "edge": 0.0171
+    }
+   ],
+   "shadow_opened": 1,
    "diag": {
     "poly_events": 600,
-    "poly_games": 238,
-    "kalshi_events": 1437,
-    "matched": 157,
-    "priced": 297,
+    "poly_games": 241,
+    "kalshi_events": 1441,
+    "matched": 159,
+    "priced": 300,
     "best_gaps": [
      [
-      0.025,
-      "KXNCAAMBGAME-26NOV24BRYMRST-MRST"
+      0.035,
+      "KXCS2GAME-26NOV250200FAZEPV-PV"
      ],
      [
       0.02,
@@ -56,7 +71,7 @@
      ],
      [
       0.015,
-      "KXDOTA2GAME-26NOV241100Z10PCKCP-PCKCP"
+      "KXEUROLEAGUEGAME-26NOV241500FENFCB-FCB"
      ],
      [
       0.01,
@@ -72,49 +87,80 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 4,
-   "skipped": {},
+   "opened": 3,
+   "skipped": {
+    "already_holding": 1
+   },
    "diag": {
-    "skipped_settles_late": 1
+    "skipped_settles_late": 0
    }
   },
   "crypto": {
-   "picks_found": 0,
+   "picks_found": 4,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [],
+   "shadow": [
+    {
+     "ticker": "KXBTCD-26NOV2410-T61099.99",
+     "side": "NO",
+     "ask": 0.83,
+     "fair": 0.9177,
+     "edge": 0.0777
+    },
+    {
+     "ticker": "KXBTCD-26NOV2410-T60999.99",
+     "side": "NO",
+     "ask": 0.8,
+     "fair": 0.8876,
+     "edge": 0.076
+    },
+    {
+     "ticker": "KXBTCD-26NOV2410-T60899.99",
+     "side": "NO",
+     "ask": 0.77,
+     "fair": 0.8503,
+     "edge": 0.0678
+    },
+    {
+     "ticker": "KXBTCD-26NOV2410-T60799.99",
+     "side": "NO",
+     "ask": 0.74,
+     "fair": 0.8054,
+     "edge": 0.0516
+    }
+   ],
    "shadow_opened": 0,
    "diag": {
-    "markets_priced": 120,
+    "markets_priced": 608,
     "vol": {
-     "BTC-USD": 0.007444275969916784,
-     "ETH-USD": 0.008255039023358723
+     "BTC-USD": 0.007495880687309433,
+     "ETH-USD": 0.00827640963835661
     },
     "best": [
      [
-      -0.055,
-      "KXETHD-26NOV2417-T1659.99"
+      -0.15,
+      "KXBTCD-26NOV2410-T62799.99"
      ],
      [
-      -0.045,
-      "KXBTCD-26NOV2417-T59249.99"
+      -0.101,
+      "KXBTCD-26NOV2410-T61199.99"
      ],
      [
-      -0.043,
-      "KXBTCD-26NOV2417-T59749.99"
+      -0.098,
+      "KXBTCD-26NOV2410-T60999.99"
      ],
      [
-      -0.042,
-      "KXBTCD-26NOV2417-T58999.99"
+      -0.098,
+      "KXBTCD-26NOV2410-T61099.99"
      ],
      [
-      -0.042,
-      "KXBTCD-26NOV2417-T59499.99"
+      -0.09,
+      "KXBTCD-26NOV2410-T60899.99"
      ],
      [
-      -0.035,
-      "KXBTCD-26NOV2417-T59999.99"
+      -0.089,
+      "KXBTCD-26NOV2410-T61299.99"
      ]
     ]
    }
@@ -127,8 +173,8 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 23,
-  "settled": 1
+  "marked": 24,
+  "settled": 3
  },
  "shadow_update": {
   "marked": 6,
@@ -158,16 +204,16 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 5177,
+   "picks": 5180,
    "open": 28,
    "won": 2871,
-   "lost": 2278,
-   "pl": -1758.3099999999822,
-   "risked": 51620.26000000024,
-   "clv_sum": -2933.0700000000006,
-   "clv_n": 5088,
-   "roi": -0.03406240108050548,
-   "clv": -0.5764681603773586
+   "lost": 2281,
+   "pl": -1788.249999999982,
+   "risked": 51650.200000000244,
+   "clv_sum": -3094.5700000000006,
+   "clv_n": 5091,
+   "roi": -0.034622324792546275,
+   "clv": -0.6078511098016108
   },
   {
    "strategy": "weather",
@@ -212,8 +258,8 @@
  "shadow_standings": [
   {
    "strategy": "polymarket",
-   "picks": 237,
-   "open": 6,
+   "picks": 238,
+   "open": 7,
    "won": 91,
    "lost": 140,
    "pl": -216.0099999999998,
