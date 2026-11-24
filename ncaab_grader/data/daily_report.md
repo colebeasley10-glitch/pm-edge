@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T19:45:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T20:00:33+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $516.27 (start $500, at risk $35.00) · ¼-Kelly comparison $523.39
-**Season to date (BET tier):** 16-12-0 · flat P/L $+16.27 (+11.6% on risk) · ¼-Kelly P/L $+23.39 · beat close 29%
+**Paper bankroll:** $511.27 (start $500, at risk $30.00) · ¼-Kelly comparison $516.40
+**Season to date (BET tier):** 16-13-0 · flat P/L $+11.27 (+7.8% on risk) · ¼-Kelly P/L $+16.40 · beat close 28%
 
 ## Qualified bets (6)
 
@@ -141,7 +141,7 @@ WHY: Model line New Haven Chargers PK vs market +2.5 (+2.4 pts) from opponent-ad
 LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
 ```
 
-## Watch list (28) — positive EV but not a qualified bet
+## Watch list (26) — positive EV but not a qualified bet
 
 - Kansas State Wildcats ML +900 (+900) · Gonzaga Bulldogs at Kansas State Wildcats · Wed 12:30 AM ET · EV +19.4% · min +763
 - Siena Saints ML -142 (-142) · Vermont Catamounts at Siena Saints · Tue 7:00 PM ET · EV +6.1% · min -153
@@ -153,8 +153,8 @@ LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
 - Loyola Maryland Greyhounds ML -155 (-155) · Rider Broncs at Loyola Maryland Greyhounds · Tue 7:00 PM ET · EV +2.9% · min -155
 - North Alabama Lions ML -155 (-155) · Alabama A&M Bulldogs at North Alabama Lions · Tue 8:00 PM ET · EV +2.8% · min -154
 - Morgan State Bears ML -115 (-115) · Mount St. Mary's Mountaineers at Morgan State Bears · Tue 7:00 PM ET · EV +2.7% · min -114
-- Miami Hurricanes ML -285 (-285) · Miami Hurricanes at TCU Horned Frogs · Tue 3:00 PM ET · EV +2.2% · min -276
 - Baylor Bears +2.5 (-110) · Baylor Bears at Alabama Crimson Tide · Tue 10:00 PM ET · EV +1.8% · min -110
+- OVER 147.5 (-105) · Jacksonville Dolphins at Indiana Hoosiers · Tue 7:00 PM ET · EV +1.7% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -163,6 +163,6 @@ Bankroll $531.52 · 169-154-0 · logged this run 0 · open 20
 ## Data gaps
 
 - no line posted yet (30): Penn State Berks Nittany Lions @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, Emerson Lions @ Quinnipiac Bobcats, Carolina Christian Centurions @ Presbyterian Blue Hose, SUNY Fredonia Blue Devils @ Mercyhurst Lakers, Arlington Baptist Patriots @ East Texas A&M Lions, Alcorn State Braves @ Louisiana Tech Bulldogs, Arkansas Baptist Buffaloes @ Little Rock Trojans, Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns, St. Bonaventure Bonnies @ Belmont Bruins, Rice Owls @ Ohio Bobcats, Northern Iowa Panthers @ Charlotte 49ers, Mercy Mavericks @ Fordham Rams, Virginia Cavaliers @ Marquette Golden Eagles, Penn State Abington Nittany Lions @ Saint Joseph's Hawks …
-- possession data coverage: 0.991
+- possession data coverage: 0.989
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
