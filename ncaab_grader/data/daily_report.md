@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T15:45:27+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T16:00:33+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -163,13 +163,12 @@ WHY: Model line New Haven Chargers PK vs market +2.5 (+2.4 pts) from opponent-ad
 LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
 ```
 
-## Watch list (32) — positive EV but not a qualified bet
+## Watch list (30) — positive EV but not a qualified bet
 
 - Kansas State Wildcats ML +900 (+900) · Gonzaga Bulldogs at Kansas State Wildcats · Wed 12:30 AM ET · EV +19.4% · min +763
 - Siena Saints ML -142 (-142) · Vermont Catamounts at Siena Saints · Tue 7:00 PM ET · EV +6.1% · min -153
 - Wofford Terriers ML -110 (-110) · Queens University Royals at Wofford Terriers · Tue 6:00 PM ET · EV +5.5% · min -116
 - Weber State Wildcats ML -110 (-110) · Tarleton State Texans at Weber State Wildcats · Tue 7:00 PM ET · EV +5.3% · min -115
-- New Mexico State Aggies ML +190 (+190) · Ohio Bobcats at New Mexico State Aggies · Tue 11:00 AM ET · EV +5.2% · min +184
 - Green Bay Phoenix ML -110 (-110) · Green Bay Phoenix at Kansas City Roos · Tue 8:00 PM ET · EV +5.2% · min -115
 - Wofford Terriers -1.5 (+110) · Queens University Royals at Wofford Terriers · Tue 6:00 PM ET · EV +4.8% · min +104
 - Green Bay Phoenix -1.5 (+110) · Green Bay Phoenix at Kansas City Roos · Tue 8:00 PM ET · EV +4.4% · min +105
@@ -177,6 +176,7 @@ LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
 - North Alabama Lions ML -155 (-155) · Alabama A&M Bulldogs at North Alabama Lions · Tue 8:00 PM ET · EV +2.8% · min -154
 - Morgan State Bears ML -115 (-115) · Mount St. Mary's Mountaineers at Morgan State Bears · Tue 7:00 PM ET · EV +2.7% · min -114
 - Miami Hurricanes ML -285 (-285) · Miami Hurricanes at TCU Horned Frogs · Tue 3:00 PM ET · EV +2.2% · min -276
+- Baylor Bears +2.5 (-110) · Baylor Bears at Alabama Crimson Tide · Tue 10:00 PM ET · EV +1.8% · min -110
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
