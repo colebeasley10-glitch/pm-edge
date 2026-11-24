@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T20:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T20:30:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $511.27 (start $500, at risk $30.00) · ¼-Kelly comparison $516.40
 **Season to date (BET tier):** 16-13-0 · flat P/L $+11.27 (+7.8% on risk) · ¼-Kelly P/L $+16.40 · beat close 28%
 
-## Qualified bets (6)
+## Qualified bets (5)
 
 ```
 GAME: Gonzaga Bulldogs at Kansas State Wildcats (neutral)
@@ -73,28 +73,6 @@ FLAGS: neutral site; injuries/lineups not modeled — check before betting
 
 WHY: Model line DePaul Blue Demons +0.5 vs market +4.5 (+3.9 pts) from opponent-adjusted efficiency and venue.
 LOGGED: 2026-11-23T21:30:28+00:00 · model ncaab_v1
-```
-
-```
-GAME: Long Beach State Beach at Arkansas State Red Wolves (neutral)
-TIPOFF: Tue 3:30 PM ET
-
-SPORTSBOOK LINE: Long Beach State Beach +4.5 (-110)
-MODEL LINE: Long Beach State Beach +0.5
-PROJECTED SCORE: Long Beach State Beach 78 - Arkansas State Red Wolves 79
-
-MODEL COVER PROBABILITY: 53.9%
-BREAK-EVEN PROBABILITY: 52.38%
-EXPECTED ROI: +2.9%
-
-RECOMMENDATION: Long Beach State Beach +4.5
-MINIMUM ACCEPTABLE PRICE: -112
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $3.92
-CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 53.9% (backtest-shrunk toward the market)
-FLAGS: neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Long Beach State Beach +0.5 vs market +4.5 (+3.8 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
 ```
 
 ```
