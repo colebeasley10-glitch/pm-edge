@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-23
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T01:45:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T02:00:32+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $521.27 (start $500, at risk $20.00) · ¼-Kelly comparison $527.74
+**Paper bankroll:** $521.27 (start $500, at risk $30.00) · ¼-Kelly comparison $527.74
 **Season to date (BET tier):** 16-11-0 · flat P/L $+21.27 (+15.8% on risk) · ¼-Kelly P/L $+27.74 · beat close 30%
 
-## Qualified bets (4)
+## Qualified bets (6)
 
 ```
 GAME: Gonzaga Bulldogs at Kansas State Wildcats (neutral)
@@ -97,7 +97,51 @@ WHY: Model line DePaul Blue Demons +0.5 vs market +4.5 (+3.9 pts) from opponent-
 LOGGED: 2026-11-23T21:30:28+00:00 · model ncaab_v1
 ```
 
-## Watch list (24) — positive EV but not a qualified bet
+```
+GAME: Long Beach State Beach at Arkansas State Red Wolves (neutral)
+TIPOFF: Tue 3:30 PM ET
+
+SPORTSBOOK LINE: Long Beach State Beach +4.5 (-110)
+MODEL LINE: Long Beach State Beach +0.5
+PROJECTED SCORE: Long Beach State Beach 78 - Arkansas State Red Wolves 79
+
+MODEL COVER PROBABILITY: 53.9%
+BREAK-EVEN PROBABILITY: 52.38%
+EXPECTED ROI: +2.9%
+
+RECOMMENDATION: Long Beach State Beach +4.5
+MINIMUM ACCEPTABLE PRICE: -112
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $3.92
+CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 53.9% (backtest-shrunk toward the market)
+FLAGS: neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line Long Beach State Beach +0.5 vs market +4.5 (+3.8 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
+```
+
+```
+GAME: Lindenwood Lions at New Haven Chargers (neutral)
+TIPOFF: Tue 4:00 PM ET
+
+SPORTSBOOK LINE: New Haven Chargers +2.5 (-105)
+MODEL LINE: New Haven Chargers PK
+PROJECTED SCORE: Lindenwood Lions 65 - New Haven Chargers 65
+
+MODEL COVER PROBABILITY: 52.4%
+BREAK-EVEN PROBABILITY: 51.22%
+EXPECTED ROI: +2.4%
+
+RECOMMENDATION: New Haven Chargers +2.5
+MINIMUM ACCEPTABLE PRICE: -106
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $3.15
+CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 52.4% (backtest-shrunk toward the market)
+FLAGS: neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line New Haven Chargers PK vs market +2.5 (+2.4 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-24T02:00:32+00:00 · model ncaab_v1
+```
+
+## Watch list (25) — positive EV but not a qualified bet
 
 - Colorado State Rams ML +1200 (+1200) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +7.1% · min +1150
 - Weber State Wildcats ML -110 (-110) · Tarleton State Texans at Weber State Wildcats · Tue 7:00 PM ET · EV +5.3% · min -115
@@ -114,11 +158,11 @@ LOGGED: 2026-11-23T21:30:28+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $537.51 · 167-151-0 · logged this run 0 · open 13
+Bankroll $537.51 · 167-151-0 · logged this run 2 · open 15
 
 ## Data gaps
 
-- no line posted yet (30): Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, Vermont State Randolph Knights @ Stonehill Skyhawks, Long Beach State Beach @ Arkansas State Red Wolves, Lindenwood Lions @ New Haven Chargers, Tulsa Golden Hurricane @ Illinois State Redbirds, Penn State Berks Nittany Lions @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, TBD @ TBD, Emerson Lions @ Quinnipiac Bobcats, Queens University Royals @ Wofford Terriers, Robert Morris Colonials @ Lamar Cardinals, Jacksonville Dolphins @ Indiana Hoosiers, Carolina Christian Centurions @ Presbyterian Blue Hose, Bryant Bulldogs @ Marist Red Foxes …
-- possession data coverage: 0.992
+- no line posted yet (30): Vermont State Randolph Knights @ Stonehill Skyhawks, Tulsa Golden Hurricane @ Illinois State Redbirds, Penn State Berks Nittany Lions @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, TBD @ TBD, Emerson Lions @ Quinnipiac Bobcats, Queens University Royals @ Wofford Terriers, Robert Morris Colonials @ Lamar Cardinals, Carolina Christian Centurions @ Presbyterian Blue Hose, Bryant Bulldogs @ Marist Red Foxes, Coppin State Eagles @ Villanova Wildcats, Rider Broncs @ Loyola Maryland Greyhounds, Bellarmine Knights @ Georgia Southern Eagles, Delaware State Hornets @ Chattanooga Mocs, Mount St. Mary's Mountaineers @ Morgan State Bears …
+- possession data coverage: 0.991
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
