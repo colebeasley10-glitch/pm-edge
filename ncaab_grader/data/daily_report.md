@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-23
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-24T01:00:30+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-24T01:15:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $516.27 (start $500, at risk $25.00) · ¼-Kelly comparison $521.34
-**Season to date (BET tier):** 15-11-0 · flat P/L $+16.27 (+12.5% on risk) · ¼-Kelly P/L $+21.34 · beat close 27%
+**Paper bankroll:** $521.27 (start $500, at risk $20.00) · ¼-Kelly comparison $527.74
+**Season to date (BET tier):** 16-11-0 · flat P/L $+21.27 (+15.8% on risk) · ¼-Kelly P/L $+27.74 · beat close 30%
 
 ## Qualified bets (4)
 
@@ -97,7 +97,7 @@ WHY: Model line DePaul Blue Demons +0.5 vs market +4.5 (+3.9 pts) from opponent-
 LOGGED: 2026-11-23T21:30:28+00:00 · model ncaab_v1
 ```
 
-## Watch list (23) — positive EV but not a qualified bet
+## Watch list (24) — positive EV but not a qualified bet
 
 - Colorado State Rams ML +1200 (+1200) · Colorado State Rams at Arizona Wildcats · Mon 11:30 PM ET · EV +7.1% · min +1150
 - Weber State Wildcats ML -110 (-110) · Tarleton State Texans at Weber State Wildcats · Tue 7:00 PM ET · EV +5.3% · min -115
@@ -105,12 +105,12 @@ LOGGED: 2026-11-23T21:30:28+00:00 · model ncaab_v1
 - Green Bay Phoenix ML -110 (-110) · Green Bay Phoenix at Kansas City Roos · Tue 8:00 PM ET · EV +5.2% · min -115
 - Green Bay Phoenix -1.5 (+110) · Green Bay Phoenix at Kansas City Roos · Tue 8:00 PM ET · EV +4.4% · min +105
 - Wright State Raiders ML -115 (-115) · Wright State Raiders at St. Bonaventure Bonnies · Tue 10:00 AM ET · EV +4.2% · min -118
+- North Alabama Lions ML -155 (-155) · Alabama A&M Bulldogs at North Alabama Lions · Tue 8:00 PM ET · EV +2.8% · min -154
 - Miami Hurricanes ML -285 (-285) · Miami Hurricanes at TCU Horned Frogs · Tue 3:00 PM ET · EV +2.2% · min -276
 - Baylor Bears +2.5 (-110) · Baylor Bears at Alabama Crimson Tide · Tue 10:00 PM ET · EV +1.8% · min -110
 - OVER 149.5 (-105) · Ohio Bobcats at New Mexico State Aggies · Tue 11:00 AM ET · EV +1.8% · min -102
 - OVER 143.5 (-105) · SE Louisiana Lions at Northern Colorado Bears · Tue 12:30 PM ET · EV +1.7% · min -102
 - OVER 130.5 (-105) · Hampton Pirates at Old Dominion Monarchs · Tue 7:00 PM ET · EV +1.7% · min -102
-- OVER 153.5 (-105) · Sam Houston Bearkats at Washington State Cougars · Tue 9:00 PM ET · EV +1.7% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -118,7 +118,7 @@ Bankroll $537.51 · 167-151-0 · logged this run 0 · open 13
 
 ## Data gaps
 
-- no line posted yet (30): Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, Southern Utah Thunderbirds @ Florida International Panthers, Vermont State Randolph Knights @ Stonehill Skyhawks, Oregon State Beavers @ San Francisco Dons, Ole Miss Rebels @ TBD, App State Mountaineers @ Yale Bulldogs, Long Beach State Beach @ Arkansas State Red Wolves, Lindenwood Lions @ New Haven Chargers, Tulsa Golden Hurricane @ Illinois State Redbirds, Penn State Berks Nittany Lions @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, TBD @ TBD, Emerson Lions @ Quinnipiac Bobcats, Queens University Royals @ Wofford Terriers …
+- no line posted yet (30): Dickinson State Blue Hawks @ Idaho Vandals, Carroll (MT) Fighting Saints @ Montana Grizzlies, Vermont State Randolph Knights @ Stonehill Skyhawks, Long Beach State Beach @ Arkansas State Red Wolves, Lindenwood Lions @ New Haven Chargers, Tulsa Golden Hurricane @ Illinois State Redbirds, Penn State Berks Nittany Lions @ Navy Midshipmen, Bloomsburg Huskies @ Wagner Seahawks, TBD @ TBD, Emerson Lions @ Quinnipiac Bobcats, Queens University Royals @ Wofford Terriers, Robert Morris Colonials @ Lamar Cardinals, Jacksonville Dolphins @ Indiana Hoosiers, Carolina Christian Centurions @ Presbyterian Blue Hose, Bryant Bulldogs @ Marist Red Foxes …
 - possession data coverage: 0.991
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
