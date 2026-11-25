@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T17:15:27+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T17:30:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $520.00 (start $500, at risk $26.23) · ¼-Kelly comparison $518.70
 **Season to date (BET tier):** 20-15-0 · flat P/L $+20.00 (+11.4% on risk) · ¼-Kelly P/L $+18.70 · beat close 31%
 
-## Qualified bets (5)
+## Qualified bets (4)
 
 ```
 GAME: Ole Miss Rebels at Arizona Wildcats (neutral)
@@ -73,28 +73,6 @@ FLAGS: neutral site; injuries/lineups not modeled — check before betting
 
 WHY: Model line UC Davis Aggies -9 vs market -7.5 (+1.7 pts) from opponent-adjusted efficiency and venue.
 LOGGED: 2026-11-25T02:45:27+00:00 · model ncaab_v1
-```
-
-```
-GAME: Northern Colorado Bears at Detroit Mercy Titans (neutral)
-TIPOFF: Wed 12:30 PM ET
-
-SPORTSBOOK LINE: Detroit Mercy Titans +5.5 (-102)
-MODEL LINE: Detroit Mercy Titans +4
-PROJECTED SCORE: Northern Colorado Bears 78 - Detroit Mercy Titans 74
-
-MODEL COVER PROBABILITY: 51.6%
-BREAK-EVEN PROBABILITY: 50.50%
-EXPECTED ROI: +2.2%
-
-RECOMMENDATION: Detroit Mercy Titans +5.5
-MINIMUM ACCEPTABLE PRICE: -102
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $2.84
-CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 51.6% (backtest-shrunk toward the market)
-FLAGS: neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Detroit Mercy Titans +4 vs market +5.5 (+1.6 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-25T04:15:35+00:00 · model ncaab_v1
 ```
 
 ```
