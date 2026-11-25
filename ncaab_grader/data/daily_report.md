@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T02:30:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T02:45:27+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $515.37 (start $500, at risk $25.00) · ¼-Kelly comparison $520.62
-**Season to date (BET tier):** 18-14-0 · flat P/L $+15.37 (+9.6% on risk) · ¼-Kelly P/L $+20.62 · beat close 34%
+**Paper bankroll:** $520.37 (start $500, at risk $26.23) · ¼-Kelly comparison $525.58
+**Season to date (BET tier):** 19-14-0 · flat P/L $+20.37 (+12.3% on risk) · ¼-Kelly P/L $+25.58 · beat close 33%
 
-## Qualified bets (3)
+## Qualified bets (5)
 
 ```
 GAME: Gonzaga Bulldogs at Kansas State Wildcats (neutral)
@@ -29,6 +29,50 @@ FLAGS: neutral site; injuries/lineups not modeled — check before betting
 
 WHY: Model line Kansas State Wildcats +9 vs market +15.5 (+6.7 pts) from opponent-adjusted efficiency and venue.
 LOGGED: 2026-11-23T23:30:28+00:00 · model ncaab_v1
+```
+
+```
+GAME: Ole Miss Rebels at Arizona Wildcats (neutral)
+TIPOFF: Wed 2:30 PM ET
+
+SPORTSBOOK LINE: Ole Miss Rebels +5.5 (-110)
+MODEL LINE: Ole Miss Rebels PK
+PROJECTED SCORE: Ole Miss Rebels 77 - Arizona Wildcats 77
+
+MODEL COVER PROBABILITY: 55.8%
+BREAK-EVEN PROBABILITY: 52.38%
+EXPECTED ROI: +6.4%
+
+RECOMMENDATION: Ole Miss Rebels +5.5
+MINIMUM ACCEPTABLE PRICE: -121
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $8.86
+CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 55.8% (backtest-shrunk toward the market)
+FLAGS: neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line Ole Miss Rebels PK vs market +5.5 (+5.7 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-25T02:45:27+00:00 · model ncaab_v1
+```
+
+```
+GAME: Omaha Mavericks at UC Davis Aggies (neutral)
+TIPOFF: Wed 8:00 PM ET
+
+SPORTSBOOK LINE: UC Davis Aggies -7.5 (-102)
+MODEL LINE: UC Davis Aggies -9
+PROJECTED SCORE: Omaha Mavericks 70 - UC Davis Aggies 79
+
+MODEL COVER PROBABILITY: 51.7%
+BREAK-EVEN PROBABILITY: 50.50%
+EXPECTED ROI: +2.5%
+
+RECOMMENDATION: UC Davis Aggies -7.5
+MINIMUM ACCEPTABLE PRICE: -103
+SUGGESTED STAKE: $1.23 flat (1% of the $500 start) · ¼-Kelly comparison $3.16
+CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 51.7% (backtest-shrunk toward the market)
+FLAGS: neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line UC Davis Aggies -9 vs market -7.5 (+1.7 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-25T02:45:27+00:00 · model ncaab_v1
 ```
 
 ```
@@ -75,7 +119,7 @@ WHY: Model line Penn State Nittany Lions +1 vs market +4.5 (+3.4 pts) from oppon
 LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (25) — positive EV but not a qualified bet
+## Watch list (32) — positive EV but not a qualified bet
 
 - Kansas State Wildcats ML +900 (+900) · Gonzaga Bulldogs at Kansas State Wildcats · Wed 12:30 AM ET · EV +19.4% · min +763
 - Northern Iowa Panthers ML +320 (+320) · Northern Iowa Panthers at Charlotte 49ers · Wed 11:00 AM ET · EV +15.2% · min +276
@@ -83,20 +127,20 @@ LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 - Marquette Golden Eagles ML +200 (+200) · Virginia Cavaliers at Marquette Golden Eagles · Wed 12:00 PM ET · EV +6.1% · min +191
 - Princeton Tigers ML +140 (+140) · Princeton Tigers at Liberty Flames · Wed 4:00 PM ET · EV +4.6% · min +136
 - Rice Owls ML +185 (+185) · Rice Owls at Ohio Bobcats · Wed 11:00 AM ET · EV +4.3% · min +181
+- UC Davis Aggies ML -265 (-265) · Omaha Mavericks at UC Davis Aggies · Wed 8:00 PM ET · EV +4.3% · min -278
+- LSU New Orleans Privateers ML -175 (-175) · Grambling Tigers at LSU New Orleans Privateers · Wed 4:00 PM ET · EV +3.5% · min -178
+- Ole Miss Rebels ML +180 (+180) · Ole Miss Rebels at Arizona Wildcats · Wed 2:30 PM ET · EV +3.3% · min +179
 - SMU Mustangs ML +190 (+190) · SMU Mustangs at Utah State Aggies · Wed 7:00 PM ET · EV +3.0% · min +190
+- Northwestern State Demons ML -120 (-120) · West Florida Argonauts at Northwestern State Demons · Wed 6:00 PM ET · EV +2.1% · min -118
 - Baylor Bears +2.5 (-110) · Baylor Bears at Alabama Crimson Tide · Tue 10:00 PM ET · EV +1.8% · min -110
-- OVER 138.5 (-105) · Northern Illinois Huskies at SIU Edwardsville Cougars · Wed 7:00 PM ET · EV +1.8% · min -103
-- Northern Iowa Panthers +7.5 (-105) · Northern Iowa Panthers at Charlotte 49ers · Wed 11:00 AM ET · EV +1.8% · min -105
-- OVER 135.5 (-105) · Princeton Tigers at Liberty Flames · Wed 4:00 PM ET · EV +1.8% · min -102
-- Texas A&M Aggies -5.5 (-102) · Texas A&M Aggies at Xavier Musketeers · Wed 2:30 PM ET · EV +1.8% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $545.58 · 174-156-0 · logged this run 0 · open 18
+Bankroll $535.58 · 175-159-0 · logged this run 4 · open 18
 
 ## Data gaps
 
-- no line posted yet (30): Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, Northern Colorado Bears @ Detroit Mercy Titans, American International Yellow Jackets @ Rhode Island Rams, Arkansas-Pine Bluff Golden Lions @ South Dakota Coyotes, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Manhattan Jaspers @ NJIT Highlanders, Johnson & Wales Griffins @ Brown Bears, Ole Miss Rebels @ Arizona Wildcats, SE Louisiana Lions @ North Dakota Fighting Hawks, Jackson State Tigers @ Oklahoma State Cowboys, Bethesda Flames @ Utah Tech Trailblazers …
-- possession data coverage: 0.972
+- no line posted yet (21): Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, Northern Colorado Bears @ Detroit Mercy Titans, American International Yellow Jackets @ Rhode Island Rams, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Manhattan Jaspers @ NJIT Highlanders, Johnson & Wales Griffins @ Brown Bears, SE Louisiana Lions @ North Dakota Fighting Hawks, Bethesda Flames @ Utah Tech Trailblazers, BYU Cougars @ Providence Friars, Kennesaw State Owls @ TBD, Case Western Reserve Spartans @ Cleveland State Vikings …
+- possession data coverage: 0.958
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
