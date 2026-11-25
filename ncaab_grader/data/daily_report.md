@@ -1,35 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T05:15:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T05:30:32+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $525.00 (start $500, at risk $26.23) · ¼-Kelly comparison $528.70
 **Season to date (BET tier):** 20-14-0 · flat P/L $+25.00 (+14.7% on risk) · ¼-Kelly P/L $+28.70 · beat close 32%
 
-## Qualified bets (6)
-
-```
-GAME: Gonzaga Bulldogs at Kansas State Wildcats (neutral)
-TIPOFF: Wed 12:30 AM ET
-
-SPORTSBOOK LINE: Kansas State Wildcats +15.5 (-110)
-MODEL LINE: Kansas State Wildcats +9
-PROJECTED SCORE: Gonzaga Bulldogs 80 - Kansas State Wildcats 71
-
-MODEL COVER PROBABILITY: 56.8%
-BREAK-EVEN PROBABILITY: 52.38%
-EXPECTED ROI: +8.5%
-
-RECOMMENDATION: Kansas State Wildcats +15.5
-MINIMUM ACCEPTABLE PRICE: -126
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $10.00
-CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 56.8% (backtest-shrunk toward the market)
-FLAGS: neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Kansas State Wildcats +9 vs market +15.5 (+6.7 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-23T23:30:28+00:00 · model ncaab_v1
-```
+## Qualified bets (5)
 
 ```
 GAME: Ole Miss Rebels at Arizona Wildcats (neutral)
@@ -141,9 +119,8 @@ WHY: Model line Penn State Nittany Lions +1 vs market +4.5 (+3.4 pts) from oppon
 LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (30) — positive EV but not a qualified bet
+## Watch list (29) — positive EV but not a qualified bet
 
-- Kansas State Wildcats ML +900 (+900) · Gonzaga Bulldogs at Kansas State Wildcats · Wed 12:30 AM ET · EV +19.4% · min +763
 - Northern Iowa Panthers ML +320 (+320) · Northern Iowa Panthers at Charlotte 49ers · Wed 11:00 AM ET · EV +15.2% · min +276
 - Penn State Nittany Lions ML +185 (+185) · Memphis Tigers at Penn State Nittany Lions · Wed 5:00 PM ET · EV +8.3% · min +171
 - Marquette Golden Eagles ML +200 (+200) · Virginia Cavaliers at Marquette Golden Eagles · Wed 12:00 PM ET · EV +6.1% · min +191
@@ -155,6 +132,7 @@ LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 - SMU Mustangs ML +190 (+190) · SMU Mustangs at Utah State Aggies · Wed 7:00 PM ET · EV +3.0% · min +190
 - Northwestern State Demons ML -120 (-120) · West Florida Argonauts at Northwestern State Demons · Wed 6:00 PM ET · EV +2.1% · min -118
 - OVER 138.5 (-105) · Northern Illinois Huskies at SIU Edwardsville Cougars · Wed 7:00 PM ET · EV +1.8% · min -103
+- Northern Iowa Panthers +7.5 (-105) · Northern Iowa Panthers at Charlotte 49ers · Wed 11:00 AM ET · EV +1.8% · min -105
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -163,6 +141,6 @@ Bankroll $520.11 · 177-164-0 · logged this run 0 · open 13
 ## Data gaps
 
 - no line posted yet (18): Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, American International Yellow Jackets @ Rhode Island Rams, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Manhattan Jaspers @ NJIT Highlanders, Johnson & Wales Griffins @ Brown Bears, Bethesda Flames @ Utah Tech Trailblazers, Kennesaw State Owls @ Charleston Cougars, Case Western Reserve Spartans @ Cleveland State Vikings, Eastern Michigan Eagles @ UTEP Miners, Northwest Indian RedHawks @ Montana State Bobcats, TBD @ TBD …
-- possession data coverage: 0.984
+- possession data coverage: 0.985
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
