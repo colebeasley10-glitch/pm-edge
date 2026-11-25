@@ -1,35 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T19:15:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T19:30:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $524.24 (start $500, at risk $21.23) · ¼-Kelly comparison $521.74
 **Season to date (BET tier):** 21-15-0 · flat P/L $+24.24 (+13.5% on risk) · ¼-Kelly P/L $+21.74 · beat close 33%
 
-## Qualified bets (4)
-
-```
-GAME: Ole Miss Rebels at Arizona Wildcats (neutral)
-TIPOFF: Wed 2:30 PM ET
-
-SPORTSBOOK LINE: Ole Miss Rebels +5.5 (-110)
-MODEL LINE: Ole Miss Rebels PK
-PROJECTED SCORE: Ole Miss Rebels 77 - Arizona Wildcats 77
-
-MODEL COVER PROBABILITY: 55.8%
-BREAK-EVEN PROBABILITY: 52.38%
-EXPECTED ROI: +6.4%
-
-RECOMMENDATION: Ole Miss Rebels +5.5
-MINIMUM ACCEPTABLE PRICE: -121
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $8.86
-CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 55.8% (backtest-shrunk toward the market)
-FLAGS: neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Ole Miss Rebels PK vs market +5.5 (+5.7 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-25T02:45:27+00:00 · model ncaab_v1
-```
+## Qualified bets (3)
 
 ```
 GAME: Tennessee Volunteers at Iowa State Cyclones (neutral)
@@ -97,20 +75,20 @@ WHY: Model line Penn State Nittany Lions +1 vs market +4.5 (+3.4 pts) from oppon
 LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (24) — positive EV but not a qualified bet
+## Watch list (22) — positive EV but not a qualified bet
 
 - Penn State Nittany Lions ML +185 (+185) · Memphis Tigers at Penn State Nittany Lions · Wed 5:00 PM ET · EV +8.3% · min +171
 - Washington Huskies ML +160 (+160) · Washington Huskies at VCU Rams · Wed 10:00 PM ET · EV +7.6% · min +149
 - Princeton Tigers ML +140 (+140) · Princeton Tigers at Liberty Flames · Wed 4:00 PM ET · EV +4.6% · min +136
 - UC Davis Aggies ML -265 (-265) · Omaha Mavericks at UC Davis Aggies · Wed 8:00 PM ET · EV +4.3% · min -278
 - LSU New Orleans Privateers ML -175 (-175) · Grambling Tigers at LSU New Orleans Privateers · Wed 4:00 PM ET · EV +3.5% · min -178
-- Ole Miss Rebels ML +180 (+180) · Ole Miss Rebels at Arizona Wildcats · Wed 2:30 PM ET · EV +3.3% · min +179
 - Iowa State Cyclones ML -112 (-112) · Tennessee Volunteers at Iowa State Cyclones · Thu 3:30 PM ET · EV +3.3% · min -113
 - SMU Mustangs ML +190 (+190) · SMU Mustangs at Utah State Aggies · Wed 7:00 PM ET · EV +3.0% · min +190
 - Northwestern State Demons ML -120 (-120) · West Florida Argonauts at Northwestern State Demons · Wed 6:00 PM ET · EV +2.1% · min -118
 - OVER 138.5 (-105) · Northern Illinois Huskies at SIU Edwardsville Cougars · Wed 7:00 PM ET · EV +1.8% · min -103
 - OVER 135.5 (-105) · Princeton Tigers at Liberty Flames · Wed 4:00 PM ET · EV +1.8% · min -102
-- Texas A&M Aggies -5.5 (-102) · Texas A&M Aggies at Xavier Musketeers · Wed 2:30 PM ET · EV +1.8% · min -102
+- OVER 158.5 (-105) · St. Thomas Tommies at UNC Wilmington Seahawks · Wed 7:00 PM ET · EV +1.8% · min -102
+- OVER 133.5 (-105) · Pacific Tigers at Jacksonville State Gamecocks · Wed 10:30 PM ET · EV +1.7% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
