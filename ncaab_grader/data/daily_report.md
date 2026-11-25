@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T14:15:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T14:30:40+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $520.00 (start $500, at risk $21.23) · ¼-Kelly comparison $518.70
+**Paper bankroll:** $520.00 (start $500, at risk $26.23) · ¼-Kelly comparison $518.70
 **Season to date (BET tier):** 20-15-0 · flat P/L $+20.00 (+11.4% on risk) · ¼-Kelly P/L $+18.70 · beat close 31%
 
-## Qualified bets (5)
+## Qualified bets (6)
 
 ```
 GAME: Ole Miss Rebels at Arizona Wildcats (neutral)
@@ -29,6 +29,28 @@ FLAGS: neutral site; injuries/lineups not modeled — check before betting
 
 WHY: Model line Ole Miss Rebels PK vs market +5.5 (+5.7 pts) from opponent-adjusted efficiency and venue.
 LOGGED: 2026-11-25T02:45:27+00:00 · model ncaab_v1
+```
+
+```
+GAME: Tennessee Volunteers at Iowa State Cyclones (neutral)
+TIPOFF: Thu 3:30 PM ET
+
+SPORTSBOOK LINE: Iowa State Cyclones -1.5 (+110)
+MODEL LINE: Iowa State Cyclones -1
+PROJECTED SCORE: Tennessee Volunteers 67 - Iowa State Cyclones 68
+
+MODEL COVER PROBABILITY: 49.4%
+BREAK-EVEN PROBABILITY: 47.62%
+EXPECTED ROI: +3.7%
+
+RECOMMENDATION: Iowa State Cyclones -1.5
+MINIMUM ACCEPTABLE PRICE: +107
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $4.22
+CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 49.4% (backtest-shrunk toward the market)
+FLAGS: neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line Iowa State Cyclones -1 vs market -1.5 (-0.6 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-25T14:30:40+00:00 · model ncaab_v1
 ```
 
 ```
@@ -119,7 +141,7 @@ WHY: Model line Penn State Nittany Lions +1 vs market +4.5 (+3.4 pts) from oppon
 LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (32) — positive EV but not a qualified bet
+## Watch list (34) — positive EV but not a qualified bet
 
 - Northern Iowa Panthers ML +320 (+320) · Northern Iowa Panthers at Charlotte 49ers · Wed 11:00 AM ET · EV +15.2% · min +276
 - Penn State Nittany Lions ML +185 (+185) · Memphis Tigers at Penn State Nittany Lions · Wed 5:00 PM ET · EV +8.3% · min +171
@@ -130,9 +152,9 @@ LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 - UC Davis Aggies ML -265 (-265) · Omaha Mavericks at UC Davis Aggies · Wed 8:00 PM ET · EV +4.3% · min -278
 - LSU New Orleans Privateers ML -175 (-175) · Grambling Tigers at LSU New Orleans Privateers · Wed 4:00 PM ET · EV +3.5% · min -178
 - Ole Miss Rebels ML +180 (+180) · Ole Miss Rebels at Arizona Wildcats · Wed 2:30 PM ET · EV +3.3% · min +179
+- Iowa State Cyclones ML -112 (-112) · Tennessee Volunteers at Iowa State Cyclones · Thu 3:30 PM ET · EV +3.3% · min -113
 - SMU Mustangs ML +190 (+190) · SMU Mustangs at Utah State Aggies · Wed 7:00 PM ET · EV +3.0% · min +190
 - Northwestern State Demons ML -120 (-120) · West Florida Argonauts at Northwestern State Demons · Wed 6:00 PM ET · EV +2.1% · min -118
-- OVER 138.5 (-105) · Northern Illinois Huskies at SIU Edwardsville Cougars · Wed 7:00 PM ET · EV +1.8% · min -103
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
