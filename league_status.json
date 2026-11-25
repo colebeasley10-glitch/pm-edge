@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-25T14:30:46.705199Z",
+ "ran_at": "2026-11-25T14:45:45.116121Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -17,7 +17,7 @@
    }
   },
   "polymarket": {
-   "picks_found": 2,
+   "picks_found": 4,
    "opened": 0,
    "skipped": {},
    "benched": true,
@@ -25,29 +25,51 @@
     {
      "ticker": "KXDOTA2GAME-26NOV251000AMAV-AMA",
      "side": "YES",
-     "ask": 0.38,
-     "fair": 0.79,
-     "edge": 0.3935
+     "ask": 0.36,
+     "fair": 0.795,
+     "edge": 0.4187
     },
     {
      "ticker": "KXVALORANTGAME-26NOV250730SIGGLE-SIG",
+     "side": "YES",
+     "ask": 0.35,
+     "fair": 0.575,
+     "edge": 0.2089
+    },
+    {
+     "ticker": "KXNCAAFGAME-26NOV28LTGASO-LT",
+     "side": "YES",
+     "ask": 0.46,
+     "fair": 0.65,
+     "edge": 0.1724
+    },
+    {
+     "ticker": "KXNCAAFGAME-26NOV28LTGASO-GASO",
      "side": "NO",
-     "ask": 0.34,
-     "fair": 0.425,
-     "edge": 0.0691
+     "ask": 0.47,
+     "fair": 0.65,
+     "edge": 0.1624
     }
    ],
-   "shadow_opened": 0,
+   "shadow_opened": 1,
    "diag": {
     "poly_events": 600,
-    "poly_games": 258,
-    "kalshi_events": 1547,
-    "matched": 167,
-    "priced": 310,
+    "poly_games": 260,
+    "kalshi_events": 1536,
+    "matched": 166,
+    "priced": 306,
     "best_gaps": [
      [
-      0.41,
+      0.435,
       "KXDOTA2GAME-26NOV251000AMAV-AMA"
+     ],
+     [
+      0.225,
+      "KXVALORANTGAME-26NOV250730SIGGLE-SIG"
+     ],
+     [
+      0.19,
+      "KXNCAAFGAME-26NOV28LTGASO-LT"
      ],
      [
       0.015,
@@ -55,7 +77,7 @@
      ],
      [
       0.015,
-      "KXVALORANTGAME-26NOV251100BARMDR-MDR"
+      "KXVALORANTGAME-26NOV251100AURNAVIJ-NAVIJ"
      ],
      [
       0.015,
@@ -67,15 +89,7 @@
      ],
      [
       0.01,
-      "KXVALORANTGAME-26NOV251100AURNAVIJ-NAVIJ"
-     ],
-     [
-      0.01,
-      "KXNCAAFGAME-26NOV28MRSHULM-ULM"
-     ],
-     [
-      0.005,
-      "KXVALORANTGAME-26NOV251330WIPJL-JL"
+      "KXNCAAMBGAME-26NOV25TXAMXAV-XAV"
      ]
     ]
    }
@@ -87,10 +101,12 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 4,
-   "skipped": {},
+   "opened": 2,
+   "skipped": {
+    "same_game": 2
+   },
    "diag": {
-    "skipped_settles_late": 0
+    "skipped_settles_late": 1
    }
   },
   "crypto": {
@@ -103,33 +119,33 @@
    "diag": {
     "markets_priced": 120,
     "vol": {
-     "BTC-USD": 0.007389209899082115,
-     "ETH-USD": 0.008279806655638943
+     "BTC-USD": 0.0074387238108120455,
+     "ETH-USD": 0.008294928600875382
     },
     "best": [
      [
-      -0.042,
-      "KXETHD-26NOV2517-T1649.99"
-     ],
-     [
-      -0.039,
-      "KXBTCD-26NOV2517-T57749.99"
-     ],
-     [
-      -0.039,
+      -0.038,
       "KXETHD-26NOV2517-T1609.99"
      ],
      [
-      -0.034,
-      "KXBTCD-26NOV2517-T58249.99"
+      0.033,
+      "KXBTCD-26NOV2517-T55749.99"
      ],
      [
-      -0.032,
-      "KXBTCD-26NOV2517-T57499.99"
+      0.031,
+      "KXBTCD-26NOV2517-T54749.99"
      ],
      [
-      -0.029,
-      "KXBTCD-26NOV2517-T58499.99"
+      0.031,
+      "KXBTCD-26NOV2517-T54999.99"
+     ],
+     [
+      -0.03,
+      "KXBTCD-26NOV2517-T57749.99"
+     ],
+     [
+      0.028,
+      "KXBTCD-26NOV2517-T54499.99"
      ]
     ]
    }
@@ -142,7 +158,7 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 21,
+  "marked": 24,
   "settled": 0
  },
  "shadow_update": {
@@ -173,16 +189,16 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 5358,
-   "open": 25,
-   "won": 2976,
+   "picks": 5360,
+   "open": 26,
+   "won": 2977,
    "lost": 2357,
-   "pl": -1786.77999999998,
-   "risked": 53462.73000000027,
-   "clv_sum": -3446.520000000001,
-   "clv_n": 5272,
-   "roi": -0.033421039292231634,
-   "clv": -0.6537405159332323
+   "pl": -1775.80999999998,
+   "risked": 53472.76000000027,
+   "clv_sum": -3393.020000000001,
+   "clv_n": 5273,
+   "roi": -0.033209619252867646,
+   "clv": -0.6434705101460271
   },
   {
    "strategy": "weather",
@@ -227,8 +243,8 @@
  "shadow_standings": [
   {
    "strategy": "polymarket",
-   "picks": 251,
-   "open": 5,
+   "picks": 252,
+   "open": 6,
    "won": 97,
    "lost": 149,
    "pl": -238.60999999999984,
