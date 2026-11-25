@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T02:15:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T02:30:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -97,6 +97,6 @@ Bankroll $545.58 · 174-156-0 · logged this run 0 · open 18
 ## Data gaps
 
 - no line posted yet (30): Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, Northern Colorado Bears @ Detroit Mercy Titans, American International Yellow Jackets @ Rhode Island Rams, Arkansas-Pine Bluff Golden Lions @ South Dakota Coyotes, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Manhattan Jaspers @ NJIT Highlanders, Johnson & Wales Griffins @ Brown Bears, Ole Miss Rebels @ Arizona Wildcats, SE Louisiana Lions @ North Dakota Fighting Hawks, Jackson State Tigers @ Oklahoma State Cowboys, Bethesda Flames @ Utah Tech Trailblazers …
-- possession data coverage: 0.971
+- possession data coverage: 0.972
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
