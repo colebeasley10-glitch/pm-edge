@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T00:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T00:30:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -97,28 +97,28 @@ WHY: Model line Penn State Nittany Lions +1 vs market +4.5 (+3.4 pts) from oppon
 LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (24) — positive EV but not a qualified bet
+## Watch list (28) — positive EV but not a qualified bet
 
 - Kansas State Wildcats ML +900 (+900) · Gonzaga Bulldogs at Kansas State Wildcats · Wed 12:30 AM ET · EV +19.4% · min +763
 - Northern Iowa Panthers ML +320 (+320) · Northern Iowa Panthers at Charlotte 49ers · Wed 11:00 AM ET · EV +15.2% · min +276
 - Penn State Nittany Lions ML +185 (+185) · Memphis Tigers at Penn State Nittany Lions · Wed 5:00 PM ET · EV +8.3% · min +171
 - Marquette Golden Eagles ML +200 (+200) · Virginia Cavaliers at Marquette Golden Eagles · Wed 12:00 PM ET · EV +6.1% · min +191
 - Green Bay Phoenix ML -110 (-110) · Green Bay Phoenix at Kansas City Roos · Tue 8:00 PM ET · EV +5.2% · min -115
+- Princeton Tigers ML +140 (+140) · Princeton Tigers at Liberty Flames · Wed 4:00 PM ET · EV +4.6% · min +136
 - Green Bay Phoenix -1.5 (+110) · Green Bay Phoenix at Kansas City Roos · Tue 8:00 PM ET · EV +4.4% · min +105
 - Rice Owls ML +185 (+185) · Rice Owls at Ohio Bobcats · Wed 11:00 AM ET · EV +4.3% · min +181
 - SMU Mustangs ML +190 (+190) · SMU Mustangs at Utah State Aggies · Wed 7:00 PM ET · EV +3.0% · min +190
 - North Alabama Lions ML -155 (-155) · Alabama A&M Bulldogs at North Alabama Lions · Tue 8:00 PM ET · EV +2.8% · min -154
 - Baylor Bears +2.5 (-110) · Baylor Bears at Alabama Crimson Tide · Tue 10:00 PM ET · EV +1.8% · min -110
 - OVER 138.5 (-105) · Northern Illinois Huskies at SIU Edwardsville Cougars · Wed 7:00 PM ET · EV +1.8% · min -103
-- Northern Iowa Panthers +7.5 (-105) · Northern Iowa Panthers at Charlotte 49ers · Wed 11:00 AM ET · EV +1.8% · min -105
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $531.52 · 169-154-0 · logged this run 0 · open 21
+Bankroll $531.52 · 169-154-0 · logged this run 2 · open 23
 
 ## Data gaps
 
-- no line posted yet (30): Arlington Baptist Patriots @ East Texas A&M Lions, Arkansas Baptist Buffaloes @ Little Rock Trojans, Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns, Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, Northern Colorado Bears @ TBD, Lindenwood Lions @ Stony Brook Seawolves, American International Yellow Jackets @ Rhode Island Rams, Tulane Green Wave @ Davidson Wildcats, Arkansas-Pine Bluff Golden Lions @ South Dakota Coyotes, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Saint Peter's Peacocks @ Columbia Lions, Warner Royals @ North Florida Ospreys …
-- possession data coverage: 0.989
+- no line posted yet (30): Arkansas Baptist Buffaloes @ Little Rock Trojans, Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns, Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, Northern Colorado Bears @ TBD, American International Yellow Jackets @ Rhode Island Rams, Arkansas-Pine Bluff Golden Lions @ South Dakota Coyotes, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Manhattan Jaspers @ NJIT Highlanders, Johnson & Wales Griffins @ Brown Bears, Ole Miss Rebels @ TBD, SE Louisiana Lions @ TBD …
+- possession data coverage: 0.988
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
