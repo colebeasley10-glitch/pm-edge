@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T21:30:30+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T21:45:35+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -163,6 +163,6 @@ Bankroll $515.01 · 178-166-0 · logged this run 0 · open 11
 ## Data gaps
 
 - no line posted yet (10): Case Western Reserve Spartans @ Cleveland State Vikings, Northwest Indian RedHawks @ Montana State Bobcats, Georgia Bulldogs @ Cincinnati Bearcats, Army Black Knights @ UTSA Roadrunners, Oklahoma Sooners @ Purdue Boilermakers, Boston College Eagles @ UCF Knights, South Carolina Gamecocks @ Arizona State Sun Devils, DePaul Blue Demons @ Pittsburgh Panthers, Jacksonville State Gamecocks @ UC Davis Aggies, Pacific Tigers @ Omaha Mavericks
-- possession data coverage: 0.984
+- possession data coverage: 0.985
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
