@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T01:45:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T02:00:44+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -75,7 +75,7 @@ WHY: Model line Penn State Nittany Lions +1 vs market +4.5 (+3.4 pts) from oppon
 LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (26) — positive EV but not a qualified bet
+## Watch list (25) — positive EV but not a qualified bet
 
 - Kansas State Wildcats ML +900 (+900) · Gonzaga Bulldogs at Kansas State Wildcats · Wed 12:30 AM ET · EV +19.4% · min +763
 - Northern Iowa Panthers ML +320 (+320) · Northern Iowa Panthers at Charlotte 49ers · Wed 11:00 AM ET · EV +15.2% · min +276
@@ -92,11 +92,11 @@ LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $537.02 · 170-154-0 · logged this run 0 · open 24
+Bankroll $545.58 · 174-156-0 · logged this run 0 · open 18
 
 ## Data gaps
 
-- no line posted yet (30): Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, Northern Colorado Bears @ Detroit Mercy Titans, American International Yellow Jackets @ Rhode Island Rams, Arkansas-Pine Bluff Golden Lions @ South Dakota Coyotes, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Manhattan Jaspers @ NJIT Highlanders, Johnson & Wales Griffins @ Brown Bears, Ole Miss Rebels @ TBD, SE Louisiana Lions @ North Dakota Fighting Hawks, Jackson State Tigers @ Oklahoma State Cowboys, Bethesda Flames @ Utah Tech Trailblazers …
-- possession data coverage: 0.984
+- no line posted yet (30): Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, Northern Colorado Bears @ Detroit Mercy Titans, American International Yellow Jackets @ Rhode Island Rams, Arkansas-Pine Bluff Golden Lions @ South Dakota Coyotes, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Manhattan Jaspers @ NJIT Highlanders, Johnson & Wales Griffins @ Brown Bears, Ole Miss Rebels @ Arizona Wildcats, SE Louisiana Lions @ North Dakota Fighting Hawks, Jackson State Tigers @ Oklahoma State Cowboys, Bethesda Flames @ Utah Tech Trailblazers …
+- possession data coverage: 0.971
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
