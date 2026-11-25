@@ -1,13 +1,35 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T22:45:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T23:00:35+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $514.24 (start $500, at risk $26.23) · ¼-Kelly comparison $510.04
+**Paper bankroll:** $514.24 (start $500, at risk $31.23) · ¼-Kelly comparison $510.04
 **Season to date (BET tier):** 21-17-0 · flat P/L $+14.24 (+7.5% on risk) · ¼-Kelly P/L $+10.04 · beat close 34%
 
-## Qualified bets (5)
+## Qualified bets (6)
+
+```
+GAME: Boston College Eagles at UCF Knights (neutral)
+TIPOFF: Thu 1:30 PM ET
+
+SPORTSBOOK LINE: Boston College Eagles +2.5 (-105)
+MODEL LINE: Boston College Eagles -1.5
+PROJECTED SCORE: Boston College Eagles 75 - UCF Knights 74
+
+MODEL COVER PROBABILITY: 53.9%
+BREAK-EVEN PROBABILITY: 51.22%
+EXPECTED ROI: +5.2%
+
+RECOMMENDATION: Boston College Eagles +2.5
+MINIMUM ACCEPTABLE PRICE: -112
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $6.86
+CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 53.9% (backtest-shrunk toward the market)
+FLAGS: neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line Boston College Eagles -1.5 vs market +2.5 (+3.8 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-25T23:00:35+00:00 · model ncaab_v1
+```
 
 ```
 GAME: Alabama Crimson Tide at Kansas State Wildcats (neutral)
@@ -119,28 +141,28 @@ WHY: Model line Utah State Aggies PK vs market +3.5 (+3.4 pts) from opponent-adj
 LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (20) — positive EV but not a qualified bet
+## Watch list (19) — positive EV but not a qualified bet
 
 - Washington Huskies ML +160 (+160) · Washington Huskies at VCU Rams · Wed 10:00 PM ET · EV +7.6% · min +149
 - SMU Mustangs ML +245 (+245) · SMU Mustangs at LSU Tigers · Thu 7:00 PM ET · EV +6.0% · min +235
 - Saint Louis Billikens ML -180 (-180) · Stanford Cardinal at Saint Louis Billikens · Wed 11:59 PM ET · EV +5.3% · min -192
 - Oregon Ducks ML +360 (+360) · Texas Tech Red Raiders at Oregon Ducks · Thu 11:30 PM ET · EV +4.6% · min +353
 - UC Davis Aggies ML -265 (-265) · Omaha Mavericks at UC Davis Aggies · Wed 8:00 PM ET · EV +4.3% · min -278
+- Boston College Eagles ML +130 (+130) · Boston College Eagles at UCF Knights · Thu 1:30 PM ET · EV +4.0% · min +128
 - Iowa State Cyclones ML -112 (-112) · Tennessee Volunteers at Iowa State Cyclones · Thu 3:30 PM ET · EV +3.3% · min -113
 - SMU Mustangs ML +190 (+190) · SMU Mustangs at Utah State Aggies · Wed 7:00 PM ET · EV +3.0% · min +190
-- Northwestern State Demons ML -120 (-120) · West Florida Argonauts at Northwestern State Demons · Wed 6:00 PM ET · EV +2.1% · min -118
 - OVER 138.5 (-105) · Northern Illinois Huskies at SIU Edwardsville Cougars · Wed 7:00 PM ET · EV +1.8% · min -103
 - OVER 158.5 (-105) · St. Thomas Tommies at UNC Wilmington Seahawks · Wed 7:00 PM ET · EV +1.8% · min -102
 - OVER 133.5 (-105) · Pacific Tigers at Jacksonville State Gamecocks · Wed 10:30 PM ET · EV +1.7% · min -102
-- OVER 167.5 (-105) · Cal State Northridge Matadors at Weber State Wildcats · Wed 6:00 PM ET · EV +1.7% · min -102
+- OVER 154.5 (-105) · Grand Canyon Lopes at Colorado Buffaloes · Wed 9:30 PM ET · EV +1.7% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $515.01 · 178-166-0 · logged this run 0 · open 11
+Bankroll $514.91 · 179-167-0 · logged this run 0 · open 9
 
 ## Data gaps
 
-- no line posted yet (10): Case Western Reserve Spartans @ Cleveland State Vikings, Northwest Indian RedHawks @ Montana State Bobcats, Georgia Bulldogs @ Cincinnati Bearcats, Army Black Knights @ UTSA Roadrunners, Oklahoma Sooners @ Purdue Boilermakers, Boston College Eagles @ UCF Knights, South Carolina Gamecocks @ Arizona State Sun Devils, DePaul Blue Demons @ Pittsburgh Panthers, Jacksonville State Gamecocks @ UC Davis Aggies, Pacific Tigers @ Omaha Mavericks
-- possession data coverage: 0.985
+- no line posted yet (9): Case Western Reserve Spartans @ Cleveland State Vikings, Northwest Indian RedHawks @ Montana State Bobcats, Georgia Bulldogs @ Cincinnati Bearcats, Army Black Knights @ UTSA Roadrunners, Oklahoma Sooners @ Purdue Boilermakers, South Carolina Gamecocks @ Arizona State Sun Devils, DePaul Blue Demons @ Pittsburgh Panthers, Jacksonville State Gamecocks @ UC Davis Aggies, Pacific Tigers @ Omaha Mavericks
+- possession data coverage: 0.986
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
