@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T01:15:36+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T01:30:36+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -92,11 +92,11 @@ LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $537.02 · 170-154-0 · logged this run 2 · open 24
+Bankroll $537.02 · 170-154-0 · logged this run 0 · open 24
 
 ## Data gaps
 
-- no line posted yet (30): Louisiana Christian Wildcats @ Louisiana Ragin' Cajuns, Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, Northern Colorado Bears @ Detroit Mercy Titans, American International Yellow Jackets @ Rhode Island Rams, Arkansas-Pine Bluff Golden Lions @ South Dakota Coyotes, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Manhattan Jaspers @ NJIT Highlanders, Johnson & Wales Griffins @ Brown Bears, Ole Miss Rebels @ TBD, SE Louisiana Lions @ North Dakota Fighting Hawks, Jackson State Tigers @ Oklahoma State Cowboys …
-- possession data coverage: 0.983
+- no line posted yet (30): Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, Northern Colorado Bears @ Detroit Mercy Titans, American International Yellow Jackets @ Rhode Island Rams, Arkansas-Pine Bluff Golden Lions @ South Dakota Coyotes, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Manhattan Jaspers @ NJIT Highlanders, Johnson & Wales Griffins @ Brown Bears, Ole Miss Rebels @ TBD, SE Louisiana Lions @ North Dakota Fighting Hawks, Jackson State Tigers @ Oklahoma State Cowboys, Bethesda Flames @ Utah Tech Trailblazers …
+- possession data coverage: 0.984
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
