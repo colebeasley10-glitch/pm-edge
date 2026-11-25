@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T10:00:31+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T10:15:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -119,10 +119,11 @@ WHY: Model line Penn State Nittany Lions +1 vs market +4.5 (+3.4 pts) from oppon
 LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (31) — positive EV but not a qualified bet
+## Watch list (32) — positive EV but not a qualified bet
 
 - Northern Iowa Panthers ML +320 (+320) · Northern Iowa Panthers at Charlotte 49ers · Wed 11:00 AM ET · EV +15.2% · min +276
 - Penn State Nittany Lions ML +185 (+185) · Memphis Tigers at Penn State Nittany Lions · Wed 5:00 PM ET · EV +8.3% · min +171
+- Washington Huskies ML +160 (+160) · Washington Huskies at VCU Rams · Wed 10:00 PM ET · EV +7.6% · min +149
 - Marquette Golden Eagles ML +200 (+200) · Virginia Cavaliers at Marquette Golden Eagles · Wed 12:00 PM ET · EV +6.1% · min +191
 - Princeton Tigers ML +140 (+140) · Princeton Tigers at Liberty Flames · Wed 4:00 PM ET · EV +4.6% · min +136
 - Rice Owls ML +185 (+185) · Rice Owls at Ohio Bobcats · Wed 11:00 AM ET · EV +4.3% · min +181
@@ -132,7 +133,6 @@ LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 - SMU Mustangs ML +190 (+190) · SMU Mustangs at Utah State Aggies · Wed 7:00 PM ET · EV +3.0% · min +190
 - Northwestern State Demons ML -120 (-120) · West Florida Argonauts at Northwestern State Demons · Wed 6:00 PM ET · EV +2.1% · min -118
 - OVER 138.5 (-105) · Northern Illinois Huskies at SIU Edwardsville Cougars · Wed 7:00 PM ET · EV +1.8% · min -103
-- Northern Iowa Panthers +7.5 (-105) · Northern Iowa Panthers at Charlotte 49ers · Wed 11:00 AM ET · EV +1.8% · min -105
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -140,7 +140,7 @@ Bankroll $520.11 · 177-164-0 · logged this run 0 · open 13
 
 ## Data gaps
 
-- no line posted yet (17): Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, American International Yellow Jackets @ Rhode Island Rams, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Manhattan Jaspers @ NJIT Highlanders, Johnson & Wales Griffins @ Brown Bears, Bethesda Flames @ Utah Tech Trailblazers, Kennesaw State Owls @ Charleston Cougars, Case Western Reserve Spartans @ Cleveland State Vikings, Eastern Michigan Eagles @ UTEP Miners, Northwest Indian RedHawks @ Montana State Bobcats, Grand Canyon Lopes @ Colorado Buffaloes …
+- no line posted yet (16): Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, American International Yellow Jackets @ Rhode Island Rams, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Johnson & Wales Griffins @ Brown Bears, Bethesda Flames @ Utah Tech Trailblazers, Kennesaw State Owls @ Charleston Cougars, Case Western Reserve Spartans @ Cleveland State Vikings, Eastern Michigan Eagles @ UTEP Miners, Northwest Indian RedHawks @ Montana State Bobcats, Grand Canyon Lopes @ Colorado Buffaloes, Stanford Cardinal @ Saint Louis Billikens …
 - possession data coverage: 0.992
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
