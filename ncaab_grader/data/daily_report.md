@@ -1,13 +1,35 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T23:30:32+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T23:45:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $514.24 (start $500, at risk $31.23) · ¼-Kelly comparison $510.04
+**Paper bankroll:** $514.24 (start $500, at risk $41.23) · ¼-Kelly comparison $510.04
 **Season to date (BET tier):** 21-17-0 · flat P/L $+14.24 (+7.5% on risk) · ¼-Kelly P/L $+10.04 · beat close 34%
 
-## Qualified bets (6)
+## Qualified bets (8)
+
+```
+GAME: Jacksonville State Gamecocks at UC Davis Aggies (neutral)
+TIPOFF: Thu 8:00 PM ET
+
+SPORTSBOOK LINE: UC Davis Aggies +1.5 (-110)
+MODEL LINE: UC Davis Aggies -3.5
+PROJECTED SCORE: Jacksonville State Gamecocks 72 - UC Davis Aggies 76
+
+MODEL COVER PROBABILITY: 55.3%
+BREAK-EVEN PROBABILITY: 52.38%
+EXPECTED ROI: +5.5%
+
+RECOMMENDATION: UC Davis Aggies +1.5
+MINIMUM ACCEPTABLE PRICE: -118
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $7.55
+CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 55.3% (backtest-shrunk toward the market)
+FLAGS: neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line UC Davis Aggies -3.5 vs market +1.5 (+5.2 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-25T23:45:24+00:00 · model ncaab_v1
+```
 
 ```
 GAME: Boston College Eagles at UCF Knights (neutral)
@@ -76,6 +98,28 @@ LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
 ```
 
 ```
+GAME: Georgia Bulldogs at Cincinnati Bearcats (neutral)
+TIPOFF: Thu 11:00 AM ET
+
+SPORTSBOOK LINE: Cincinnati Bearcats -1.5 (-110)
+MODEL LINE: Cincinnati Bearcats -6
+PROJECTED SCORE: Georgia Bulldogs 75 - Cincinnati Bearcats 81
+
+MODEL COVER PROBABILITY: 54.8%
+BREAK-EVEN PROBABILITY: 52.38%
+EXPECTED ROI: +4.6%
+
+RECOMMENDATION: Cincinnati Bearcats -1.5
+MINIMUM ACCEPTABLE PRICE: -116
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $6.31
+CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 54.8% (backtest-shrunk toward the market)
+FLAGS: neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line Cincinnati Bearcats -6 vs market -1.5 (+4.7 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-25T23:45:24+00:00 · model ncaab_v1
+```
+
+```
 GAME: Tennessee Volunteers at Iowa State Cyclones (neutral)
 TIPOFF: Thu 3:30 PM ET
 
@@ -141,20 +185,20 @@ WHY: Model line Utah State Aggies PK vs market +3.5 (+3.4 pts) from opponent-adj
 LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (19) — positive EV but not a qualified bet
+## Watch list (21) — positive EV but not a qualified bet
 
 - Washington Huskies ML +160 (+160) · Washington Huskies at VCU Rams · Wed 10:00 PM ET · EV +7.6% · min +149
 - SMU Mustangs ML +245 (+245) · SMU Mustangs at LSU Tigers · Thu 7:00 PM ET · EV +6.0% · min +235
+- Cincinnati Bearcats ML -130 (-130) · Georgia Bulldogs at Cincinnati Bearcats · Thu 11:00 AM ET · EV +6.0% · min -139
 - Saint Louis Billikens ML -180 (-180) · Stanford Cardinal at Saint Louis Billikens · Wed 11:59 PM ET · EV +5.3% · min -192
 - Oregon Ducks ML +360 (+360) · Texas Tech Red Raiders at Oregon Ducks · Thu 11:30 PM ET · EV +4.6% · min +353
 - UC Davis Aggies ML -265 (-265) · Omaha Mavericks at UC Davis Aggies · Wed 8:00 PM ET · EV +4.3% · min -278
 - Boston College Eagles ML +130 (+130) · Boston College Eagles at UCF Knights · Thu 1:30 PM ET · EV +4.0% · min +128
 - Iowa State Cyclones ML -112 (-112) · Tennessee Volunteers at Iowa State Cyclones · Thu 3:30 PM ET · EV +3.3% · min -113
 - SMU Mustangs ML +190 (+190) · SMU Mustangs at Utah State Aggies · Wed 7:00 PM ET · EV +3.0% · min +190
+- UC Davis Aggies ML +105 (+105) · Jacksonville State Gamecocks at UC Davis Aggies · Thu 8:00 PM ET · EV +2.6% · min +106
 - OVER 138.5 (-105) · Northern Illinois Huskies at SIU Edwardsville Cougars · Wed 7:00 PM ET · EV +1.8% · min -103
 - OVER 158.5 (-105) · St. Thomas Tommies at UNC Wilmington Seahawks · Wed 7:00 PM ET · EV +1.8% · min -102
-- OVER 133.5 (-105) · Pacific Tigers at Jacksonville State Gamecocks · Wed 10:30 PM ET · EV +1.7% · min -102
-- OVER 154.5 (-105) · Grand Canyon Lopes at Colorado Buffaloes · Wed 9:30 PM ET · EV +1.7% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -162,7 +206,7 @@ Bankroll $514.91 · 179-167-0 · logged this run 0 · open 9
 
 ## Data gaps
 
-- no line posted yet (9): Case Western Reserve Spartans @ Cleveland State Vikings, Northwest Indian RedHawks @ Montana State Bobcats, Georgia Bulldogs @ Cincinnati Bearcats, Army Black Knights @ UTSA Roadrunners, Oklahoma Sooners @ Purdue Boilermakers, South Carolina Gamecocks @ Arizona State Sun Devils, DePaul Blue Demons @ Pittsburgh Panthers, Jacksonville State Gamecocks @ UC Davis Aggies, Pacific Tigers @ Omaha Mavericks
-- possession data coverage: 0.987
+- no line posted yet (4): Case Western Reserve Spartans @ Cleveland State Vikings, Northwest Indian RedHawks @ Montana State Bobcats, Army Black Knights @ UTSA Roadrunners, Pacific Tigers @ Omaha Mavericks
+- possession data coverage: 0.984
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
