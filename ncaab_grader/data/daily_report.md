@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T04:00:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T04:15:35+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $525.00 (start $500, at risk $21.23) · ¼-Kelly comparison $528.70
+**Paper bankroll:** $525.00 (start $500, at risk $26.23) · ¼-Kelly comparison $528.70
 **Season to date (BET tier):** 20-14-0 · flat P/L $+25.00 (+14.7% on risk) · ¼-Kelly P/L $+28.70 · beat close 32%
 
-## Qualified bets (5)
+## Qualified bets (6)
 
 ```
 GAME: Gonzaga Bulldogs at Kansas State Wildcats (neutral)
@@ -98,6 +98,28 @@ LOGGED: 2026-11-24T23:45:27+00:00 · model ncaab_v1
 ```
 
 ```
+GAME: Northern Colorado Bears at Detroit Mercy Titans (neutral)
+TIPOFF: Wed 12:30 PM ET
+
+SPORTSBOOK LINE: Detroit Mercy Titans +5.5 (-102)
+MODEL LINE: Detroit Mercy Titans +4
+PROJECTED SCORE: Northern Colorado Bears 78 - Detroit Mercy Titans 74
+
+MODEL COVER PROBABILITY: 51.6%
+BREAK-EVEN PROBABILITY: 50.50%
+EXPECTED ROI: +2.2%
+
+RECOMMENDATION: Detroit Mercy Titans +5.5
+MINIMUM ACCEPTABLE PRICE: -102
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $2.84
+CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 51.6% (backtest-shrunk toward the market)
+FLAGS: neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line Detroit Mercy Titans +4 vs market +5.5 (+1.6 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-25T04:15:35+00:00 · model ncaab_v1
+```
+
+```
 GAME: Memphis Tigers at Penn State Nittany Lions (neutral)
 TIPOFF: Wed 5:00 PM ET
 
@@ -136,11 +158,11 @@ LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $525.58 · 175-161-0 · logged this run 0 · open 17
+Bankroll $520.11 · 177-164-0 · logged this run 1 · open 13
 
 ## Data gaps
 
-- no line posted yet (21): Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, Northern Colorado Bears @ Detroit Mercy Titans, American International Yellow Jackets @ Rhode Island Rams, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Manhattan Jaspers @ NJIT Highlanders, Johnson & Wales Griffins @ Brown Bears, SE Louisiana Lions @ North Dakota Fighting Hawks, Bethesda Flames @ Utah Tech Trailblazers, BYU Cougars @ Providence Friars, Kennesaw State Owls @ TBD, Case Western Reserve Spartans @ Cleveland State Vikings …
-- possession data coverage: 0.98
+- no line posted yet (18): Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, American International Yellow Jackets @ Rhode Island Rams, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Manhattan Jaspers @ NJIT Highlanders, Johnson & Wales Griffins @ Brown Bears, Bethesda Flames @ Utah Tech Trailblazers, Kennesaw State Owls @ TBD, Case Western Reserve Spartans @ Cleveland State Vikings, Eastern Michigan Eagles @ TBD, Northwest Indian RedHawks @ Montana State Bobcats, TBD @ TBD …
+- possession data coverage: 0.971
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
