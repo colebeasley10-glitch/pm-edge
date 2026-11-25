@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T18:45:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T19:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -97,7 +97,7 @@ WHY: Model line Penn State Nittany Lions +1 vs market +4.5 (+3.4 pts) from oppon
 LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (27) — positive EV but not a qualified bet
+## Watch list (24) — positive EV but not a qualified bet
 
 - Penn State Nittany Lions ML +185 (+185) · Memphis Tigers at Penn State Nittany Lions · Wed 5:00 PM ET · EV +8.3% · min +171
 - Washington Huskies ML +160 (+160) · Washington Huskies at VCU Rams · Wed 10:00 PM ET · EV +7.6% · min +149
@@ -118,7 +118,7 @@ Bankroll $520.11 · 177-164-0 · logged this run 0 · open 13
 
 ## Data gaps
 
-- no line posted yet (18): Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Johnson & Wales Griffins @ Brown Bears, Bethesda Flames @ Utah Tech Trailblazers, Case Western Reserve Spartans @ Cleveland State Vikings, Northwest Indian RedHawks @ Montana State Bobcats, Georgia Bulldogs @ Cincinnati Bearcats, Army Black Knights @ UTSA Roadrunners, Oklahoma Sooners @ Purdue Boilermakers, Boston College Eagles @ UCF Knights, South Carolina Gamecocks @ Arizona State Sun Devils, Georgetown Hoyas @ Texas Longhorns, Arkansas Razorbacks @ Michigan State Spartans, Utah State Aggies @ USC Trojans …
-- possession data coverage: 0.99
+- no line posted yet (15): Bethesda Flames @ Utah Tech Trailblazers, Case Western Reserve Spartans @ Cleveland State Vikings, Northwest Indian RedHawks @ Montana State Bobcats, Georgia Bulldogs @ Cincinnati Bearcats, Army Black Knights @ UTSA Roadrunners, Oklahoma Sooners @ Purdue Boilermakers, Boston College Eagles @ UCF Knights, South Carolina Gamecocks @ Arizona State Sun Devils, Georgetown Hoyas @ Texas Longhorns, Arkansas Razorbacks @ Michigan State Spartans, Utah State Aggies @ USC Trojans, Saint Mary's Gaels @ UCLA Bruins, SMU Mustangs @ LSU Tigers, DePaul Blue Demons @ Pittsburgh Panthers, Jacksonville State Gamecocks @ UC Davis Aggies
+- possession data coverage: 0.991
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
