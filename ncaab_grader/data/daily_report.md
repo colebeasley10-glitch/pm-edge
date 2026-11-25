@@ -1,13 +1,35 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T19:45:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T20:00:52+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $524.24 (start $500, at risk $21.23) · ¼-Kelly comparison $521.74
-**Season to date (BET tier):** 21-15-0 · flat P/L $+24.24 (+13.5% on risk) · ¼-Kelly P/L $+21.74 · beat close 33%
+**Paper bankroll:** $519.24 (start $500, at risk $21.23) · ¼-Kelly comparison $518.90
+**Season to date (BET tier):** 21-16-0 · flat P/L $+19.24 (+10.4% on risk) · ¼-Kelly P/L $+18.90 · beat close 35%
 
-## Qualified bets (3)
+## Qualified bets (4)
+
+```
+GAME: Alabama Crimson Tide at Kansas State Wildcats (neutral)
+TIPOFF: Thu 9:00 PM ET
+
+SPORTSBOOK LINE: Kansas State Wildcats +14.5 (-110)
+MODEL LINE: Kansas State Wildcats +9.5
+PROJECTED SCORE: Alabama Crimson Tide 88 - Kansas State Wildcats 78
+
+MODEL COVER PROBABILITY: 54.9%
+BREAK-EVEN PROBABILITY: 52.38%
+EXPECTED ROI: +4.7%
+
+RECOMMENDATION: Kansas State Wildcats +14.5
+MINIMUM ACCEPTABLE PRICE: -116
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $6.47
+CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 54.9% (backtest-shrunk toward the market)
+FLAGS: neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line Kansas State Wildcats +9.5 vs market +14.5 (+4.8 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-25T20:00:52+00:00 · model ncaab_v1
+```
 
 ```
 GAME: Tennessee Volunteers at Iowa State Cyclones (neutral)
@@ -96,7 +118,7 @@ Bankroll $520.11 · 177-164-0 · logged this run 0 · open 13
 
 ## Data gaps
 
-- no line posted yet (15): Bethesda Flames @ Utah Tech Trailblazers, Case Western Reserve Spartans @ Cleveland State Vikings, Northwest Indian RedHawks @ Montana State Bobcats, Georgia Bulldogs @ Cincinnati Bearcats, Army Black Knights @ UTSA Roadrunners, Oklahoma Sooners @ Purdue Boilermakers, Boston College Eagles @ UCF Knights, South Carolina Gamecocks @ Arizona State Sun Devils, Georgetown Hoyas @ Texas Longhorns, Arkansas Razorbacks @ Michigan State Spartans, Utah State Aggies @ USC Trojans, Saint Mary's Gaels @ UCLA Bruins, SMU Mustangs @ LSU Tigers, DePaul Blue Demons @ Pittsburgh Panthers, Jacksonville State Gamecocks @ UC Davis Aggies
-- possession data coverage: 0.991
+- no line posted yet (13): Bethesda Flames @ Utah Tech Trailblazers, Case Western Reserve Spartans @ Cleveland State Vikings, Northwest Indian RedHawks @ Montana State Bobcats, Georgia Bulldogs @ Cincinnati Bearcats, Army Black Knights @ UTSA Roadrunners, Oklahoma Sooners @ Purdue Boilermakers, Boston College Eagles @ UCF Knights, South Carolina Gamecocks @ Arizona State Sun Devils, Utah State Aggies @ USC Trojans, Saint Mary's Gaels @ UCLA Bruins, SMU Mustangs @ LSU Tigers, DePaul Blue Demons @ Pittsburgh Panthers, Jacksonville State Gamecocks @ UC Davis Aggies
+- possession data coverage: 0.989
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
