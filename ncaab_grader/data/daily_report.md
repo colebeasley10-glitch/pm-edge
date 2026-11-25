@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T16:45:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T17:00:37+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -123,7 +123,6 @@ LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 
 - Penn State Nittany Lions ML +185 (+185) · Memphis Tigers at Penn State Nittany Lions · Wed 5:00 PM ET · EV +8.3% · min +171
 - Washington Huskies ML +160 (+160) · Washington Huskies at VCU Rams · Wed 10:00 PM ET · EV +7.6% · min +149
-- Marquette Golden Eagles ML +200 (+200) · Virginia Cavaliers at Marquette Golden Eagles · Wed 12:00 PM ET · EV +6.1% · min +191
 - Princeton Tigers ML +140 (+140) · Princeton Tigers at Liberty Flames · Wed 4:00 PM ET · EV +4.6% · min +136
 - UC Davis Aggies ML -265 (-265) · Omaha Mavericks at UC Davis Aggies · Wed 8:00 PM ET · EV +4.3% · min -278
 - LSU New Orleans Privateers ML -175 (-175) · Grambling Tigers at LSU New Orleans Privateers · Wed 4:00 PM ET · EV +3.5% · min -178
@@ -133,6 +132,7 @@ LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 - Northwestern State Demons ML -120 (-120) · West Florida Argonauts at Northwestern State Demons · Wed 6:00 PM ET · EV +2.1% · min -118
 - OVER 138.5 (-105) · Northern Illinois Huskies at SIU Edwardsville Cougars · Wed 7:00 PM ET · EV +1.8% · min -103
 - OVER 135.5 (-105) · Princeton Tigers at Liberty Flames · Wed 4:00 PM ET · EV +1.8% · min -102
+- Texas A&M Aggies -5.5 (-102) · Texas A&M Aggies at Xavier Musketeers · Wed 2:30 PM ET · EV +1.8% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -140,7 +140,7 @@ Bankroll $520.11 · 177-164-0 · logged this run 0 · open 13
 
 ## Data gaps
 
-- no line posted yet (19): Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, American International Yellow Jackets @ Rhode Island Rams, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Johnson & Wales Griffins @ Brown Bears, Bethesda Flames @ Utah Tech Trailblazers, Case Western Reserve Spartans @ Cleveland State Vikings, Northwest Indian RedHawks @ Montana State Bobcats, Georgia Bulldogs @ Cincinnati Bearcats, Army Black Knights @ UTSA Roadrunners, Oklahoma Sooners @ Purdue Boilermakers, Boston College Eagles @ UCF Knights, South Carolina Gamecocks @ Arizona State Sun Devils …
-- possession data coverage: 0.992
+- no line posted yet (17): American International Yellow Jackets @ Rhode Island Rams, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Johnson & Wales Griffins @ Brown Bears, Bethesda Flames @ Utah Tech Trailblazers, Case Western Reserve Spartans @ Cleveland State Vikings, Northwest Indian RedHawks @ Montana State Bobcats, Georgia Bulldogs @ Cincinnati Bearcats, Army Black Knights @ UTSA Roadrunners, Oklahoma Sooners @ Purdue Boilermakers, Boston College Eagles @ UCF Knights, South Carolina Gamecocks @ Arizona State Sun Devils, Georgetown Hoyas @ Texas Longhorns, Arkansas Razorbacks @ Michigan State Spartans …
+- possession data coverage: 0.991
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
