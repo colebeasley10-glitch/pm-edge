@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-24
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T02:45:27+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-25T03:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -119,7 +119,7 @@ WHY: Model line Penn State Nittany Lions +1 vs market +4.5 (+3.4 pts) from oppon
 LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (32) — positive EV but not a qualified bet
+## Watch list (31) — positive EV but not a qualified bet
 
 - Kansas State Wildcats ML +900 (+900) · Gonzaga Bulldogs at Kansas State Wildcats · Wed 12:30 AM ET · EV +19.4% · min +763
 - Northern Iowa Panthers ML +320 (+320) · Northern Iowa Panthers at Charlotte 49ers · Wed 11:00 AM ET · EV +15.2% · min +276
@@ -132,15 +132,15 @@ LOGGED: 2026-11-24T21:30:29+00:00 · model ncaab_v1
 - Ole Miss Rebels ML +180 (+180) · Ole Miss Rebels at Arizona Wildcats · Wed 2:30 PM ET · EV +3.3% · min +179
 - SMU Mustangs ML +190 (+190) · SMU Mustangs at Utah State Aggies · Wed 7:00 PM ET · EV +3.0% · min +190
 - Northwestern State Demons ML -120 (-120) · West Florida Argonauts at Northwestern State Demons · Wed 6:00 PM ET · EV +2.1% · min -118
-- Baylor Bears +2.5 (-110) · Baylor Bears at Alabama Crimson Tide · Tue 10:00 PM ET · EV +1.8% · min -110
+- OVER 138.5 (-105) · Northern Illinois Huskies at SIU Edwardsville Cougars · Wed 7:00 PM ET · EV +1.8% · min -103
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $535.58 · 175-159-0 · logged this run 4 · open 18
+Bankroll $535.58 · 175-159-0 · logged this run 0 · open 18
 
 ## Data gaps
 
 - no line posted yet (21): Mercy Mavericks @ Fordham Rams, Penn State Abington Nittany Lions @ Saint Joseph's Hawks, Vermont State Randolph Knights @ Fairleigh Dickinson Knights, Northern Colorado Bears @ Detroit Mercy Titans, American International Yellow Jackets @ Rhode Island Rams, Grace Christian Tigers @ Western Michigan Broncos, Montreat Cavaliers @ Western Carolina Catamounts, Warner Royals @ North Florida Ospreys, Manhattan Jaspers @ NJIT Highlanders, Johnson & Wales Griffins @ Brown Bears, SE Louisiana Lions @ North Dakota Fighting Hawks, Bethesda Flames @ Utah Tech Trailblazers, BYU Cougars @ Providence Friars, Kennesaw State Owls @ TBD, Case Western Reserve Spartans @ Cleveland State Vikings …
-- possession data coverage: 0.958
+- possession data coverage: 0.965
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
