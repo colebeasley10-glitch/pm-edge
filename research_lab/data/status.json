@@ -20,7 +20,7 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 11/24"
  },
  "last_run": {
-  "at": "2026-11-26T02:06:29.018796Z",
+  "at": "2026-11-26T02:18:19.499989Z",
   "best_price": {
    "compared": 0,
    "new_picks": 0,
@@ -35,14 +35,14 @@
   },
   "book_errors": 0,
   "coles_plays": {
-   "app_props": 14070,
+   "app_props": 14140,
    "apps": {
     "PrizePicks": {
      "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.prizepicks.com/projections?per_page=2000&single_stat=true&game_mode=pickem",
      "props": null,
      "skipped": {
-      "event_type": 1308,
-      "not_standard": 41995
+      "event_type": 1319,
+      "not_standard": 41838
      },
      "tried": [
       "partner-api.prizepicks.com/projections: 200 but 0 usable",
@@ -52,13 +52,13 @@
     },
     "Sleeper": {
      "error": null,
-     "props": 2922,
+     "props": 2945,
      "tried": null,
      "url": null
     },
     "Underdog": {
      "error": null,
-     "props": 11148,
+     "props": 11195,
      "tried": [
       "api.underdogfantasy.com/beta/v7/over_under_lines: 404",
       "api.underdogfantasy.com/beta/v6/over_under_lines: 426"
@@ -75,18 +75,18 @@
     ]
    },
    "closest": [
+    "Underdog Draymond Green Under 5.5 Points -137 vs fair -131 (-1.7%)",
+    "Sleeper Draymond Green Under 5.5 Points -139 vs fair -131 (-2.4%)",
     "Sleeper Dalton Kincaid Under 3.5 Receptions -175 vs fair -164 (-2.4%)",
-    "Underdog Anton Frondell Under 0.5 Points -159 vs fair -149 (-2.6%)",
     "Sleeper Dylan Larkin Under 0.5 Assists -200 vs fair -184 (-2.8%)",
     "Sleeper Alex Killorn Under 0.5 Goals -588 vs fair -490 (-2.8%)",
     "Sleeper Anton Frondell Under 0.5 Goals -435 vs fair -375 (-2.9%)",
     "Underdog Charles Bassey Under 10.5 Points -117 vs fair -110 (-3.0%)",
-    "Underdog Keegan Murray Under 13.5 Points -137 vs fair -126 (-3.6%)",
-    "Sleeper Colston Loveland Under 5.5 Receptions -169 vs fair -154 (-3.7%)"
+    "Underdog Keegan Murray Under 13.5 Points -137 vs fair -126 (-3.6%)"
    ],
    "clv_tracked": 0,
    "edges": 0,
-   "matched": 672,
+   "matched": 598,
    "new_plays": 0,
    "pushed": 0,
    "settled": 0,
@@ -94,6 +94,7 @@
   },
   "data_failures": [],
   "ev": {
+   "book_offers": 0,
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
@@ -104,8 +105,10 @@
     "taken_at": "2026-11-01T08:32:40.763365Z"
    },
    "errors": [],
-   "games": 0,
-   "picks": 0
+   "games": 15,
+   "kalshi_offers": 0,
+   "picks": 30,
+   "polymarket_offers": 18
   },
   "maker_candidates": {
    "candidates": 0,
@@ -124,42 +127,53 @@
    "settled": 0
   },
   "odds_fam_board": {
-   "arbs_possible": 0,
+   "arbs_possible": 18,
    "bets_graded": 0,
    "clv_scored": 0,
-   "props": 850,
-   "rows": 850
+   "props": 776,
+   "rows": 806
   },
   "paper_only": true,
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [],
-   "kalshi_markets": 0,
+   "fetched": [
+    "basketball"
+   ],
+   "kalshi_markets": 571,
    "matched": 0,
-   "note": "no Pinnacle fetch due this round",
-   "pinnacle_games": 0,
-   "requests_today": 84,
-   "samples": [],
+   "pinnacle_games": 16,
+   "requests_today": 85,
+   "samples": [
+    "no_pinnacle_match: Chicago vs Charlotte: Chicago wins",
+    "no_pinnacle_match: Chicago vs Charlotte: Charlotte wins",
+    "no_pinnacle_match: Cleveland vs New York: Cleveland wins",
+    "no_pinnacle_match: Cleveland vs New York: New York wins",
+    "no_pinnacle_match: Minnesota vs Oklahoma City: Minnesota wins",
+    "no_pinnacle_match: Minnesota vs Oklahoma City: Oklahoma City wins",
+    "no_pinnacle_match: Brooklyn vs Milwaukee: Brooklyn wins",
+    "no_pinnacle_match: Brooklyn vs Milwaukee: Milwaukee wins"
+   ],
    "skipped": [
-    "basketball: next in 11 min",
     "football: saving budget for game windows",
     "hockey: saving budget for game windows",
     "baseball: saving budget for game windows",
     "soccer: saving budget for game windows",
     "tennis: saving budget for game windows"
    ],
-   "unmatched": {}
+   "unmatched": {
+    "no_pinnacle_match": 571
+   }
   },
   "prop_board": {
    "new_plays": 0,
-   "props": 0,
+   "props": 34,
    "pushed": 0,
    "settled": 0
   },
   "reconciled": true,
   "sharp_plays": {
-   "games": 0,
+   "games": 16,
    "new_plays": 0,
    "pushed": 0,
    "settled": 0
@@ -167,8 +181,8 @@
   "sleeper": {
    "edges": 0,
    "errors": [],
-   "lines": 1615,
-   "matched_props": 180,
+   "lines": 1607,
+   "matched_props": 148,
    "unmatched_stats": [
     "anytime_touchdowns",
     "assists",
@@ -223,13 +237,13 @@
   "strategies": {
    "EV_FINDER_v2": {
     "filled": 0,
-    "no_fill": 0,
+    "no_fill": 1,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 1,
     "reconcile_problems": [],
     "rejected": 0,
-    "scanned": 0,
+    "scanned": 30,
     "settle": {
      "marked": 14,
      "pending": 15,
@@ -238,13 +252,13 @@
    },
    "EV_FINDER_v3": {
     "filled": 0,
-    "no_fill": 0,
+    "no_fill": 1,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 1,
     "reconcile_problems": [],
     "rejected": 0,
-    "scanned": 0,
+    "scanned": 30,
     "settle": {
      "marked": 13,
      "pending": 15,
@@ -253,6 +267,6 @@
    }
   }
  },
- "last_success": "2026-11-26T02:06:29.018796Z",
+ "last_success": "2026-11-26T02:18:19.499989Z",
  "report_sent": "20261031"
 }
