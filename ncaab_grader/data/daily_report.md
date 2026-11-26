@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-26
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-26T20:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-26T20:30:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $512.56 (start $500, at risk $35.00) · ¼-Kelly comparison $509.83
 **Season to date (BET tier):** 22-19-0 · flat P/L $+12.56 (+6.2% on risk) · ¼-Kelly P/L $+9.83 · beat close 32%
 
-## Qualified bets (6)
+## Qualified bets (5)
 
 ```
 GAME: Jacksonville State Gamecocks at UC Davis Aggies (neutral)
@@ -76,28 +76,6 @@ LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
 ```
 
 ```
-GAME: Tennessee Volunteers at Iowa State Cyclones (neutral)
-TIPOFF: Thu 3:30 PM ET
-
-SPORTSBOOK LINE: Iowa State Cyclones -1.5 (+110)
-MODEL LINE: Iowa State Cyclones -1
-PROJECTED SCORE: Tennessee Volunteers 67 - Iowa State Cyclones 68
-
-MODEL COVER PROBABILITY: 49.4%
-BREAK-EVEN PROBABILITY: 47.62%
-EXPECTED ROI: +3.7%
-
-RECOMMENDATION: Iowa State Cyclones -1.5
-MINIMUM ACCEPTABLE PRICE: +107
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $4.22
-CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 49.4% (backtest-shrunk toward the market)
-FLAGS: neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Iowa State Cyclones -1 vs market -1.5 (-0.6 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-25T14:30:40+00:00 · model ncaab_v1
-```
-
-```
 GAME: Pacific Tigers at Omaha Mavericks (neutral)
 TIPOFF: Thu 10:30 PM ET
 
@@ -141,13 +119,11 @@ WHY: Model line Utah State Aggies PK vs market +3.5 (+3.4 pts) from opponent-adj
 LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (6) — positive EV but not a qualified bet
+## Watch list (4) — positive EV but not a qualified bet
 
 - SMU Mustangs ML +245 (+245) · SMU Mustangs at LSU Tigers · Thu 7:00 PM ET · EV +6.0% · min +235
 - Oregon Ducks ML +360 (+360) · Texas Tech Red Raiders at Oregon Ducks · Thu 11:30 PM ET · EV +4.6% · min +353
-- Iowa State Cyclones ML -112 (-112) · Tennessee Volunteers at Iowa State Cyclones · Thu 3:30 PM ET · EV +3.3% · min -113
 - UC Davis Aggies ML +105 (+105) · Jacksonville State Gamecocks at UC Davis Aggies · Thu 8:00 PM ET · EV +2.6% · min +106
-- OVER 163.5 (-105) · Miami Hurricanes at Michigan Wolverines · Thu 3:30 PM ET · EV +1.6% · min -102
 - Oregon Ducks +9.5 (-110) · Texas Tech Red Raiders at Oregon Ducks · Thu 11:30 PM ET · EV +1.5% · min -109
 
 ## Home-court spread TEST (paper, own $500 — not bets)
