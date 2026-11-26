@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-26
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-26T19:00:30+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-26T19:15:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -157,6 +157,6 @@ Bankroll $518.53 · 183-170-0 · logged this run 0 · open 2
 ## Data gaps
 
 - no line posted yet (30): Virginia Cavaliers @ Xavier Musketeers, Liberty Flames @ St. Thomas Tommies, Vermont Catamounts @ Merrimack Warriors, Hampton Pirates @ UMass Lowell River Hawks, Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, TBD @ TBD, Wake Forest Demon Deacons @ Memphis Tigers, Southern Jaguars @ Vanderbilt Commodores, Clarke Pride @ South Dakota Coyotes, South Alabama Jaguars @ Fresno State Bulldogs, Navy Midshipmen @ Fairfield Stags, Maine Black Bears @ Le Moyne Dolphins, TBD @ TBD, Texas State Bobcats @ Louisiana Tech Bulldogs, Princeton Tigers @ UNC Wilmington Seahawks …
-- possession data coverage: 0.991
+- possession data coverage: 0.989
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
