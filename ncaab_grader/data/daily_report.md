@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-26T03:45:34+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-26T04:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -182,6 +182,6 @@ Bankroll $513.77 · 182-170-0 · logged this run 0 · open 3
 ## Data gaps
 
 - no line posted yet (1): Pacific Tigers @ Omaha Mavericks
-- possession data coverage: 0.982
+- possession data coverage: 0.989
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
