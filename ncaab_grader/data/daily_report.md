@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-26T02:30:29+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-26T02:45:27+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $514.24 (start $500, at risk $41.23) · ¼-Kelly comparison $510.04
-**Season to date (BET tier):** 21-17-0 · flat P/L $+14.24 (+7.5% on risk) · ¼-Kelly P/L $+10.04 · beat close 34%
+**Paper bankroll:** $509.24 (start $500, at risk $36.23) · ¼-Kelly comparison $507.25
+**Season to date (BET tier):** 21-18-0 · flat P/L $+9.24 (+4.7% on risk) · ¼-Kelly P/L $+7.25 · beat close 33%
 
 ## Qualified bets (7)
 
@@ -180,11 +180,11 @@ LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $504.91 · 179-169-0 · logged this run 0 · open 7
+Bankroll $509.22 · 181-170-0 · logged this run 0 · open 4
 
 ## Data gaps
 
 - no line posted yet (2): Army Black Knights @ UTSA Roadrunners, Pacific Tigers @ Omaha Mavericks
-- possession data coverage: 0.985
+- possession data coverage: 0.98
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
