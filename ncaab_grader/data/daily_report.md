@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-26
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-26T15:45:28+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-26T16:00:33+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $508.01 (start $500, at risk $40.00) · ¼-Kelly comparison $504.09
 **Season to date (BET tier):** 21-19-0 · flat P/L $+8.01 (+4.1% on risk) · ¼-Kelly P/L $+4.09 · beat close 32%
 
-## Qualified bets (8)
+## Qualified bets (7)
 
 ```
 GAME: Jacksonville State Gamecocks at UC Davis Aggies (neutral)
@@ -98,28 +98,6 @@ LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
 ```
 
 ```
-GAME: Georgia Bulldogs at Cincinnati Bearcats (neutral)
-TIPOFF: Thu 11:00 AM ET
-
-SPORTSBOOK LINE: Cincinnati Bearcats -1.5 (-110)
-MODEL LINE: Cincinnati Bearcats -6
-PROJECTED SCORE: Georgia Bulldogs 75 - Cincinnati Bearcats 81
-
-MODEL COVER PROBABILITY: 54.8%
-BREAK-EVEN PROBABILITY: 52.38%
-EXPECTED ROI: +4.6%
-
-RECOMMENDATION: Cincinnati Bearcats -1.5
-MINIMUM ACCEPTABLE PRICE: -116
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $6.31
-CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 54.8% (backtest-shrunk toward the market)
-FLAGS: neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Cincinnati Bearcats -6 vs market -1.5 (+4.7 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-25T23:45:24+00:00 · model ncaab_v1
-```
-
-```
 GAME: Tennessee Volunteers at Iowa State Cyclones (neutral)
 TIPOFF: Thu 3:30 PM ET
 
@@ -185,10 +163,9 @@ WHY: Model line Utah State Aggies PK vs market +3.5 (+3.4 pts) from opponent-adj
 LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (8) — positive EV but not a qualified bet
+## Watch list (7) — positive EV but not a qualified bet
 
 - SMU Mustangs ML +245 (+245) · SMU Mustangs at LSU Tigers · Thu 7:00 PM ET · EV +6.0% · min +235
-- Cincinnati Bearcats ML -130 (-130) · Georgia Bulldogs at Cincinnati Bearcats · Thu 11:00 AM ET · EV +6.0% · min -139
 - Oregon Ducks ML +360 (+360) · Texas Tech Red Raiders at Oregon Ducks · Thu 11:30 PM ET · EV +4.6% · min +353
 - Boston College Eagles ML +130 (+130) · Boston College Eagles at UCF Knights · Thu 1:30 PM ET · EV +4.0% · min +128
 - Iowa State Cyclones ML -112 (-112) · Tennessee Volunteers at Iowa State Cyclones · Thu 3:30 PM ET · EV +3.3% · min -113
@@ -202,7 +179,7 @@ Bankroll $518.53 · 183-170-0 · logged this run 0 · open 2
 
 ## Data gaps
 
-- no line posted yet (26): Virginia Cavaliers @ Xavier Musketeers, Liberty Flames @ St. Thomas Tommies, Vermont Catamounts @ Merrimack Warriors, Hampton Pirates @ UMass Lowell River Hawks, Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, TBD @ TBD, Wake Forest Demon Deacons @ Memphis Tigers, Southern Jaguars @ Vanderbilt Commodores, Clarke Pride @ South Dakota Coyotes, South Alabama Jaguars @ Fresno State Bulldogs, Navy Midshipmen @ Fairfield Stags, Maine Black Bears @ Le Moyne Dolphins, TBD @ TBD, Texas State Bobcats @ Louisiana Tech Bulldogs, Princeton Tigers @ UNC Wilmington Seahawks …
+- no line posted yet (30): Virginia Cavaliers @ Xavier Musketeers, Liberty Flames @ St. Thomas Tommies, Vermont Catamounts @ Merrimack Warriors, Hampton Pirates @ UMass Lowell River Hawks, Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, TBD @ TBD, Wake Forest Demon Deacons @ Memphis Tigers, Southern Jaguars @ Vanderbilt Commodores, Clarke Pride @ South Dakota Coyotes, South Alabama Jaguars @ Fresno State Bulldogs, Navy Midshipmen @ Fairfield Stags, Maine Black Bears @ Le Moyne Dolphins, TBD @ TBD, Texas State Bobcats @ Louisiana Tech Bulldogs, Princeton Tigers @ UNC Wilmington Seahawks …
 - possession data coverage: 0.992
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
