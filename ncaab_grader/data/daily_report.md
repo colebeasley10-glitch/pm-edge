@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-26
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-26T10:45:27+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-26T11:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -202,7 +202,7 @@ Bankroll $518.53 · 183-170-0 · logged this run 0 · open 2
 
 ## Data gaps
 
-- no line posted yet (1): Virginia Cavaliers @ Xavier Musketeers
+- no line posted yet (2): Virginia Cavaliers @ Xavier Musketeers, Liberty Flames @ St. Thomas Tommies
 - possession data coverage: 0.992
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
