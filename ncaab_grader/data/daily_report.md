@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-26T02:45:27+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-26T03:00:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -163,9 +163,8 @@ WHY: Model line Utah State Aggies PK vs market +3.5 (+3.4 pts) from opponent-adj
 LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (12) — positive EV but not a qualified bet
+## Watch list (10) — positive EV but not a qualified bet
 
-- Washington Huskies ML +160 (+160) · Washington Huskies at VCU Rams · Wed 10:00 PM ET · EV +7.6% · min +149
 - SMU Mustangs ML +245 (+245) · SMU Mustangs at LSU Tigers · Thu 7:00 PM ET · EV +6.0% · min +235
 - Cincinnati Bearcats ML -130 (-130) · Georgia Bulldogs at Cincinnati Bearcats · Thu 11:00 AM ET · EV +6.0% · min -139
 - Saint Louis Billikens ML -180 (-180) · Stanford Cardinal at Saint Louis Billikens · Wed 11:59 PM ET · EV +5.3% · min -192
@@ -174,7 +173,6 @@ LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
 - Iowa State Cyclones ML -112 (-112) · Tennessee Volunteers at Iowa State Cyclones · Thu 3:30 PM ET · EV +3.3% · min -113
 - UC Davis Aggies ML +105 (+105) · Jacksonville State Gamecocks at UC Davis Aggies · Thu 8:00 PM ET · EV +2.6% · min +106
 - OVER 133.5 (-105) · Pacific Tigers at Jacksonville State Gamecocks · Wed 10:30 PM ET · EV +1.7% · min -102
-- Washington Huskies +3.5 (-110) · Washington Huskies at VCU Rams · Wed 10:00 PM ET · EV +1.7% · min -109
 - OVER 163.5 (-105) · Miami Hurricanes at Michigan Wolverines · Thu 3:30 PM ET · EV +1.6% · min -102
 - Oregon Ducks +9.5 (-110) · Texas Tech Red Raiders at Oregon Ducks · Thu 11:30 PM ET · EV +1.5% · min -109
 
@@ -185,6 +183,6 @@ Bankroll $509.22 · 181-170-0 · logged this run 0 · open 4
 ## Data gaps
 
 - no line posted yet (2): Army Black Knights @ UTSA Roadrunners, Pacific Tigers @ Omaha Mavericks
-- possession data coverage: 0.98
+- possession data coverage: 0.985
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
