@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-26T03:15:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-26T03:30:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $509.24 (start $500, at risk $36.23) · ¼-Kelly comparison $507.25
-**Season to date (BET tier):** 21-18-0 · flat P/L $+9.24 (+4.7% on risk) · ¼-Kelly P/L $+7.25 · beat close 33%
+**Paper bankroll:** $508.01 (start $500, at risk $35.00) · ¼-Kelly comparison $504.09
+**Season to date (BET tier):** 21-19-0 · flat P/L $+8.01 (+4.1% on risk) · ¼-Kelly P/L $+4.09 · beat close 32%
 
 ## Qualified bets (7)
 
@@ -163,7 +163,7 @@ WHY: Model line Utah State Aggies PK vs market +3.5 (+3.4 pts) from opponent-adj
 LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (10) — positive EV but not a qualified bet
+## Watch list (9) — positive EV but not a qualified bet
 
 - SMU Mustangs ML +245 (+245) · SMU Mustangs at LSU Tigers · Thu 7:00 PM ET · EV +6.0% · min +235
 - Cincinnati Bearcats ML -130 (-130) · Georgia Bulldogs at Cincinnati Bearcats · Thu 11:00 AM ET · EV +6.0% · min -139
@@ -172,17 +172,16 @@ LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
 - Boston College Eagles ML +130 (+130) · Boston College Eagles at UCF Knights · Thu 1:30 PM ET · EV +4.0% · min +128
 - Iowa State Cyclones ML -112 (-112) · Tennessee Volunteers at Iowa State Cyclones · Thu 3:30 PM ET · EV +3.3% · min -113
 - UC Davis Aggies ML +105 (+105) · Jacksonville State Gamecocks at UC Davis Aggies · Thu 8:00 PM ET · EV +2.6% · min +106
-- OVER 133.5 (-105) · Pacific Tigers at Jacksonville State Gamecocks · Wed 10:30 PM ET · EV +1.7% · min -102
 - OVER 163.5 (-105) · Miami Hurricanes at Michigan Wolverines · Thu 3:30 PM ET · EV +1.6% · min -102
 - Oregon Ducks +9.5 (-110) · Texas Tech Red Raiders at Oregon Ducks · Thu 11:30 PM ET · EV +1.5% · min -109
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $509.22 · 181-170-0 · logged this run 0 · open 4
+Bankroll $513.77 · 182-170-0 · logged this run 0 · open 3
 
 ## Data gaps
 
-- no line posted yet (2): Army Black Knights @ UTSA Roadrunners, Pacific Tigers @ Omaha Mavericks
-- possession data coverage: 0.985
+- no line posted yet (1): Pacific Tigers @ Omaha Mavericks
+- possession data coverage: 0.982
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
