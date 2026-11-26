@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-26
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-26T21:15:21+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-26T21:30:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $512.56 (start $500, at risk $35.00) · ¼-Kelly comparison $509.83
-**Season to date (BET tier):** 22-19-0 · flat P/L $+12.56 (+6.2% on risk) · ¼-Kelly P/L $+9.83 · beat close 32%
+**Paper bankroll:** $517.32 (start $500, at risk $30.00) · ¼-Kelly comparison $516.36
+**Season to date (BET tier):** 23-19-0 · flat P/L $+17.32 (+8.4% on risk) · ¼-Kelly P/L $+16.36 · beat close 31%
 
-## Qualified bets (5)
+## Qualified bets (4)
 
 ```
 GAME: Jacksonville State Gamecocks at UC Davis Aggies (neutral)
@@ -97,34 +97,14 @@ WHY: Model line Pacific Tigers -11.5 vs market -8.5 (+2.8 pts) from opponent-adj
 LOGGED: 2026-11-26T04:15:27+00:00 · model ncaab_v1
 ```
 
-```
-GAME: Utah State Aggies at USC Trojans (neutral)
-TIPOFF: Thu 4:30 PM ET
-
-SPORTSBOOK LINE: Utah State Aggies +3.5 (-110)
-MODEL LINE: Utah State Aggies PK
-PROJECTED SCORE: Utah State Aggies 83 - USC Trojans 83
-
-MODEL COVER PROBABILITY: 53.4%
-BREAK-EVEN PROBABILITY: 52.38%
-EXPECTED ROI: +2.0%
-
-RECOMMENDATION: Utah State Aggies +3.5
-MINIMUM ACCEPTABLE PRICE: -110
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $2.80
-CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 53.4% (backtest-shrunk toward the market)
-FLAGS: neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Utah State Aggies PK vs market +3.5 (+3.4 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
-```
-
-## Watch list (4) — positive EV but not a qualified bet
+## Watch list (6) — positive EV but not a qualified bet
 
 - SMU Mustangs ML +245 (+245) · SMU Mustangs at LSU Tigers · Thu 7:00 PM ET · EV +6.0% · min +235
 - Oregon Ducks ML +360 (+360) · Texas Tech Red Raiders at Oregon Ducks · Thu 11:30 PM ET · EV +4.6% · min +353
 - UC Davis Aggies ML +105 (+105) · Jacksonville State Gamecocks at UC Davis Aggies · Thu 8:00 PM ET · EV +2.6% · min +106
+- OVER 158.5 (-105) · Virginia Cavaliers at Xavier Musketeers · Fri 11:00 AM ET · EV +1.6% · min -102
 - Oregon Ducks +9.5 (-110) · Texas Tech Red Raiders at Oregon Ducks · Thu 11:30 PM ET · EV +1.5% · min -109
+- Xavier Musketeers ML +320 (+320) · Virginia Cavaliers at Xavier Musketeers · Fri 11:00 AM ET · EV +1.2% · min +327
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -132,7 +112,7 @@ Bankroll $518.53 · 183-170-0 · logged this run 0 · open 2
 
 ## Data gaps
 
-- no line posted yet (30): Virginia Cavaliers @ Xavier Musketeers, Liberty Flames @ St. Thomas Tommies, Vermont Catamounts @ Merrimack Warriors, Hampton Pirates @ UMass Lowell River Hawks, Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, TBD @ TBD, Wake Forest Demon Deacons @ Memphis Tigers, Southern Jaguars @ Vanderbilt Commodores, Clarke Pride @ South Dakota Coyotes, South Alabama Jaguars @ Fresno State Bulldogs, Navy Midshipmen @ Fairfield Stags, Maine Black Bears @ Le Moyne Dolphins, TBD @ TBD, Texas State Bobcats @ Louisiana Tech Bulldogs, Princeton Tigers @ UNC Wilmington Seahawks …
-- possession data coverage: 0.991
+- no line posted yet (30): Liberty Flames @ St. Thomas Tommies, Vermont Catamounts @ Merrimack Warriors, Hampton Pirates @ UMass Lowell River Hawks, Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, TBD @ TBD, Wake Forest Demon Deacons @ Memphis Tigers, Southern Jaguars @ Vanderbilt Commodores, Clarke Pride @ South Dakota Coyotes, South Alabama Jaguars @ Fresno State Bulldogs, Navy Midshipmen @ Fairfield Stags, Maine Black Bears @ Le Moyne Dolphins, TBD @ TBD, Texas State Bobcats @ Louisiana Tech Bulldogs, Princeton Tigers @ UNC Wilmington Seahawks, TBD @ TBD …
+- possession data coverage: 0.989
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
