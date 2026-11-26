@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-26T04:00:31+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-26T04:15:27+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $508.01 (start $500, at risk $35.00) · ¼-Kelly comparison $504.09
+**Paper bankroll:** $508.01 (start $500, at risk $40.00) · ¼-Kelly comparison $504.09
 **Season to date (BET tier):** 21-19-0 · flat P/L $+8.01 (+4.1% on risk) · ¼-Kelly P/L $+4.09 · beat close 32%
 
-## Qualified bets (7)
+## Qualified bets (8)
 
 ```
 GAME: Jacksonville State Gamecocks at UC Davis Aggies (neutral)
@@ -142,6 +142,28 @@ LOGGED: 2026-11-25T14:30:40+00:00 · model ncaab_v1
 ```
 
 ```
+GAME: Pacific Tigers at Omaha Mavericks (neutral)
+TIPOFF: Thu 10:30 PM ET
+
+SPORTSBOOK LINE: Pacific Tigers -8.5 (-105)
+MODEL LINE: Pacific Tigers -11.5
+PROJECTED SCORE: Pacific Tigers 76 - Omaha Mavericks 65
+
+MODEL COVER PROBABILITY: 52.9%
+BREAK-EVEN PROBABILITY: 51.22%
+EXPECTED ROI: +3.2%
+
+RECOMMENDATION: Pacific Tigers -8.5
+MINIMUM ACCEPTABLE PRICE: -108
+SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $4.20
+CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 52.9% (backtest-shrunk toward the market)
+FLAGS: neutral site; injuries/lineups not modeled — check before betting
+
+WHY: Model line Pacific Tigers -11.5 vs market -8.5 (+2.8 pts) from opponent-adjusted efficiency and venue.
+LOGGED: 2026-11-26T04:15:27+00:00 · model ncaab_v1
+```
+
+```
 GAME: Utah State Aggies at USC Trojans (neutral)
 TIPOFF: Thu 4:30 PM ET
 
@@ -181,7 +203,7 @@ Bankroll $513.77 · 182-170-0 · logged this run 0 · open 3
 
 ## Data gaps
 
-- no line posted yet (1): Pacific Tigers @ Omaha Mavericks
-- possession data coverage: 0.989
+- no line posted yet (1): San Diego State Aztecs @ Maryland Terrapins
+- possession data coverage: 0.986
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
