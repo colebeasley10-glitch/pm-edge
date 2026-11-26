@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-25T23:45:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-26T00:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -185,7 +185,7 @@ WHY: Model line Utah State Aggies PK vs market +3.5 (+3.4 pts) from opponent-adj
 LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (21) — positive EV but not a qualified bet
+## Watch list (16) — positive EV but not a qualified bet
 
 - Washington Huskies ML +160 (+160) · Washington Huskies at VCU Rams · Wed 10:00 PM ET · EV +7.6% · min +149
 - SMU Mustangs ML +245 (+245) · SMU Mustangs at LSU Tigers · Thu 7:00 PM ET · EV +6.0% · min +235
@@ -195,10 +195,10 @@ LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
 - UC Davis Aggies ML -265 (-265) · Omaha Mavericks at UC Davis Aggies · Wed 8:00 PM ET · EV +4.3% · min -278
 - Boston College Eagles ML +130 (+130) · Boston College Eagles at UCF Knights · Thu 1:30 PM ET · EV +4.0% · min +128
 - Iowa State Cyclones ML -112 (-112) · Tennessee Volunteers at Iowa State Cyclones · Thu 3:30 PM ET · EV +3.3% · min -113
-- SMU Mustangs ML +190 (+190) · SMU Mustangs at Utah State Aggies · Wed 7:00 PM ET · EV +3.0% · min +190
 - UC Davis Aggies ML +105 (+105) · Jacksonville State Gamecocks at UC Davis Aggies · Thu 8:00 PM ET · EV +2.6% · min +106
-- OVER 138.5 (-105) · Northern Illinois Huskies at SIU Edwardsville Cougars · Wed 7:00 PM ET · EV +1.8% · min -103
-- OVER 158.5 (-105) · St. Thomas Tommies at UNC Wilmington Seahawks · Wed 7:00 PM ET · EV +1.8% · min -102
+- OVER 133.5 (-105) · Pacific Tigers at Jacksonville State Gamecocks · Wed 10:30 PM ET · EV +1.7% · min -102
+- OVER 154.5 (-105) · Grand Canyon Lopes at Colorado Buffaloes · Wed 9:30 PM ET · EV +1.7% · min -102
+- Washington Huskies +3.5 (-110) · Washington Huskies at VCU Rams · Wed 10:00 PM ET · EV +1.7% · min -109
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
@@ -206,7 +206,7 @@ Bankroll $514.91 · 179-167-0 · logged this run 0 · open 9
 
 ## Data gaps
 
-- no line posted yet (4): Case Western Reserve Spartans @ Cleveland State Vikings, Northwest Indian RedHawks @ Montana State Bobcats, Army Black Knights @ UTSA Roadrunners, Pacific Tigers @ Omaha Mavericks
-- possession data coverage: 0.984
+- no line posted yet (3): Northwest Indian RedHawks @ Montana State Bobcats, Army Black Knights @ UTSA Roadrunners, Pacific Tigers @ Omaha Mavericks
+- possession data coverage: 0.987
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
