@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-25
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-26T00:15:27+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-26T00:30:27+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -202,11 +202,11 @@ LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $514.91 · 179-167-0 · logged this run 0 · open 9
+Bankroll $509.91 · 179-168-0 · logged this run 0 · open 8
 
 ## Data gaps
 
 - no line posted yet (3): Northwest Indian RedHawks @ Montana State Bobcats, Army Black Knights @ UTSA Roadrunners, Pacific Tigers @ Omaha Mavericks
-- possession data coverage: 0.987
+- possession data coverage: 0.983
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
