@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-26
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-26T18:15:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-26T18:30:27+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $508.01 (start $500, at risk $40.00) · ¼-Kelly comparison $504.09
-**Season to date (BET tier):** 21-19-0 · flat P/L $+8.01 (+4.1% on risk) · ¼-Kelly P/L $+4.09 · beat close 32%
+**Paper bankroll:** $512.56 (start $500, at risk $35.00) · ¼-Kelly comparison $509.83
+**Season to date (BET tier):** 22-19-0 · flat P/L $+12.56 (+6.2% on risk) · ¼-Kelly P/L $+9.83 · beat close 32%
 
-## Qualified bets (7)
+## Qualified bets (6)
 
 ```
 GAME: Jacksonville State Gamecocks at UC Davis Aggies (neutral)
@@ -29,28 +29,6 @@ FLAGS: neutral site; injuries/lineups not modeled — check before betting
 
 WHY: Model line UC Davis Aggies -3.5 vs market +1.5 (+5.2 pts) from opponent-adjusted efficiency and venue.
 LOGGED: 2026-11-25T23:45:24+00:00 · model ncaab_v1
-```
-
-```
-GAME: Boston College Eagles at UCF Knights (neutral)
-TIPOFF: Thu 1:30 PM ET
-
-SPORTSBOOK LINE: Boston College Eagles +2.5 (-105)
-MODEL LINE: Boston College Eagles -1.5
-PROJECTED SCORE: Boston College Eagles 75 - UCF Knights 74
-
-MODEL COVER PROBABILITY: 53.9%
-BREAK-EVEN PROBABILITY: 51.22%
-EXPECTED ROI: +5.2%
-
-RECOMMENDATION: Boston College Eagles +2.5
-MINIMUM ACCEPTABLE PRICE: -112
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $6.86
-CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 53.9% (backtest-shrunk toward the market)
-FLAGS: neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Boston College Eagles -1.5 vs market +2.5 (+3.8 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-25T23:00:35+00:00 · model ncaab_v1
 ```
 
 ```
@@ -163,11 +141,10 @@ WHY: Model line Utah State Aggies PK vs market +3.5 (+3.4 pts) from opponent-adj
 LOGGED: 2026-11-25T20:45:29+00:00 · model ncaab_v1
 ```
 
-## Watch list (7) — positive EV but not a qualified bet
+## Watch list (6) — positive EV but not a qualified bet
 
 - SMU Mustangs ML +245 (+245) · SMU Mustangs at LSU Tigers · Thu 7:00 PM ET · EV +6.0% · min +235
 - Oregon Ducks ML +360 (+360) · Texas Tech Red Raiders at Oregon Ducks · Thu 11:30 PM ET · EV +4.6% · min +353
-- Boston College Eagles ML +130 (+130) · Boston College Eagles at UCF Knights · Thu 1:30 PM ET · EV +4.0% · min +128
 - Iowa State Cyclones ML -112 (-112) · Tennessee Volunteers at Iowa State Cyclones · Thu 3:30 PM ET · EV +3.3% · min -113
 - UC Davis Aggies ML +105 (+105) · Jacksonville State Gamecocks at UC Davis Aggies · Thu 8:00 PM ET · EV +2.6% · min +106
 - OVER 163.5 (-105) · Miami Hurricanes at Michigan Wolverines · Thu 3:30 PM ET · EV +1.6% · min -102
@@ -180,6 +157,6 @@ Bankroll $518.53 · 183-170-0 · logged this run 0 · open 2
 ## Data gaps
 
 - no line posted yet (30): Virginia Cavaliers @ Xavier Musketeers, Liberty Flames @ St. Thomas Tommies, Vermont Catamounts @ Merrimack Warriors, Hampton Pirates @ UMass Lowell River Hawks, Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, TBD @ TBD, Wake Forest Demon Deacons @ Memphis Tigers, Southern Jaguars @ Vanderbilt Commodores, Clarke Pride @ South Dakota Coyotes, South Alabama Jaguars @ Fresno State Bulldogs, Navy Midshipmen @ Fairfield Stags, Maine Black Bears @ Le Moyne Dolphins, TBD @ TBD, Texas State Bobcats @ Louisiana Tech Bulldogs, Princeton Tigers @ UNC Wilmington Seahawks …
-- possession data coverage: 0.992
+- possession data coverage: 0.991
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
