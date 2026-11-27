@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-27T08:00:51.294024Z",
+ "ran_at": "2026-11-27T08:15:34.922452Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -25,9 +25,9 @@
     {
      "ticker": "KXNCAAWBGAME-26NOV27UMBCIONA-UMBC",
      "side": "NO",
-     "ask": 0.39,
-     "fair": 0.965,
-     "edge": 0.5582
+     "ask": 0.4,
+     "fair": 0.9685,
+     "edge": 0.5514
     },
     {
      "ticker": "KXNCAAMBGAME-26NOV27ISUSJU-SJU",
@@ -41,9 +41,9 @@
    "diag": {
     "poly_events": 600,
     "poly_games": 302,
-    "kalshi_events": 1694,
-    "matched": 197,
-    "priced": 363,
+    "kalshi_events": 1692,
+    "matched": 196,
+    "priced": 359,
     "best_gaps": [
      [
       0.015,
@@ -63,6 +63,10 @@
      ],
      [
       0.005,
+      "KXVALORANTGAME-26NOV270400YOUAQ-YOU"
+     ],
+     [
+      0.005,
       "KXSERIEAGAME-26NOV30CAGACM-ACM"
      ],
      [
@@ -72,10 +76,6 @@
      [
       0.005,
       "KXSERIEAGAME-26NOV28TORLAZ-LAZ"
-     ],
-     [
-      0.005,
-      "KXNCAAMBGAME-26NOV27TXSTLT-LT"
      ]
     ]
    }
@@ -87,80 +87,29 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 4,
-   "skipped": {},
+   "opened": 2,
+   "skipped": {
+    "already_holding": 1,
+    "same_game": 1
+   },
    "diag": {
     "skipped_settles_late": 1
    }
   },
   "crypto": {
-   "picks_found": 4,
+   "picks_found": 0,
    "opened": 0,
    "skipped": {},
    "benched": true,
-   "shadow": [
-    {
-     "ticker": "KXBTCD-26NOV2704-T61999.99",
-     "side": "YES",
-     "ask": 0.13,
-     "fair": 0.2298,
-     "edge": 0.0917
-    },
-    {
-     "ticker": "KXBTCD-26NOV2704-T62099.99",
-     "side": "YES",
-     "ask": 0.07,
-     "fair": 0.1602,
-     "edge": 0.0857
-    },
-    {
-     "ticker": "KXBTCD-26NOV2704-T61399.99",
-     "side": "NO",
-     "ask": 0.13,
-     "fair": 0.2142,
-     "edge": 0.0762
-    },
-    {
-     "ticker": "KXBTCD-26NOV2704-T62199.99",
-     "side": "YES",
-     "ask": 0.03,
-     "fair": 0.1062,
-     "edge": 0.0742
-    }
-   ],
+   "shadow": [],
    "shadow_opened": 0,
    "diag": {
-    "markets_priced": 488,
+    "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.005116256906424613,
-     "ETH-USD": 0.005391692456733848
+     "BTC-USD": 0.0051745246086957256,
+     "ETH-USD": 0.005407523587075292
     },
-    "best": [
-     [
-      -0.18,
-      "KXETHD-26NOV2704-T1874.99"
-     ],
-     [
-      -0.16,
-      "KXETHD-26NOV2704-T1804.99"
-     ],
-     [
-      -0.14,
-      "KXETHD-26NOV2704-T1774.99"
-     ],
-     [
-      -0.14,
-      "KXETHD-26NOV2704-T1789.99"
-     ],
-     [
-      -0.14,
-      "KXETHD-26NOV2704-T1794.99"
-     ],
-     [
-      -0.13,
-      "KXETHD-26NOV2704-T1784.99"
-     ]
-    ]
+    "best": []
    }
   }
  },
@@ -171,12 +120,12 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 10,
-  "settled": 0
+  "marked": 11,
+  "settled": 2
  },
  "shadow_update": {
   "marked": 5,
-  "settled": 0
+  "settled": 4
  },
  "live_sharp": {
   "enabled": false,
@@ -202,16 +151,16 @@
  "standings": [
   {
    "strategy": "sharp",
-   "picks": 5558,
-   "open": 14,
+   "picks": 5560,
+   "open": 13,
    "won": 3100,
-   "lost": 2444,
-   "pl": -1850.8699999999772,
-   "risked": 55576.820000000334,
-   "clv_sum": -2987.4200000000005,
-   "clv_n": 5481,
-   "roi": -0.0333029129770283,
-   "clv": -0.5450501733260354
+   "lost": 2447,
+   "pl": -1881.439999999977,
+   "risked": 55607.390000000334,
+   "clv_sum": -3124.9200000000005,
+   "clv_n": 5484,
+   "roi": -0.033834351873014826,
+   "clv": -0.569824945295405
   },
   {
    "strategy": "weather",
@@ -257,15 +206,15 @@
   {
    "strategy": "crypto",
    "picks": 480,
-   "open": 4,
+   "open": 0,
    "won": 58,
-   "lost": 418,
-   "pl": -1210.1599999999976,
-   "risked": 5005.159999999999,
-   "clv_sum": -228.0,
-   "clv_n": 476,
-   "roi": -0.24178248048014406,
-   "clv": -0.4789915966386555
+   "lost": 422,
+   "pl": -1252.3799999999976,
+   "risked": 5047.379999999999,
+   "clv_sum": -231.0,
+   "clv_n": 480,
+   "roi": -0.2481247696824883,
+   "clv": -0.48125
   },
   {
    "strategy": "polymarket",
