@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-27
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-27T16:45:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-27T17:00:33+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,7 +53,7 @@ WHY: Model line Oregon Ducks -2 vs market +2.5 (+4.3 pts) from opponent-adjusted
 LOGGED: 2026-11-27T14:00:31+00:00 · model ncaab_v1
 ```
 
-## Watch list (27) — positive EV but not a qualified bet
+## Watch list (26) — positive EV but not a qualified bet
 
 - Lehigh Mountain Hawks ML +900 (+900) · Lehigh Mountain Hawks at UC Santa Barbara Gauchos · Fri 7:00 PM ET · EV +19.7% · min +760
 - Miami Hurricanes ML -135 (-135) · Miami Hurricanes at Alabama Crimson Tide · Fri 8:30 PM ET · EV +8.5% · min -153
@@ -63,10 +63,10 @@ LOGGED: 2026-11-27T14:00:31+00:00 · model ncaab_v1
 - Le Moyne Dolphins +1.5 (+100) · Maine Black Bears at Le Moyne Dolphins · Fri 2:00 PM ET · EV +5.3% · min -107
 - Oregon Ducks ML +130 (+130) · Oregon Ducks at Maryland Terrapins · Fri 3:30 PM ET · EV +5.0% · min +126
 - Tennessee Volunteers ML -122 (-122) · Tennessee Volunteers at Louisville Cardinals · Fri 9:00 PM ET · EV +3.1% · min -122
-- St. Thomas Tommies +1.5 (-110) · Liberty Flames at St. Thomas Tommies · Fri 12:00 PM ET · EV +2.6% · min -111
 - Lafayette Leopards ML -205 (-205) · Niagara Purple Eagles at Lafayette Leopards · Fri 4:30 PM ET · EV +2.6% · min -203
 - Wake Forest Demon Deacons +2.5 (-105) · Wake Forest Demon Deacons at Memphis Tigers · Fri 1:30 PM ET · EV +2.5% · min -106
 - Texas Tech Red Raiders ML -278 (-278) · Texas Tech Red Raiders at San Diego State Aztecs · Fri 11:30 PM ET · EV +2.2% · min -270
+- Saint Mary's Gaels +7.5 (-110) · Texas Longhorns at Saint Mary's Gaels · Fri 5:00 PM ET · EV +2.2% · min -110
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
