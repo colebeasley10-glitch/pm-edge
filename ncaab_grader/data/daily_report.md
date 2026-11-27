@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-26
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-27T04:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-27T04:30:27+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -31,12 +31,11 @@ WHY: Model line UC Davis Aggies +2 vs market +4.5 (+2.4 pts) from opponent-adjus
 LOGGED: 2026-11-26T22:15:22+00:00 · model ncaab_v1
 ```
 
-## Watch list (21) — positive EV but not a qualified bet
+## Watch list (19) — positive EV but not a qualified bet
 
 - Idaho Vandals ML +700 (+700) · Idaho Vandals at Washington State Cougars · Fri 8:00 PM ET · EV +5.9% · min +678
 - UC Davis Aggies ML +185 (+185) · Pacific Tigers at UC Davis Aggies · Fri 8:00 PM ET · EV +5.5% · min +178
 - Le Moyne Dolphins +1.5 (+100) · Maine Black Bears at Le Moyne Dolphins · Fri 2:00 PM ET · EV +5.3% · min -107
-- Oregon Ducks ML +360 (+360) · Texas Tech Red Raiders at Oregon Ducks · Thu 11:30 PM ET · EV +4.6% · min +353
 - St. Thomas Tommies +1.5 (-110) · Liberty Flames at St. Thomas Tommies · Fri 12:00 PM ET · EV +2.6% · min -111
 - Wake Forest Demon Deacons +2.5 (-105) · Wake Forest Demon Deacons at Memphis Tigers · Fri 1:30 PM ET · EV +2.5% · min -106
 - Saint Mary's Gaels +7.5 (-110) · Texas Longhorns at Saint Mary's Gaels · Fri 5:00 PM ET · EV +2.2% · min -110
@@ -45,6 +44,7 @@ LOGGED: 2026-11-26T22:15:22+00:00 · model ncaab_v1
 - OVER 142.5 (-105) · Niagara Purple Eagles at Lafayette Leopards · Fri 4:30 PM ET · EV +1.8% · min -103
 - OVER 146.5 (-105) · Old Dominion Monarchs at Virginia Tech Hokies · Fri 5:00 PM ET · EV +1.7% · min -102
 - OVER 147.5 (-105) · South Alabama Jaguars at Fresno State Bulldogs · Fri 2:00 PM ET · EV +1.7% · min -102
+- OVER 133.5 (-105) · Vermont Catamounts at Merrimack Warriors · Fri 1:00 PM ET · EV +1.7% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
