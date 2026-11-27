@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-26
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-27T02:30:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-27T02:45:25+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,28 +53,28 @@ WHY: Model line Pacific Tigers -11.5 vs market -8.5 (+2.8 pts) from opponent-adj
 LOGGED: 2026-11-26T04:15:27+00:00 · model ncaab_v1
 ```
 
-## Watch list (14) — positive EV but not a qualified bet
+## Watch list (21) — positive EV but not a qualified bet
 
 - Idaho Vandals ML +700 (+700) · Idaho Vandals at Washington State Cougars · Fri 8:00 PM ET · EV +5.9% · min +678
 - UC Davis Aggies ML +185 (+185) · Pacific Tigers at UC Davis Aggies · Fri 8:00 PM ET · EV +5.5% · min +178
+- Le Moyne Dolphins +1.5 (+100) · Maine Black Bears at Le Moyne Dolphins · Fri 2:00 PM ET · EV +5.3% · min -107
 - Oregon Ducks ML +360 (+360) · Texas Tech Red Raiders at Oregon Ducks · Thu 11:30 PM ET · EV +4.6% · min +353
 - St. Thomas Tommies +1.5 (-110) · Liberty Flames at St. Thomas Tommies · Fri 12:00 PM ET · EV +2.6% · min -111
 - Wake Forest Demon Deacons +2.5 (-105) · Wake Forest Demon Deacons at Memphis Tigers · Fri 1:30 PM ET · EV +2.5% · min -106
+- Saint Mary's Gaels +7.5 (-110) · Texas Longhorns at Saint Mary's Gaels · Fri 5:00 PM ET · EV +2.2% · min -110
+- Lehigh Mountain Hawks +14.5 (-110) · Lehigh Mountain Hawks at UC Santa Barbara Gauchos · Fri 7:00 PM ET · EV +2.1% · min -110
 - West Virginia Mountaineers ML -130 (-130) · West Virginia Mountaineers at North Carolina Tar Heels · Fri 7:00 PM ET · EV +2.0% · min -127
+- OVER 142.5 (-105) · Niagara Purple Eagles at Lafayette Leopards · Fri 4:30 PM ET · EV +1.8% · min -103
 - OVER 146.5 (-105) · Old Dominion Monarchs at Virginia Tech Hokies · Fri 5:00 PM ET · EV +1.7% · min -102
 - OVER 147.5 (-105) · South Alabama Jaguars at Fresno State Bulldogs · Fri 2:00 PM ET · EV +1.7% · min -102
-- OVER 148.5 (-105) · Idaho Vandals at Washington State Cougars · Fri 8:00 PM ET · EV +1.6% · min -102
-- OVER 138.5 (-105) · Texas State Bobcats at Louisiana Tech Bulldogs · Fri 3:00 PM ET · EV +1.6% · min -102
-- OVER 158.5 (-105) · Virginia Cavaliers at Xavier Musketeers · Fri 11:00 AM ET · EV +1.6% · min -102
-- OVER 145.5 (-105) · Missouri State Bears at Oral Roberts Golden Eagles · Fri 8:00 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $518.53 · 183-170-0 · logged this run 0 · open 4
+Bankroll $518.53 · 183-170-0 · logged this run 3 · open 7
 
 ## Data gaps
 
-- no line posted yet (30): Vermont Catamounts @ Merrimack Warriors, Hampton Pirates @ UMass Lowell River Hawks, Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, TBD @ TBD, Southern Jaguars @ Vanderbilt Commodores, Clarke Pride @ South Dakota Coyotes, Navy Midshipmen @ Fairfield Stags, Maine Black Bears @ Le Moyne Dolphins, Georgetown Hoyas @ UCLA Bruins, TBD @ TBD, Auburn Montgomery Senators @ UAB Blazers, Bellarmine Knights @ Butler Bulldogs, La Salle Explorers @ Bucknell Bison, Colgate Raiders @ Hofstra Pride, TBD @ Maryland Terrapins …
-- possession data coverage: 0.991
+- no line posted yet (14): Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, TBD @ TBD, Clarke Pride @ South Dakota Coyotes, TBD @ TBD, Auburn Montgomery Senators @ UAB Blazers, TBD @ Maryland Terrapins, TBD @ TBD, Southern Wesleyan Warriors @ South Carolina Upstate Spartans, North Carolina Wesleyan Battling Bishops @ East Carolina Pirates, Lane College Dragons @ Little Rock Trojans, TBD @ TBD, TBD @ TBD, TBD @ TBD, TBD @ San Diego State Aztecs
+- possession data coverage: 0.99
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
