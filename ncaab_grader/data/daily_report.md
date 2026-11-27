@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-27
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-27T15:45:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-27T16:00:45+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,7 +53,7 @@ WHY: Model line Oregon Ducks -2 vs market +2.5 (+4.3 pts) from opponent-adjusted
 LOGGED: 2026-11-27T14:00:31+00:00 · model ncaab_v1
 ```
 
-## Watch list (29) — positive EV but not a qualified bet
+## Watch list (27) — positive EV but not a qualified bet
 
 - Lehigh Mountain Hawks ML +900 (+900) · Lehigh Mountain Hawks at UC Santa Barbara Gauchos · Fri 7:00 PM ET · EV +19.7% · min +760
 - Miami Hurricanes ML -135 (-135) · Miami Hurricanes at Alabama Crimson Tide · Fri 8:30 PM ET · EV +8.5% · min -153
