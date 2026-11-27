@@ -1,13 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-26
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-27T03:15:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-27T03:30:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $507.32 (start $500, at risk $21.39) · ¼-Kelly comparison $509.34
-**Season to date (BET tier):** 23-21-0 · flat P/L $+7.32 (+3.4% on risk) · ¼-Kelly P/L $+9.34 · beat close 34%
+**Paper bankroll:** $506.67 (start $500, at risk $11.39) · ¼-Kelly comparison $507.56
+**Season to date (BET tier):** 24-22-0 · flat P/L $+6.67 (+2.9% on risk) · ¼-Kelly P/L $+7.56 · beat close 33%
 
-## Qualified bets (2)
+## Qualified bets (1)
 
 ```
 GAME: Pacific Tigers at UC Davis Aggies (neutral)
@@ -31,28 +31,6 @@ WHY: Model line UC Davis Aggies +2 vs market +4.5 (+2.4 pts) from opponent-adjus
 LOGGED: 2026-11-26T22:15:22+00:00 · model ncaab_v1
 ```
 
-```
-GAME: Pacific Tigers at Omaha Mavericks (neutral)
-TIPOFF: Thu 10:30 PM ET
-
-SPORTSBOOK LINE: Pacific Tigers -8.5 (-105)
-MODEL LINE: Pacific Tigers -11.5
-PROJECTED SCORE: Pacific Tigers 76 - Omaha Mavericks 65
-
-MODEL COVER PROBABILITY: 52.9%
-BREAK-EVEN PROBABILITY: 51.22%
-EXPECTED ROI: +3.2%
-
-RECOMMENDATION: Pacific Tigers -8.5
-MINIMUM ACCEPTABLE PRICE: -108
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $4.20
-CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 52.9% (backtest-shrunk toward the market)
-FLAGS: neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Pacific Tigers -11.5 vs market -8.5 (+2.8 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-26T04:15:27+00:00 · model ncaab_v1
-```
-
 ## Watch list (21) — positive EV but not a qualified bet
 
 - Idaho Vandals ML +700 (+700) · Idaho Vandals at Washington State Cougars · Fri 8:00 PM ET · EV +5.9% · min +678
@@ -74,7 +52,7 @@ Bankroll $518.53 · 183-170-0 · logged this run 0 · open 7
 
 ## Data gaps
 
-- no line posted yet (14): Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, TBD @ TBD, Clarke Pride @ South Dakota Coyotes, TBD @ TBD, Auburn Montgomery Senators @ UAB Blazers, TBD @ Maryland Terrapins, TBD @ TBD, Southern Wesleyan Warriors @ South Carolina Upstate Spartans, North Carolina Wesleyan Battling Bishops @ East Carolina Pirates, Lane College Dragons @ Little Rock Trojans, TBD @ TBD, TBD @ TBD, TBD @ TBD, TBD @ San Diego State Aztecs
-- possession data coverage: 0.991
+- no line posted yet (14): Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, TBD @ TBD, Clarke Pride @ South Dakota Coyotes, TCU Horned Frogs @ TBD, Auburn Montgomery Senators @ UAB Blazers, TBD @ Maryland Terrapins, Michigan Wolverines @ TBD, Southern Wesleyan Warriors @ South Carolina Upstate Spartans, North Carolina Wesleyan Battling Bishops @ East Carolina Pirates, Lane College Dragons @ Little Rock Trojans, TBD @ TBD, TBD @ TBD, Creighton Bluejays @ TBD, TBD @ San Diego State Aztecs
+- possession data coverage: 0.989
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
