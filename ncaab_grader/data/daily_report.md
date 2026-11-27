@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-27
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-27T08:45:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-27T09:00:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,6 +53,6 @@ Bankroll $518.53 · 183-170-0 · logged this run 0 · open 7
 ## Data gaps
 
 - no line posted yet (8): Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, Clarke Pride @ South Dakota Coyotes, Auburn Montgomery Senators @ UAB Blazers, Oregon Ducks @ Maryland Terrapins, Southern Wesleyan Warriors @ South Carolina Upstate Spartans, North Carolina Wesleyan Battling Bishops @ East Carolina Pirates, Lane College Dragons @ Little Rock Trojans, Texas Tech Red Raiders @ San Diego State Aztecs
-- possession data coverage: 0.99
+- possession data coverage: 0.992
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
