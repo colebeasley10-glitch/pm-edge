@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-11-27T11:30:41.990948Z",
+ "ran_at": "2026-11-27T11:45:38.842731Z",
  "strategies": {
   "weather": {
    "picks_found": 0,
@@ -17,7 +17,7 @@
    }
   },
   "polymarket": {
-   "picks_found": 5,
+   "picks_found": 6,
    "opened": 0,
    "skipped": {},
    "benched": true,
@@ -32,9 +32,16 @@
     {
      "ticker": "KXEERSTEDIVGAME-26NOV27AZOSS-AZ",
      "side": "NO",
+     "ask": 0.45,
+     "fair": 0.9875,
+     "edge": 0.5198
+    },
+    {
+     "ticker": "KXEERSTEDIVGAME-26NOV27UTRALM-ALM",
+     "side": "NO",
      "ask": 0.47,
-     "fair": 0.987,
-     "edge": 0.4994
+     "fair": 0.9915,
+     "edge": 0.5039
     },
     {
      "ticker": "KXNCAAMBGAME-26NOV27ISUSJU-SJU",
@@ -47,32 +54,28 @@
      "ticker": "KXEERSTEDIVGAME-26NOV27DORVIT-DOR",
      "side": "NO",
      "ask": 0.7,
-     "fair": 0.998,
-     "edge": 0.283
+     "fair": 0.994,
+     "edge": 0.279
     },
     {
-     "ticker": "KXK2LEAGUEGAME-26NOV28YONPAC-PAC",
+     "ticker": "KXCS2GAME-26NOV271000REV9INE-9INE",
      "side": "NO",
-     "ask": 0.73,
-     "fair": 0.765,
-     "edge": 0.0212
+     "ask": 0.44,
+     "fair": 0.475,
+     "edge": 0.0177
     }
    ],
-   "shadow_opened": 0,
+   "shadow_opened": 1,
    "diag": {
     "poly_events": 600,
-    "poly_games": 295,
-    "kalshi_events": 1655,
-    "matched": 182,
-    "priced": 335,
+    "poly_games": 286,
+    "kalshi_events": 1654,
+    "matched": 177,
+    "priced": 329,
     "best_gaps": [
      [
-      0.015,
-      "KXTHAIL1GAME-26NOV27UTHSIS-UTH"
-     ],
-     [
-      0.015,
-      "KXK2LEAGUEGAME-26NOV28YONPAC-YON"
+      0.02,
+      "KXCS2GAME-26NOV280100PRVNAVI-PRV"
      ],
      [
       0.015,
@@ -80,11 +83,15 @@
      ],
      [
       0.015,
+      "KXEFLCHAMPIONSHIPGAME-26NOV28WHUSTK-STK"
+     ],
+     [
+      0.015,
       "KXEFLCHAMPIONSHIPGAME-26NOV27SOUMID-MID"
      ],
      [
-      0.01,
-      "KXVALORANTGAME-26NOV271100MDRAUR-MDR"
+      0.015,
+      "KXCS2GAME-26NOV271000REV9INE-REV"
      ],
      [
       0.01,
@@ -92,7 +99,7 @@
      ],
      [
       0.005,
-      "KXVALORANTGAME-26NOV271100CGNEP-EP"
+      "KXSRBSLGAME-26NOV27IMTMAC-IMT"
      ],
      [
       0.005,
@@ -108,13 +115,13 @@
   },
   "sharp": {
    "picks_found": 4,
-   "opened": 2,
+   "opened": 0,
    "skipped": {
-    "already_holding": 1,
-    "same_game": 1
+    "same_game": 3,
+    "already_holding": 1
    },
    "diag": {
-    "skipped_settles_late": 0
+    "skipped_settles_late": 1
    }
   },
   "crypto": {
@@ -127,8 +134,8 @@
    "diag": {
     "markets_priced": 0,
     "vol": {
-     "BTC-USD": 0.004921789707916415,
-     "ETH-USD": 0.005219732423646167
+     "BTC-USD": 0.004925608172839768,
+     "ETH-USD": 0.005217474065438713
     },
     "best": []
    }
@@ -141,12 +148,12 @@
   "0": "20261027"
  },
  "update": {
-  "marked": 21,
-  "settled": 0
+  "marked": 19,
+  "settled": 1
  },
  "shadow_update": {
-  "marked": 8,
-  "settled": 0
+  "marked": 7,
+  "settled": 1
  },
  "live_sharp": {
   "enabled": false,
@@ -173,15 +180,15 @@
   {
    "strategy": "sharp",
    "picks": 5583,
-   "open": 23,
-   "won": 3108,
-   "lost": 2452,
-   "pl": -1897.979999999977,
-   "risked": 55737.93000000033,
-   "clv_sum": -3053.4200000000005,
-   "clv_n": 5497,
-   "roi": -0.034051856608237265,
-   "clv": -0.5554702565035475
+   "open": 20,
+   "won": 3110,
+   "lost": 2453,
+   "pl": -1899.669999999977,
+   "risked": 55767.62000000032,
+   "clv_sum": -3035.9200000000005,
+   "clv_n": 5500,
+   "roi": -0.03406403213907938,
+   "clv": -0.5519854545454547
   },
   {
    "strategy": "weather",
@@ -239,16 +246,16 @@
   },
   {
    "strategy": "polymarket",
-   "picks": 265,
+   "picks": 266,
    "open": 8,
-   "won": 100,
+   "won": 101,
    "lost": 157,
-   "pl": -245.6999999999998,
-   "risked": 2608.53,
-   "clv_sum": -149.0,
-   "clv_n": 218,
-   "roi": -0.0941909811273015,
-   "clv": -0.6834862385321101
+   "pl": -242.2499999999998,
+   "risked": 2618.0800000000004,
+   "clv_sum": -122.5,
+   "clv_n": 219,
+   "roi": -0.09252964004155709,
+   "clv": -0.5593607305936074
   },
   {
    "strategy": "weather",
