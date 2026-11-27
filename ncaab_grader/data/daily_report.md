@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-27
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-27T23:15:26+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-27T23:30:26+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,6 +53,6 @@ Bankroll $522.51 · 185-171-0 · logged this run 0 · open 11
 ## Data gaps
 
 - no line posted yet (30): North Carolina Wesleyan Battling Bishops @ East Carolina Pirates, Lane College Dragons @ Little Rock Trojans, IU Columbus Crimson Pride @ Indiana State Sycamores, Hampton Pirates @ Radford Highlanders, Vermont Catamounts @ Colgate Raiders, Alcorn State Braves @ Georgia Tech Yellow Jackets, North Carolina Central Eagles @ Gardner-Webb Runnin' Bulldogs, Lehigh Mountain Hawks @ Pepperdine Waves, Clinton Golden Bears @ Winthrop Eagles, Manhattan Jaspers @ Morgan State Bears, New College Mighty Banyans @ Stetson Hatters, North Florida Ospreys @ Columbia Lions, Central Connecticut Blue Devils @ Navy Midshipmen, Delaware State Hornets @ North Carolina A&T Aggies, Georgia Southern Eagles @ UNC Asheville Bulldogs …
-- possession data coverage: 0.984
+- possession data coverage: 0.985
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
