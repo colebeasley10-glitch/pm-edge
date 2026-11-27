@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-27
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-27T05:30:30+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-27T05:45:24+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $511.22 (start $500, at risk $6.39) · ¼-Kelly comparison $513.44
-**Season to date (BET tier):** 25-22-0 · flat P/L $+11.22 (+4.9% on risk) · ¼-Kelly P/L $+13.44 · beat close 34%
+**Paper bankroll:** $515.98 (start $500, at risk $1.39) · ¼-Kelly comparison $517.44
+**Season to date (BET tier):** 26-22-0 · flat P/L $+15.98 (+6.8% on risk) · ¼-Kelly P/L $+17.44 · beat close 33%
 
 ## Qualified bets (1)
 
@@ -31,7 +31,7 @@ WHY: Model line UC Davis Aggies +2 vs market +4.5 (+2.4 pts) from opponent-adjus
 LOGGED: 2026-11-26T22:15:22+00:00 · model ncaab_v1
 ```
 
-## Watch list (19) — positive EV but not a qualified bet
+## Watch list (20) — positive EV but not a qualified bet
 
 - Idaho Vandals ML +700 (+700) · Idaho Vandals at Washington State Cougars · Fri 8:00 PM ET · EV +5.9% · min +678
 - UC Davis Aggies ML +185 (+185) · Pacific Tigers at UC Davis Aggies · Fri 8:00 PM ET · EV +5.5% · min +178
@@ -52,7 +52,7 @@ Bankroll $518.53 · 183-170-0 · logged this run 0 · open 7
 
 ## Data gaps
 
-- no line posted yet (14): Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, TBD @ TBD, Clarke Pride @ South Dakota Coyotes, TCU Horned Frogs @ TBD, Auburn Montgomery Senators @ UAB Blazers, TBD @ Maryland Terrapins, Michigan Wolverines @ Kansas State Wildcats, Southern Wesleyan Warriors @ South Carolina Upstate Spartans, North Carolina Wesleyan Battling Bishops @ East Carolina Pirates, Lane College Dragons @ Little Rock Trojans, TBD @ TBD, TBD @ TBD, Creighton Bluejays @ TBD, TBD @ San Diego State Aztecs
-- possession data coverage: 0.99
+- no line posted yet (10): Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, Clarke Pride @ South Dakota Coyotes, TCU Horned Frogs @ TBD, Auburn Montgomery Senators @ UAB Blazers, TBD @ Maryland Terrapins, Southern Wesleyan Warriors @ South Carolina Upstate Spartans, North Carolina Wesleyan Battling Bishops @ East Carolina Pirates, Lane College Dragons @ Little Rock Trojans, Creighton Bluejays @ TBD, TBD @ San Diego State Aztecs
+- possession data coverage: 0.989
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
