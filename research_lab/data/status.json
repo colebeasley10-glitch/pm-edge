@@ -20,7 +20,7 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 11/26"
  },
  "last_run": {
-  "at": "2026-11-27T09:09:51.197222Z",
+  "at": "2026-11-27T09:18:49.237010Z",
   "best_price": {
    "compared": 0,
    "new_picks": 0,
@@ -35,14 +35,14 @@
   },
   "book_errors": 0,
   "coles_plays": {
-   "app_props": 16997,
+   "app_props": 16985,
    "apps": {
     "PrizePicks": {
      "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.prizepicks.com/projections?per_page=2000&single_stat=true&game_mode=pickem",
      "props": null,
      "skipped": {
       "event_type": 1584,
-      "not_standard": 37074
+      "not_standard": 37065
      },
      "tried": [
       "partner-api.prizepicks.com/projections: 200 but 0 usable",
@@ -52,13 +52,13 @@
     },
     "Sleeper": {
      "error": null,
-     "props": 4419,
+     "props": 4427,
      "tried": null,
      "url": null
     },
     "Underdog": {
      "error": null,
-     "props": 12578,
+     "props": 12558,
      "tried": [
       "api.underdogfantasy.com/beta/v7/over_under_lines: 404",
       "api.underdogfantasy.com/beta/v6/over_under_lines: 426"
@@ -94,6 +94,7 @@
   },
   "data_failures": [],
   "ev": {
+   "book_offers": 0,
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
@@ -104,11 +105,13 @@
     "taken_at": "2026-11-01T08:32:40.763365Z"
    },
    "errors": [],
-   "games": 0,
-   "picks": 0
+   "games": 91,
+   "kalshi_offers": 160,
+   "picks": 820,
+   "polymarket_offers": 148
   },
   "maker_candidates": {
-   "candidates": 0,
+   "candidates": 576,
    "sharp_agrees": 0
   },
   "my_bets": {
@@ -123,42 +126,57 @@
    "settled": 0
   },
   "odds_fam_board": {
-   "arbs_possible": 0,
+   "arbs_possible": 803,
    "bets_graded": 0,
    "clv_scored": 0,
    "props": 476,
-   "rows": 476
+   "rows": 1296
   },
   "paper_only": true,
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [],
-   "kalshi_markets": 0,
-   "matched": 0,
-   "note": "no Pinnacle fetch due this round",
-   "pinnacle_games": 0,
-   "requests_today": 16,
-   "samples": [],
-   "skipped": [
-    "football: next in 8 min",
-    "basketball: next in 23 min",
-    "hockey: next in 8 min",
-    "baseball: next in 23 min",
-    "soccer: next in 128 min",
-    "tennis: next in 128 min"
+   "fetched": [
+    "football",
+    "hockey"
    ],
-   "unmatched": {}
+   "kalshi_markets": 4682,
+   "matched": 479,
+   "ncaaf_lines_saved": 65,
+   "pinnacle_games": 92,
+   "requests_today": 18,
+   "samples": [
+    "no_pinnacle_match: West Virginia vs Utah: Utah wins",
+    "no_pinnacle_match: West Virginia vs Utah: West Virginia wins",
+    "no_pinnacle_match: University at Albany vs Lehigh: Lehigh wins",
+    "no_pinnacle_match: University at Albany vs Lehigh: University at Albany wins",
+    "no_pinnacle_match: Harvard vs Monmouth: Monmouth wins",
+    "no_pinnacle_match: Harvard vs Monmouth: Harvard wins",
+    "no_pinnacle_match: UMass vs Bowling Green: Bowling Green wins",
+    "no_pinnacle_match: UMass vs Bowling Green: UMass wins"
+   ],
+   "skipped": [
+    "basketball: next in 14 min",
+    "baseball: next in 14 min",
+    "soccer: next in 119 min",
+    "tennis: next in 119 min"
+   ],
+   "unmatched": {
+    "no_moneyline": 2,
+    "no_pinnacle_match": 2610,
+    "pinnacle_line_not_offered": 1583,
+    "unsupported_market_type": 8
+   }
   },
   "prop_board": {
    "new_plays": 0,
-   "props": 0,
+   "props": 125,
    "pushed": 0,
    "settled": 0
   },
   "reconciled": true,
   "sharp_plays": {
-   "games": 0,
+   "games": 67,
    "new_plays": 0,
    "pushed": 0,
    "settled": 0
@@ -166,7 +184,7 @@
   "sleeper": {
    "edges": 0,
    "errors": [],
-   "lines": 2464,
+   "lines": 2470,
    "matched_props": 154,
    "unmatched_stats": [
     "anytime_touchdowns",
@@ -226,10 +244,10 @@
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 3,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 3,
+    "scanned": 820,
     "settle": {
      "marked": 22,
      "pending": 23,
@@ -241,10 +259,10 @@
     "no_fill": 0,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 1,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 1,
+    "scanned": 820,
     "settle": {
      "marked": 18,
      "pending": 18,
@@ -253,6 +271,6 @@
    }
   }
  },
- "last_success": "2026-11-27T09:09:51.197222Z",
+ "last_success": "2026-11-27T09:18:49.237010Z",
  "report_sent": "20261031"
 }
