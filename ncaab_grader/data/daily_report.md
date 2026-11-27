@@ -1,35 +1,13 @@
 # NCAA Basketball Model — daily report 2026-11-26
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-27T01:45:23+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-27T02:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
 **Paper bankroll:** $507.32 (start $500, at risk $21.39) · ¼-Kelly comparison $509.34
 **Season to date (BET tier):** 23-21-0 · flat P/L $+7.32 (+3.4% on risk) · ¼-Kelly P/L $+9.34 · beat close 34%
 
-## Qualified bets (3)
-
-```
-GAME: Alabama Crimson Tide at Kansas State Wildcats (neutral)
-TIPOFF: Thu 9:00 PM ET
-
-SPORTSBOOK LINE: Kansas State Wildcats +14.5 (-110)
-MODEL LINE: Kansas State Wildcats +9.5
-PROJECTED SCORE: Alabama Crimson Tide 88 - Kansas State Wildcats 78
-
-MODEL COVER PROBABILITY: 54.9%
-BREAK-EVEN PROBABILITY: 52.38%
-EXPECTED ROI: +4.7%
-
-RECOMMENDATION: Kansas State Wildcats +14.5
-MINIMUM ACCEPTABLE PRICE: -116
-SUGGESTED STAKE: $5.00 flat (1% of the $500 start) · ¼-Kelly comparison $6.47
-CONFIDENCE/UNCERTAINTY: MEDIUM — ratings blend prior and this season's games; calibrated win prob 54.9% (backtest-shrunk toward the market)
-FLAGS: neutral site; injuries/lineups not modeled — check before betting
-
-WHY: Model line Kansas State Wildcats +9.5 vs market +14.5 (+4.8 pts) from opponent-adjusted efficiency and venue.
-LOGGED: 2026-11-25T20:00:52+00:00 · model ncaab_v1
-```
+## Qualified bets (2)
 
 ```
 GAME: Pacific Tigers at UC Davis Aggies (neutral)
@@ -96,7 +74,7 @@ Bankroll $518.53 · 183-170-0 · logged this run 0 · open 4
 
 ## Data gaps
 
-- no line posted yet (30): Vermont Catamounts @ Merrimack Warriors, Hampton Pirates @ UMass Lowell River Hawks, Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, TBD @ TBD, Southern Jaguars @ Vanderbilt Commodores, Clarke Pride @ South Dakota Coyotes, Navy Midshipmen @ Fairfield Stags, Maine Black Bears @ Le Moyne Dolphins, TBD @ Georgetown Hoyas, TBD @ TBD, Auburn Montgomery Senators @ UAB Blazers, Bellarmine Knights @ Butler Bulldogs, La Salle Explorers @ Bucknell Bison, Colgate Raiders @ Hofstra Pride, TBD @ Maryland Terrapins …
+- no line posted yet (30): Vermont Catamounts @ Merrimack Warriors, Hampton Pirates @ UMass Lowell River Hawks, Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, TBD @ TBD, Southern Jaguars @ Vanderbilt Commodores, Clarke Pride @ South Dakota Coyotes, Navy Midshipmen @ Fairfield Stags, Maine Black Bears @ Le Moyne Dolphins, Georgetown Hoyas @ UCLA Bruins, TBD @ TBD, Auburn Montgomery Senators @ UAB Blazers, Bellarmine Knights @ Butler Bulldogs, La Salle Explorers @ Bucknell Bison, Colgate Raiders @ Hofstra Pride, TBD @ Maryland Terrapins …
 - possession data coverage: 0.991
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
