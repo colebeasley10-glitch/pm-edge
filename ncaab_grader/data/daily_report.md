@@ -1,11 +1,11 @@
-# NCAA Basketball Model — daily report 2026-11-26
+# NCAA Basketball Model — daily report 2026-11-27
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-27T04:45:27+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-27T05:00:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $506.67 (start $500, at risk $11.39) · ¼-Kelly comparison $507.56
-**Season to date (BET tier):** 24-22-0 · flat P/L $+6.67 (+2.9% on risk) · ¼-Kelly P/L $+7.56 · beat close 33%
+**Paper bankroll:** $511.22 (start $500, at risk $6.39) · ¼-Kelly comparison $513.44
+**Season to date (BET tier):** 25-22-0 · flat P/L $+11.22 (+4.9% on risk) · ¼-Kelly P/L $+13.44 · beat close 34%
 
 ## Qualified bets (1)
 
@@ -52,7 +52,7 @@ Bankroll $518.53 · 183-170-0 · logged this run 0 · open 7
 
 ## Data gaps
 
-- no line posted yet (14): Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, TBD @ TBD, Clarke Pride @ South Dakota Coyotes, TCU Horned Frogs @ TBD, Auburn Montgomery Senators @ UAB Blazers, TBD @ Maryland Terrapins, Michigan Wolverines @ TBD, Southern Wesleyan Warriors @ South Carolina Upstate Spartans, North Carolina Wesleyan Battling Bishops @ East Carolina Pirates, Lane College Dragons @ Little Rock Trojans, TBD @ TBD, TBD @ TBD, Creighton Bluejays @ TBD, TBD @ San Diego State Aztecs
-- possession data coverage: 0.991
+- no line posted yet (14): Bryant & Stratton (OH) Bobcats @ Youngstown State Penguins, TBD @ TBD, Clarke Pride @ South Dakota Coyotes, TCU Horned Frogs @ TBD, Auburn Montgomery Senators @ UAB Blazers, TBD @ Maryland Terrapins, Michigan Wolverines @ Kansas State Wildcats, Southern Wesleyan Warriors @ South Carolina Upstate Spartans, North Carolina Wesleyan Battling Bishops @ East Carolina Pirates, Lane College Dragons @ Little Rock Trojans, TBD @ TBD, TBD @ TBD, Creighton Bluejays @ TBD, TBD @ San Diego State Aztecs
+- possession data coverage: 0.99
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
