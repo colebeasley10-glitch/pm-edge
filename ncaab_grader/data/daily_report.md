@@ -1,11 +1,11 @@
 # NCAA Basketball Model — daily report 2026-11-27
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-28T03:15:25+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-28T03:30:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
-**Paper bankroll:** $510.98 (start $500, at risk $11.39) · ¼-Kelly comparison $512.30
-**Season to date (BET tier):** 26-23-0 · flat P/L $+10.98 (+4.6% on risk) · ¼-Kelly P/L $+12.30 · beat close 35%
+**Paper bankroll:** $509.59 (start $500, at risk $10.00) · ¼-Kelly comparison $507.41
+**Season to date (BET tier):** 26-24-0 · flat P/L $+9.59 (+4.0% on risk) · ¼-Kelly P/L $+7.41 · beat close 34%
 
 ## Qualified bets (2)
 
@@ -53,7 +53,7 @@ WHY: Model line Radford Highlanders -4.5 vs market -1.5 (+3.2 pts) from opponent
 LOGGED: 2026-11-27T23:45:25+00:00 · model ncaab_v1
 ```
 
-## Watch list (27) — positive EV but not a qualified bet
+## Watch list (28) — positive EV but not a qualified bet
 
 - Stony Brook Seawolves ML -185 (-185) · Delaware Blue Hens at Stony Brook Seawolves · Sat 4:00 PM ET · EV +10.5% · min -230
 - Gardner-Webb Runnin' Bulldogs ML -125 (-125) · North Carolina Central Eagles at Gardner-Webb Runnin' Bulldogs · Sat 1:00 PM ET · EV +5.8% · min -133
@@ -70,11 +70,11 @@ LOGGED: 2026-11-27T23:45:25+00:00 · model ncaab_v1
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $521.61 · 187-173-0 · logged this run 0 · open 15
+Bankroll $516.61 · 187-174-0 · logged this run 0 · open 14
 
 ## Data gaps
 
 - no line posted yet (14): IU Columbus Crimson Pride @ Indiana State Sycamores, Clinton Golden Bears @ Winthrop Eagles, New College Mighty Banyans @ Stetson Hatters, Southwestern Christian U Eagles @ Central Arkansas Bears, Kentucky Christian Knights @ UT Martin Skyhawks, Paul Quinn Tigers @ Sam Houston Bearkats, Azusa Pacific Cougars @ Idaho State Bengals, Lincoln (CA) Oaklanders @ UC Riverside Highlanders, Cal Poly Humboldt Lumberjacks @ Nevada Wolf Pack, Trinity College of Jacksonville Eagles @ Jacksonville Dolphins, Toccoa Falls Eagles @ Middle Tennessee Blue Raiders, St. Lawrence Saints @ Cornell Big Red, Dallas Crusaders @ Abilene Christian Wildcats, TBD @ TBD
-- possession data coverage: 0.986
+- possession data coverage: 0.982
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
