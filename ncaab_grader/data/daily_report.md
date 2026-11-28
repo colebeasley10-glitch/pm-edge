@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-28
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-28T12:45:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-28T13:00:30+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -74,7 +74,7 @@ Bankroll $516.61 · 187-174-0 · logged this run 0 · open 14
 
 ## Data gaps
 
-- no line posted yet (21): IU Columbus Crimson Pride @ Indiana State Sycamores, Clinton Golden Bears @ Winthrop Eagles, New College Mighty Banyans @ Stetson Hatters, Southwestern Christian U Eagles @ Central Arkansas Bears, Kentucky Christian Knights @ UT Martin Skyhawks, Paul Quinn Tigers @ Sam Houston Bearkats, Azusa Pacific Cougars @ Idaho State Bengals, Lincoln (CA) Oaklanders @ UC Riverside Highlanders, Cal Poly Humboldt Lumberjacks @ Nevada Wolf Pack, Trinity College of Jacksonville Eagles @ Jacksonville Dolphins, Toccoa Falls Eagles @ Middle Tennessee Blue Raiders, St. Lawrence Saints @ Cornell Big Red, Dallas Crusaders @ Abilene Christian Wildcats, Niagara Purple Eagles @ Maine Black Bears, Merrimack Warriors @ Colgate Raiders …
+- no line posted yet (30): IU Columbus Crimson Pride @ Indiana State Sycamores, Clinton Golden Bears @ Winthrop Eagles, New College Mighty Banyans @ Stetson Hatters, Southwestern Christian U Eagles @ Central Arkansas Bears, Kentucky Christian Knights @ UT Martin Skyhawks, Paul Quinn Tigers @ Sam Houston Bearkats, Azusa Pacific Cougars @ Idaho State Bengals, Lincoln (CA) Oaklanders @ UC Riverside Highlanders, Cal Poly Humboldt Lumberjacks @ Nevada Wolf Pack, Trinity College of Jacksonville Eagles @ Jacksonville Dolphins, Toccoa Falls Eagles @ Middle Tennessee Blue Raiders, St. Lawrence Saints @ Cornell Big Red, Dallas Crusaders @ Abilene Christian Wildcats, Niagara Purple Eagles @ Maine Black Bears, Merrimack Warriors @ Colgate Raiders …
 - possession data coverage: 0.99
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
