@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-28
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-28T16:45:31+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-28T17:00:29+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,7 +53,7 @@ WHY: Model line Radford Highlanders -4.5 vs market -1.5 (+3.2 pts) from opponent
 LOGGED: 2026-11-27T23:45:25+00:00 · model ncaab_v1
 ```
 
-## Watch list (32) — positive EV but not a qualified bet
+## Watch list (31) — positive EV but not a qualified bet
 
 - Lehigh Mountain Hawks ML +360 (+360) · Lehigh Mountain Hawks at Pepperdine Waves · Sat 1:30 PM ET · EV +11.8% · min +324
 - Stony Brook Seawolves ML -185 (-185) · Delaware Blue Hens at Stony Brook Seawolves · Sat 4:00 PM ET · EV +10.5% · min -230
