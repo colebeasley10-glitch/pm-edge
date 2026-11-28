@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-27
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-28T04:15:22+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-28T04:30:28+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,7 +53,7 @@ WHY: Model line Radford Highlanders -4.5 vs market -1.5 (+3.2 pts) from opponent
 LOGGED: 2026-11-27T23:45:25+00:00 · model ncaab_v1
 ```
 
-## Watch list (30) — positive EV but not a qualified bet
+## Watch list (29) — positive EV but not a qualified bet
 
 - Lehigh Mountain Hawks ML +360 (+360) · Lehigh Mountain Hawks at Pepperdine Waves · Sat 1:30 PM ET · EV +11.8% · min +324
 - Stony Brook Seawolves ML -185 (-185) · Delaware Blue Hens at Stony Brook Seawolves · Sat 4:00 PM ET · EV +10.5% · min -230
@@ -75,6 +75,6 @@ Bankroll $516.61 · 187-174-0 · logged this run 0 · open 14
 ## Data gaps
 
 - no line posted yet (14): IU Columbus Crimson Pride @ Indiana State Sycamores, Clinton Golden Bears @ Winthrop Eagles, New College Mighty Banyans @ Stetson Hatters, Southwestern Christian U Eagles @ Central Arkansas Bears, Kentucky Christian Knights @ UT Martin Skyhawks, Paul Quinn Tigers @ Sam Houston Bearkats, Azusa Pacific Cougars @ Idaho State Bengals, Lincoln (CA) Oaklanders @ UC Riverside Highlanders, Cal Poly Humboldt Lumberjacks @ Nevada Wolf Pack, Trinity College of Jacksonville Eagles @ Jacksonville Dolphins, Toccoa Falls Eagles @ Middle Tennessee Blue Raiders, St. Lawrence Saints @ Cornell Big Red, Dallas Crusaders @ Abilene Christian Wildcats, TBD @ TBD
-- possession data coverage: 0.985
+- possession data coverage: 0.986
 
 Injuries, suspensions and lineup news are NOT in the model. The market knows them; a big model-vs-line gap on a news day is usually the model being wrong.
