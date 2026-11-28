@@ -1,6 +1,6 @@
 # NCAA Basketball Model — daily report 2026-11-27
 
-Model ncaab_v1 · PAPER ONLY · run 2026-11-28T01:45:24+00:00
+Model ncaab_v1 · PAPER ONLY · run 2026-11-28T02:00:31+00:00
 
 Markets with a tested rule: SPREAD · others are WATCH only until the backtest supports them.
 
@@ -53,24 +53,24 @@ WHY: Model line Radford Highlanders -4.5 vs market -1.5 (+3.2 pts) from opponent
 LOGGED: 2026-11-27T23:45:25+00:00 · model ncaab_v1
 ```
 
-## Watch list (18) — positive EV but not a qualified bet
+## Watch list (27) — positive EV but not a qualified bet
 
+- Stony Brook Seawolves ML -185 (-185) · Delaware Blue Hens at Stony Brook Seawolves · Sat 4:00 PM ET · EV +10.5% · min -230
+- Gardner-Webb Runnin' Bulldogs ML -125 (-125) · North Carolina Central Eagles at Gardner-Webb Runnin' Bulldogs · Sat 1:00 PM ET · EV +5.8% · min -133
+- Colgate Raiders ML -122 (-122) · Vermont Catamounts at Colgate Raiders · Sat 1:00 PM ET · EV +5.4% · min -129
 - Purdue Fort Wayne Mastodons ML -130 (-130) · Wofford Terriers at Purdue Fort Wayne Mastodons · Sat 1:00 PM ET · EV +4.8% · min -135
+- Ball State Cardinals ML -148 (-148) · Ball State Cardinals at Southern Indiana Screaming Eagles · Sat 2:00 PM ET · EV +4.2% · min -152
+- South Dakota State Jackrabbits ML -120 (-120) · South Alabama Jaguars at South Dakota State Jackrabbits · Sat 6:00 PM ET · EV +3.9% · min -122
+- Air Force Falcons ML -130 (-130) · Brown Bears at Air Force Falcons · Sat 3:00 PM ET · EV +3.7% · min -132
 - North Carolina Central Eagles -1.5 (+109) · North Carolina Central Eagles at Gardner-Webb Runnin' Bulldogs · Sat 1:00 PM ET · EV +3.3% · min +106
-- Tennessee Volunteers ML -122 (-122) · Tennessee Volunteers at Louisville Cardinals · Fri 9:00 PM ET · EV +3.1% · min -122
+- Army Black Knights ML -355 (-355) · Rider Broncs at Army Black Knights · Sat 7:00 PM ET · EV +2.9% · min -353
+- Georgia Southern Eagles ML -115 (-115) · Georgia Southern Eagles at UNC Asheville Bulldogs · Sat 2:00 PM ET · EV +2.6% · min -114
+- Le Moyne Dolphins ML -122 (-122) · Le Moyne Dolphins at Niagara Purple Eagles · Sat 2:00 PM ET · EV +2.2% · min -120
 - Texas Tech Red Raiders ML -278 (-278) · Texas Tech Red Raiders at San Diego State Aztecs · Fri 11:30 PM ET · EV +2.2% · min -270
-- OVER 147.5 (-104) · Troy Trojans at Chattanooga Mocs · Sat 2:00 PM ET · EV +2.1% · min -102
-- OVER 149.5 (-104) · Bethune-Cookman Wildcats at San Francisco Dons · Sat 7:00 PM ET · EV +2.1% · min -102
-- OVER 143.5 (-105) · Drake Bulldogs at North Dakota State Bison · Sat 6:00 PM ET · EV +1.7% · min -102
-- OVER 151.5 (-105) · Bucknell Bison at Pennsylvania Quakers · Sat 6:00 PM ET · EV +1.7% · min -102
-- OVER 137.5 (-105) · Drexel Dragons at Mount St. Mary's Mountaineers · Sat 4:00 PM ET · EV +1.7% · min -102
-- OVER 141.5 (-105) · McNeese Cowboys at Louisiana Ragin' Cajuns · Sat 4:00 PM ET · EV +1.7% · min -102
-- OVER 151.5 (-105) · VMI Keydets at Richmond Spiders · Sat 6:00 PM ET · EV +1.7% · min -102
-- OVER 151.5 (-105) · Northern Arizona Lumberjacks at Cal State Bakersfield Roadrunners · Sat 5:00 PM ET · EV +1.6% · min -102
 
 ## Home-court spread TEST (paper, own $500 — not bets)
 
-Bankroll $517.06 · 186-173-0 · logged this run 0 · open 12
+Bankroll $517.06 · 186-173-0 · logged this run 4 · open 16
 
 ## Data gaps
 
