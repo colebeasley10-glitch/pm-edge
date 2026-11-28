@@ -20,7 +20,7 @@
   "title": "\ud83e\uddea Research Lab (PAPER) 11/27"
  },
  "last_run": {
-  "at": "2026-11-28T10:18:05.001207Z",
+  "at": "2026-11-28T10:33:05.503130Z",
   "best_price": {
    "compared": 0,
    "new_picks": 0,
@@ -35,14 +35,14 @@
   },
   "book_errors": 0,
   "coles_plays": {
-   "app_props": 14606,
+   "app_props": 14612,
    "apps": {
     "PrizePicks": {
      "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.prizepicks.com/projections?per_page=2000&single_stat=true&game_mode=pickem",
      "props": null,
      "skipped": {
-      "event_type": 1630,
-      "not_standard": 49148
+      "event_type": 1593,
+      "not_standard": 49079
      },
      "tried": [
       "partner-api.prizepicks.com/projections: 200 but 0 usable",
@@ -52,13 +52,13 @@
     },
     "Sleeper": {
      "error": null,
-     "props": 3285,
+     "props": 3292,
      "tried": null,
      "url": null
     },
     "Underdog": {
      "error": null,
-     "props": 11321,
+     "props": 11320,
      "tried": [
       "api.underdogfantasy.com/beta/v7/over_under_lines: 404",
       "api.underdogfantasy.com/beta/v6/over_under_lines: 426"
@@ -75,25 +75,26 @@
     ]
    },
    "closest": [
-    "Sleeper Alex Tuch Over 0.5 Assists +168 vs fair +167 (+0.3%)",
+    "Underdog Jake Neighbours Over 1.5 Shots On Goal -122 vs fair -130 (+2.9%)",
+    "Sleeper Alex Tuch Over 0.5 Assists +171 vs fair +167 (+1.4%)",
     "Underdog Shai Gilgeous-Alexander Under 32.5 Points -137 vs fair -133 (-1.2%)",
+    "Sleeper Tom Wilson Under 0.5 Goals -476 vs fair -438 (-1.5%)",
     "Sleeper Gabriel Vilardi Under 0.5 Assists -227 vs fair -216 (-1.5%)",
     "Sleeper Jake Neighbours Over 1.5 Shots On Goal -135 vs fair -130 (-1.6%)",
     "Sleeper Mackie Samoskevich Under 0.5 Goals -588 vs fair -525 (-1.7%)",
-    "Underdog Justice Haynes Under 39.5 Rushing Yards -137 vs fair -130 (-2.0%)",
-    "Underdog Jake Neighbours Over 1.5 Shots On Goal -137 vs fair -130 (-2.0%)",
-    "Sleeper Tom Wilson Under 0.5 Goals -500 vs fair -438 (-2.3%)"
+    "Underdog Justice Haynes Under 39.5 Rushing Yards -137 vs fair -130 (-2.0%)"
    ],
-   "clv_tracked": 0,
-   "edges": 0,
-   "matched": 1396,
-   "new_plays": 0,
-   "pushed": 0,
+   "clv_tracked": 1,
+   "edges": 1,
+   "matched": 1393,
+   "new_plays": 1,
+   "pushed": 1,
    "settled": 0,
    "voided_mismatched": 0
   },
   "data_failures": [],
   "ev": {
+   "book_offers": 0,
    "books": {
     "credits_today": 0,
     "daily_credits": 6,
@@ -104,11 +105,13 @@
     "taken_at": "2026-11-01T08:32:40.763365Z"
    },
    "errors": [],
-   "games": 0,
-   "picks": 0
+   "games": 63,
+   "kalshi_offers": 106,
+   "picks": 562,
+   "polymarket_offers": 114
   },
   "maker_candidates": {
-   "candidates": 0,
+   "candidates": 510,
    "sharp_agrees": 0
   },
   "my_bets": {
@@ -123,42 +126,57 @@
    "settled": 0
   },
   "odds_fam_board": {
-   "arbs_possible": 0,
+   "arbs_possible": 547,
    "bets_graded": 0,
    "clv_scored": 0,
    "props": 1654,
-   "rows": 1654
+   "rows": 2216
   },
   "paper_only": true,
   "pinnacle": {
    "budget": 90,
    "errors": [],
-   "fetched": [],
-   "kalshi_markets": 0,
-   "matched": 0,
-   "note": "no Pinnacle fetch due this round",
-   "pinnacle_games": 0,
-   "requests_today": 20,
-   "samples": [],
-   "skipped": [
-    "football: next in 0 min",
-    "basketball: next in 15 min",
-    "hockey: next in 75 min",
-    "baseball: next in 90 min",
-    "soccer: next in 60 min",
-    "tennis: next in 59 min"
+   "fetched": [
+    "football"
    ],
-   "unmatched": {}
+   "kalshi_markets": 3528,
+   "matched": 324,
+   "ncaaf_lines_saved": 53,
+   "pinnacle_games": 64,
+   "requests_today": 21,
+   "samples": [
+    "no_pinnacle_match: University at Albany vs Lehigh: Lehigh wins",
+    "no_pinnacle_match: University at Albany vs Lehigh: University at Albany wins",
+    "no_pinnacle_match: Harvard vs Monmouth: Monmouth wins",
+    "no_pinnacle_match: Harvard vs Monmouth: Harvard wins",
+    "no_pinnacle_match: UMass vs Bowling Green: Bowling Green wins",
+    "no_pinnacle_match: UMass vs Bowling Green: UMass wins",
+    "no_pinnacle_match: Idaho St. vs North Dakota: North Dakota wins",
+    "no_pinnacle_match: Idaho St. vs North Dakota: Idaho St. wins"
+   ],
+   "skipped": [
+    "basketball: next in 0 min",
+    "hockey: next in 60 min",
+    "baseball: next in 75 min",
+    "soccer: next in 45 min",
+    "tennis: next in 44 min"
+   ],
+   "unmatched": {
+    "no_moneyline": 2,
+    "no_pinnacle_match": 1917,
+    "pinnacle_line_not_offered": 1277,
+    "unsupported_market_type": 8
+   }
   },
   "prop_board": {
    "new_plays": 0,
-   "props": 0,
+   "props": 388,
    "pushed": 0,
    "settled": 0
   },
   "reconciled": true,
   "sharp_plays": {
-   "games": 0,
+   "games": 62,
    "new_plays": 0,
    "pushed": 0,
    "settled": 0
@@ -166,7 +184,7 @@
   "sleeper": {
    "edges": 0,
    "errors": [],
-   "lines": 1669,
+   "lines": 1672,
    "matched_props": 338,
    "unmatched_stats": [
     "anytime_touchdowns",
@@ -219,13 +237,13 @@
   "strategies": {
    "EV_FINDER_v2": {
     "filled": 0,
-    "no_fill": 0,
+    "no_fill": 2,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 5,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 3,
+    "scanned": 562,
     "settle": {
      "marked": 19,
      "pending": 20,
@@ -234,13 +252,13 @@
    },
    "EV_FINDER_v3": {
     "filled": 0,
-    "no_fill": 0,
+    "no_fill": 1,
     "ok": true,
     "pushed": 0,
-    "qualified": 0,
+    "qualified": 3,
     "reconcile_problems": [],
-    "rejected": 0,
-    "scanned": 0,
+    "rejected": 2,
+    "scanned": 562,
     "settle": {
      "marked": 16,
      "pending": 16,
@@ -249,6 +267,6 @@
    }
   }
  },
- "last_success": "2026-11-28T10:18:05.001207Z",
+ "last_success": "2026-11-28T10:33:05.503130Z",
  "report_sent": "20261031"
 }
